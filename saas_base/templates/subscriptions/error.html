@@ -1,0 +1,17 @@
+<!-- saas_base/templates/subscriptions/error.html -->
+{% extends "base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="mb-4">Something went wrong</h1>
+  <p class="lead">We encountered an error processing your request.</p>
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  <div class="mt-4">
+    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

@@ -65,7 +65,6 @@ celerybeat-schedule
 # Environments
 .venv
 venv/
-ENV/
 
 # Rope project settings
 .ropeproject
@@ -274,5 +273,5 @@ saas_base/media/
 .pytest_cache/
 .ipython/
 .env
-.envs/*
-!.envs/.local/
+ENV/
+.envs

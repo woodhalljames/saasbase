@@ -24,3 +24,18 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"username": self.username})
+
+
+    def has_active_subscription(self):
+        """Check if user has an active subscription"""
+        try:
+            return self.subscription.subscription_active
+        except:
+            return False
+    
+    def get_stripe_customer_id(self):
+        """Get Stripe customer ID for this user"""
+        try:
+            return self.subscription.stripe_customer_id
+        except:
+            return None

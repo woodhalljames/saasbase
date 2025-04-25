@@ -31,6 +31,23 @@ class UserSignupForm(SignupForm):
     Check UserSocialSignupForm for accounts created from social.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Get price_id from request if it exists
+        if self.request and 'price_id' in self.request.GET:
+            self.price_id = self.request.GET.get('price_id')
+        else:
+            self.price_id = None
+    
+    def save(self, request):
+        # Save the user as normal
+        user = super().save(request)
+        
+        # Store the price_id in session if exists
+        if hasattr(self, 'price_id') and self.price_id:
+            request.session['subscription_price_id'] = self.price_id
+        
+        return user
 
 class UserSocialSignupForm(SocialSignupForm):
     """

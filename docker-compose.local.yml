@@ -75,6 +75,11 @@ services:
     <<: *django
     image: saas_base_local_flower
     container_name: saas_base_local_flower
+    depends_on:
+      - redis
+      - postgres
+      - mailpit
+      - celeryworker  # Make sure this is here
     ports:
       - '5555:5555'
     command: /start-flower

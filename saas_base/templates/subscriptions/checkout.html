@@ -1,0 +1,88 @@
+<!-- saas_base/templates/subscriptions/checkout.html -->
+{% extends "base.html" %}
+
+{% block title %}Subscription Checkout{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 class="mb-4">Choose a Subscription Plan</h1>
+  
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  
+  <div class="row">
+    {% for price in prices %}
+    <div class="col-md-4 mb-4">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">{{ price.product.name }}</h5>
+          <p class="card-text">{{ price.product.description }}</p>
+          <p class="card-text">
+            {{ price.unit_amount|floatformat:2 }} {{ price.currency|upper }} / 
+            {% if price.recurring.interval_count > 1 %}
+              {{ price.recurring.interval_count }} {{ price.recurring.interval }}s
+            {% else %}
+              {{ price.recurring.interval }}
+            {% endif %}
+          </p>
+          <button 
+            class="btn btn-primary checkout-button" 
+            data-price-id="{{ price.id }}">
+            Subscribe
+          </button>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <p>No subscription plans available. Please check back later.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stripe = Stripe('{{ stripe_public_key }}');
+    
+    // Handle checkout button clicks
+    document.querySelectorAll('.checkout-button').forEach(button => {
+      button.addEventListener('click', function() {
+        const priceId = this.getAttribute('data-price-id');
+        
+        // Disable the button to prevent multiple clicks
+        this.disabled = true;
+        this.textContent = 'Processing...';
+        
+        // Create checkout session
+        fetch('{% url "subscriptions:checkout" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: `price_id=${priceId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+            this.disabled = false;
+            this.textContent = 'Subscribe';
+          } else {
+            return stripe.redirectToCheckout({ sessionId: data.sessionId });
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred. Please try again.');
+          this.disabled = false;
+          this.textContent = 'Subscribe';
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

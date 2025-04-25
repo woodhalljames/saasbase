@@ -1,0 +1,16 @@
+<!-- saas_base/templates/subscriptions/checkout_cancel.html -->
+{% extends "base.html" %}
+
+{% block title %}Checkout Canceled{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="mb-4">Checkout Canceled</h1>
+  <p class="lead">Your subscription checkout was canceled.</p>
+  <p>No charges were made to your account.</p>
+  <div class="mt-4">
+    <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">Try Again</a>
+    <a href="{% url 'home' %}" class="btn btn-outline-primary">Back to Home</a>
+  </div>
+</div>
+{% endblock %}

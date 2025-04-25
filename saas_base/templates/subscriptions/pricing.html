@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h1 class="display-4">Choose Your Plan</h1>
+    <p class="lead">Select the subscription plan that works best for you</p>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  
+  <!-- Toggle for Monthly/Yearly pricing -->
+  <div class="d-flex justify-content-center mb-5">
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-outline-primary active" id="monthly-toggle">Monthly</button>
+      <button type="button" class="btn btn-outline-primary" id="yearly-toggle">Yearly</button>
+    </div>
+  </div>
+  
+  <div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header text-center">
+          <h3 class="my-0">{{ product.name }}</h3>
+        </div>
+        <div class="card-body d-flex flex-column">
+          <p class="card-text">{{ product.description }}</p>
+          
+          <!-- Monthly pricing (default visible) -->
+          <div class="pricing monthly-pricing">
+            {% if product.prices.monthly %}
+              <h2 class="card-title pricing-card-title text-center mb-4">
+                {{ product.prices.monthly.amount|floatformat:2 }} {{ product.prices.monthly.currency|upper }}
+                <small class="text-muted">/ month</small>
+              </h2>
+              <button class="btn btn-lg btn-block btn-primary mt-auto plan-button" 
+                     data-price-id="{{ product.prices.monthly.id }}">
+                Get Started
+              </button>
+            {% else %}
+              <h2 class="card-title pricing-card-title text-center mb-4 text-muted">
+                Not available monthly
+              </h2>
+            {% endif %}
+          </div>
+          
+          <!-- Yearly pricing (default hidden) -->
+          <div class="pricing yearly-pricing" style="display: none;">
+            {% if product.prices.yearly %}
+              <h2 class="card-title pricing-card-title text-center mb-4">
+                {{ product.prices.yearly.amount|floatformat:2 }} {{ product.prices.yearly.currency|upper }}
+                <small class="text-muted">/ year</small>
+              </h2>
+              <button class="btn btn-lg btn-block btn-primary mt-auto plan-button" 
+                     data-price-id="{{ product.prices.yearly.id }}">
+                Get Started
+              </button>
+            {% else %}
+              <h2 class="card-title pricing-card-title text-center mb-4 text-muted">
+                Not available yearly
+              </h2>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center">
+      <p>No subscription plans available. Please check back later.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle between monthly and yearly pricing
+    const monthlyToggle = document.getElementById('monthly-toggle');
+    const yearlyToggle = document.getElementById('yearly-toggle');
+    const monthlyPricing = document.querySelectorAll('.monthly-pricing');
+    const yearlyPricing = document.querySelectorAll('.yearly-pricing');
+    
+    monthlyToggle.addEventListener('click', function() {
+      monthlyToggle.classList.add('active');
+      yearlyToggle.classList.remove('active');
+      monthlyPricing.forEach(el => el.style.display = 'block');
+      yearlyPricing.forEach(el => el.style.display = 'none');
+    });
+    
+    yearlyToggle.addEventListener('click', function() {
+      yearlyToggle.classList.add('active');
+      monthlyToggle.classList.remove('active');
+      yearlyPricing.forEach(el => el.style.display = 'block');
+      monthlyPricing.forEach(el => el.style.display = 'none');
+    });
+    
+    // Handle plan selection
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const userAuthenticated = {{ user_authenticated|lower }};
+    
+    document.querySelectorAll('.plan-button').forEach(button => {
+      button.addEventListener('click', function() {
+        const priceId = this.getAttribute('data-price-id');
+        
+        if (!userAuthenticated) {
+          // If user is not logged in, redirect to signup page with price_id in query parameter
+          window.location.href = "{% url 'account_signup' %}?next={% url 'subscriptions:checkout' %}&price_id=" + priceId;
+          return;
+        }
+        
+        // User is authenticated, proceed to checkout
+        this.disabled = true;
+        this.textContent = 'Processing...';
+        
+        fetch('{% url "subscriptions:checkout" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: `price_id=${priceId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+            this.disabled = false;
+            this.textContent = 'Get Started';
+          } else {
+            return stripe.redirectToCheckout({ sessionId: data.sessionId });
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred. Please try again.');
+          this.disabled = false;
+          this.textContent = 'Get Started';
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}
