@@ -24,6 +24,10 @@ class UserAdminCreationForm(admin_forms.AdminUserCreationForm):  # type: ignore[
         }
 
 
+# saas_base/users/forms.py
+# saas_base/users/forms.py
+# Update the UserSignupForm class
+
 class UserSignupForm(SignupForm):
     """
     Form that will be rendered on a user sign up section/screen.
@@ -34,7 +38,7 @@ class UserSignupForm(SignupForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Get price_id from request if it exists
-        if self.request and 'price_id' in self.request.GET:
+        if hasattr(self, 'request') and self.request and 'price_id' in self.request.GET:
             self.price_id = self.request.GET.get('price_id')
         else:
             self.price_id = None

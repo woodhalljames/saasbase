@@ -88,58 +88,46 @@ def customer_portal(request):
 
 def pricing_page(request):
     """Public pricing page showing available subscription plans"""
-    
-    # Initialize Stripe API
-    stripe.api_key = settings.STRIPE_SECRET_KEY
+    from .models import Product, Price
     
     try:
-        # Fetch active prices with their products
-        prices = stripe.Price.list(
-            active=True,
-            expand=['data.product'],
-            limit=20  # Increase limit to ensure we get all prices
+        # Get active products with prices
+        products_with_prices = []
+        
+        for product in Product.objects.filter(active=True):
+            # Get all prices for this product, organized by interval
+            monthly_price = product.prices.filter(active=True, interval='month').first()
+            yearly_price = product.prices.filter(active=True, interval='year').first()
+            
+            # Only include products that have at least one active price
+            if monthly_price or yearly_price:
+                products_with_prices.append({
+                    'id': product.stripe_id,
+                    'name': product.name,
+                    'description': product.description,
+                    'prices': {
+                        'monthly': {
+                            'id': monthly_price.stripe_id,
+                            'amount': monthly_price.amount / 100,
+                            'currency': monthly_price.currency.upper()
+                        } if monthly_price else None,
+                        'yearly': {
+                            'id': yearly_price.stripe_id,
+                            'amount': yearly_price.amount / 100,
+                            'currency': yearly_price.currency.upper()
+                        } if yearly_price else None
+                    }
+                })
+        
+        # Sort products by monthly price (ascending)
+        products_with_prices.sort(
+            key=lambda p: p['prices']['monthly']['amount'] 
+            if p['prices']['monthly'] 
+            else float('inf')
         )
         
-        # Group prices by product and interval (monthly/yearly)
-        products = {}
-        for price in prices.data:
-            # Skip prices without recurring component or inactive products
-            if not price.recurring or not price.product.active:
-                continue
-                
-            product_id = price.product.id
-            
-            if product_id not in products:
-                products[product_id] = {
-                    'id': product_id,
-                    'name': price.product.name,
-                    'description': price.product.description,
-                    'prices': {'monthly': None, 'yearly': None}
-                }
-            
-            # Categorize as monthly or yearly
-            interval = price.recurring.interval
-            if interval == 'month':
-                products[product_id]['prices']['monthly'] = {
-                    'id': price.id,
-                    'amount': price.unit_amount / 100,  # Convert from cents to dollars
-                    'currency': price.currency.upper()
-                }
-            elif interval == 'year':
-                products[product_id]['prices']['yearly'] = {
-                    'id': price.id,
-                    'amount': price.unit_amount / 100,  # Convert from cents to dollars
-                    'currency': price.currency.upper()
-                }
-        
-        # Convert to list for easier templating
-        product_list = list(products.values())
-        
-        # Sort products by price (ascending)
-        product_list.sort(key=lambda p: p['prices']['monthly']['amount'] if p['prices']['monthly'] else float('inf'))
-        
         return render(request, 'subscriptions/pricing.html', {
-            'products': product_list,
+            'products': products_with_prices,
             'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
             'user_authenticated': request.user.is_authenticated
         })
