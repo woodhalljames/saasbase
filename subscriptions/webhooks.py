@@ -1,11 +1,14 @@
-# saas_base/subscriptions/webhooks.py
-import stripe
+import logging
+from django.db import transaction
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+import stripe
 
 from .models import CustomerSubscription
+
+logger = logging.getLogger(__name__)
 
 @csrf_exempt
 @require_POST
@@ -14,110 +17,128 @@ def stripe_webhook(request):
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     
+    logger.info(f"Received webhook - signature: {sig_header[:10] if sig_header else 'None'}")
+    
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-    except ValueError:
-        # Invalid payload
+        logger.info(f"Webhook verified: {event.type}")
+    except ValueError as e:
+        logger.error(f"Invalid payload: {str(e)}")
         return HttpResponse(status=400)
-    except stripe.error.SignatureVerificationError:
-        # Invalid signature
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid signature: {str(e)}")
         return HttpResponse(status=400)
     
     # Handle the event
-    if event.type == 'checkout.session.completed':
-        handle_checkout_session(event.data.object)
-    elif event.type == 'customer.subscription.created':
-        handle_subscription_created(event.data.object)
-    elif event.type == 'customer.subscription.updated':
-        handle_subscription_updated(event.data.object)
-    elif event.type == 'customer.subscription.deleted':
-        handle_subscription_deleted(event.data.object)
+    try:
+        if event.type == 'checkout.session.completed':
+            handle_checkout_session(event.data.object)
+        elif event.type == 'customer.subscription.created':
+            handle_subscription_created(event.data.object)
+        elif event.type == 'customer.subscription.updated':
+            handle_subscription_updated(event.data.object)
+        elif event.type == 'customer.subscription.deleted':
+            handle_subscription_deleted(event.data.object)
+    except Exception as e:
+        logger.error(f"Error processing {event.type}: {str(e)}")
+        # We still return 200 so Stripe doesn't retry
     
     return HttpResponse(status=200)
 
 def handle_checkout_session(session):
     """Process checkout.session.completed event"""
-    customer_id = session.get('customer')
+    customer_id = session.customer
     
     if not customer_id:
+        logger.warning("Checkout session has no customer ID")
         return
     
-    # Update customer record with checkout information
     try:
-        customer_subscription = CustomerSubscription.objects.get(
-            stripe_customer_id=customer_id
-        )
-        
-        # If subscription was created via checkout, it will be in the session
-        if session.get('subscription'):
-            customer_subscription.stripe_subscription_id = session.get('subscription')
-            customer_subscription.save()
+        with transaction.atomic():
+            customer_subscription = CustomerSubscription.objects.get(
+                stripe_customer_id=customer_id
+            )
+            
+            if session.subscription:
+                customer_subscription.stripe_subscription_id = session.subscription
+                customer_subscription.save()
+                logger.info(f"Updated subscription ID to {session.subscription} for customer {customer_id}")
     except CustomerSubscription.DoesNotExist:
-        # This is an edge case, but we might want to handle it
-        pass
+        logger.warning(f"No customer subscription found for customer {customer_id}")
+    except Exception as e:
+        logger.error(f"Error processing checkout session: {str(e)}")
 
 def handle_subscription_created(subscription):
     """Process customer.subscription.created event"""
-    customer_id = subscription.get('customer')
+    customer_id = subscription.customer
     
     try:
-        customer_subscription = CustomerSubscription.objects.get(
-            stripe_customer_id=customer_id
-        )
-        
-        customer_subscription.stripe_subscription_id = subscription.get('id')
-        customer_subscription.status = subscription.get('status')
-        
-        # Set plan ID from the first item
-        if subscription.get('items') and subscription.get('items').get('data'):
-            item = subscription.get('items').get('data')[0]
-            customer_subscription.plan_id = item.get('price').get('id')
-        
-        # Check if subscription is active
-        customer_subscription.subscription_active = subscription.get('status') in ['active', 'trialing']
-        customer_subscription.save()
+        with transaction.atomic():
+            customer_subscription = CustomerSubscription.objects.get(
+                stripe_customer_id=customer_id
+            )
+            
+            customer_subscription.stripe_subscription_id = subscription.id
+            customer_subscription.status = subscription.status
+            
+            # Set plan ID from the first item
+            if subscription.items and len(subscription.items.data) > 0:
+                item = subscription.items.data[0]
+                customer_subscription.plan_id = item.price.id
+            
+            # Check if subscription is active
+            customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+            customer_subscription.save()
+            
+            logger.info(f"Created subscription {subscription.id} for customer {customer_id}")
     except CustomerSubscription.DoesNotExist:
-        # Subscription created for unknown customer
-        pass
+        logger.warning(f"Subscription created for unknown customer: {customer_id}")
+    except Exception as e:
+        logger.error(f"Error creating subscription: {str(e)}")
 
 def handle_subscription_updated(subscription):
     """Process customer.subscription.updated event"""
-    customer_id = subscription.get('customer')
+    customer_id = subscription.customer
     
     try:
-        customer_subscription = CustomerSubscription.objects.get(
-            stripe_customer_id=customer_id
-        )
-        
-        customer_subscription.status = subscription.get('status')
-        
-        # Update plan ID if it has changed
-        if subscription.get('items') and subscription.get('items').get('data'):
-            item = subscription.get('items').get('data')[0]
-            customer_subscription.plan_id = item.get('price').get('id')
-        
-        # Update active status
-        customer_subscription.subscription_active = subscription.get('status') in ['active', 'trialing']
-        customer_subscription.save()
+        with transaction.atomic():
+            customer_subscription = CustomerSubscription.objects.get(
+                stripe_customer_id=customer_id
+            )
+            
+            customer_subscription.status = subscription.status
+            
+            if subscription.items and len(subscription.items.data) > 0:
+                item = subscription.items.data[0]
+                customer_subscription.plan_id = item.price.id
+            
+            customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+            customer_subscription.save()
+            
+            logger.info(f"Updated subscription {subscription.id} for customer {customer_id}")
     except CustomerSubscription.DoesNotExist:
-        # Subscription update for unknown customer
-        pass
+        logger.warning(f"Subscription updated for unknown customer: {customer_id}")
+    except Exception as e:
+        logger.error(f"Error updating subscription: {str(e)}")
 
 def handle_subscription_deleted(subscription):
     """Process customer.subscription.deleted event"""
-    customer_id = subscription.get('customer')
+    customer_id = subscription.customer
     
     try:
-        customer_subscription = CustomerSubscription.objects.get(
-            stripe_customer_id=customer_id
-        )
-        
-        # Mark subscription as inactive
-        customer_subscription.subscription_active = False
-        customer_subscription.status = subscription.get('status')
-        customer_subscription.save()
+        with transaction.atomic():
+            customer_subscription = CustomerSubscription.objects.get(
+                stripe_customer_id=customer_id
+            )
+            
+            customer_subscription.subscription_active = False
+            customer_subscription.status = subscription.status
+            customer_subscription.save()
+            
+            logger.info(f"Marked subscription {subscription.id} as inactive")
     except CustomerSubscription.DoesNotExist:
-        # Subscription deleted for unknown customer
-        pass
+        logger.warning(f"Subscription deleted for unknown customer: {customer_id}")
+    except Exception as e:
+        logger.error(f"Error deleting subscription: {str(e)}")

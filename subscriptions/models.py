@@ -21,6 +21,48 @@ class CustomerSubscription(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_subscription_details(self):
+        """Get detailed information about the current subscription"""
+        if not self.subscription_active or not self.plan_id:
+            return None
+            
+        try:
+            # Get price and associated product information
+            price = Price.objects.get(stripe_id=self.plan_id)
+            return {
+                'name': price.product.name,
+                'description': price.product.description,
+                'amount': price.amount_display,
+                'interval': price.get_interval_display(),
+                'status': self.status
+            }
+        except Price.DoesNotExist:
+            return {
+                'name': 'Unknown Plan',
+                'description': None,
+                'amount': None, 
+                'interval': None,
+                'status': self.status
+            }
+
+    def get_stripe_subscription(self):
+        """Get subscription details directly from Stripe"""
+        if not self.stripe_subscription_id:
+            return None
+            
+        import stripe
+        from django.conf import settings
+        
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        
+        try:
+            return stripe.Subscription.retrieve(
+                self.stripe_subscription_id,
+                expand=['items.data.price.product']
+            )
+        except Exception:
+            return None
+
     def __str__(self):
         return f"{self.user.username}'s subscription"
     

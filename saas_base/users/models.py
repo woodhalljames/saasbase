@@ -39,3 +39,5 @@ class User(AbstractUser):
             return self.subscription.stripe_customer_id
         except:
             return None
+        
+    

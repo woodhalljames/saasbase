@@ -20,31 +20,44 @@
 
     {% if object == request.user %}
       <!-- Subscription Status -->
-      <div class="row mt-4">
-        <div class="col-sm-12">
-          <div class="card">
-            <div class="card-header">
-              <h5>Subscription Status</h5>
-            </div>
-            <div class="card-body">
-              {% if object.has_active_subscription %}
-                <p class="text-success">
-                  <strong>Active Subscription</strong>
-                </p>
-                {% if object.subscription.status %}
-                  <p>Status: {{ object.subscription.status }}</p>
-                {% endif %}
-                <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
-                  Manage Subscription
-                </a>
-              {% else %}
-                <p>You don't have an active subscription.</p>
-                <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">
-                  Subscribe Now
-                </a>
-              {% endif %}
-            </div>
-          </div>
+      <div class="card">
+        <div class="card-header">
+          <h5>Subscription Status</h5>
+        </div>
+        <div class="card-body">
+          {% if object.has_active_subscription %}
+  <p class="text-success">
+    <strong>Active Subscription</strong>
+  </p>
+  
+  {% with sub_details=object.subscription.get_subscription_details %}
+    {% if sub_details %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">{{ sub_details.name }}</h5>
+          {% if sub_details.description %}
+            <p class="card-text">{{ sub_details.description }}</p>
+          {% endif %}
+          <ul class="list-group list-group-flush mb-3">
+            {% if sub_details.amount %}
+              <li class="list-group-item">Price: {{ sub_details.amount }} / {{ sub_details.interval }}</li>
+            {% endif %}
+            <li class="list-group-item">Status: {{ sub_details.status|title }}</li>
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  {% endwith %}
+  
+  <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
+    Manage Subscription
+  </a>
+{% else %}
+  <p>You don't have an active subscription.</p>
+  <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">
+    Subscribe Now
+  </a>
+{% endif %}
         </div>
       </div>
 

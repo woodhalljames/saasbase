@@ -30,10 +30,10 @@ class Command(BaseCommand):
                 self.stdout.write(f"Updated product: {product.name}")
         
         # Sync prices
-        prices = stripe.Price.list(active=True)
+        prices = stripe.Price.list(active=True, limit=100)  # Increase limit
         self.stdout.write(f"Found {len(prices.data)} active prices")
-        
         for stripe_price in prices.data:
+            
             # Skip if no product or no recurring component
             if not stripe_price.product:
                 continue
@@ -71,5 +71,10 @@ class Command(BaseCommand):
                     self.stdout.write(f"Updated price: {price}")
             except Product.DoesNotExist:
                 self.stdout.write(f"Product not found for price: {stripe_price.id}")
+            self.stdout.write(f"Processing price: {stripe_price.id}, product: {stripe_price.product}")
+            if hasattr(stripe_price, 'recurring'):
+                self.stdout.write(f"  Recurring: {stripe_price.recurring}")
+            else:
+                self.stdout.write(f"  NO RECURRING COMPONENT")
         
         self.stdout.write(self.style.SUCCESS('Successfully synced products and prices from Stripe'))
