@@ -174,7 +174,8 @@ def handle_invoice_paid(invoice):
         )
         
         # Only reset if this was a late payment (subscription was inactive)
-        if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
+        if customer_subscription.status in ['past_due', 'unprd'
+        'aid', 'incomplete']:
             from usage_limits.usage_tracker import UsageTracker
             UsageTracker.reset_usage(customer_subscription.user)
             logger.info(f"Reset usage for customer {customer_id} after late payment")

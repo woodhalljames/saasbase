@@ -85,10 +85,6 @@ class CustomerSubscription(models.Model):
             return None
         return UsageTracker.get_usage_data(self.user)
 
-    # Add these methods to the CustomerSubscription class in the models.py file
-    CustomerSubscription.get_tier_name = get_tier_name
-    CustomerSubscription.get_monthly_limit = get_monthly_limit
-    CustomerSubscription.get_usage_data = get_usage_data
 
     def __str__(self):
         return f"{self.user.username}'s subscription"
