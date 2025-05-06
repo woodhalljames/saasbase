@@ -3,7 +3,8 @@
 
 import ssl
 from pathlib import Path
-
+import redis
+from urllib.parse import urlparse
 import environ
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -84,6 +85,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "saas_base.users",
     "subscriptions",
+    "usage_limits",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -261,7 +263,12 @@ LOGGING = {
 
 REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 REDIS_SSL = REDIS_URL.startswith("rediss://")
+REDIS_RATE_LIMIT_URL = env("REDIS_RATE_LIMIT_URL", default=REDIS_URL)
+_redis_url = urlparse(REDIS_RATE_LIMIT_URL)
+REDIS_RATE_LIMIT_SSL = _redis_url.scheme == 'rediss'
 
+# Rate limiting settings
+RATE_LIMIT_ENABLED = env.bool("RATE_LIMIT_ENABLED", default=True)
 # Celery
 # ------------------------------------------------------------------------------
 if USE_TZ:

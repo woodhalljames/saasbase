@@ -41,6 +41,8 @@ def stripe_webhook(request):
             handle_subscription_updated(event.data.object)
         elif event.type == 'customer.subscription.deleted':
             handle_subscription_deleted(event.data.object)
+        elif event.type == 'invoice.paid':
+            handle_invoice_paid(event.data.object)
     except Exception as e:
         logger.error(f"Error processing {event.type}: {str(e)}")
         # We still return 200 so Stripe doesn't retry
@@ -108,14 +110,30 @@ def handle_subscription_updated(subscription):
                 stripe_customer_id=customer_id
             )
             
+            # Store the old plan ID to check for tier changes
+            old_plan_id = customer_subscription.plan_id
+            
             customer_subscription.status = subscription.status
             
+            # Update plan ID if items exist
             if subscription.items and len(subscription.items.data) > 0:
                 item = subscription.items.data[0]
                 customer_subscription.plan_id = item.price.id
             
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
             customer_subscription.save()
+            
+            # Check for tier change
+            if old_plan_id != customer_subscription.plan_id:
+                logger.info(f"Subscription plan changed from {old_plan_id} to {customer_subscription.plan_id}")
+                
+                # Get the new tier's limit from TierLimits
+                from usage_limits.tier_config import TierLimits
+                old_tier = TierLimits.get_tier_from_price_id(old_plan_id)
+                new_tier = TierLimits.get_tier_from_price_id(customer_subscription.plan_id)
+                
+                if old_tier != new_tier:
+                    logger.info(f"User tier changed from {old_tier} to {new_tier}")
             
             logger.info(f"Updated subscription {subscription.id} for customer {customer_id}")
     except CustomerSubscription.DoesNotExist:
@@ -142,3 +160,27 @@ def handle_subscription_deleted(subscription):
         logger.warning(f"Subscription deleted for unknown customer: {customer_id}")
     except Exception as e:
         logger.error(f"Error deleting subscription: {str(e)}")
+
+
+# Add to subscriptions/webhooks.py
+def handle_invoice_paid(invoice):
+    """Process invoice.paid event to reset usage counters if payment was overdue"""
+    customer_id = invoice.customer
+    
+    try:
+        # Get customer subscription
+        customer_subscription = CustomerSubscription.objects.get(
+            stripe_customer_id=customer_id
+        )
+        
+        # Only reset if this was a late payment (subscription was inactive)
+        if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
+            from usage_limits.usage_tracker import UsageTracker
+            UsageTracker.reset_usage(customer_subscription.user)
+            logger.info(f"Reset usage for customer {customer_id} after late payment")
+    except CustomerSubscription.DoesNotExist:
+        logger.warning(f"Payment received for unknown customer: {customer_id}")
+    except Exception as e:
+        logger.error(f"Error processing payment: {str(e)}")
+
+

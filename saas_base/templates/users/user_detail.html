@@ -18,46 +18,67 @@
       </div>
     </div>
 
-    {% if object == request.user %}
-      <!-- Subscription Status -->
-      <div class="card">
-        <div class="card-header">
-          <h5>Subscription Status</h5>
-        </div>
-        <div class="card-body">
-          {% if object.has_active_subscription %}
-  <p class="text-success">
-    <strong>Active Subscription</strong>
-  </p>
-  
-  {% with sub_details=object.subscription.get_subscription_details %}
-    {% if sub_details %}
-      <div class="card mb-3">
-        <div class="card-body">
-          <h5 class="card-title">{{ sub_details.name }}</h5>
-          {% if sub_details.description %}
-            <p class="card-text">{{ sub_details.description }}</p>
-          {% endif %}
-          <ul class="list-group list-group-flush mb-3">
-            {% if sub_details.amount %}
-              <li class="list-group-item">Price: {{ sub_details.amount }} / {{ sub_details.interval }}</li>
+    {% if object.has_active_subscription %}
+    <p class="text-success">
+      <strong>Active Subscription</strong>
+    </p>
+    
+    {% with sub_details=object.subscription.get_subscription_details %}
+      {% if sub_details %}
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">{{ sub_details.name }}</h5>
+            {% if sub_details.description %}
+              <p class="card-text">{{ sub_details.description }}</p>
             {% endif %}
-            <li class="list-group-item">Status: {{ sub_details.status|title }}</li>
-          </ul>
+            <ul class="list-group list-group-flush mb-3">
+              {% if sub_details.amount %}
+                <li class="list-group-item">Price: {{ sub_details.amount }} / {{ sub_details.interval }}</li>
+              {% endif %}
+              <li class="list-group-item">Status: {{ sub_details.status|title }}</li>
+              
+              <!-- Add usage information -->
+              {% with usage=object.subscription.get_usage_data %}
+                {% if usage %}
+                  <li class="list-group-item">
+                    <div class="d-flex justify-content-between mb-1">
+                      <span>Monthly Usage:</span>
+                      <span>{{ usage.current }} / {{ usage.limit }}</span>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar 
+                        {% if usage.percentage >= 90 %}bg-danger
+                        {% elif usage.percentage >= 75 %}bg-warning
+                        {% else %}bg-success{% endif %}"
+                        role="progressbar" 
+                        style="width: {{ usage.percentage }}%;"
+                        aria-valuenow="{{ usage.percentage }}" 
+                        aria-valuemin="0" 
+                        aria-valuemax="100">
+                        {{ usage.percentage }}%
+                      </div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                      {{ usage.remaining }} actions remaining this month
+                    </small>
+                  </li>
+                {% endif %}
+              {% endwith %}
+            </ul>
+          </div>
         </div>
-      </div>
-    {% endif %}
-  {% endwith %}
-  
-  <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
-    Manage Subscription
-  </a>
-{% else %}
-  <p>You don't have an active subscription.</p>
-  <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">
-    Subscribe Now
-  </a>
-{% endif %}
+      {% endif %}
+    {% endwith %}
+    
+    <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
+      Manage Subscription
+    </a>
+  {% else %}
+    <p>You don't have an active subscription.</p>
+    <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">
+      Subscribe Now
+    </a>
+  {% endif %}
         </div>
       </div>
 

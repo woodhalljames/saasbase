@@ -62,6 +62,33 @@ class CustomerSubscription(models.Model):
             )
         except Exception:
             return None
+        
+
+
+        # Add to subscriptions/models.py
+    def get_tier_name(self):
+        """Get the subscription tier name based on the plan_id"""
+        from usage_limits.tier_config import TierLimits
+        if not self.plan_id or not self.subscription_active:
+            return 'free'
+        return TierLimits.get_tier_from_price_id(self.plan_id)
+
+    def get_monthly_limit(self):
+        """Get the monthly usage limit based on the subscription tier"""
+        from usage_limits.tier_config import TierLimits
+        return TierLimits.get_limit_for_tier(self.get_tier_name())
+
+    def get_usage_data(self):
+        """Get the usage data for this subscription"""
+        from usage_limits.usage_tracker import UsageTracker
+        if not self.user:
+            return None
+        return UsageTracker.get_usage_data(self.user)
+
+    # Add these methods to the CustomerSubscription class in the models.py file
+    CustomerSubscription.get_tier_name = get_tier_name
+    CustomerSubscription.get_monthly_limit = get_monthly_limit
+    CustomerSubscription.get_usage_data = get_usage_data
 
     def __str__(self):
         return f"{self.user.username}'s subscription"
@@ -106,3 +133,4 @@ class Price(models.Model):
     def amount_display(self):
         """Return the amount in dollars/euros/etc."""
         return f"{self.amount / 100:.2f} {self.currency.upper()}"
+    
