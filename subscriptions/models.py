@@ -85,7 +85,6 @@ class CustomerSubscription(models.Model):
             return None
         return UsageTracker.get_usage_data(self.user)
 
-
     def __str__(self):
         return f"{self.user.username}'s subscription"
     
