@@ -1,0 +1,32 @@
+<!-- templates/wedding_vision/includes/token_status.html -->
+<div class="token-status card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">Token Usage</h4>
+      <div class="d-flex justify-content-between mb-2">
+        <span>Monthly usage:</span>
+        <span><strong>{{ usage_data.current }} / {{ usage_data.limit }}</strong></span>
+      </div>
+      <div class="progress" style="height: 20px;">
+        <div class="progress-bar 
+          {% if usage_data.percentage >= 90 %}bg-danger
+          {% elif usage_data.percentage >= 75 %}bg-warning
+          {% else %}bg-success{% endif %}"
+          role="progressbar" 
+          style="width: {{ usage_data.percentage }}%;" 
+          aria-valuenow="{{ usage_data.percentage }}" 
+          aria-valuemin="0" 
+          aria-valuemax="100">
+          {{ usage_data.percentage }}%
+        </div>
+      </div>
+      <div class="text-center mt-2">
+        <small class="text-muted">{{ usage_data.remaining }} tokens remaining</small>
+        {% if usage_data.remaining < 10 %}
+          <div class="alert alert-warning mt-2 mb-0">
+            <i class="fa fa-exclamation-triangle"></i> Your tokens are running low. 
+            <a href="{% url 'subscriptions:pricing' %}">Upgrade your plan</a> for more tokens.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Venue Photo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Upload Venue Photo</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description (optional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="image" class="form-label">Venue Image</label>
+                            <input type="file" class="form-control" id="image" name="image" accept=".jpg,.jpeg,.png,.webp" required>
+                            <div class="form-text">Upload JPG, PNG or WEBP file (max 5MB)</div>
+                        </div>
+                        
+                        <div class="image-preview-container mt-3 mb-3">
+                            <img id="image-preview" class="img-fluid d-none" alt="Image Preview">
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Upload Venue</button>
+                            <a href="{% url 'wedding_vision:venue_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block inline_javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const imageInput = document.getElementById('image');
+  const imagePreview = document.getElementById('image-preview');
+  
+  imageInput.addEventListener('change', function() {
+    if (imageInput.files && imageInput.files[0]) {
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        imagePreview.setAttribute('src', e.target.result);
+        imagePreview.classList.remove('d-none');
+      }
+      
+      reader.readAsDataURL(imageInput.files[0]);
+    }
+  });
+});
+</script>
+{% endblock inline_javascript %}
+{% endblock content %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Wedding Vision - Venues{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>Your Venue Images</h1>
+            
+            {% if venues %}
+                <div class="row mt-4">
+                    {% for venue in venues %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <img src="{{ venue.image.url }}" class="card-img-top" alt="{{ venue.title }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ venue.title }}</h5>
+                                {% if venue.description %}
+                                <p class="card-text">{{ venue.description }}</p>
+                                {% endif %}
+                                <a href="{% url 'wedding_vision:venue_detail' venue.id %}" class="btn btn-primary">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info mt-4">
+                    <p>You haven't uploaded any venue images yet.</p>
+                </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{% url 'wedding_vision:venue_upload' %}" class="btn btn-success">Upload New Venue</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Wedding Vision</h5>
+                    <p class="card-text">Transform your venue photos with AI-powered wedding themes!</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">Upload venue photos</li>
+                        <li class="list-group-item">Apply wedding themes</li>
+                        <li class="list-group-item">Save your favorites</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
