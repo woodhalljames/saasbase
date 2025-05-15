@@ -75,7 +75,7 @@
     </a>
   {% else %}
     <p>You don't have an active subscription.</p>
-    <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">
+    <a href="{% url 'subscriptions:pricing' %}" class="btn btn-primary">
       Subscribe Now
     </a>
   {% endif %}
@@ -92,6 +92,5 @@
         </div>
       </div>
       <!-- End Action buttons -->
-    {% endif %}
-  </div>
+    </div>
 {% endblock content %}

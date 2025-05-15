@@ -91,16 +91,44 @@ class CustomerSubscription(models.Model):
 
 
 class Product(models.Model):
-    """Store Stripe product information locally"""
+    """Store Stripe product information locally with additional customization fields"""
     stripe_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     active = models.BooleanField(default=True)
+    
+    # Additional fields for customization
+    features = models.TextField(blank=True, null=True, 
+                               help_text="Feature list in JSON format. Example: ['Feature 1', 'Feature 2']")
+    display_order = models.IntegerField(default=0, 
+                                       help_text="Order to display products (lower numbers first)")
+    highlight = models.BooleanField(default=False, 
+                                   help_text="Highlight this product on the pricing page")
+    tokens = models.IntegerField(default=5, 
+                                help_text="Number of tokens/actions included with this product")
+    show_on_site = models.BooleanField(default=True,
+                                      help_text="Show this product on the pricing page")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+    
+    def get_features_list(self):
+        """Returns the features as a Python list"""
+        if not self.features:
+            return []
+        
+        import json
+        try:
+            return json.loads(self.features)
+        except json.JSONDecodeError:
+            # If not valid JSON, assume it's a comma-separated list
+            return [f.strip() for f in self.features.split(',')]
+
+    class Meta:
+        ordering = ['display_order', 'name']
 
 class Price(models.Model):
     """Store Stripe price information locally"""
@@ -118,6 +146,10 @@ class Price(models.Model):
     amount = models.IntegerField()  # Amount in cents
     interval = models.CharField(max_length=10, choices=INTERVAL_CHOICES)
     interval_count = models.IntegerField(default=1)
+    display_name = models.CharField(max_length=100, blank=True, null=True,
+                                  help_text="Optional name to display instead of the default")
+    is_featured = models.BooleanField(default=False,
+                                     help_text="Feature this pricing option on the pricing page")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -128,4 +160,7 @@ class Price(models.Model):
     def amount_display(self):
         """Return the amount in dollars/euros/etc."""
         return f"{self.amount / 100:.2f} {self.currency.upper()}"
+    
+    class Meta:
+        ordering = ['product__display_order', 'interval', 'amount']
     

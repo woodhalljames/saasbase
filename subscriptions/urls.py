@@ -12,5 +12,4 @@ urlpatterns = [
     path("", views.pricing_page, name="pricing"),
     path("webhook/", webhooks.stripe_webhook, name="webhook"),
 
-
 ]
