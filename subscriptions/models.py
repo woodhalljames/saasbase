@@ -21,6 +21,13 @@ class CustomerSubscription(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_usage_data(self):
+        """Get the usage data for this subscription's user"""
+        from usage_limits.usage_tracker import UsageTracker
+        if not self.user:
+            return None
+        return UsageTracker.get_usage_data(self.user)
+
     def get_subscription_details(self):
         """Get detailed information about the current subscription"""
         if not self.subscription_active or not self.plan_id:
@@ -28,13 +35,14 @@ class CustomerSubscription(models.Model):
             
         try:
             # Get price and associated product information
-            price = Price.objects.get(stripe_id=self.plan_id)
+            price = Price.objects.select_related('product').get(stripe_id=self.plan_id)
             return {
                 'name': price.product.name,
                 'description': price.product.description,
                 'amount': price.amount_display,
                 'interval': price.get_interval_display(),
-                'status': self.status
+                'status': self.status,
+                'tokens': price.product.tokens,  # Include tokens in details
             }
         except Price.DoesNotExist:
             return {
@@ -42,7 +50,8 @@ class CustomerSubscription(models.Model):
                 'description': None,
                 'amount': None, 
                 'interval': None,
-                'status': self.status
+                'status': self.status,
+                'tokens': 0,
             }
 
     def get_stripe_subscription(self):
@@ -78,12 +87,10 @@ class CustomerSubscription(models.Model):
         from usage_limits.tier_config import TierLimits
         return TierLimits.get_limit_for_tier(self.get_tier_name())
 
-    def get_usage_data(self):
-        """Get the usage data for this subscription"""
-        from usage_limits.usage_tracker import UsageTracker
-        if not self.user:
-            return None
-        return UsageTracker.get_usage_data(self.user)
+   
+    
+
+    
 
     def __str__(self):
         return f"{self.user.username}'s subscription"

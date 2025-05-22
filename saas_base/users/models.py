@@ -25,7 +25,6 @@ class User(AbstractUser):
         """
         return reverse("users:detail", kwargs={"username": self.username})
 
-
     def has_active_subscription(self):
         """Check if user has an active subscription"""
         try:
@@ -39,5 +38,18 @@ class User(AbstractUser):
             return self.subscription.stripe_customer_id
         except:
             return None
-        
     
+    @property 
+    def subscription(self):
+        """Get or create subscription object for the user"""
+        from subscriptions.models import CustomerSubscription
+        
+        # Try to get existing subscription
+        try:
+            return CustomerSubscription.objects.get(user=self)
+        except CustomerSubscription.DoesNotExist:
+            # Create a default subscription for the user
+            return CustomerSubscription.objects.create(
+                user=self,
+                subscription_active=False
+            )

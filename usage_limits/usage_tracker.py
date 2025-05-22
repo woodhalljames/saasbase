@@ -1,11 +1,9 @@
-# usage_limits/usage_tracker.py
 import time
 import logging
 from datetime import datetime, timedelta
 from django.utils import timezone
 
 from .redis_client import RedisClient
-from .tier_config import TierLimits
 
 logger = logging.getLogger(__name__)
 
@@ -77,20 +75,39 @@ class UsageTracker:
     def get_user_limit(cls, user):
         """Get the monthly usage limit for a user based on their subscription"""
         if not user or not user.is_authenticated:
-            return TierLimits.get_limit_for_tier('free')
+            return 3  # Default free tier limit
         
         try:
-            # Get user's subscription plan ID if available
+            # Try to get subscription
             subscription = getattr(user, 'subscription', None)
             if not subscription or not subscription.subscription_active:
-                return TierLimits.get_limit_for_tier('free')
+                return 3  # Free tier limit
             
+            # Try to get the limit from the Product model first
             plan_id = subscription.plan_id
+            if plan_id:
+                try:
+                    from subscriptions.models import Price
+                    price = Price.objects.select_related('product').get(stripe_id=plan_id)
+                    product_tokens = price.product.tokens
+                    if product_tokens > 0:
+                        logger.debug(f"Using product tokens limit: {product_tokens} for user {user.id}")
+                        return product_tokens
+                except Price.DoesNotExist:
+                    logger.warning(f"Price not found for plan_id: {plan_id}")
+                except Exception as e:
+                    logger.error(f"Error getting product tokens: {str(e)}")
+            
+            # Fallback to tier-based limits
+            from .tier_config import TierLimits
             tier = TierLimits.get_tier_from_price_id(plan_id)
-            return TierLimits.get_limit_for_tier(tier)
+            limit = TierLimits.get_limit_for_tier(tier)
+            logger.debug(f"Using tier-based limit: {limit} for tier {tier}, user {user.id}")
+            return limit
+            
         except Exception as e:
             logger.error(f"Error determining limit for user {user.id}: {str(e)}")
-            return TierLimits.get_limit_for_tier('free')
+            return 3  # Free tier fallback
     
     @classmethod
     def get_usage_data(cls, user):
@@ -98,8 +115,8 @@ class UsageTracker:
         if not user or not user.is_authenticated:
             return {
                 'current': 0,
-                'limit': TierLimits.get_limit_for_tier('free'),
-                'remaining': TierLimits.get_limit_for_tier('free'),
+                'limit': 3,
+                'remaining': 3,
                 'percentage': 0
             }
         

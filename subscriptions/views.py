@@ -49,51 +49,74 @@ def subscription_checkout(request):
 
 @login_required
 def checkout_success(request):
-    """Handle successful checkout with direct Stripe API check"""
+    """Handle successful checkout with improved subscription detection"""
     import stripe
     from django.conf import settings
-    from .models import CustomerSubscription
+    from .models import CustomerSubscription, Price, Product
     import time
+    import logging
     
+    logger = logging.getLogger(__name__)
     stripe.api_key = settings.STRIPE_SECRET_KEY
     
     # Try to get customer subscription
     try:
         customer_subscription = CustomerSubscription.objects.get(user=request.user)
         
-        # If we don't have a subscription ID yet (webhook hasn't processed), 
-        # try to find it directly from Stripe
-        if not customer_subscription.stripe_subscription_id and customer_subscription.stripe_customer_id:
-            # Wait a moment for Stripe to process
-            time.sleep(1.5)
+        # If we already have an active subscription, we're good
+        if customer_subscription.subscription_active and customer_subscription.stripe_subscription_id:
+            logger.info(f"User {request.user.username} already has active subscription")
+            return render(request, 'subscriptions/checkout_success.html')
+        
+        # If we have a customer ID but no active subscription, check Stripe directly
+        if customer_subscription.stripe_customer_id:
+            # Wait for Stripe to process
+            time.sleep(2)
             
-            # Query Stripe for subscriptions
-            subscriptions = stripe.Subscription.list(
-                customer=customer_subscription.stripe_customer_id,
-                limit=1,
-                status='active'
-            )
-            
-            # If found, update our local record
-            if subscriptions and subscriptions.data:
-                subscription = subscriptions.data[0]
-                customer_subscription.stripe_subscription_id = subscription.id
-                customer_subscription.status = subscription.status
-                customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+            # Try multiple times to find the subscription
+            for attempt in range(3):
+                logger.info(f"Attempt {attempt+1} to find subscription for {request.user.username}")
                 
-                # Set plan ID from the first item
-                if subscription.items and len(subscription.items.data) > 0:
-                    item = subscription.items.data[0]
-                    customer_subscription.plan_id = item.price.id
+                # Query Stripe for subscriptions
+                subscriptions = stripe.Subscription.list(
+                    customer=customer_subscription.stripe_customer_id,
+                    limit=5,
+                    expand=['data.items.data.price.product']
+                )
                 
-                customer_subscription.save()
-    except (CustomerSubscription.DoesNotExist, stripe.error.StripeError) as e:
-        # Log the error but don't show to user
-        import logging
-        logging.error(f"Error syncing subscription: {str(e)}")
+                # Find the most recent active subscription
+                if subscriptions and subscriptions.data:
+                    active_sub = None
+                    for sub in subscriptions.data:
+                        if sub.status in ['active', 'trialing']:
+                            active_sub = sub
+                            break
+                    
+                    if active_sub:
+                        # Update subscription record
+                        customer_subscription.stripe_subscription_id = active_sub.id
+                        customer_subscription.status = active_sub.status
+                        customer_subscription.subscription_active = True
+                        
+                        # Set plan ID from the first item
+                        if active_sub.items and active_sub.items.data:
+                            item = active_sub.items.data[0]
+                            customer_subscription.plan_id = item.price.id
+                        
+                        customer_subscription.save()
+                        logger.info(f"Successfully updated subscription for {request.user.username}")
+                        break
+                
+                # Wait before next attempt
+                if attempt < 2:
+                    time.sleep(1)
+    
+    except CustomerSubscription.DoesNotExist:
+        logger.warning(f"No subscription record for {request.user.username}")
+    except Exception as e:
+        logger.error(f"Error syncing subscription: {str(e)}")
     
     return render(request, 'subscriptions/checkout_success.html')
-
 
 @login_required
 def checkout_cancel(request):

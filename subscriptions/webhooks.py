@@ -1,4 +1,4 @@
-# subscriptions/webhooks.py
+# subscriptions/webhooks.py - REPLACE the entire webhooks.py file with this
 import logging
 from django.db import transaction
 from django.conf import settings
@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 import stripe
 import json
 
-from .models import CustomerSubscription
+from .models import CustomerSubscription, Product, Price
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,6 @@ def stripe_webhook(request):
         logger.error(f"Invalid signature: {str(e)}")
         return HttpResponse(status=400)
     
-    # Log full event data for debugging (sanitize in production)
-    logger.debug(f"Event data: {json.dumps(event.to_dict())}")
-    
     # Handle the event
     try:
         if event.type == 'checkout.session.completed':
@@ -50,13 +47,13 @@ def stripe_webhook(request):
             handle_invoice_paid(event.data.object)
     except Exception as e:
         logger.error(f"Error processing {event.type}: {str(e)}", exc_info=True)
-        # We still return 200 so Stripe doesn't retry
     
     return HttpResponse(status=200)
 
 def handle_checkout_session(session):
-    """Process checkout.session.completed event"""
+    """Process checkout.session.completed event with improved plan_id handling"""
     customer_id = session.customer
+    subscription_id = session.subscription
     
     if not customer_id:
         logger.warning("Checkout session has no customer ID")
@@ -66,119 +63,119 @@ def handle_checkout_session(session):
     
     try:
         with transaction.atomic():
-            customer_subscription = CustomerSubscription.objects.get(
-                stripe_customer_id=customer_id
+            # Set Stripe API key
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            
+            # Get or create customer subscription
+            customer_subscription, created = CustomerSubscription.objects.get_or_create(
+                stripe_customer_id=customer_id,
+                defaults={
+                    'subscription_active': False
+                }
             )
             
-            if session.subscription:
-                customer_subscription.stripe_subscription_id = session.subscription
-                # We set subscription_active to True here as we know the checkout was successful
-                customer_subscription.subscription_active = True
-                customer_subscription.status = 'active'  # Assuming active until we hear otherwise
-                customer_subscription.save()
-                logger.info(f"Updated subscription ID to {session.subscription} for customer {customer_id}")
+            if subscription_id:
+                # Fetch full subscription details from Stripe
+                stripe_sub = stripe.Subscription.retrieve(
+                    subscription_id,
+                    expand=['items.data.price.product']
+                )
                 
-                # Immediately fetch the subscription details to get the plan
-                stripe.api_key = settings.STRIPE_SECRET_KEY
-                try:
-                    sub_details = stripe.Subscription.retrieve(
-                        session.subscription,
-                        expand=['items.data.price']
-                    )
+                # Update subscription details
+                customer_subscription.stripe_subscription_id = subscription_id
+                customer_subscription.subscription_active = True
+                customer_subscription.status = stripe_sub.status
+                
+                # Extract and save plan_id
+                if stripe_sub.items and stripe_sub.items.data:
+                    price_item = stripe_sub.items.data[0]
+                    customer_subscription.plan_id = price_item.price.id
                     
-                    if sub_details.items and sub_details.items.data:
-                        item = sub_details.items.data[0]
-                        customer_subscription.plan_id = item.price.id
-                        customer_subscription.status = sub_details.status
-                        customer_subscription.save()
-                        logger.info(f"Updated plan ID to {item.price.id} for subscription {session.subscription}")
-                except Exception as e:
-                    logger.error(f"Error fetching subscription details: {str(e)}")
-    except CustomerSubscription.DoesNotExist:
-        logger.warning(f"No customer subscription found for customer {customer_id}")
+                    # Also sync the product and price data locally
+                    sync_product_and_price(price_item.price)
+                    
+                    logger.info(f"Set plan_id to {price_item.price.id} for subscription {subscription_id}")
+                
+                customer_subscription.save()
+                logger.info(f"Successfully processed checkout for customer {customer_id}")
+                
     except Exception as e:
         logger.error(f"Error processing checkout session: {str(e)}", exc_info=True)
 
+def sync_product_and_price(stripe_price):
+    """Sync a Stripe price and its product to local database"""
+    try:
+        # Sync product
+        product_data = stripe_price.product
+        product, created = Product.objects.update_or_create(
+            stripe_id=product_data.id,
+            defaults={
+                'name': product_data.name,
+                'description': product_data.description or '',
+                'active': product_data.active,
+            }
+        )
+        if created:
+            logger.info(f"Created new product: {product.name}")
+        
+        # Sync price
+        price, created = Price.objects.update_or_create(
+            stripe_id=stripe_price.id,
+            defaults={
+                'product': product,
+                'active': stripe_price.active,
+                'currency': stripe_price.currency,
+                'amount': stripe_price.unit_amount,
+                'interval': stripe_price.recurring.interval,
+                'interval_count': stripe_price.recurring.interval_count,
+            }
+        )
+        if created:
+            logger.info(f"Created new price: {price}")
+            
+    except Exception as e:
+        logger.error(f"Error syncing product/price: {str(e)}")
+
 def handle_subscription_created(subscription):
-    """Process customer.subscription.created event with improved product info handling"""
+    """Process customer.subscription.created event"""
     customer_id = subscription.customer
     
     try:
         with transaction.atomic():
-            # Check if we already have this subscription recorded
-            existing = CustomerSubscription.objects.filter(
-                stripe_subscription_id=subscription.id
-            ).first()
+            stripe.api_key = settings.STRIPE_SECRET_KEY
             
-            if existing:
-                logger.info(f"Subscription {subscription.id} already exists, updating status")
-                handle_subscription_updated(subscription)
-                return
-            
-            customer_subscription = CustomerSubscription.objects.get(
-                stripe_customer_id=customer_id
+            # Get or create customer subscription
+            customer_subscription, created = CustomerSubscription.objects.get_or_create(
+                stripe_customer_id=customer_id,
+                defaults={
+                    'subscription_active': False
+                }
             )
             
+            # Update subscription details
             customer_subscription.stripe_subscription_id = subscription.id
             customer_subscription.status = subscription.status
-            
-            # Set plan ID from the first item and retrieve expanded product info
-            if subscription.items and len(subscription.items.data) > 0:
-                item = subscription.items.data[0]
-                customer_subscription.plan_id = item.price.id
-                
-                # If we need more product info, fetch it from Stripe
-                stripe.api_key = settings.STRIPE_SECRET_KEY
-                try:
-                    # Fetch price with expanded product details
-                    price_details = stripe.Price.retrieve(
-                        item.price.id,
-                        expand=['product']
-                    )
-                    
-                    # Create or update the local product record
-                    from subscriptions.models import Product, Price
-                    
-                    product, _ = Product.objects.update_or_create(
-                        stripe_id=price_details.product.id,
-                        defaults={
-                            'name': price_details.product.name,
-                            'description': price_details.product.description,
-                            'active': price_details.product.active,
-                        }
-                    )
-                    
-                    # Create or update the local price record
-                    Price.objects.update_or_create(
-                        stripe_id=price_details.id,
-                        defaults={
-                            'product': product,
-                            'active': price_details.active,
-                            'currency': price_details.currency,
-                            'amount': price_details.unit_amount,
-                            'interval': price_details.recurring.interval,
-                            'interval_count': price_details.recurring.interval_count,
-                        }
-                    )
-                    
-                    # Update tier mapping
-                    from usage_limits.tier_config import TierLimits
-                    tier = TierLimits.get_tier_from_price_id(price_details.id)
-                    logger.info(f"Subscription {subscription.id} mapped to tier: {tier}")
-                    
-                except Exception as e:
-                    logger.error(f"Error updating product/price info: {str(e)}")
-            
-            # Check if subscription is active
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-            customer_subscription.save()
             
+            # Extract plan_id from subscription items
+            if subscription.items and subscription.items.data:
+                price_item = subscription.items.data[0]
+                customer_subscription.plan_id = price_item.price.id
+                
+                # Fetch and sync product details
+                stripe_price = stripe.Price.retrieve(
+                    price_item.price.id,
+                    expand=['product']
+                )
+                sync_product_and_price(stripe_price)
+                
+                logger.info(f"Set plan_id to {price_item.price.id} for new subscription {subscription.id}")
+            
+            customer_subscription.save()
             logger.info(f"Created subscription {subscription.id} for customer {customer_id}")
-    except CustomerSubscription.DoesNotExist:
-        logger.warning(f"Subscription created for unknown customer: {customer_id}")
+            
     except Exception as e:
         logger.error(f"Error creating subscription: {str(e)}", exc_info=True)
-
 
 def handle_subscription_updated(subscription):
     """Process customer.subscription.updated event"""
@@ -190,32 +187,19 @@ def handle_subscription_updated(subscription):
                 stripe_customer_id=customer_id
             )
             
-            # Store the old plan ID to check for tier changes
-            old_plan_id = customer_subscription.plan_id
-            
+            # Update subscription details
             customer_subscription.status = subscription.status
-            
-            # Update plan ID if items exist
-            if subscription.items and len(subscription.items.data) > 0:
-                item = subscription.items.data[0]
-                customer_subscription.plan_id = item.price.id
-            
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+            
+            # Update plan_id if items exist
+            if subscription.items and subscription.items.data:
+                price_item = subscription.items.data[0]
+                customer_subscription.plan_id = price_item.price.id
+                logger.info(f"Updated plan_id to {price_item.price.id} for subscription {subscription.id}")
+            
             customer_subscription.save()
-            
-            # Check for tier change
-            if old_plan_id != customer_subscription.plan_id:
-                logger.info(f"Subscription plan changed from {old_plan_id} to {customer_subscription.plan_id}")
-                
-                # Get the new tier's limit from TierLimits
-                from usage_limits.tier_config import TierLimits
-                old_tier = TierLimits.get_tier_from_price_id(old_plan_id)
-                new_tier = TierLimits.get_tier_from_price_id(customer_subscription.plan_id)
-                
-                if old_tier != new_tier:
-                    logger.info(f"User tier changed from {old_tier} to {new_tier}")
-            
             logger.info(f"Updated subscription {subscription.id} for customer {customer_id}")
+            
     except CustomerSubscription.DoesNotExist:
         logger.warning(f"Subscription updated for unknown customer: {customer_id}")
     except Exception as e:
@@ -242,25 +226,21 @@ def handle_subscription_deleted(subscription):
         logger.error(f"Error deleting subscription: {str(e)}", exc_info=True)
 
 def handle_invoice_paid(invoice):
-    """Process invoice.paid event to reset usage counters if payment was overdue"""
+    """Process invoice.paid event"""
     customer_id = invoice.customer
     
     try:
-        # Get customer subscription
         customer_subscription = CustomerSubscription.objects.get(
             stripe_customer_id=customer_id
         )
         
-        # Only reset if this was a late payment (subscription was inactive)
+        # Update status if this was a late payment
         if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
-            from usage_limits.usage_tracker import UsageTracker
-            UsageTracker.reset_usage(customer_subscription.user)
-            logger.info(f"Reset usage for customer {customer_id} after late payment")
-            
-            # Update subscription status
             customer_subscription.status = 'active'
             customer_subscription.subscription_active = True
             customer_subscription.save()
+            logger.info(f"Reactivated subscription for customer {customer_id}")
+            
     except CustomerSubscription.DoesNotExist:
         logger.warning(f"Payment received for unknown customer: {customer_id}")
     except Exception as e:
