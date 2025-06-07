@@ -145,6 +145,17 @@ def pricing_page(request):
     # Check if we should auto-redirect to checkout
     auto_checkout_price_id = request.GET.get('checkout')
     
+    # Check if this is a new user (just signed up)
+    is_new_user = (
+        request.user.is_authenticated and 
+        not request.user.has_active_subscription() and
+        not request.session.get('pricing_visited', False)
+    )
+    
+    # Mark that they've visited pricing
+    if request.user.is_authenticated:
+        request.session['pricing_visited'] = True
+
     try:
         # Get active products with prices - only those marked to show on site
         products_with_prices = []
@@ -193,11 +204,13 @@ def pricing_page(request):
             'products': products_with_prices,
             'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
             'user_authenticated': request.user.is_authenticated,
-            'auto_checkout_price_id': auto_checkout_price_id
+            'auto_checkout_price_id': auto_checkout_price_id,
+            'is_new_user': is_new_user,  # Add this flag
         })
     except Exception as e:
         return render(request, 'subscriptions/pricing.html', {
             'error': str(e),
             'stripe_public_key': settings.STRIPE_PUBLIC_KEY,
-            'user_authenticated': request.user.is_authenticated
+            'user_authenticated': request.user.is_authenticated,
+            'is_new_user': False,
         })

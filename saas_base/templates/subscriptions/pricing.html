@@ -8,7 +8,13 @@
     <h1 class="display-4">Choose Your Plan</h1>
     <p class="lead">Select the subscription plan that works best for you</p>
   </div>
-
+  {% if is_new_user %}
+  <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+    <h5 class="alert-heading">🎉 Welcome to SaaS Base!</h5>
+    <p class="mb-0">Your account has been created successfully. Choose a subscription plan below to get started with full access to all features.</p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
   {% if error %}
   <div class="alert alert-danger">{{ error }}</div>
   {% endif %}
