@@ -70,10 +70,47 @@
         </button>
         <a class="navbar-brand" href="{% url 'home' %}">SaaS Base</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-              <a class="nav-link" href="{% url 'home' %}">Home <span class="visually-hidden">(current)</span></a>
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'home' %}">Home</a>
             </li>
+            
+            {% if request.user.is_authenticated %}
+              <!-- AI Processing Menu -->
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="aiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-magic"></i> AI Processing
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="aiDropdown">
+                  <li><a class="dropdown-item" href="{% url 'image_processing:dashboard' %}">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:upload' %}">
+                    <i class="bi bi-cloud-upload"></i> Upload Images
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
+                    <i class="bi bi-images"></i> My Images
+                  </a></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
+                    <i class="bi bi-clock-history"></i> Processing History
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+                    <i class="bi bi-collection"></i> Collections
+                  </a></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
+                    <i class="bi bi-heart"></i> Favorites
+                  </a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'image_processing:themes_list' %}">
+                    <i class="bi bi-palette"></i> Browse Themes
+                  </a></li>
+                </ul>
+              </li>
+            {% endif %}
+            
             <li class="nav-item">
               <a class="nav-link" href="{% url 'subscriptions:pricing' %}">Pricing</a>
             </li>
@@ -103,10 +140,54 @@
               </li>
             {% endif %}
           </ul>
+          
+          <!-- Usage indicator for authenticated users -->
+          {% if request.user.is_authenticated %}
+            <div class="navbar-text me-3">
+              {% load static %}
+              {% comment %}You can add a usage indicator here{% endcomment %}
+              <small class="text-muted">
+                <i class="bi bi-lightning"></i>
+                <span id="usage-indicator">Loading...</span>
+              </small>
+            </div>
+          {% endif %}
         </div>
       </div>
     </nav>
   </div>
+  
+  
+
+<!-- Add this script at the bottom of base.html to load usage data -->
+{% if request.user.is_authenticated %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load usage data for the indicator
+    fetch('/ai/')
+        .then(response => {
+            if (response.ok) {
+                // If the user can access the AI dashboard, show usage
+                const indicator = document.getElementById('usage-indicator');
+                if (indicator) {
+                    // You can make an AJAX call to get usage data or embed it in the template
+                    indicator.innerHTML = '{{ request.user.subscription.get_usage_data.remaining|default:"0" }} left';
+                }
+            }
+        })
+        .catch(() => {
+            // Hide indicator if there's an error
+            const indicator = document.getElementById('usage-indicator');
+            if (indicator) {
+                indicator.style.display = 'none';
+            }
+        });
+});
+</script>
+{% endif %}
+
+<!-- Add Bootstrap Icons if not already included -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
   <div class="container">
     {% if messages %}
       {% for message in messages %}

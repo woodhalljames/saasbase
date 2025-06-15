@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Processing History{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item active">Processing History</li>
+        </ol>
+      </nav>
+      <h1>Processing History</h1>
+      <p class="text-muted">View all your AI image processing jobs</p>
+    </div>
+    <div class="col-md-6 text-end">
+      <a href="{% url 'image_processing:dashboard' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% if page_obj %}
+    <!-- Processing Jobs List -->
+    <div class="row">
+      <div class="col-12">
+        {% for job in page_obj %}
+          <div class="card mb-4">
+            <div class="card-header">
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <h6 class="mb-0">
+                    <i class="bi bi-image"></i> {{ job.user_image.original_filename }}
+                  </h6>
+                  <small class="text-muted">Job #{{ job.id }} • {{ job.created_at|date:"M d, Y H:i" }}</small>
+                </div>
+                <div class="col-md-6 text-end">
+                  <span class="badge fs-6 {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    {% if job.status == 'processing' %}
+                      <i class="bi bi-hourglass-split"></i>
+                    {% elif job.status == 'completed' %}
+                      <i class="bi bi-check-circle"></i>
+                    {% elif job.status == 'failed' %}
+                      <i class="bi bi-x-circle"></i>
+                    {% else %}
+                      <i class="bi bi-clock"></i>
+                    {% endif %}
+                    {{ job.get_status_display }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="row">
+                <!-- Original Image -->
+                <div class="col-md-3">
+                  <h6 class="text-muted mb-2">Original Image</h6>
+                  <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                       class="img-fluid rounded" 
+                       alt="{{ job.user_image.original_filename }}"
+                       style="max-height: 150px; width: 100%; object-fit: cover;">
+                  <div class="mt-2">
+                    <small class="text-muted">
+                      {{ job.user_image.width }}x{{ job.user_image.height }}<br>
+                      {{ job.user_image.file_size|filesizeformat }}
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Job Details -->
+                <div class="col-md-3">
+                  <h6 class="text-muted mb-2">Processing Details</h6>
+                  <div class="small">
+                    <div class="mb-1">
+                      <strong>Prompts:</strong> {{ job.prompt_count }}
+                      <div class="text-muted">
+                        {% for prompt in job.prompts.all %}
+                          <span class="badge bg-light text-dark">{{ prompt.name }}</span>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    <div class="mb-1"><strong>CFG Scale:</strong> {{ job.cfg_scale }}</div>
+                    <div class="mb-1"><strong>Steps:</strong> {{ job.steps }}</div>
+                    {% if job.seed %}
+                      <div class="mb-1"><strong>Seed:</strong> {{ job.seed }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <!-- Processing Results -->
+                <div class="col-md-6">
+                  <h6 class="text-muted mb-2">Results</h6>
+                  
+                  {% if job.status == 'completed' %}
+                    {% if job.processed_images.all %}
+                      <div class="row">
+                        {% for processed_img in job.processed_images.all %}
+                          <div class="col-lg-4 col-md-6 col-sm-4 mb-2">
+                            <div class="card">
+                              <img src="{{ processed_img.processed_image.url }}" 
+                                   class="card-img-top" 
+                                   style="height: 100px; object-fit: cover;"
+                                   alt="{{ processed_img.prompt_template.name }}">
+                              <div class="card-body p-2">
+                                <small class="text-muted d-block text-truncate" title="{{ processed_img.prompt_template.name }}">
+                                  {{ processed_img.prompt_template.name }}
+                                </small>
+                                <div class="btn-group w-100 mt-1" role="group">
+                                  <a href="{{ processed_img.processed_image.url }}" 
+                                     class="btn btn-sm btn-outline-primary" 
+                                     target="_blank" 
+                                     title="View Full Size">
+                                    <i class="bi bi-eye"></i>
+                                  </a>
+                                  <a href="{{ processed_img.processed_image.url }}" 
+                                     class="btn btn-sm btn-outline-secondary" 
+                                     download 
+                                     title="Download">
+                                    <i class="bi bi-download"></i>
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <div class="text-muted">No processed images found</div>
+                    {% endif %}
+                    
+                    <!-- Timing Info -->
+                    {% if job.completed_at %}
+                      <div class="mt-2">
+                        <small class="text-success">
+                          <i class="bi bi-clock"></i> 
+                          Completed in {{ job.completed_at|timeuntil:job.created_at }}
+                        </small>
+                      </div>
+                    {% endif %}
+                    
+                  {% elif job.status == 'processing' %}
+                    <div class="d-flex align-items-center">
+                      <div class="spinner-border spinner-border-sm text-warning me-2" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                      </div>
+                      <span class="text-warning">Processing in progress...</span>
+                    </div>
+                    <div class="mt-2">
+                      <button class="btn btn-sm btn-outline-info" onclick="checkJobStatus({{ job.id }})">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Status
+                      </button>
+                    </div>
+                    
+                  {% elif job.status == 'failed' %}
+                    <div class="alert alert-danger mb-0">
+                      <h6 class="alert-heading">Processing Failed</h6>
+                      <p class="mb-0">{{ job.error_message|default:"An error occurred during processing" }}</p>
+                    </div>
+                    <div class="mt-2">
+                      <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise"></i> Try Again
+                      </a>
+                    </div>
+                    
+                  {% else %}
+                    <div class="text-muted">
+                      <i class="bi bi-clock"></i> Waiting to start...
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="card-footer bg-transparent">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye"></i> View Image
+                  </a>
+                  {% if job.status == 'completed' and job.processed_images.all %}
+                    <button class="btn btn-sm btn-outline-success" onclick="downloadAll({{ job.id }})">
+                      <i class="bi bi-download"></i> Download All
+                    </button>
+                  {% endif %}
+                </div>
+                <small class="text-muted">
+                  {% if job.status == 'completed' %}
+                    {{ job.processed_images.count }} image{{ job.processed_images.count|pluralize }} generated
+                  {% else %}
+                    {{ job.prompt_count }} prompt{{ job.prompt_count|pluralize }} requested
+                  {% endif %}
+                </small>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+      <nav aria-label="Processing history pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1">First</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+              <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+              </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
+
+  {% else %}
+    <!-- Empty state -->
+    <div class="row">
+      <div class="col-12">
+        <div class="text-center py-5">
+          <i class="bi bi-clock-history text-muted" style="font-size: 4rem;"></i>
+          <h3 class="mt-3 text-muted">No Processing History</h3>
+          <p class="text-muted">You haven't processed any images with AI yet</p>
+          <div class="mt-4">
+            <a href="{% url 'image_processing:upload' %}" class="btn btn-primary btn-lg me-3">
+              <i class="bi bi-cloud-upload"></i> Upload Image
+            </a>
+            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-secondary btn-lg">
+              <i class="bi bi-images"></i> Browse Images
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function checkJobStatus(jobId) {
+    fetch(`/ai/job/${jobId}/status/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'processing') {
+                // Reload the page to show updated status
+                window.location.reload();
+            } else {
+                // Show a brief message that it's still processing
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check"></i> Still processing...';
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking job status:', error);
+        });
+}
+
+function downloadAll(jobId) {
+    // This would implement bulk download functionality
+    alert('Bulk download functionality would be implemented here');
+}
+
+// Auto-refresh page every 30 seconds if there are processing jobs
+document.addEventListener('DOMContentLoaded', function() {
+    const processingJobs = document.querySelectorAll('.spinner-border');
+    if (processingJobs.length > 0) {
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000); // Refresh every 30 seconds
+    }
+});
+</script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

@@ -18,3 +18,9 @@ django-crispy-forms==2.3  # https://github.com/django-crispy-forms/django-crispy
 crispy-bootstrap5==2025.4  # https://github.com/django-crispy-forms/crispy-bootstrap5
 django-redis==5.4.0  # https://github.com/jazzband/django-redis
 stripe==8.3.0
+
+# AI and Image Processing
+# ------------------------------------------------------------------------------
+requests==2.32.3  # For Stability AI API calls
+Pillow==11.1.0  # Already included above, but adding comment for image processing
+uuid==1.30  # For generating unique filenames

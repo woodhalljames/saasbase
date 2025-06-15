@@ -1,25 +1,54 @@
-# usage_limits/tier_config.py
+# Add this to usage_limits/tier_config.py (update the existing TIERS dict)
+
 class TierLimits:
     """Define usage limits for each subscription tier"""
     TIERS = {
         'basic': {
             'monthly_limit': 5,  # Updated to match the 5 actions seen in the dashboard
+            'max_prompts_per_image': 2,  # Can use 2 prompts per image
             'stripe_price_ids': [],  # We'll populate this dynamically from the database
         },
         'pro': {
             'monthly_limit': 50,
+            'max_prompts_per_image': 5,  # Can use 5 prompts per image
             'stripe_price_ids': [],
         },
         'enterprise': {
             'monthly_limit': 200,
+            'max_prompts_per_image': 10,  # Can use 10 prompts per image
             'stripe_price_ids': [],
         },
         'free': {
             'monthly_limit': 3,  # Default for users without a subscription
+            'max_prompts_per_image': 1,  # Can only use 1 prompt per image
             'stripe_price_ids': [],
         }
     }
 
+    @classmethod
+    def get_max_prompts_for_tier(cls, tier_name):
+        """Get the maximum prompts per image for a tier"""
+        return cls.TIERS.get(tier_name, cls.TIERS['free'])['max_prompts_per_image']
+    
+    @classmethod
+    def get_user_max_prompts(cls, user):
+        """Get the maximum prompts per image for a user based on their subscription"""
+        if not user or not user.is_authenticated:
+            return cls.TIERS['free']['max_prompts_per_image']
+        
+        try:
+            subscription = getattr(user, 'subscription', None)
+            if not subscription or not subscription.subscription_active:
+                return cls.TIERS['free']['max_prompts_per_image']
+            
+            tier = cls.get_tier_from_price_id(subscription.plan_id)
+            return cls.get_max_prompts_for_tier(tier)
+            
+        except Exception:
+            return cls.TIERS['free']['max_prompts_per_image']
+
+    # ... (keep all existing methods)
+    
     @classmethod
     def initialize_from_db(cls):
         """Initialize price IDs from the database when the app starts"""

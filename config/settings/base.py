@@ -86,6 +86,7 @@ LOCAL_APPS = [
     "saas_base.users",
     "subscriptions",
     "usage_limits",
+    "image_processing",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -341,3 +342,7 @@ STRIPE_LIVE_MODE = env.bool("STRIPE_LIVE_MODE", default=False)
 # Helper method to determine which Stripe keys to use
 STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_SECRET_KEY
 STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_PUBLIC_KEY
+
+
+STABILITY_API_KEY = env("STABILITY_API_KEY", default="")
+STABILITY_AI_ENGINE = env("STABILITY_AI_ENGINE", default="stable-diffusion-v1-6")
