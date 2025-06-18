@@ -96,13 +96,15 @@
                   <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
                     <i class="bi bi-clock-history"></i> Processing History
                   </a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
-                    <i class="bi bi-collection"></i> Collections
-                  </a></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
-                    <i class="bi bi-heart"></i> Favorites
-                  </a></li>
+                  {% comment %}
+<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+  <i class="bi bi-collection"></i> Collections
+</a></li>
+<li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
+  <i class="bi bi-heart"></i> Favorites
+</a></li>
+{% endcomment %}
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="{% url 'image_processing:themes_list' %}">
                     <i class="bi bi-palette"></i> Browse Themes

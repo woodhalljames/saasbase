@@ -1,4 +1,5 @@
-# image_processing/forms.py
+# image_processing/forms.py - Clean version without problematic classes
+
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import UserImage, PromptTemplate, Collection
@@ -36,10 +37,10 @@ class BulkImageUploadForm(forms.Form):
     """Form for bulk image upload - MVP version"""
     
     images = forms.FileField(
-        widget=forms.FileInput(attrs={  # Changed from ClearableFileInput to FileInput
+        widget=forms.FileInput(attrs={
             'class': 'form-control',
-            'multiple': True,  # This enables multiple file selection
             'accept': 'image/*'
+            # No 'multiple': True here - handled in template
         }),
         help_text="Select multiple wedding photos (max 5MB each, up to 10 photos)"
     )

@@ -17,7 +17,7 @@ from django.utils import timezone
 from usage_limits.decorators import usage_limit_required
 from usage_limits.tier_config import TierLimits
 from .models import UserImage, PromptTemplate, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, ImageRating, RatingTag, Favorite
-from .forms import ImageUploadForm, BulkImageUploadForm, ImageProcessingForm
+from .forms import ImageUploadForm, BulkImageUploadForm, ImageProcessingForm, CollectionForm
 from .tasks import process_image_async
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ def dashboard(request):
         'usage_data': usage_data,
     }
     
-    return render(request, 'saas_base/image_processing/dashboard.html', context)
+    return render(request, 'image_processing/dashboard.html', context)
 
 
 @login_required
@@ -130,7 +130,7 @@ def upload_image(request):
     single_form = ImageUploadForm()
     bulk_form = BulkImageUploadForm()
     
-    return render(request, 'saas_base/image_processing/upload.html', {
+    return render(request, 'image_processing/upload.html', {
         'single_form': single_form,
         'bulk_form': bulk_form
     })
@@ -154,7 +154,7 @@ def image_gallery(request):
         'total_images': images.count(),
     }
     
-    return render(request, 'saas_base/image_processing/gallery.html', context)
+    return render(request, 'image_processing/gallery.html', context)
 
 
 @login_required
@@ -180,7 +180,7 @@ def image_detail(request, pk):
         'processing_jobs': processing_jobs,
     }
     
-    return render(request, 'saas_base/image_processing/image_detail.html', context)
+    return render(request, 'image_processing/image_detail.html', context)
 
 
 @login_required
@@ -280,7 +280,7 @@ def processing_history(request):
         'page_obj': page_obj,
     }
     
-    return render(request, 'saas_base/image_processing/processing_history.html', context)
+    return render(request, 'image_processing/processing_history.html', context)
 
 
 @login_required
@@ -296,7 +296,7 @@ def processed_image_detail(request, pk):
         'processed_image': processed_image,
     }
     
-    return render(request, 'saas_base/image_processing/processed_image_detail.html', context)
+    return render(request, 'image_processing/processed_image_detail.html', context)
 
 
 @login_required
@@ -319,4 +319,241 @@ def themes_list(request):
         'max_prompts': max_prompts,
     }
     
-    return render(request, 'saas_base/image_processing/themes_list.html', context)
+    return render(request, 'image_processing/themes_list.html', context)
+
+
+
+@login_required
+def collections_list(request):
+    """Display user's collections"""
+    collections = Collection.objects.filter(user=request.user)
+    recent_favorites = Favorite.objects.filter(user=request.user)[:6]
+    
+    context = {
+        'collections': collections,
+        'recent_favorites': recent_favorites,
+    }
+    
+    return render(request, 'image_processing/collections_list.html', context)
+
+
+@login_required
+@require_POST
+def create_collection(request):
+    """Create a new collection"""
+    form = CollectionForm(request.POST, user=request.user)
+    if form.is_valid():
+        collection = form.save(commit=False)
+        collection.user = request.user
+        collection.save()
+        messages.success(request, f'Collection "{collection.name}" created successfully!')
+        return redirect('image_processing:collections_list')
+    else:
+        messages.error(request, 'Error creating collection. Please check your input.')
+        return redirect('image_processing:collections_list')
+
+
+@login_required
+def collection_detail(request, collection_id):
+    """View collection details"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    items = collection.items.all().order_by('order', '-added_at')
+    
+    context = {
+        'collection': collection,
+        'items': items,
+    }
+    
+    return render(request, 'image_processing/collection_detail.html', context)
+
+
+@login_required
+@require_POST
+def add_to_collection(request):
+    """Add image to collection via AJAX"""
+    collection_id = request.POST.get('collection_id')
+    user_image_id = request.POST.get('user_image_id')
+    processed_image_id = request.POST.get('processed_image_id')
+    
+    try:
+        collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+        
+        # Check if adding user image or processed image
+        if user_image_id:
+            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
+            item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                user_image=user_image
+            )
+        elif processed_image_id:
+            processed_image = get_object_or_404(
+                ProcessedImage, 
+                id=processed_image_id,
+                processing_job__user_image__user=request.user
+            )
+            item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                processed_image=processed_image
+            )
+        else:
+            return JsonResponse({'success': False, 'message': 'No image specified'})
+        
+        if created:
+            return JsonResponse({'success': True, 'message': f'Added to "{collection.name}"'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Already in collection'})
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+@require_POST
+def remove_from_collection(request):
+    """Remove image from collection"""
+    collection_id = request.POST.get('collection_id')
+    item_id = request.POST.get('item_id')
+    
+    try:
+        collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+        item = get_object_or_404(CollectionItem, id=item_id, collection=collection)
+        item.delete()
+        
+        return JsonResponse({'success': True, 'message': 'Removed from collection'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@login_required
+@require_POST
+def rate_image(request):
+    """Rate a processed image"""
+    processed_image_id = request.POST.get('processed_image_id')
+    rating = request.POST.get('rating')
+    tags = request.POST.getlist('tags[]')
+    
+    try:
+        processed_image = get_object_or_404(
+            ProcessedImage,
+            id=processed_image_id,
+            processing_job__user_image__user=request.user
+        )
+        
+        # Create or update rating
+        image_rating, created = ImageRating.objects.update_or_create(
+            user=request.user,
+            processed_image=processed_image,
+            defaults={'rating': rating}
+        )
+        
+        # Add tags for thumbs down ratings
+        if rating == 'down' and tags:
+            # Clear existing tags
+            image_rating.tags.all().delete()
+            # Add new tags
+            for tag in tags:
+                RatingTag.objects.create(rating=image_rating, tag=tag)
+        
+        # Get updated counts
+        thumbs_up_count = processed_image.ratings.filter(rating='up').count()
+        thumbs_down_count = processed_image.ratings.filter(rating='down').count()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Rating submitted',
+            'thumbs_up_count': thumbs_up_count,
+            'thumbs_down_count': thumbs_down_count
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+@require_POST
+def toggle_favorite(request):
+    """Toggle favorite status for an image"""
+    user_image_id = request.POST.get('user_image_id')
+    processed_image_id = request.POST.get('processed_image_id')
+    
+    try:
+        if user_image_id:
+            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
+            favorite, created = Favorite.objects.get_or_create(
+                user=request.user,
+                user_image=user_image
+            )
+        elif processed_image_id:
+            processed_image = get_object_or_404(
+                ProcessedImage,
+                id=processed_image_id,
+                processing_job__user_image__user=request.user
+            )
+            favorite, created = Favorite.objects.get_or_create(
+                user=request.user,
+                processed_image=processed_image
+            )
+        else:
+            return JsonResponse({'success': False, 'error': 'No image specified'})
+        
+        if not created:
+            # Remove favorite
+            favorite.delete()
+            is_favorited = False
+            message = 'Removed from favorites'
+        else:
+            # Added to favorites
+            is_favorited = True
+            message = 'Added to favorites'
+        
+        return JsonResponse({
+            'success': True,
+            'is_favorited': is_favorited,
+            'message': message
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def favorites_list(request):
+    """Display user's favorite images"""
+    favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(favorites, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'image_processing/favorites_list.html', context)
+
+
+@login_required
+def share_image(request, image_type, image_id):
+    """Generate sharing URL for an image"""
+    if image_type == 'user':
+        image = get_object_or_404(UserImage, id=image_id, user=request.user)
+        image_url = request.build_absolute_uri(image.image.url)
+    elif image_type == 'processed':
+        image = get_object_or_404(
+            ProcessedImage,
+            id=image_id,
+            processing_job__user_image__user=request.user
+        )
+        image_url = request.build_absolute_uri(image.processed_image.url)
+    else:
+        messages.error(request, 'Invalid image type')
+        return redirect('image_processing:dashboard')
+    
+    context = {
+        'image': image,
+        'image_url': image_url,
+        'image_type': image_type,
+    }
+    
+    return render(request, 'image_processing/share_image.html', context)
