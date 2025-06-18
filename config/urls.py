@@ -20,7 +20,7 @@ urlpatterns = [
     # Your stuff: custom urls includes go here
     # ...
     path("subscriptions/", include("subscriptions.urls", namespace="subscriptions")),
-   
+    path("studio/", include("image_processing.urls", namespace="image_processing")),
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]

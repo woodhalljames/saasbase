@@ -53,7 +53,7 @@ def dashboard(request):
 
 @login_required
 def upload_image(request):
-    """Combined single and bulk image upload"""
+    """Combined single and bulk wedding photo upload"""
     if request.method == 'POST':
         # Check if it's a bulk upload (multiple files)
         files = request.FILES.getlist('images') if 'images' in request.FILES else []
@@ -65,26 +65,37 @@ def upload_image(request):
         # Handle single file upload
         if single_file and not files:
             try:
-                user_image = UserImage(
-                    user=request.user,
-                    image=single_file,
-                    original_filename=single_file.name
-                )
-                user_image.save()
-                uploaded_count = 1
+                # Validate single file
+                if not single_file.content_type.startswith('image/'):
+                    errors.append('Please upload an image file.')
+                elif single_file.size > 5 * 1024 * 1024:  # 5MB limit
+                    errors.append('Image is too large. Maximum size is 5MB.')
+                else:
+                    user_image = UserImage(
+                        user=request.user,
+                        image=single_file,
+                        original_filename=single_file.name
+                    )
+                    user_image.save()
+                    uploaded_count = 1
             except Exception as e:
                 errors.append(f'Failed to upload {single_file.name}: {str(e)}')
         
         # Handle bulk upload
         elif files:
-            for f in files[:20]:  # Limit to 20 files
+            # MVP limit: 10 files max
+            files_to_process = files[:10]
+            if len(files) > 10:
+                errors.append('Only the first 10 images were processed. Please upload remaining photos separately.')
+            
+            for f in files_to_process:
                 try:
-                    # Validate file
+                    # Validate each file
                     if not f.content_type.startswith('image/'):
-                        errors.append(f'{f.name}: Not an image file')
+                        errors.append(f'"{f.name}" is not an image file - skipped.')
                         continue
-                    if f.size > 10 * 1024 * 1024:
-                        errors.append(f'{f.name}: File too large (max 10MB)')
+                    if f.size > 5 * 1024 * 1024:  # 5MB limit
+                        errors.append(f'"{f.name}" is too large (max 5MB) - skipped.')
                         continue
                     
                     user_image = UserImage(
@@ -95,14 +106,14 @@ def upload_image(request):
                     user_image.save()
                     uploaded_count += 1
                 except Exception as e:
-                    errors.append(f'Failed to upload {f.name}: {str(e)}')
+                    errors.append(f'Failed to upload "{f.name}": {str(e)}')
         
-        # Show results
+        # Show results with wedding-friendly messaging
         if uploaded_count > 0:
             if uploaded_count == 1:
-                messages.success(request, f'Image uploaded successfully!')
+                messages.success(request, 'Your wedding photo has been uploaded successfully! Ready to visualize different styles.')
             else:
-                messages.success(request, f'Successfully uploaded {uploaded_count} images!')
+                messages.success(request, f'Successfully uploaded {uploaded_count} wedding photos! Ready to create your dream wedding vision.')
         
         if errors:
             for error in errors:
@@ -110,6 +121,10 @@ def upload_image(request):
         
         if uploaded_count > 0:
             return redirect('image_processing:image_gallery')
+        
+        # If no files were uploaded successfully, stay on upload page
+        if not uploaded_count and errors:
+            messages.error(request, 'No photos were uploaded. Please check the requirements and try again.')
     
     # For GET requests, show the combined upload form
     single_form = ImageUploadForm()

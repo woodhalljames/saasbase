@@ -53,3 +53,6 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
         
         # New user without subscription, go to pricing page
         return reverse("subscriptions:pricing")
+
+
+user_redirect_view = UserRedirectView.as_view()
