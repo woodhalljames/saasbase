@@ -7,29 +7,27 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      SaaS Base
+      DreamWedAI
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="Saas Base" />
+        content="DreamWedAI" />
   <meta name="author"
-        content="James" />
+        content="Cactus Cat LLC" />
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
   {% block css %}
-    <!-- Latest compiled and minified Bootstrap CSS -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
-          integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" />
-<!-- Your stuff: Third-party CSS libraries go here -->
-<!-- This file stores project-specific CSS -->
-
-  
+  <!-- Latest compiled and minified Bootstrap CSS -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
+        integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <!-- Your stuff: Third-party CSS libraries go here -->
+  <!-- This file stores project-specific CSS -->
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
-
-
 {% endblock css %}
 <!-- Le javascript
     ================================================== -->
@@ -39,8 +37,8 @@
 
 <!-- Bootstrap JS -->
 <script defer
-        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js"
-        integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
+        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
+        integrity="sha512-i9cEfJwUwViEPFKdC1enz4ZRGBj8YQo6QByFTF92YXHi7waCqyexvRD75S5NVTsSiTv7rKWqG9Y5eFxmRsOn0A=="
         crossorigin="anonymous"
         referrerpolicy="no-referrer"></script>
 <!-- Your stuff: Third-party javascript libraries go here -->
@@ -68,7 +66,7 @@
                 aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="{% url 'home' %}">SaaS Base</a>
+        <a class="navbar-brand" href="{% url 'home' %}">DreamWedAI</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
@@ -76,42 +74,39 @@
             </li>
             
             {% if request.user.is_authenticated %}
-              <!-- AI Processing Menu -->
-              <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="aiDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                  <i class="bi bi-magic"></i> AI Processing
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="aiDropdown">
-                  <li><a class="dropdown-item" href="{% url 'image_processing:dashboard' %}">
-                    <i class="bi bi-speedometer2"></i> Dashboard
-                  </a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:upload' %}">
-                    <i class="bi bi-cloud-upload"></i> Upload Images
-                  </a></li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
-                    <i class="bi bi-images"></i> My Images
-                  </a></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-                    <i class="bi bi-clock-history"></i> Processing History
-                  </a></li>
-                  {% comment %}
-<li><hr class="dropdown-divider"></li>
-<li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
-  <i class="bi bi-collection"></i> Collections
-</a></li>
-<li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
-  <i class="bi bi-heart"></i> Favorites
-</a></li>
-{% endcomment %}
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'image_processing:themes_list' %}">
-                    <i class="bi bi-palette"></i> Browse Themes
-                  </a></li>
-                </ul>
-              </li>
-            {% endif %}
+  <!-- Studio Menu -->
+  {% if request.user.is_authenticated %}
+  <!-- Studio Menu -->
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-magic"></i> Studio
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="studioDropdown">
+      <li><a class="dropdown-item" href="{% url 'image_processing:dashboard' %}">
+        <i class="bi bi-magic"></i> Upload & Process
+      </a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
+        <i class="bi bi-images"></i> My Images
+      </a></li>
+      <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
+        <i class="bi bi-clock-history"></i> Processing History
+      </a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+        <i class="bi bi-collection"></i> Collections
+      </a></li>
+      <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
+        <i class="bi bi-heart"></i> Favorites
+      </a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="{% url 'image_processing:themes_list' %}">
+        <i class="bi bi-palette"></i> Browse Themes
+      </a></li>
+    </ul>
+  </li>
+{% endif %}
+{% endif %}
             
             <li class="nav-item">
               <a class="nav-link" href="{% url 'subscriptions:pricing' %}">Pricing</a>
@@ -166,10 +161,10 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Load usage data for the indicator
-    fetch('/ai/')
+    fetch('/studio/')  // Changed from '/ai/' to '/studio/'
         .then(response => {
             if (response.ok) {
-                // If the user can access the AI dashboard, show usage
+                // If the user can access the studio dashboard, show usage
                 const indicator = document.getElementById('usage-indicator');
                 if (indicator) {
                     // You can make an AJAX call to get usage data or embed it in the template
@@ -188,9 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 {% endif %}
 
-<!-- Add Bootstrap Icons if not already included -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <div class="container">
+
+ <div class="container">
     {% if messages %}
       {% for message in messages %}
         <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">

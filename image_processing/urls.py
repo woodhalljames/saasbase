@@ -4,13 +4,11 @@ from . import views
 app_name = 'image_processing'
 
 urlpatterns = [
-    # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    # Main Studio (combined upload and processing)
+    path('', views.upload_image, name='dashboard'),  # Main studio page
+    path('upload/', views.upload_image, name='upload'),  # Alias for compatibility
     
-    # Image upload (combined single and bulk)
-    path('upload/', views.upload_image, name='upload'),
-    
-    # Image management
+    # Image management  
     path('gallery/', views.image_gallery, name='image_gallery'),
     path('image/<int:pk>/', views.image_detail, name='image_detail'),
     

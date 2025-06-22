@@ -175,9 +175,7 @@
               <a class="btn btn-outline-primary" href="{% url 'account_email' %}" role="button">
                 <i class="bi bi-envelope-gear"></i> E-Mail Settings
               </a>
-              <a class="btn btn-outline-primary" href="{% url 'mfa_index' %}" role="button">
-                <i class="bi bi-shield-check"></i> Multi-Factor Auth
-              </a>
+             
               {% if object.has_active_subscription %}
                 <a class="btn btn-outline-secondary" href="{% url 'subscriptions:customer_portal' %}" role="button">
                   <i class="bi bi-credit-card"></i> Billing Portal

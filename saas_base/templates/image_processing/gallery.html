@@ -16,9 +16,6 @@
       <a href="{% url 'image_processing:upload' %}" class="btn btn-primary me-2">
         <i class="bi bi-cloud-upload"></i> Upload Image
       </a>
-      <a href="{% url 'image_processing:bulk_upload' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-files"></i> Bulk Upload
-      </a>
     </div>
   </div>
 
@@ -149,8 +146,8 @@
             <a href="{% url 'image_processing:upload' %}" class="btn btn-primary btn-lg me-3">
               <i class="bi bi-cloud-upload"></i> Upload Image
             </a>
-            <a href="{% url 'image_processing:bulk_upload' %}" class="btn btn-outline-secondary btn-lg">
-              <i class="bi bi-files"></i> Bulk Upload
+            <a href="{% url 'image_processing:upload' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-cloud-upload"></i> Upload & Process Images
             </a>
           </div>
         </div>

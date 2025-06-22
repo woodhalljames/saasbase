@@ -53,23 +53,17 @@ def dashboard(request):
 
 @login_required
 def upload_image(request):
-    """Combined single and bulk wedding photo upload"""
+    """Combined upload and processing studio - the main Studio page"""
     if request.method == 'POST':
-        # Check if it's a bulk upload (multiple files)
-        files = request.FILES.getlist('images') if 'images' in request.FILES else []
+        # Handle single image upload only
         single_file = request.FILES.get('image')
         
-        uploaded_count = 0
-        errors = []
-        
-        # Handle single file upload
-        if single_file and not files:
+        if single_file:
             try:
-                # Validate single file
                 if not single_file.content_type.startswith('image/'):
-                    errors.append('Please upload an image file.')
+                    messages.error(request, 'Please upload an image file.')
                 elif single_file.size > 5 * 1024 * 1024:  # 5MB limit
-                    errors.append('Image is too large. Maximum size is 5MB.')
+                    messages.error(request, 'Image is too large. Maximum size is 5MB.')
                 else:
                     user_image = UserImage(
                         user=request.user,
@@ -77,67 +71,48 @@ def upload_image(request):
                         original_filename=single_file.name
                     )
                     user_image.save()
-                    uploaded_count = 1
+                    messages.success(request, f'"{single_file.name}" uploaded successfully! It\'s ready for AI processing below.')
             except Exception as e:
-                errors.append(f'Failed to upload {single_file.name}: {str(e)}')
+                messages.error(request, f'Failed to upload image: {str(e)}')
+        else:
+            messages.error(request, 'No image file received.')
         
-        # Handle bulk upload
-        elif files:
-            # MVP limit: 10 files max
-            files_to_process = files[:10]
-            if len(files) > 10:
-                errors.append('Only the first 10 images were processed. Please upload remaining photos separately.')
-            
-            for f in files_to_process:
-                try:
-                    # Validate each file
-                    if not f.content_type.startswith('image/'):
-                        errors.append(f'"{f.name}" is not an image file - skipped.')
-                        continue
-                    if f.size > 5 * 1024 * 1024:  # 5MB limit
-                        errors.append(f'"{f.name}" is too large (max 5MB) - skipped.')
-                        continue
-                    
-                    user_image = UserImage(
-                        user=request.user,
-                        image=f,
-                        original_filename=f.name
-                    )
-                    user_image.save()
-                    uploaded_count += 1
-                except Exception as e:
-                    errors.append(f'Failed to upload "{f.name}": {str(e)}')
+        # Redirect to refresh the page and show the new image
+        return redirect('image_processing:upload')
         
-        # Show results with wedding-friendly messaging
-        if uploaded_count > 0:
-            if uploaded_count == 1:
-                messages.success(request, 'Your wedding photo has been uploaded successfully! Ready to visualize different styles.')
-            else:
-                messages.success(request, f'Successfully uploaded {uploaded_count} wedding photos! Ready to create your dream wedding vision.')
-        
-        if errors:
-            for error in errors:
-                messages.warning(request, error)
-        
-        if uploaded_count > 0:
-            return redirect('image_processing:image_gallery')
-        
-        # If no files were uploaded successfully, stay on upload page
-        if not uploaded_count and errors:
-            messages.error(request, 'No photos were uploaded. Please check the requirements and try again.')
+    # GET request - show the combined interface
     
-    # For GET requests, show the combined upload form
-    single_form = ImageUploadForm()
-    bulk_form = BulkImageUploadForm()
+    # Get user's recent images for the gallery (more recent images now)
+    recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:18]
     
-    return render(request, 'image_processing/upload.html', {
-        'single_form': single_form,
-        'bulk_form': bulk_form
-    })
-
-
-# Remove the separate bulk_upload view since we're combining them
-
+    # Get available prompts organized by category
+    prompts = PromptTemplate.objects.filter(is_active=True).order_by('category', 'name')
+    
+    # Get user's prompt limit
+    max_prompts = TierLimits.get_user_max_prompts(request.user)
+    
+    # Get recent processing jobs
+    recent_jobs = ImageProcessingJob.objects.filter(
+        user_image__user=request.user
+    ).order_by('-created_at')[:5]
+    
+    # Organize prompts by category
+    prompts_by_category = {}
+    for prompt in prompts:
+        category = prompt.get_category_display()
+        if category not in prompts_by_category:
+            prompts_by_category[category] = []
+        prompts_by_category[category].append(prompt)
+    
+    context = {
+        'recent_images': recent_images,
+        'prompts_by_category': prompts_by_category,
+        'max_prompts': max_prompts,
+        'recent_jobs': recent_jobs,
+        'total_images': recent_images.count() if recent_images else 0,
+    }
+    
+    return render(request, 'image_processing/studio_main.html', context)
 
 @login_required
 def image_gallery(request):
