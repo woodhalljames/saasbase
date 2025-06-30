@@ -1,12 +1,10 @@
-# image_processing/forms.py - Updated for wedding venue processing
-
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
 
 
 class ImageUploadForm(forms.ModelForm):
-    """Form for single image upload"""
+    """Simple form for single image upload"""
     
     class Meta:
         model = UserImage
@@ -14,7 +12,8 @@ class ImageUploadForm(forms.ModelForm):
         widgets = {
             'image': forms.FileInput(attrs={
                 'class': 'form-control',
-                'accept': 'image/*'
+                'accept': 'image/*',
+                'id': 'imageUpload'
             })
         }
     
@@ -33,24 +32,24 @@ class ImageUploadForm(forms.ModelForm):
         return image
 
 
-class WeddingVisualizationForm(forms.Form):
-    """Form for wedding venue visualization settings"""
+class WeddingTransformForm(forms.Form):
+    """Simple form for wedding venue transformation"""
     
     wedding_theme = forms.ChoiceField(
         choices=WEDDING_THEMES,
         widget=forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'wedding-theme-select'
+            'class': 'form-select form-select-lg',
+            'id': 'wedding-theme'
         }),
-        label="Wedding Theme",
+        label="Wedding Style",
         help_text="Choose the overall style and aesthetic for your venue"
     )
     
     space_type = forms.ChoiceField(
         choices=SPACE_TYPES,
         widget=forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'space-type-select'
+            'class': 'form-select form-select-lg',
+            'id': 'space-type'
         }),
         label="Venue Space",
         help_text="Select the type of space you want to transform"
@@ -64,7 +63,8 @@ class WeddingVisualizationForm(forms.Form):
         required=False,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
-            'step': '0.5'
+            'step': '0.5',
+            'style': 'display: none;'  # Hidden by default
         }),
         label="Style Strength",
         help_text="How strongly to apply the wedding theme (1-20, default: 7)"
@@ -75,7 +75,10 @@ class WeddingVisualizationForm(forms.Form):
         min_value=10,
         max_value=150,
         required=False,
-        widget=forms.NumberInput(attrs={'class': 'form-control'}),
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'style': 'display: none;'  # Hidden by default
+        }),
         label="Processing Quality",
         help_text="Higher values = better quality but slower processing (10-150, default: 50)"
     )
@@ -84,7 +87,8 @@ class WeddingVisualizationForm(forms.Form):
         required=False,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Leave empty for random'
+            'placeholder': 'Leave empty for random',
+            'style': 'display: none;'  # Hidden by default
         }),
         label="Random Seed",
         help_text="Use same number for consistent results (optional)"
@@ -93,60 +97,4 @@ class WeddingVisualizationForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
-        # Add user context for potential tier-based modifications
         self.user = user
-
-
-class QuickWeddingForm(forms.Form):
-    """Simplified form for quick wedding visualization"""
-    
-    wedding_theme = forms.ChoiceField(
-        choices=WEDDING_THEMES,
-        widget=forms.Select(attrs={
-            'class': 'form-select form-select-lg',
-        }),
-        label="Wedding Style"
-    )
-    
-    space_type = forms.ChoiceField(
-        choices=SPACE_TYPES,
-        widget=forms.Select(attrs={
-            'class': 'form-select form-select-lg',
-        }),
-        label="Venue Type"
-    )
-
-
-# Keep existing forms for compatibility
-class BulkImageUploadForm(forms.Form):
-    """Form for bulk image upload - kept for backward compatibility"""
-    
-    images = forms.FileField(
-        widget=forms.FileInput(attrs={
-            'class': 'form-control',
-            'accept': 'image/*',
-            'multiple': True
-        }),
-        help_text="Select multiple wedding venue photos (max 5MB each)"
-    )
-    
-    def clean_images(self):
-        files = self.files.getlist('images')
-        
-        if not files:
-            raise ValidationError("Please select at least one image.")
-        
-        # Limit to reasonable number for MVP
-        if len(files) > 5:
-            raise ValidationError("You can upload a maximum of 5 images at once.")
-        
-        # Check each file
-        for file in files:
-            if file.size > 5 * 1024 * 1024:
-                raise ValidationError(f"'{file.name}' is too large. Maximum size is 5MB per image.")
-            
-            if not file.content_type.startswith('image/'):
-                raise ValidationError(f"'{file.name}' is not an image file.")
-        
-        return files

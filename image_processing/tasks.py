@@ -1,4 +1,4 @@
-# image_processing/tasks.py - Updated for wedding venue processing
+# image_processing/tasks.py - Updated for single wedding image processing
 
 import logging
 from celery import shared_task
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def process_image_async(self, job_id):
     """
-    Asynchronously process a wedding venue image with generated prompt
+    Asynchronously process a single wedding venue image
     """
     try:
         # Get the processing job
@@ -27,7 +27,7 @@ def process_image_async(self, job_id):
         # Initialize the processing service
         processing_service = ImageProcessingService()
         
-        # For wedding processing, use the generated prompt directly
+        # Use the generated prompt from the job
         prompt_text = job.generated_prompt
         if not prompt_text:
             # Fallback: regenerate prompt if missing
@@ -36,7 +36,7 @@ def process_image_async(self, job_id):
             job.generated_prompt = prompt_text
             job.save()
         
-        logger.info(f"Processing wedding image with prompt: {prompt_text[:100]}...")
+        logger.info(f"Processing wedding venue with prompt: {prompt_text[:100]}...")
         
         # Process the image
         result = processing_service.stability_service.image_to_image(
@@ -52,7 +52,6 @@ def process_image_async(self, job_id):
             for img_result in result["results"]:
                 processed_image = ProcessedImage(
                     processing_job=job,
-                    prompt_template=None,  # We don't use prompt templates for wedding processing
                     stability_seed=img_result.get("seed"),
                     finish_reason=img_result.get("finish_reason")
                 )
@@ -131,42 +130,64 @@ def process_image_async(self, job_id):
 
 
 @shared_task
-def cleanup_old_wedding_jobs():
+def cleanup_temporary_images():
     """
-    Clean up old wedding processing jobs and their files
+    Clean up temporary (unsaved) processed images older than 48 hours
     Run this daily to keep storage manageable
     """
     from datetime import timedelta
     import os
     from django.conf import settings
     
-    # Delete jobs older than 30 days
-    cutoff_date = timezone.now() - timedelta(days=30)
+    # Delete unsaved processed images older than 48 hours
+    cutoff_date = timezone.now() - timedelta(hours=48)
     
-    old_jobs = ImageProcessingJob.objects.filter(
-        created_at__lt=cutoff_date,
-        status__in=['completed', 'failed']
+    from .models import ProcessedImage
+    temporary_images = ProcessedImage.objects.filter(
+        is_saved=False,
+        created_at__lt=cutoff_date
     )
     
     deleted_count = 0
-    for job in old_jobs:
+    for processed_image in temporary_images:
         try:
-            # Delete associated processed images
-            for processed_image in job.processed_images.all():
-                if processed_image.processed_image:
-                    file_path = processed_image.processed_image.path
-                    if os.path.exists(file_path):
-                        os.remove(file_path)
-                        logger.info(f"Deleted old wedding image: {file_path}")
+            # Delete the image file
+            if processed_image.processed_image:
+                file_path = processed_image.processed_image.path
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Deleted temporary wedding image: {file_path}")
             
-            # Delete the job
-            job.delete()
+            # Delete the database record
+            processed_image.delete()
             deleted_count += 1
             
         except Exception as e:
-            logger.error(f"Error deleting old wedding job {job.id}: {str(e)}")
+            logger.error(f"Error deleting temporary image {processed_image.id}: {str(e)}")
     
-    logger.info(f"Cleaned up {deleted_count} old wedding processing jobs")
+    logger.info(f"Cleaned up {deleted_count} temporary wedding images")
+    return deleted_count
+
+
+@shared_task
+def cleanup_failed_jobs():
+    """
+    Clean up failed processing jobs older than 7 days
+    These don't have processed images so just clean up the job records
+    """
+    from datetime import timedelta
+    
+    cutoff_date = timezone.now() - timedelta(days=7)
+    
+    failed_jobs = ImageProcessingJob.objects.filter(
+        status='failed',
+        created_at__lt=cutoff_date
+    )
+    
+    deleted_count = failed_jobs.count()
+    failed_jobs.delete()
+    
+    logger.info(f"Cleaned up {deleted_count} old failed job records")
     return deleted_count
 
 
@@ -186,3 +207,50 @@ def generate_wedding_preview(theme, space_type):
         'space_type': space_type,
         'prompt': prompt
     }
+
+
+@shared_task
+def process_batch_wedding_images(user_id, image_ids, theme, space_type):
+    """
+    Process multiple images with the same wedding theme (for future use)
+    Currently not used in MVP but could be useful for bulk processing
+    """
+    from saas_base.users.models import User
+    from .models import UserImage
+    
+    try:
+        user = User.objects.get(id=user_id)
+        results = []
+        
+        for image_id in image_ids:
+            try:
+                user_image = UserImage.objects.get(id=image_id, user=user)
+                
+                # Create processing job
+                job = ImageProcessingJob.objects.create(
+                    user_image=user_image,
+                    wedding_theme=theme,
+                    space_type=space_type
+                )
+                
+                # Process synchronously (could be made async for better performance)
+                result = process_image_async.apply(args=[job.id])
+                results.append(result.get())
+                
+            except UserImage.DoesNotExist:
+                logger.error(f"User image {image_id} not found for user {user_id}")
+                continue
+                
+        return {
+            'success': True,
+            'processed_count': len([r for r in results if r.get('success')]),
+            'failed_count': len([r for r in results if not r.get('success')]),
+            'results': results
+        }
+        
+    except User.DoesNotExist:
+        logger.error(f"User {user_id} not found")
+        return {
+            'success': False,
+            'error': f'User {user_id} not found'
+        }

@@ -6,6 +6,9 @@ from pathlib import Path
 import redis
 from urllib.parse import urlparse
 import environ
+from celery.schedules import crontab
+
+
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # saas_base/
@@ -304,6 +307,20 @@ CELERY_TASK_TIME_LIMIT = 5 * 60
 CELERY_TASK_SOFT_TIME_LIMIT = 60
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+# Add to config/settings/base.py
+
+# Celery Beat Schedule for cleanup tasks
+
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-temporary-images': {
+        'task': 'image_processing.tasks.cleanup_temporary_images',
+        'schedule': crontab(hour=2, minute=0),  # Run daily at 2 AM
+    },
+    'cleanup-failed-jobs': {
+        'task': 'image_processing.tasks.cleanup_failed_jobs',
+        'schedule': crontab(hour=3, minute=0, day_of_week=0),  # Run weekly on Sunday at 3 AM
+    },
+}
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
 CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event

@@ -1,25 +1,27 @@
+<!-- image_processing/templates/image_processing/processing_history.html -->
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Processing History{% endblock %}
+{% block title %}Wedding Processing History{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container py-4">
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-md-6">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'image_processing:dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
           <li class="breadcrumb-item active">Processing History</li>
         </ol>
       </nav>
-      <h1>Processing History</h1>
-      <p class="text-muted">View all your AI image processing jobs</p>
+      <h1>💍 Wedding Transformations</h1>
+      <p class="text-muted">View all your AI wedding venue transformations</p>
     </div>
     <div class="col-md-6 text-end">
-      <a href="{% url 'image_processing:dashboard' %}" class="btn btn-outline-primary">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
+      <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create New Transformation
       </a>
     </div>
   </div>
@@ -29,175 +31,216 @@
     <div class="row">
       <div class="col-12">
         {% for job in page_obj %}
-          <div class="card mb-4">
-            <div class="card-header">
-              <div class="row align-items-center">
-                <div class="col-md-6">
-                  <h6 class="mb-0">
-                    <i class="bi bi-image"></i> {{ job.user_image.original_filename }}
-                  </h6>
-                  <small class="text-muted">Job #{{ job.id }} • {{ job.created_at|date:"M d, Y H:i" }}</small>
-                </div>
-                <div class="col-md-6 text-end">
-                  <span class="badge fs-6 {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                    {% if job.status == 'processing' %}
-                      <i class="bi bi-hourglass-split"></i>
-                    {% elif job.status == 'completed' %}
-                      <i class="bi bi-check-circle"></i>
-                    {% elif job.status == 'failed' %}
-                      <i class="bi bi-x-circle"></i>
-                    {% else %}
-                      <i class="bi bi-clock"></i>
-                    {% endif %}
-                    {{ job.get_status_display }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
+          <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
               <div class="row">
                 <!-- Original Image -->
-                <div class="col-md-3">
-                  <h6 class="text-muted mb-2">Original Image</h6>
+                <div class="col-md-4">
+                  <h6 class="text-muted mb-2">Original Venue</h6>
                   <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                       class="img-fluid rounded" 
+                       class="img-fluid rounded shadow-sm" 
                        alt="{{ job.user_image.original_filename }}"
-                       style="max-height: 150px; width: 100%; object-fit: cover;">
+                       style="max-height: 200px; width: 100%; object-fit: cover;">
                   <div class="mt-2">
                     <small class="text-muted">
-                      {{ job.user_image.width }}x{{ job.user_image.height }}<br>
+                      <strong>{{ job.user_image.original_filename }}</strong><br>
+                      {{ job.user_image.width }}x{{ job.user_image.height }} • 
                       {{ job.user_image.file_size|filesizeformat }}
                     </small>
                   </div>
                 </div>
 
-                <!-- Job Details -->
-                <div class="col-md-3">
-                  <h6 class="text-muted mb-2">Processing Details</h6>
-                  <div class="small">
-                    <div class="mb-1">
-                      <strong>Prompts:</strong> {{ job.prompt_count }}
-                      <div class="text-muted">
-                        {% for prompt in job.prompts.all %}
-                          <span class="badge bg-light text-dark">{{ prompt.name }}</span>
-                        {% endfor %}
-                      </div>
-                    </div>
-                    <div class="mb-1"><strong>CFG Scale:</strong> {{ job.cfg_scale }}</div>
-                    <div class="mb-1"><strong>Steps:</strong> {{ job.steps }}</div>
-                    {% if job.seed %}
-                      <div class="mb-1"><strong>Seed:</strong> {{ job.seed }}</div>
-                    {% endif %}
-                  </div>
-                </div>
-
-                <!-- Processing Results -->
-                <div class="col-md-6">
-                  <h6 class="text-muted mb-2">Results</h6>
+                <!-- Processing Status & Result -->
+                <div class="col-md-4">
+                  <h6 class="text-muted mb-2">Wedding Transformation</h6>
                   
                   {% if job.status == 'completed' %}
-                    {% if job.processed_images.all %}
-                      <div class="row">
-                        {% for processed_img in job.processed_images.all %}
-                          <div class="col-lg-4 col-md-6 col-sm-4 mb-2">
-                            <div class="card">
-                              <img src="{{ processed_img.processed_image.url }}" 
-                                   class="card-img-top" 
-                                   style="height: 100px; object-fit: cover;"
-                                   alt="{{ processed_img.prompt_template.name }}">
-                              <div class="card-body p-2">
-                                <small class="text-muted d-block text-truncate" title="{{ processed_img.prompt_template.name }}">
-                                  {{ processed_img.prompt_template.name }}
-                                </small>
-                                <div class="btn-group w-100 mt-1" role="group">
-                                  <a href="{{ processed_img.processed_image.url }}" 
-                                     class="btn btn-sm btn-outline-primary" 
-                                     target="_blank" 
-                                     title="View Full Size">
-                                    <i class="bi bi-eye"></i>
-                                  </a>
-                                  <a href="{{ processed_img.processed_image.url }}" 
-                                     class="btn btn-sm btn-outline-secondary" 
-                                     download 
-                                     title="Download">
-                                    <i class="bi bi-download"></i>
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
+                    {% with processed_images=job.processed_images.all %}
+                      {% if processed_images %}
+                        {% for processed_img in processed_images %}
+                          <div class="position-relative">
+                            <img src="{{ processed_img.processed_image.url }}" 
+                                 class="img-fluid rounded shadow-sm mb-2" 
+                                 alt="Wedding transformation"
+                                 style="max-height: 200px; width: 100%; object-fit: cover;">
+                            
+                            <!-- Save/Temporary Status Badge -->
+                            {% if processed_img.is_saved %}
+                              <span class="position-absolute top-0 start-0 badge bg-success m-2">
+                                <i class="bi bi-check-circle"></i> Saved
+                              </span>
+                            {% else %}
+                              <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2">
+                                <i class="bi bi-clock"></i> Temporary
+                              </span>
+                              {% if processed_img.time_until_deletion %}
+                                <span class="position-absolute top-0 end-0 badge bg-danger m-2">
+                                  <i class="bi bi-hourglass-split"></i> {{ processed_img.time_until_deletion }} left
+                                </span>
+                              {% endif %}
+                            {% endif %}
                           </div>
                         {% endfor %}
-                      </div>
-                    {% else %}
-                      <div class="text-muted">No processed images found</div>
-                    {% endif %}
-                    
-                    <!-- Timing Info -->
-                    {% if job.completed_at %}
-                      <div class="mt-2">
-                        <small class="text-success">
-                          <i class="bi bi-clock"></i> 
-                          Completed in {{ job.completed_at|timeuntil:job.created_at }}
-                        </small>
-                      </div>
-                    {% endif %}
+                      {% else %}
+                        <div class="text-muted">No results available</div>
+                      {% endif %}
+                    {% endwith %}
                     
                   {% elif job.status == 'processing' %}
-                    <div class="d-flex align-items-center">
-                      <div class="spinner-border spinner-border-sm text-warning me-2" role="status">
-                        <span class="visually-hidden">Processing...</span>
+                    <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                      <div class="text-center">
+                        <div class="spinner-border text-warning mb-2" role="status">
+                          <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <div class="text-warning">Creating your wedding vision...</div>
+                        <button class="btn btn-sm btn-outline-info mt-2" onclick="checkJobStatus({{ job.id }})">
+                          <i class="bi bi-arrow-clockwise"></i> Check Status
+                        </button>
                       </div>
-                      <span class="text-warning">Processing in progress...</span>
-                    </div>
-                    <div class="mt-2">
-                      <button class="btn btn-sm btn-outline-info" onclick="checkJobStatus({{ job.id }})">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh Status
-                      </button>
                     </div>
                     
                   {% elif job.status == 'failed' %}
-                    <div class="alert alert-danger mb-0">
+                    <div class="alert alert-danger">
                       <h6 class="alert-heading">Processing Failed</h6>
-                      <p class="mb-0">{{ job.error_message|default:"An error occurred during processing" }}</p>
-                    </div>
-                    <div class="mt-2">
-                      <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-primary">
+                      <p class="mb-2">{{ job.error_message|default:"An error occurred during processing" }}</p>
+                      <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-warning">
                         <i class="bi bi-arrow-clockwise"></i> Try Again
                       </a>
                     </div>
                     
                   {% else %}
-                    <div class="text-muted">
-                      <i class="bi bi-clock"></i> Waiting to start...
+                    <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                      <div class="text-center text-muted">
+                        <i class="bi bi-clock" style="font-size: 2rem;"></i>
+                        <div>Waiting to start...</div>
+                      </div>
                     </div>
                   {% endif %}
+                </div>
+
+                <!-- Details & Actions -->
+                <div class="col-md-4">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                      <h6>Wedding Style</h6>
+                      {% if job.wedding_theme and job.space_type %}
+                        <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
+                        <span class="badge bg-secondary">{{ job.space_display }}</span>
+                      {% else %}
+                        <span class="text-muted">Unknown style</span>
+                      {% endif %}
+                    </div>
+                    <span class="badge fs-6 {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                      {% if job.status == 'processing' %}
+                        <i class="bi bi-hourglass-split"></i>
+                      {% elif job.status == 'completed' %}
+                        <i class="bi bi-check-circle"></i>
+                      {% elif job.status == 'failed' %}
+                        <i class="bi bi-x-circle"></i>
+                      {% else %}
+                        <i class="bi bi-clock"></i>
+                      {% endif %}
+                      {{ job.get_status_display }}
+                    </span>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <small class="text-muted">
+                      <i class="bi bi-calendar"></i> {{ job.created_at|date:"M d, Y H:i" }}<br>
+                      {% if job.completed_at %}
+                        <i class="bi bi-clock"></i> Completed in {{ job.completed_at|timeuntil:job.created_at }}
+                      {% endif %}
+                    </small>
+                  </div>
+                  
+                  <!-- Actions -->
+                  {% if job.status == 'completed' %}
+                    {% with processed_images=job.processed_images.all %}
+                      {% if processed_images %}
+                        {% for processed_img in processed_images %}
+                          <div class="mb-3">
+                            <!-- Save/Discard buttons for temporary images -->
+                            {% if not processed_img.is_saved %}
+                              <div class="d-grid gap-2 mb-2">
+                                <button class="btn btn-success btn-sm save-btn" 
+                                        data-image-id="{{ processed_img.id }}">
+                                  <i class="bi bi-collection"></i> Save to Collection
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm discard-btn" 
+                                        data-image-id="{{ processed_img.id }}">
+                                  <i class="bi bi-trash"></i> Discard
+                                </button>
+                              </div>
+                              <hr class="my-2">
+                            {% else %}
+                              <!-- Show which collection it's saved in -->
+                              {% with collection_item=processed_img.collectionitem_set.first %}
+                                {% if collection_item %}
+                                  <div class="alert alert-success py-2 mb-2">
+                                    <small>
+                                      <i class="bi bi-collection-fill"></i> 
+                                      Saved in "{{ collection_item.collection.name }}"
+                                    </small>
+                                  </div>
+                                {% endif %}
+                              {% endwith %}
+                            {% endif %}
+                            
+                            <!-- Standard action buttons -->
+                            <div class="d-grid gap-2 mb-2">
+                              <a href="{{ processed_img.processed_image.url }}" 
+                                 class="btn btn-outline-primary btn-sm" 
+                                 target="_blank">
+                                <i class="bi bi-eye"></i> View Full Size
+                              </a>
+                              <a href="{{ processed_img.processed_image.url }}" 
+                                 class="btn btn-outline-secondary btn-sm" 
+                                 download="wedding-{{ job.wedding_theme }}-{{ job.space_type }}.png">
+                                <i class="bi bi-download"></i> Download
+                              </a>
+                            </div>
+                          </div>
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
+                  {% endif %}
+                  
+                  <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" 
+                       class="btn btn-outline-info btn-sm">
+                      <i class="bi bi-image"></i> View Original
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Action Footer -->
-            <div class="card-footer bg-transparent">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-eye"></i> View Image
-                  </a>
-                  {% if job.status == 'completed' and job.processed_images.all %}
-                    <button class="btn btn-sm btn-outline-success" onclick="downloadAll({{ job.id }})">
-                      <i class="bi bi-download"></i> Download All
+            <!-- Generated Prompt (collapsible) -->
+            {% if job.generated_prompt %}
+            <div class="card-footer bg-light">
+              <div class="accordion" id="prompt-{{ job.id }}">
+                <div class="accordion-item border-0">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed bg-transparent border-0 p-0" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#prompt-text-{{ job.id }}">
+                      <small class="text-muted">
+                        <i class="bi bi-code"></i> View AI Prompt Used
+                      </small>
                     </button>
-                  {% endif %}
+                  </h2>
+                  <div id="prompt-text-{{ job.id }}" 
+                       class="accordion-collapse collapse" 
+                       data-bs-parent="#prompt-{{ job.id }}">
+                    <div class="accordion-body p-2">
+                      <small class="text-muted font-monospace">{{ job.generated_prompt }}</small>
+                    </div>
+                  </div>
                 </div>
-                <small class="text-muted">
-                  {% if job.status == 'completed' %}
-                    {{ job.processed_images.count }} image{{ job.processed_images.count|pluralize }} generated
-                  {% else %}
-                    {{ job.prompt_count }} prompt{{ job.prompt_count|pluralize }} requested
-                  {% endif %}
-                </small>
               </div>
             </div>
+            {% endif %}
           </div>
         {% endfor %}
       </div>
@@ -245,15 +288,12 @@
     <div class="row">
       <div class="col-12">
         <div class="text-center py-5">
-          <i class="bi bi-clock-history text-muted" style="font-size: 4rem;"></i>
-          <h3 class="mt-3 text-muted">No Processing History</h3>
-          <p class="text-muted">You haven't processed any images with AI yet</p>
+          <i class="bi bi-magic text-muted" style="font-size: 4rem;"></i>
+          <h3 class="mt-3 text-muted">No Wedding Transformations Yet</h3>
+          <p class="text-muted">You haven't created any wedding venue transformations yet</p>
           <div class="mt-4">
-            <a href="{% url 'image_processing:upload' %}" class="btn btn-primary btn-lg me-3">
-              <i class="bi bi-cloud-upload"></i> Upload Image
-            </a>
-            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-secondary btn-lg">
-              <i class="bi bi-images"></i> Browse Images
+            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-magic"></i> Create Your First Wedding Transformation
             </a>
           </div>
         </div>
@@ -262,9 +302,71 @@
   {% endif %}
 </div>
 
+<!-- Save to Collection Modal -->
+<div class="modal fade" id="saveToCollectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Save to Collection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="saveToCollectionForm">
+          <!-- Collection Choice -->
+          <div class="mb-3">
+            <label class="form-label">Where would you like to save this?</label>
+            
+            <!-- Default Collection Option -->
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="collection_choice" value="default" id="defaultCollection" checked>
+              <label class="form-check-label" for="defaultCollection">
+                <strong>Saved Transformations</strong> (default collection)
+              </label>
+            </div>
+            
+            <!-- Existing Collection Option -->
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="collection_choice" value="existing" id="existingCollection">
+              <label class="form-check-label" for="existingCollection">
+                Choose existing collection
+              </label>
+            </div>
+            
+            <!-- Existing Collections Dropdown -->
+            <div id="existingCollectionSelect" class="ms-4 mt-2" style="display: none;">
+              <select class="form-select" name="collection_id" id="collectionSelect">
+                <option value="">Loading collections...</option>
+              </select>
+            </div>
+            
+            <!-- New Collection Option -->
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="collection_choice" value="new" id="newCollection">
+              <label class="form-check-label" for="newCollection">
+                Create new collection
+              </label>
+            </div>
+            
+            <!-- New Collection Name Input -->
+            <div id="newCollectionInput" class="ms-4 mt-2" style="display: none;">
+              <input type="text" class="form-control" name="new_collection_name" placeholder="Enter collection name" maxlength="100">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="confirmSaveBtn">
+          <i class="bi bi-collection"></i> Save to Collection
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 function checkJobStatus(jobId) {
-    fetch(`/ai/job/${jobId}/status/`)
+    fetch(`/studio/job/${jobId}/status/`)
         .then(response => response.json())
         .then(data => {
             if (data.status !== 'processing') {
@@ -288,20 +390,232 @@ function checkJobStatus(jobId) {
         });
 }
 
-function downloadAll(jobId) {
-    // This would implement bulk download functionality
-    alert('Bulk download functionality would be implemented here');
+// Handle save and discard buttons
+document.addEventListener('DOMContentLoaded', function() {
+    let currentImageId = null;
+    
+    // Save buttons - open modal instead of direct save
+    document.querySelectorAll('.save-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentImageId = this.dataset.imageId;
+            openSaveToCollectionModal();
+        });
+    });
+    
+    // Collection choice radio buttons
+    document.querySelectorAll('input[name="collection_choice"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            toggleCollectionInputs(this.value);
+        });
+    });
+    
+    // Confirm save button
+    document.getElementById('confirmSaveBtn').addEventListener('click', function() {
+        saveToCollection();
+    });
+    
+    function openSaveToCollectionModal() {
+        // Load user's collections
+        fetch('{% url "image_processing:get_user_collections" %}')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('collectionSelect');
+                select.innerHTML = '<option value="">Choose a collection...</option>';
+                
+                data.collections.forEach(collection => {
+                    const option = document.createElement('option');
+                    option.value = collection.id;
+                    option.textContent = `${collection.name} (${collection.count} items)`;
+                    select.appendChild(option);
+                });
+                
+                if (data.collections.length === 0) {
+                    select.innerHTML = '<option value="">No collections yet</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading collections:', error);
+                document.getElementById('collectionSelect').innerHTML = '<option value="">Error loading collections</option>';
+            });
+        
+        // Reset form and show modal
+        document.getElementById('saveToCollectionForm').reset();
+        document.getElementById('defaultCollection').checked = true;
+        toggleCollectionInputs('default');
+        
+        new bootstrap.Modal(document.getElementById('saveToCollectionModal')).show();
+    }
+    
+    function toggleCollectionInputs(choice) {
+        const existingSelect = document.getElementById('existingCollectionSelect');
+        const newInput = document.getElementById('newCollectionInput');
+        
+        existingSelect.style.display = choice === 'existing' ? 'block' : 'none';
+        newInput.style.display = choice === 'new' ? 'block' : 'none';
+    }
+    
+    function saveToCollection() {
+        if (!currentImageId) return;
+        
+        const formData = new FormData();
+        const choice = document.querySelector('input[name="collection_choice"]:checked').value;
+        
+        formData.append('collection_choice', choice);
+        
+        if (choice === 'existing') {
+            const collectionId = document.getElementById('collectionSelect').value;
+            if (!collectionId) {
+                alert('Please select a collection');
+                return;
+            }
+            formData.append('collection_id', collectionId);
+        } else if (choice === 'new') {
+            const newName = document.querySelector('input[name="new_collection_name"]').value.trim();
+            if (!newName) {
+                alert('Please enter a collection name');
+                return;
+            }
+            formData.append('new_collection_name', newName);
+        }
+        
+        const btn = document.getElementById('confirmSaveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+        
+        fetch(`/studio/processed/${currentImageId}/save/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('saveToCollectionModal')).hide();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(data.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-collection"></i> Save to Collection';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error saving image', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-collection"></i> Save to Collection';
+        });
+    }
+    
+    // Discard buttons
+    document.querySelectorAll('.discard-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!confirm('Are you sure you want to discard this transformation? This cannot be undone.')) {
+                return;
+            }
+            
+            const imageId = this.dataset.imageId;
+            const btn = this;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Discarding...';
+            
+            fetch(`/studio/processed/${imageId}/discard/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error discarding image', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+            });
+        });
+    // Discard buttons
+    document.querySelectorAll('.discard-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (!confirm('Are you sure you want to discard this transformation? This cannot be undone.')) {
+                return;
+            }
+            
+            const imageId = this.dataset.imageId;
+            const btn = this;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Discarding...';
+            
+            fetch(`/studio/processed/${imageId}/discard/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast(data.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error discarding image', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+            });
+        });
+    });
+});
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
 }
 
 // Auto-refresh page every 30 seconds if there are processing jobs
-document.addEventListener('DOMContentLoaded', function() {
-    const processingJobs = document.querySelectorAll('.spinner-border');
-    if (processingJobs.length > 0) {
-        setTimeout(() => {
-            window.location.reload();
-        }, 30000); // Refresh every 30 seconds
-    }
-});
+const processingJobs = document.querySelectorAll('.spinner-border');
+if (processingJobs.length > 0) {
+    setTimeout(() => {
+        window.location.reload();
+    }, 30000); // Refresh every 30 seconds
+}
 </script>
 
 <!-- Bootstrap Icons -->

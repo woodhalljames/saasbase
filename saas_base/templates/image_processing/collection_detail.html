@@ -1,0 +1,199 @@
+<!-- image_processing/templates/image_processing/collection_detail.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ collection.name }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:collections_list' %}">Collections</a></li>
+          <li class="breadcrumb-item active">{{ collection.name }}</li>
+        </ol>
+      </nav>
+      <h1>{{ collection.name }}</h1>
+      {% if collection.description %}
+        <p class="text-muted">{{ collection.description }}</p>
+      {% endif %}
+      <div class="d-flex gap-3">
+        {% if collection.is_default %}
+          <span class="badge bg-success"><i class="bi bi-star-fill"></i> Default Collection</span>
+        {% endif %}
+        {% if collection.is_public %}
+          <span class="badge bg-info"><i class="bi bi-globe"></i> Public</span>
+        {% endif %}
+        <small class="text-muted">
+          {{ collection.item_count }} item{{ collection.item_count|pluralize }} • 
+          Updated {{ collection.updated_at|timesince }} ago
+        </small>
+      </div>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add More Images
+      </a>
+    </div>
+  </div>
+
+  {% if items %}
+    <!-- Collection Items -->
+    <div class="row">
+      {% for item in items %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+          <div class="card h-100">
+            <div class="position-relative">
+              <img src="{{ item.image_url }}" 
+                   class="card-img-top" 
+                   alt="{{ item.image_title }}"
+                   style="height: 200px; object-fit: cover;">
+              
+              <!-- Type Badge -->
+              <div class="position-absolute top-0 start-0 p-2">
+                {% if item.processed_image %}
+                  <span class="badge bg-success">
+                    <i class="bi bi-magic"></i> Transformation
+                  </span>
+                {% else %}
+                  <span class="badge bg-primary">
+                    <i class="bi bi-image"></i> Original
+                  </span>
+                {% endif %}
+              </div>
+              
+              <!-- Remove from Collection -->
+              <div class="position-absolute top-0 end-0 p-2">
+                <button class="btn btn-sm btn-outline-light" 
+                        onclick="removeFromCollection({{ item.id }})"
+                        title="Remove from collection">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="card-body">
+              <h6 class="card-title text-truncate">{{ item.image_title }}</h6>
+              
+              {% if item.processed_image %}
+                <!-- Wedding transformation details -->
+                <div class="mb-2">
+                  <span class="badge bg-primary me-1">{{ item.theme_display }}</span>
+                  <span class="badge bg-secondary">{{ item.space_display }}</span>
+                </div>
+                <small class="text-muted">
+                  <i class="bi bi-magic"></i> Saved {{ item.processed_image.saved_at|timesince }} ago
+                </small>
+              {% else %}
+                <!-- Original image details -->
+                <small class="text-muted">
+                  <i class="bi bi-image"></i> {{ item.user_image.width }}x{{ item.user_image.height }} • 
+                  {{ item.user_image.file_size|filesizeformat }}<br>
+                  <i class="bi bi-calendar"></i> Uploaded {{ item.user_image.uploaded_at|timesince }} ago
+                </small>
+              {% endif %}
+              
+              {% if item.notes %}
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-sticky"></i> {{ item.notes|truncatewords:10 }}
+                  </small>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="card-footer bg-transparent">
+              <div class="btn-group w-100" role="group">
+                {% if item.processed_image %}
+                  <a href="{% url 'image_processing:processed_image_detail' item.processed_image.pk %}" 
+                     class="btn btn-sm btn-success">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <a href="{{ item.processed_image.processed_image.url }}" 
+                     class="btn btn-sm btn-outline-secondary" 
+                     target="_blank">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                  </a>
+                  <a href="{{ item.processed_image.processed_image.url }}" 
+                     class="btn btn-sm btn-outline-primary" 
+                     download>
+                    <i class="bi bi-download"></i>
+                  </a>
+                {% else %}
+                  <a href="{% url 'image_processing:image_detail' item.user_image.pk %}" 
+                     class="btn btn-sm btn-primary">
+                    <i class="bi bi-magic"></i> Transform
+                  </a>
+                  <a href="{{ item.user_image.image.url }}" 
+                     class="btn btn-sm btn-outline-secondary" 
+                     target="_blank">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty collection -->
+    <div class="row">
+      <div class="col-12">
+        <div class="text-center py-5">
+          <i class="bi bi-collection text-muted" style="font-size: 4rem;"></i>
+          <h3 class="mt-3 text-muted">Collection is Empty</h3>
+          <p class="text-muted">Start adding wedding venue photos and transformations to this collection</p>
+          <div class="mt-4">
+            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg me-3">
+              <i class="bi bi-plus-circle"></i> Upload & Transform
+            </a>
+            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-secondary btn-lg">
+              <i class="bi bi-images"></i> Browse Gallery
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function removeFromCollection(itemId) {
+    if (confirm('Remove this item from the collection?')) {
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/studio/collections/remove/';
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        const itemIdInput = document.createElement('input');
+        itemIdInput.type = 'hidden';
+        itemIdInput.name = 'item_id';
+        itemIdInput.value = itemId;
+        
+        const collectionIdInput = document.createElement('input');
+        collectionIdInput.type = 'hidden';
+        collectionIdInput.name = 'collection_id';
+        collectionIdInput.value = {{ collection.id }};
+        
+        form.appendChild(csrfToken);
+        form.appendChild(itemIdInput);
+        form.appendChild(collectionIdInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

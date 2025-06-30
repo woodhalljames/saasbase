@@ -1,21 +1,23 @@
+<!-- image_processing/templates/image_processing/collections_list.html -->
 {% extends "base.html" %}
 {% load static %}
 
 {% block title %}My Collections{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container py-4">
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-md-6">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'image_processing:dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
           <li class="breadcrumb-item active">Collections</li>
         </ol>
       </nav>
-      <h1>My Collections</h1>
-      <p class="text-muted">Organize your images and AI creations</p>
+      <h1>💍 My Collections</h1>
+      <p class="text-muted">Organize your wedding inspiration and transformations</p>
     </div>
     <div class="col-md-6 text-end">
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
@@ -23,6 +25,52 @@
       </button>
     </div>
   </div>
+
+  <!-- Default Collection (if exists) -->
+  {% if default_collection %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <i class="bi bi-collection-fill text-success"></i> 
+            {{ default_collection.name }}
+            <span class="badge bg-success ms-2">Default</span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-2">
+              {% if default_collection.thumbnail %}
+                <img src="{{ default_collection.thumbnail.url }}" 
+                     class="img-fluid rounded" 
+                     style="height: 80px; width: 100%; object-fit: cover;"
+                     alt="{{ default_collection.name }}">
+              {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                  <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-7">
+              <p class="mb-1">{{ default_collection.description }}</p>
+              <small class="text-muted">
+                <i class="bi bi-images"></i> {{ default_collection.item_count }} item{{ default_collection.item_count|pluralize }} • 
+                <i class="bi bi-calendar"></i> Updated {{ default_collection.updated_at|timesince }} ago
+              </small>
+            </div>
+            <div class="col-md-3 text-end">
+              <a href="{% url 'image_processing:collection_detail' default_collection.id %}" 
+                 class="btn btn-success">
+                <i class="bi bi-eye"></i> View Collection
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Quick Access - Recent Favorites -->
   {% if recent_favorites %}
@@ -45,7 +93,7 @@
                   <div class="card-body p-2">
                     <small class="text-muted d-block text-truncate">
                       {% if favorite.processed_image %}
-                        {{ favorite.processed_image.prompt_template.name }}
+                        Wedding Transformation
                       {% else %}
                         {{ favorite.user_image.original_filename }}
                       {% endif %}
@@ -61,7 +109,13 @@
   </div>
   {% endif %}
 
-  <!-- Collections Grid -->
+  <!-- Custom Collections -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h4>My Custom Collections</h4>
+    </div>
+  </div>
+
   {% if collections %}
     <div class="row">
       {% for collection in collections %}
@@ -88,7 +142,7 @@
               
               {% if collection.is_public %}
                 <div class="position-absolute top-0 start-0 p-2">
-                  <span class="badge bg-success">
+                  <span class="badge bg-info">
                     <i class="bi bi-globe"></i> Public
                   </span>
                 </div>
@@ -117,11 +171,11 @@
                   <i class="bi bi-three-dots"></i>
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="{% url 'image_processing:edit_collection' collection.id %}">
+                  <li><a class="dropdown-item" href="#" onclick="editCollection({{ collection.id }}, '{{ collection.name }}', '{{ collection.description }}', {{ collection.is_public|yesno:'true,false' }})">
                     <i class="bi bi-pencil"></i> Edit
                   </a></li>
                   {% if collection.is_public %}
-                    <li><a class="dropdown-item" href="{% url 'image_processing:share_image' 'collection' collection.id %}">
+                    <li><a class="dropdown-item" href="#" onclick="shareCollection({{ collection.id }})">
                       <i class="bi bi-share"></i> Share
                     </a></li>
                   {% endif %}
@@ -137,14 +191,14 @@
       {% endfor %}
     </div>
   {% else %}
-    <!-- Empty state -->
+    <!-- Empty state for custom collections -->
     <div class="row">
       <div class="col-12">
-        <div class="text-center py-5">
-          <i class="bi bi-collection text-muted" style="font-size: 4rem;"></i>
-          <h3 class="mt-3 text-muted">No Collections Yet</h3>
-          <p class="text-muted">Create your first collection to organize your images and AI creations</p>
-          <button class="btn btn-primary btn-lg mt-3" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+        <div class="text-center py-4 bg-light rounded">
+          <i class="bi bi-collection text-muted" style="font-size: 3rem;"></i>
+          <h5 class="mt-3 text-muted">No Custom Collections Yet</h5>
+          <p class="text-muted">Create collections to organize your wedding transformations by theme, venue, or style</p>
+          <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
             <i class="bi bi-plus-circle"></i> Create Your First Collection
           </button>
         </div>
@@ -166,11 +220,13 @@
         <div class="modal-body">
           <div class="mb-3">
             <label for="collectionName" class="form-label">Collection Name</label>
-            <input type="text" class="form-control" id="collectionName" name="name" required maxlength="100">
+            <input type="text" class="form-control" id="collectionName" name="name" required maxlength="100" 
+                   placeholder="e.g., Rustic Barn Ideas, Garden Party Inspiration">
           </div>
           <div class="mb-3">
             <label for="collectionDescription" class="form-label">Description (Optional)</label>
-            <textarea class="form-control" id="collectionDescription" name="description" rows="3"></textarea>
+            <textarea class="form-control" id="collectionDescription" name="description" rows="3" 
+                      placeholder="Describe what this collection is for..."></textarea>
           </div>
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="isPublic" name="is_public">
@@ -194,7 +250,7 @@ function deleteCollection(id, name) {
         // Create form and submit
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/ai/collections/${id}/delete/`;
+        form.action = `/studio/collections/${id}/delete/`;
         
         const csrfToken = document.createElement('input');
         csrfToken.type = 'hidden';
@@ -205,6 +261,16 @@ function deleteCollection(id, name) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+function editCollection(id, name, description, isPublic) {
+    // For now, just show an alert. You could implement an edit modal here
+    alert(`Edit functionality would open a modal for "${name}"`);
+}
+
+function shareCollection(id) {
+    // For now, just show an alert. You could implement sharing functionality here
+    alert('Share functionality would generate a public link');
 }
 </script>
 
