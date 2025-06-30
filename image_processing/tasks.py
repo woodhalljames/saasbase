@@ -1,7 +1,10 @@
+# image_processing/tasks.py - Updated for wedding venue processing
+
 import logging
 from celery import shared_task
 from django.utils import timezone
-from .models import ImageProcessingJob
+from django.core.files.base import ContentFile
+from .models import ImageProcessingJob, ProcessedImage
 from .services import ImageProcessingService
 
 logger = logging.getLogger(__name__)
@@ -10,48 +13,104 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def process_image_async(self, job_id):
     """
-    Asynchronously process an image with Stability AI
+    Asynchronously process a wedding venue image with generated prompt
     """
     try:
         # Get the processing job
         job = ImageProcessingJob.objects.get(id=job_id)
         
+        # Update job status
+        job.status = 'processing'
+        job.started_at = timezone.now()
+        job.save()
+        
         # Initialize the processing service
         processing_service = ImageProcessingService()
         
-        # Process the image
-        results = processing_service.process_image_with_prompts(job)
+        # For wedding processing, use the generated prompt directly
+        prompt_text = job.generated_prompt
+        if not prompt_text:
+            # Fallback: regenerate prompt if missing
+            from .models import generate_wedding_prompt
+            prompt_text = generate_wedding_prompt(job.wedding_theme, job.space_type)
+            job.generated_prompt = prompt_text
+            job.save()
         
-        if results:
-            logger.info(f"Successfully processed job {job_id} with {len(results)} results")
+        logger.info(f"Processing wedding image with prompt: {prompt_text[:100]}...")
+        
+        # Process the image
+        result = processing_service.stability_service.image_to_image(
+            image_path=job.user_image.image.path,
+            prompt=prompt_text,
+            cfg_scale=job.cfg_scale,
+            steps=job.steps,
+            seed=job.seed
+        )
+        
+        if result["success"] and result["results"]:
+            # Save the processed image
+            for img_result in result["results"]:
+                processed_image = ProcessedImage(
+                    processing_job=job,
+                    prompt_template=None,  # We don't use prompt templates for wedding processing
+                    stability_seed=img_result.get("seed"),
+                    finish_reason=img_result.get("finish_reason")
+                )
+                
+                # Save the image file with wedding context in filename
+                theme_space = f"{job.wedding_theme}_{job.space_type}"
+                filename = f"wedding_{theme_space}_{job.id}_{timezone.now().timestamp()}.png"
+                processed_image.processed_image.save(
+                    filename,
+                    ContentFile(img_result["image_data"]),
+                    save=False
+                )
+                processed_image.save()
+                
+                logger.info(f"Successfully saved wedding processed image: {filename}")
+            
+            # Update job status to completed
+            job.status = 'completed'
+            job.completed_at = timezone.now()
+            job.save()
+            
+            logger.info(f"Successfully completed wedding processing job {job_id}")
             return {
                 'success': True,
                 'job_id': job_id,
-                'processed_count': len(results)
+                'theme': job.wedding_theme,
+                'space': job.space_type
             }
         else:
-            logger.error(f"No results for job {job_id}")
+            # No successful results
+            error_msg = result.get('error', 'No images were successfully processed')
+            job.status = 'failed'
+            job.error_message = error_msg
+            job.completed_at = timezone.now()
+            job.save()
+            
+            logger.error(f"Wedding processing failed for job {job_id}: {error_msg}")
             return {
                 'success': False,
                 'job_id': job_id,
-                'error': 'No images were processed successfully'
+                'error': error_msg
             }
             
     except ImageProcessingJob.DoesNotExist:
-        logger.error(f"Processing job {job_id} not found")
+        logger.error(f"Wedding processing job {job_id} not found")
         return {
             'success': False,
             'error': f'Job {job_id} not found'
         }
         
     except Exception as exc:
-        logger.error(f"Error processing job {job_id}: {str(exc)}")
+        logger.error(f"Error processing wedding job {job_id}: {str(exc)}")
         
         # Retry logic
         if self.request.retries < self.max_retries:
             # Exponential backoff: 60s, 120s, 240s
             countdown = 60 * (2 ** self.request.retries)
-            logger.info(f"Retrying job {job_id} in {countdown} seconds")
+            logger.info(f"Retrying wedding job {job_id} in {countdown} seconds")
             raise self.retry(countdown=countdown, exc=exc)
         
         # Mark job as failed if all retries exhausted
@@ -72,9 +131,9 @@ def process_image_async(self, job_id):
 
 
 @shared_task
-def cleanup_old_processing_jobs():
+def cleanup_old_wedding_jobs():
     """
-    Clean up old processing jobs and their files
+    Clean up old wedding processing jobs and their files
     Run this daily to keep storage manageable
     """
     from datetime import timedelta
@@ -98,44 +157,32 @@ def cleanup_old_processing_jobs():
                     file_path = processed_image.processed_image.path
                     if os.path.exists(file_path):
                         os.remove(file_path)
+                        logger.info(f"Deleted old wedding image: {file_path}")
             
             # Delete the job
             job.delete()
             deleted_count += 1
             
         except Exception as e:
-            logger.error(f"Error deleting old job {job.id}: {str(e)}")
+            logger.error(f"Error deleting old wedding job {job.id}: {str(e)}")
     
-    logger.info(f"Cleaned up {deleted_count} old processing jobs")
+    logger.info(f"Cleaned up {deleted_count} old wedding processing jobs")
     return deleted_count
 
 
 @shared_task
-def check_stability_ai_balance():
+def generate_wedding_preview(theme, space_type):
     """
-    Check Stability AI account balance and log warnings if low
+    Generate a preview of what a wedding theme + space combination might look like
+    This could be used for showing examples before processing
     """
-    try:
-        from .services import StabilityAIService
-        
-        service = StabilityAIService()
-        balance = service.get_account_balance()
-        
-        credits = balance.get('credits', 0)
-        
-        if credits < 10:
-            logger.warning(f"Stability AI credits running low: {credits} remaining")
-        elif credits < 50:
-            logger.info(f"Stability AI credits: {credits} remaining")
-        
-        return {
-            'success': True,
-            'credits': credits
-        }
-        
-    except Exception as e:
-        logger.error(f"Error checking Stability AI balance: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
+    from .models import generate_wedding_prompt
+    
+    prompt = generate_wedding_prompt(theme, space_type)
+    logger.info(f"Generated wedding preview prompt for {theme} + {space_type}")
+    
+    return {
+        'theme': theme,
+        'space_type': space_type,
+        'prompt': prompt
+    }

@@ -1,8 +1,8 @@
-# image_processing/forms.py - Clean version without problematic classes
+# image_processing/forms.py - Updated for wedding venue processing
 
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import UserImage, PromptTemplate, Collection
+from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
 
 
 class ImageUploadForm(forms.ModelForm):
@@ -22,7 +22,7 @@ class ImageUploadForm(forms.ModelForm):
         image = self.cleaned_data.get('image')
         
         if image:
-            # Check file size (max 5MB for MVP)
+            # Check file size (max 5MB)
             if image.size > 5 * 1024 * 1024:
                 raise ValidationError("Image file too large. Maximum size is 5MB.")
             
@@ -33,67 +33,51 @@ class ImageUploadForm(forms.ModelForm):
         return image
 
 
-class BulkImageUploadForm(forms.Form):
-    """Form for bulk image upload - MVP version"""
+class WeddingVisualizationForm(forms.Form):
+    """Form for wedding venue visualization settings"""
     
-    images = forms.FileField(
-        widget=forms.FileInput(attrs={
-            'class': 'form-control',
-            'accept': 'image/*'
-            # No 'multiple': True here - handled in template
+    wedding_theme = forms.ChoiceField(
+        choices=WEDDING_THEMES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'wedding-theme-select'
         }),
-        help_text="Select multiple wedding photos (max 5MB each, up to 10 photos)"
+        label="Wedding Theme",
+        help_text="Choose the overall style and aesthetic for your venue"
     )
     
-    def clean_images(self):
-        files = self.files.getlist('images')
-        
-        if not files:
-            raise ValidationError("Please select at least one image.")
-        
-        # MVP limits: 10 files max
-        if len(files) > 10:
-            raise ValidationError("You can upload a maximum of 10 images at once.")
-        
-        # Check each file
-        for file in files:
-            # MVP limit: 5MB per file (more reasonable for wedding photos)
-            if file.size > 5 * 1024 * 1024:
-                raise ValidationError(f"'{file.name}' is too large. Maximum size is 5MB per image.")
-            
-            # Ensure it's an image
-            if not file.content_type.startswith('image/'):
-                raise ValidationError(f"'{file.name}' is not an image file.")
-        
-        return files
-
-
-class ImageProcessingForm(forms.Form):
-    """Form for configuring wedding space visualization"""
-    
-    prompts = forms.ModelMultipleChoiceField(
-        queryset=PromptTemplate.objects.filter(is_active=True),
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
-        help_text="Select wedding styles to visualize your space"
+    space_type = forms.ChoiceField(
+        choices=SPACE_TYPES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'space-type-select'
+        }),
+        label="Venue Space",
+        help_text="Select the type of space you want to transform"
     )
     
+    # Optional advanced settings (collapsed by default)
     cfg_scale = forms.FloatField(
         initial=7.0,
         min_value=1.0,
         max_value=20.0,
+        required=False,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'step': '0.5'
         }),
-        help_text="Style strength (1-20, default: 7)"
+        label="Style Strength",
+        help_text="How strongly to apply the wedding theme (1-20, default: 7)"
     )
     
     steps = forms.IntegerField(
         initial=50,
         min_value=10,
         max_value=150,
+        required=False,
         widget=forms.NumberInput(attrs={'class': 'form-control'}),
-        help_text="Processing quality (10-150, default: 50)"
+        label="Processing Quality",
+        help_text="Higher values = better quality but slower processing (10-150, default: 50)"
     )
     
     seed = forms.IntegerField(
@@ -102,70 +86,67 @@ class ImageProcessingForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Leave empty for random'
         }),
-        help_text="Random seed for consistent results (optional)"
+        label="Random Seed",
+        help_text="Use same number for consistent results (optional)"
     )
-
-
-class PromptFilterForm(forms.Form):
-    """Form for filtering wedding styles"""
-    
-    category = forms.ChoiceField(
-        choices=[('', 'All Styles')] + PromptTemplate.CATEGORY_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    search = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Search wedding styles...'
-        })
-    )
-
-
-class CollectionForm(forms.ModelForm):
-    """Form for creating wedding inspiration collections"""
-    
-    class Meta:
-        model = Collection
-        fields = ['name', 'description', 'is_public']
-        widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g. "Rustic Barn Wedding", "Garden Party"...'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Describe your wedding vision...'
-            }),
-            'is_public': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        }
-        labels = {
-            'name': 'Collection Name',
-            'description': 'Wedding Vision (Optional)',
-            'is_public': 'Share with other couples'
-        }
     
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-    
-    def clean_name(self):
-        name = self.cleaned_data.get('name')
-        if self.user:
-            # Check for duplicate names for this user (excluding current instance)
-            existing = Collection.objects.filter(
-                user=self.user, 
-                name__iexact=name
-            )
-            if self.instance.pk:
-                existing = existing.exclude(pk=self.instance.pk)
-            
-            if existing.exists():
-                raise ValidationError("You already have a collection with this name.")
         
-        return name
+        # Add user context for potential tier-based modifications
+        self.user = user
+
+
+class QuickWeddingForm(forms.Form):
+    """Simplified form for quick wedding visualization"""
+    
+    wedding_theme = forms.ChoiceField(
+        choices=WEDDING_THEMES,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+        }),
+        label="Wedding Style"
+    )
+    
+    space_type = forms.ChoiceField(
+        choices=SPACE_TYPES,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+        }),
+        label="Venue Type"
+    )
+
+
+# Keep existing forms for compatibility
+class BulkImageUploadForm(forms.Form):
+    """Form for bulk image upload - kept for backward compatibility"""
+    
+    images = forms.FileField(
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*',
+            'multiple': True
+        }),
+        help_text="Select multiple wedding venue photos (max 5MB each)"
+    )
+    
+    def clean_images(self):
+        files = self.files.getlist('images')
+        
+        if not files:
+            raise ValidationError("Please select at least one image.")
+        
+        # Limit to reasonable number for MVP
+        if len(files) > 5:
+            raise ValidationError("You can upload a maximum of 5 images at once.")
+        
+        # Check each file
+        for file in files:
+            if file.size > 5 * 1024 * 1024:
+                raise ValidationError(f"'{file.name}' is too large. Maximum size is 5MB per image.")
+            
+            if not file.content_type.startswith('image/'):
+                raise ValidationError(f"'{file.name}' is not an image file.")
+        
+        return files

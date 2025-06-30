@@ -23,16 +23,24 @@ def processed_image_upload_path(instance, filename):
 
 class PromptTemplate(models.Model):
     """Predefined prompts/themes for image processing"""
-    CATEGORY_CHOICES = [
-        ('art', 'Artistic'),
-        ('photo', 'Photography'),
-        ('fantasy', 'Fantasy'),
-        ('nature', 'Nature'),
-        ('portrait', 'Portrait'),
-        ('abstract', 'Abstract'),
-        ('vintage', 'Vintage'),
-        ('modern', 'Modern'),
-    ]
+    WEDDING_THEMES = [
+    ('rustic', 'Rustic'),
+    ('modern', 'Modern'),
+    ('vintage', 'Vintage'),
+    ('bohemian', 'Bohemian'),
+    ('elegant', 'Elegant'),
+    ('garden', 'Garden Party'),
+]
+
+    ROOM_SPACES = [
+    ('indoor_ceremony', 'Indoor Ceremony'),
+    ('outdoor_ceremony', 'Outdoor Ceremony'),
+    ('reception_hall', 'Reception Hall'),
+    ('garden', 'Garden/Outdoor'),
+    ('beach', 'Beach'),
+    ('barn', 'Barn'),
+]
+    
     
     name = models.CharField(max_length=100)
     description = models.TextField(help_text="Description of what this prompt does")
