@@ -1,5 +1,3 @@
-# image_processing/views.py - Simplified Wedding Views
-
 import json
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
@@ -432,16 +430,22 @@ def discard_processed_image(request, pk):
 @login_required
 def collections_list(request):
     """Display user's wedding inspiration collections"""
-    collections = Collection.objects.filter(user=request.user)
-    recent_favorites = Favorite.objects.filter(user=request.user)[:6]
+    # Get default collection separately
+    default_collection = Collection.objects.filter(user=request.user, is_default=True).first()
+    
+    # Get custom collections (non-default)
+    collections = Collection.objects.filter(user=request.user, is_default=False).order_by('-updated_at')
+    
+    # Get recent favorites
+    recent_favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')[:6]
     
     context = {
+        'default_collection': default_collection,
         'collections': collections,
         'recent_favorites': recent_favorites,
     }
     
     return render(request, 'image_processing/collections_list.html', context)
-
 
 @login_required
 @require_POST
@@ -505,3 +509,76 @@ def favorites_list(request):
     }
     
     return render(request, 'image_processing/favorites_list.html', context)
+
+
+
+@login_required
+@require_POST
+def create_collection(request):
+    """Create a new collection"""
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    is_public = request.POST.get('is_public') == 'on'
+    
+    if not name:
+        messages.error(request, 'Collection name is required')
+        return redirect('image_processing:collections_list')
+    
+    try:
+        collection = Collection.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            is_public=is_public
+        )
+        messages.success(request, f'Collection "{name}" created successfully!')
+    except Exception as e:
+        logger.error(f"Error creating collection: {str(e)}")
+        messages.error(request, 'Error creating collection')
+    
+    return redirect('image_processing:collections_list')
+
+
+@login_required
+def get_user_collections(request):
+    """API endpoint to get user's collections as JSON"""
+    collections = Collection.objects.filter(user=request.user).order_by('-updated_at')
+    
+    collections_data = []
+    for collection in collections:
+        collections_data.append({
+            'id': collection.id,
+            'name': collection.name,
+            'count': collection.item_count,
+            'is_default': collection.is_default
+        })
+    
+    return JsonResponse({
+        'collections': collections_data
+    })
+
+
+@login_required
+def collection_detail(request, collection_id):
+    """Display a specific collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    # Get all items in the collection
+    items = collection.items.select_related(
+        'user_image', 
+        'processed_image__processing_job'
+    ).order_by('order', '-added_at')
+    
+    # Add display information to each item
+    for item in items:
+        if item.processed_image:
+            job = item.processed_image.processing_job
+            item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
+            item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+    
+    context = {
+        'collection': collection,
+        'items': items,
+    }
+    
+    return render(request, 'image_processing/collection_detail.html', context)

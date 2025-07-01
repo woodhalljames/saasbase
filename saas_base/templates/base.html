@@ -74,39 +74,32 @@
             </li>
             
             {% if request.user.is_authenticated %}
-  <!-- Studio Menu -->
-  {% if request.user.is_authenticated %}
-  <!-- Studio Menu -->
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="bi bi-magic"></i> Studio
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="studioDropdown">
-      <li><a class="dropdown-item" href="{% url 'image_processing:dashboard' %}">
-        <i class="bi bi-magic"></i> Upload & Process
-      </a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
-        <i class="bi bi-images"></i> My Images
-      </a></li>
-      <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-        <i class="bi bi-clock-history"></i> Processing History
-      </a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
-        <i class="bi bi-collection"></i> Collections
-      </a></li>
-      <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
-        <i class="bi bi-heart"></i> Favorites
-      </a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="{% url 'image_processing:themes_list' %}">
-        <i class="bi bi-palette"></i> Browse Themes
-      </a></li>
-    </ul>
-  </li>
-{% endif %}
-{% endif %}
+            <!-- Studio Menu -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-magic"></i> Studio
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="studioDropdown">
+                <li><a class="dropdown-item" href="{% url 'image_processing:dashboard' %}">
+                  <i class="bi bi-magic"></i> Upload & Process
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
+                  <i class="bi bi-images"></i> My Images
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
+                  <i class="bi bi-clock-history"></i> Processing History
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+                  <i class="bi bi-collection"></i> Collections
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
+                  <i class="bi bi-heart"></i> Favorites
+                </a></li>
+              </ul>
+            </li>
+          {% endif %}
             
             <li class="nav-item">
               <a class="nav-link" href="{% url 'subscriptions:pricing' %}">Pricing</a>

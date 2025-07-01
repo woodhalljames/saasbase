@@ -1,4 +1,4 @@
-# image_processing/models.py - Complete Wedding Implementation
+# image_processing/models.py - Updated with advanced prompt system
 import os
 import uuid
 from datetime import timedelta
@@ -47,39 +47,13 @@ SPACE_TYPES = [
 ]
 
 
-def generate_wedding_prompt(theme, space_type):
-    """Generate AI prompt for wedding venue transformation"""
-    theme_descriptions = {
-        'rustic': 'rustic wooden decorations, burlap and lace details, mason jar centerpieces, warm string lights, wooden signs, vintage furniture',
-        'modern': 'sleek contemporary decorations, minimalist floral arrangements, geometric shapes, clean lines, modern lighting, elegant simplicity',
-        'vintage': 'antique decorations, vintage lace, old-fashioned flowers, retro furniture, classic chandeliers, nostalgic romantic details',
-        'bohemian': 'colorful tapestries, macrame details, wildflower arrangements, eclectic furniture, dreamcatchers, free-spirited decorations',
-        'classic': 'traditional white decorations, elegant floral arrangements, classic drapery, formal table settings, timeless romantic details',
-        'garden': 'abundant flowers, natural greenery, botanical arrangements, outdoor garden elements, natural lighting, organic decorations',
-        'beach': 'coastal decorations, seashells, driftwood, ocean-inspired colors, nautical elements, breezy natural lighting',
-        'industrial': 'exposed brick, metal fixtures, Edison bulb lighting, urban elements, concrete accents, modern industrial decorations',
-    }
+def generate_wedding_prompt(theme, space_type, additional_details=None):
+    """Generate comprehensive AI prompt for wedding venue transformation using advanced system"""
+    from .prompt_generator import WeddingPromptGenerator
     
-    space_descriptions = {
-        'indoor_ceremony': 'indoor wedding ceremony space with aisle and altar area',
-        'outdoor_ceremony': 'outdoor wedding ceremony space with natural backdrop',
-        'reception_hall': 'wedding reception dining and dancing area',
-        'garden': 'outdoor garden wedding space with natural elements',
-        'beach': 'beachside wedding venue with ocean views',
-        'barn': 'rustic barn wedding venue with wooden elements',
-        'ballroom': 'elegant ballroom wedding space',
-        'rooftop': 'rooftop wedding venue with city or landscape views',
-    }
-    
-    theme_desc = theme_descriptions.get(theme, 'beautiful wedding decorations')
-    space_desc = space_descriptions.get(space_type, 'wedding venue')
-    
-    prompt = f"""Transform this {space_desc} into a stunning {theme} style wedding venue. 
-    Add {theme_desc}. Create a romantic, inviting atmosphere perfect for a wedding celebration. 
-    Maintain the original architecture but enhance it with appropriate wedding decorations, 
-    lighting, and styling. The result should look realistic and professionally decorated."""
-    
-    return prompt
+    return WeddingPromptGenerator.generate_comprehensive_prompt(
+        theme, space_type, additional_details
+    )
 
 
 def get_wedding_choices():
@@ -147,7 +121,7 @@ class UserImage(models.Model):
 
 
 class ImageProcessingJob(models.Model):
-    """Track wedding venue transformation jobs"""
+    """Track wedding venue transformation jobs with advanced parameters"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -162,12 +136,23 @@ class ImageProcessingJob(models.Model):
     # Wedding-specific fields
     wedding_theme = models.CharField(max_length=20, choices=WEDDING_THEMES, null=True, blank=True)
     space_type = models.CharField(max_length=20, choices=SPACE_TYPES, null=True, blank=True)
-    generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
     
-    # Stability AI parameters
+    # Generated prompts and parameters
+    generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
+    negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
+    
+    # Advanced Stability AI parameters
     cfg_scale = models.FloatField(default=7.0, help_text="How strictly the diffusion process adheres to the prompt text")
     steps = models.IntegerField(default=50, help_text="Number of diffusion steps to run")
     seed = models.BigIntegerField(blank=True, null=True, help_text="Random noise seed for generation")
+    
+    # New SD3 parameters
+    aspect_ratio = models.CharField(max_length=10, default='16:9', help_text="Aspect ratio for output image")
+    strength = models.FloatField(default=0.35, help_text="How much the input image influences the output (0.0-1.0)")
+    output_format = models.CharField(max_length=10, default='png', help_text="Output image format")
+    
+    # Additional customization
+    additional_details = models.TextField(blank=True, null=True, help_text="Additional user-specified details")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -183,10 +168,39 @@ class ImageProcessingJob(models.Model):
         return f"Wedding Job {self.id} - {theme_display} {space_display} ({self.status})"
     
     def save(self, *args, **kwargs):
-        # Generate prompt if wedding theme and space type are provided
+        # Generate comprehensive prompt if wedding theme and space type are provided
         if self.wedding_theme and self.space_type and not self.generated_prompt:
-            self.generated_prompt = generate_wedding_prompt(self.wedding_theme, self.space_type)
+            prompt_data = generate_wedding_prompt(
+                self.wedding_theme, 
+                self.space_type, 
+                self.additional_details
+            )
+            
+            self.generated_prompt = prompt_data['prompt']
+            self.negative_prompt = prompt_data['negative_prompt']
+            
+            # Update parameters with recommendations
+            recommended_params = prompt_data['recommended_params']
+            self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
+            self.steps = recommended_params.get('steps', self.steps)
+            self.aspect_ratio = recommended_params.get('aspect_ratio', self.aspect_ratio)
+            self.strength = recommended_params.get('strength', self.strength)
+            self.output_format = recommended_params.get('output_format', self.output_format)
+        
         super().save(*args, **kwargs)
+    
+    def get_stability_ai_params(self):
+        """Get all parameters formatted for Stability AI API call"""
+        return {
+            'prompt': self.generated_prompt,
+            'negative_prompt': self.negative_prompt,
+            'cfg_scale': self.cfg_scale,
+            'steps': self.steps,
+            'seed': self.seed,
+            'aspect_ratio': self.aspect_ratio,
+            'strength': self.strength,
+            'output_format': self.output_format,
+        }
 
 
 class ProcessedImage(models.Model):
@@ -263,7 +277,7 @@ class ProcessedImage(models.Model):
         return f"Wedding Transformation - Job {self.processing_job.id} ({status})"
 
 
-# Keep these models for favorites and collections
+# Keep these models for favorites and collections (unchanged)
 class Collection(models.Model):
     """User collections/albums for organizing wedding inspiration"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
