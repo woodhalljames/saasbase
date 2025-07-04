@@ -25,6 +25,9 @@ def wedding_studio(request):
     
     # Handle image upload
     if request.method == 'POST':
+        print(f"POST request received: {request.POST}")
+        print(f"Files in request: {request.FILES}")
+        
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
@@ -32,11 +35,14 @@ def wedding_studio(request):
                 user_image.user = request.user
                 user_image.original_filename = form.cleaned_data['image'].name
                 user_image.save()
+                print(f"Image saved successfully: {user_image.id}")
                 messages.success(request, f'"{user_image.original_filename}" uploaded successfully!')
                 return redirect('image_processing:wedding_studio')
             except Exception as e:
+                print(f"Error saving image: {str(e)}")
                 messages.error(request, f'Failed to upload image: {str(e)}')
         else:
+            print(f"Form errors: {form.errors}")
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, error)
@@ -60,11 +66,9 @@ def wedding_studio(request):
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
         'upload_form': ImageUploadForm(),
-        'transform_form': WeddingTransformForm(),
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
-
 
 @login_required
 def image_detail(request, pk):

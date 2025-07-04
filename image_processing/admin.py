@@ -73,14 +73,14 @@ class ImageProcessingJobAdmin(admin.ModelAdmin):
             'fields': ('user_image', 'status', 'error_message')
         }),
         ('Wedding Configuration', {
-            'fields': ('wedding_theme', 'space_type'),
+            'fields': ('wedding_theme', 'space_type', 'additional_details'),
         }),
         ('AI Parameters', {
-            'fields': ('cfg_scale', 'steps', 'seed'),
+            'fields': ('strength', 'cfg_scale', 'steps', 'seed', 'aspect_ratio', 'output_format'),
             'classes': ('collapse',)
         }),
         ('Generated Prompt', {
-            'fields': ('generated_prompt',),
+            'fields': ('generated_prompt', 'negative_prompt'),
             'classes': ('collapse',)
         }),
         ('Timestamps', {

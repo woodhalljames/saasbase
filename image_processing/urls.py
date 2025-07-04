@@ -1,4 +1,4 @@
-# image_processing/urls.py - Clean wedding venue processing URLs
+# image_processing/urls.py - Simplified wedding venue processing URLs
 
 from django.urls import path
 from . import views
@@ -8,7 +8,6 @@ app_name = 'image_processing'
 urlpatterns = [
     # Main Wedding Studio
     path('', views.wedding_studio, name='wedding_studio'),
-    path('studio/', views.wedding_studio, name='dashboard'),
     
     # Single Image Processing
     path('image/<int:pk>/', views.image_detail, name='image_detail'),

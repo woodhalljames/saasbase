@@ -1,4 +1,4 @@
-# image_processing/forms.py - Updated with advanced Stability AI parameters
+# image_processing/forms.py - Updated to remove batch processing
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
@@ -34,7 +34,7 @@ class ImageUploadForm(forms.ModelForm):
 
 
 class WeddingTransformForm(forms.Form):
-    """Comprehensive form for wedding venue transformation with advanced options"""
+    """Simplified form for wedding venue transformation with advanced options"""
     
     # Basic wedding configuration
     wedding_theme = forms.ChoiceField(
@@ -69,27 +69,7 @@ class WeddingTransformForm(forms.Form):
         help_text="Describe any specific elements you want to emphasize"
     )
     
-    # Advanced Stability AI Parameters (collapsed by default)
-    ASPECT_RATIO_CHOICES = [
-        ('16:9', '16:9 (Landscape - recommended)'),
-        ('1:1', '1:1 (Square)'),
-        ('21:9', '21:9 (Ultra-wide)'),
-        ('3:2', '3:2 (Classic photo)'),
-        ('4:5', '4:5 (Portrait)'),
-        ('9:16', '9:16 (Vertical)'),
-    ]
-    
-    aspect_ratio = forms.ChoiceField(
-        choices=ASPECT_RATIO_CHOICES,
-        initial='16:9',
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-        }),
-        label="Image Aspect Ratio",
-        help_text="Choose the output image proportions"
-    )
-    
+    # Advanced Stability AI Parameters
     strength = forms.FloatField(
         initial=0.35,
         min_value=0.1,
@@ -139,23 +119,6 @@ class WeddingTransformForm(forms.Form):
         }),
         label="Random Seed (Optional)",
         help_text="Use same number for reproducible results"
-    )
-    
-    # Output format
-    OUTPUT_FORMAT_CHOICES = [
-        ('png', 'PNG (High Quality)'),
-        ('jpeg', 'JPEG (Smaller File)'),
-    ]
-    
-    output_format = forms.ChoiceField(
-        choices=OUTPUT_FORMAT_CHOICES,
-        initial='png',
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-        }),
-        label="Output Format",
-        help_text="Choose the output image format"
     )
     
     def __init__(self, *args, **kwargs):
@@ -218,12 +181,10 @@ class WeddingTransformForm(forms.Form):
             'wedding_theme': self.cleaned_data['wedding_theme'],
             'space_type': self.cleaned_data['space_type'],
             'additional_details': self.cleaned_data.get('additional_details', ''),
-            'aspect_ratio': self.cleaned_data.get('aspect_ratio', '16:9'),
             'strength': self.cleaned_data.get('strength', 0.35),
             'cfg_scale': self.cleaned_data.get('cfg_scale', 7.0),
             'steps': self.cleaned_data.get('steps', 50),
             'seed': self.cleaned_data.get('seed'),
-            'output_format': self.cleaned_data.get('output_format', 'png'),
         }
 
 
@@ -269,22 +230,16 @@ class QuickTransformForm(forms.Form):
                 'steps': 25,
                 'cfg_scale': 6.0,
                 'strength': 0.3,
-                'aspect_ratio': '16:9',
-                'output_format': 'jpeg'
             },
             'balanced': {
                 'steps': 50,
                 'cfg_scale': 7.0,
                 'strength': 0.35,
-                'aspect_ratio': '16:9',
-                'output_format': 'png'
             },
             'premium': {
                 'steps': 75,
                 'cfg_scale': 8.0,
                 'strength': 0.4,
-                'aspect_ratio': '16:9',
-                'output_format': 'png'
             }
         }
         return presets.get(preset, presets['balanced'])
@@ -303,58 +258,4 @@ class QuickTransformForm(forms.Form):
             'space_type': self.cleaned_data['space_type'],
             'additional_details': '',
             **preset_params
-        }
-
-
-class BatchProcessForm(forms.Form):
-    """Form for processing multiple images with the same wedding style"""
-    
-    wedding_theme = forms.ChoiceField(
-        choices=WEDDING_THEMES,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    space_type = forms.ChoiceField(
-        choices=SPACE_TYPES,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-    
-    image_ids = forms.CharField(
-        widget=forms.HiddenInput(),
-        help_text="Comma-separated list of image IDs to process"
-    )
-    
-    def clean_image_ids(self):
-        """Validate and parse image IDs"""
-        image_ids_str = self.cleaned_data.get('image_ids', '')
-        
-        try:
-            image_ids = [int(id_str.strip()) for id_str in image_ids_str.split(',') if id_str.strip()]
-            
-            if not image_ids:
-                raise ValidationError("No images selected for processing")
-            
-            if len(image_ids) > 10:  # Limit batch size
-                raise ValidationError("Maximum 10 images can be processed at once")
-            
-            return image_ids
-            
-        except ValueError:
-            raise ValidationError("Invalid image IDs provided")
-    
-    def get_processing_parameters(self):
-        """Get parameters for batch processing"""
-        if not self.is_valid():
-            return None
-        
-        return {
-            'wedding_theme': self.cleaned_data['wedding_theme'],
-            'space_type': self.cleaned_data['space_type'],
-            'image_ids': self.cleaned_data['image_ids'],
-            # Use balanced preset for batch processing
-            'strength': 0.35,
-            'cfg_scale': 7.0,
-            'steps': 50,
-            'aspect_ratio': '16:9',
-            'output_format': 'png'
         }

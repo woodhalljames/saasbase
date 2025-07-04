@@ -1,4 +1,4 @@
-# image_processing/tasks.py - Updated for single wedding image processing
+# image_processing/tasks.py - Updated to remove batch processing
 
 import logging
 from celery import shared_task
@@ -32,47 +32,17 @@ def process_image_async(self, job_id):
         if not prompt_text:
             # Fallback: regenerate prompt if missing
             from .models import generate_wedding_prompt
-            prompt_text = generate_wedding_prompt(job.wedding_theme, job.space_type)
-            job.generated_prompt = prompt_text
+            prompt_data = generate_wedding_prompt(job.wedding_theme, job.space_type, job.additional_details)
+            job.generated_prompt = prompt_data['prompt']
+            job.negative_prompt = prompt_data['negative_prompt']
             job.save()
         
         logger.info(f"Processing wedding venue with prompt: {prompt_text[:100]}...")
         
-        # Process the image
-        result = processing_service.stability_service.image_to_image(
-            image_path=job.user_image.image.path,
-            prompt=prompt_text,
-            cfg_scale=job.cfg_scale,
-            steps=job.steps,
-            seed=job.seed
-        )
+        # Process the image using the service
+        success = processing_service.process_wedding_image(job)
         
-        if result["success"] and result["results"]:
-            # Save the processed image
-            for img_result in result["results"]:
-                processed_image = ProcessedImage(
-                    processing_job=job,
-                    stability_seed=img_result.get("seed"),
-                    finish_reason=img_result.get("finish_reason")
-                )
-                
-                # Save the image file with wedding context in filename
-                theme_space = f"{job.wedding_theme}_{job.space_type}"
-                filename = f"wedding_{theme_space}_{job.id}_{timezone.now().timestamp()}.png"
-                processed_image.processed_image.save(
-                    filename,
-                    ContentFile(img_result["image_data"]),
-                    save=False
-                )
-                processed_image.save()
-                
-                logger.info(f"Successfully saved wedding processed image: {filename}")
-            
-            # Update job status to completed
-            job.status = 'completed'
-            job.completed_at = timezone.now()
-            job.save()
-            
+        if success:
             logger.info(f"Successfully completed wedding processing job {job_id}")
             return {
                 'success': True,
@@ -81,18 +51,11 @@ def process_image_async(self, job_id):
                 'space': job.space_type
             }
         else:
-            # No successful results
-            error_msg = result.get('error', 'No images were successfully processed')
-            job.status = 'failed'
-            job.error_message = error_msg
-            job.completed_at = timezone.now()
-            job.save()
-            
-            logger.error(f"Wedding processing failed for job {job_id}: {error_msg}")
+            logger.error(f"Wedding processing failed for job {job_id}")
             return {
                 'success': False,
                 'job_id': job_id,
-                'error': error_msg
+                'error': 'Processing failed'
             }
             
     except ImageProcessingJob.DoesNotExist:
@@ -199,58 +162,11 @@ def generate_wedding_preview(theme, space_type):
     """
     from .models import generate_wedding_prompt
     
-    prompt = generate_wedding_prompt(theme, space_type)
+    prompt_data = generate_wedding_prompt(theme, space_type)
     logger.info(f"Generated wedding preview prompt for {theme} + {space_type}")
     
     return {
         'theme': theme,
         'space_type': space_type,
-        'prompt': prompt
+        'prompt': prompt_data['prompt']
     }
-
-
-@shared_task
-def process_batch_wedding_images(user_id, image_ids, theme, space_type):
-    """
-    Process multiple images with the same wedding theme (for future use)
-    Currently not used in MVP but could be useful for bulk processing
-    """
-    from saas_base.users.models import User
-    from .models import UserImage
-    
-    try:
-        user = User.objects.get(id=user_id)
-        results = []
-        
-        for image_id in image_ids:
-            try:
-                user_image = UserImage.objects.get(id=image_id, user=user)
-                
-                # Create processing job
-                job = ImageProcessingJob.objects.create(
-                    user_image=user_image,
-                    wedding_theme=theme,
-                    space_type=space_type
-                )
-                
-                # Process synchronously (could be made async for better performance)
-                result = process_image_async.apply(args=[job.id])
-                results.append(result.get())
-                
-            except UserImage.DoesNotExist:
-                logger.error(f"User image {image_id} not found for user {user_id}")
-                continue
-                
-        return {
-            'success': True,
-            'processed_count': len([r for r in results if r.get('success')]),
-            'failed_count': len([r for r in results if not r.get('success')]),
-            'results': results
-        }
-        
-    except User.DoesNotExist:
-        logger.error(f"User {user_id} not found")
-        return {
-            'success': False,
-            'error': f'User {user_id} not found'
-        }

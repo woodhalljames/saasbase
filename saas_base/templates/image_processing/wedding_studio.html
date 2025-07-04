@@ -33,154 +33,169 @@
     </div>
   </div>
 
-  <!-- Step 1: Select Your Venue Photo -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header bg-light">
-          <h4 class="mb-0">Step 1: Select Your Venue Photo</h4>
+  <!-- Hidden Upload Form - Keep it simple and working -->
+  <form method="post" enctype="multipart/form-data" action="{% url 'image_processing:wedding_studio' %}" id="uploadForm" style="display: none;">
+    {% csrf_token %}
+    {{ upload_form.image }}
+  </form>
+
+  <!-- Main Studio Interface -->
+  <div class="row">
+    <!-- Left Side: Image Preview -->
+    <div class="col-md-8">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Your Venue Photo</h5>
+          <button class="btn btn-outline-primary btn-sm" id="uploadNewBtn">
+            <i class="bi bi-plus-circle"></i> Upload New
+          </button>
         </div>
-        <div class="card-body">
+        <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 400px;">
           
-          <!-- Upload Area -->
-          <div class="row mb-4">
-            <div class="col-12">
-              <form method="post" enctype="multipart/form-data" id="uploadForm">
-                {% csrf_token %}
-                <div class="upload-area border-2 border-dashed rounded p-4 text-center bg-light" 
-                     style="cursor: pointer; min-height: 120px;"
-                     onclick="document.getElementById('id_image').click()">
-                  <i class="bi bi-cloud-upload text-primary" style="font-size: 2rem;"></i>
-                  <h6 class="mt-2">Upload New Venue Photo</h6>
-                  <small class="text-muted">JPG, PNG, GIF, WebP • Max 5MB • Click to browse</small>
-                  {{ upload_form.image }}
-                </div>
-              </form>
+          <!-- Image Preview Area -->
+          <div id="imagePreviewArea" class="text-center w-100">
+            <!-- Placeholder when no image selected -->
+            <div id="imagePlaceholder">
+              <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+              <h4 class="text-muted mt-3">Select or Upload Your Venue Photo</h4>
+              <p class="text-muted">Choose from recent uploads or upload a new venue photo to get started</p>
+              
+              <button class="btn btn-primary btn-lg" id="uploadMainBtn">
+                <i class="bi bi-upload"></i> Upload Venue Photo
+              </button>
+              
+              <!-- Backup: Simple file input (in case JavaScript fails) -->
+              <div class="mt-3">
+                <input type="file" class="form-control" accept="image/*" id="backupFileInput" style="max-width: 300px; margin: 0 auto;">
+                <button type="button" class="btn btn-secondary mt-2" id="backupUploadBtn">
+                  Upload Selected File
+                </button>
+              </div>
+            </div>
+            
+            <!-- Selected image display -->
+            <div id="selectedImageDisplay" style="display: none;">
+              <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 400px; max-width: 100%;" alt="Selected Venue">
+              <div class="mt-3">
+                <h6 id="selectedImageName">Venue Photo</h6>
+                <small class="text-muted" id="selectedImageDetails">Ready for transformation</small>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Recent Images Grid -->
+    <!-- Right Side: Controls -->
+    <div class="col-md-4">
+      
+      <!-- Recent Uploads -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Recent Uploads</h6>
+        </div>
+        <div class="card-body">
           {% if recent_images %}
-          <h6 class="text-muted mb-3">Or choose from your recent uploads:</h6>
-          <div class="row">
-            {% for image in recent_images %}
-              <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                <div class="card venue-image-card h-100" 
-                     data-image-id="{{ image.id }}"
-                     data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
-                     data-image-name="{{ image.original_filename }}"
-                     data-image-size="{{ image.file_size }}"
-                     data-image-dimensions="{{ image.width }}x{{ image.height }}"
-                     style="cursor: pointer; transition: all 0.2s;">
-                  <div class="position-relative">
+            <div class="row g-2">
+              {% for image in recent_images|slice:":3" %}
+                <div class="col-4">
+                  <div class="card venue-thumbnail" 
+                       data-image-id="{{ image.id }}"
+                       data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
+                       data-image-name="{{ image.original_filename }}"
+                       data-image-size="{{ image.file_size }}"
+                       data-image-dimensions="{{ image.width }}x{{ image.height }}"
+                       style="cursor: pointer; transition: all 0.2s;">
                     <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
                          class="card-img-top" 
-                         alt="{{ image.original_filename }}"
-                         style="height: 120px; object-fit: cover;">
-                    
-                    <!-- Selected indicator -->
-                    <div class="position-absolute top-0 end-0 p-2 selected-indicator" style="display: none;">
-                      <span class="badge bg-success">
-                        <i class="bi bi-check-circle"></i> Selected
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div class="card-body p-2">
-                    <small class="text-muted d-block text-truncate" title="{{ image.original_filename }}">
-                      {{ image.original_filename }}
-                    </small>
-                    <small class="text-muted">{{ image.uploaded_at|timesince }} ago</small>
+                         style="height: 80px; object-fit: cover;" 
+                         alt="{{ image.original_filename }}">
                   </div>
                 </div>
+              {% endfor %}
+            </div>
+            {% if recent_images|length > 3 %}
+              <div class="text-center mt-2">
+                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
+                  View All ({{ recent_images|length }})
+                </a>
               </div>
-            {% endfor %}
-          </div>
+            {% endif %}
           {% else %}
-            <div class="text-center py-4">
-              <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
-              <p class="text-muted mt-2">No venue photos yet. Upload your first photo above!</p>
+            <div class="text-center py-3">
+              <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
+              <p class="text-muted mt-2 mb-0">No uploads yet</p>
             </div>
           {% endif %}
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Step 2: Selected Venue (appears when image is selected) -->
-  <div class="row" id="selectedVenueSection" style="display: none;">
-    <div class="col-12">
-      <div class="card border-success">
-        <div class="card-header bg-light">
-          <h4 class="mb-0">Step 2: Transform Your Venue</h4>
+      <!-- Wedding Style Options - Always Visible -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Wedding Style</h6>
         </div>
         <div class="card-body">
-          <div class="row">
-            <!-- Large Preview -->
-            <div class="col-md-7">
-              <div class="text-center">
-                <div class="border rounded p-3 bg-light">
-                  <img id="selectedImage" class="img-fluid rounded" style="max-height: 400px;" alt="Selected Venue">
+          <form id="transformForm">
+            {% csrf_token %}
+            
+            <!-- Theme Selection -->
+            <div class="mb-3">
+              <label for="wedding-theme" class="form-label"><strong>Theme:</strong></label>
+              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
+                <option value="">Choose your wedding style...</option>
+                {% for value, label in wedding_themes %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Space Type Selection -->
+            <div class="mb-3">
+              <label for="space-type" class="form-label"><strong>Space Type:</strong></label>
+              <select class="form-select" id="space-type" name="space_type" required>
+                <option value="">What type of space?</option>
+                {% for value, label in space_types %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            
+            <!-- Advanced Options Toggle -->
+            <div class="mb-3">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
+                <i class="bi bi-gear"></i> Advanced Options
+              </button>
+            </div>
+            
+            <!-- Advanced Options (Collapsed) -->
+            <div class="collapse" id="advancedOptions">
+              <div class="card card-body bg-light">
+                <div class="mb-2">
+                  <label for="cfg_scale" class="form-label">Style Strength: <span id="cfgValue">7.0</span></label>
+                  <input type="range" class="form-range" id="cfg_scale" min="1" max="20" step="0.5" value="7">
                 </div>
-                <div class="mt-3">
-                  <h6 id="selectedImageName">venue_photo.jpg</h6>
-                  <small class="text-muted" id="selectedImageDetails">1024x768 • 2.5 MB</small>
+                <div class="mb-2">
+                  <label for="steps" class="form-label">Quality: <span id="stepsValue">50</span></label>
+                  <input type="range" class="form-range" id="steps" min="10" max="150" step="10" value="50">
                 </div>
               </div>
             </div>
-            
-            <!-- Style Selection -->
-            <div class="col-md-5">
-              <form id="transformForm">
-                {% csrf_token %}
-                
-                <!-- Wedding Theme -->
-                <div class="mb-4">
-                  <label for="wedding-theme" class="form-label"><strong>Wedding Style:</strong></label>
-                  <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
-                    <option value="">Choose your wedding style...</option>
-                    {% for value, label in wedding_themes %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Space Type -->
-                <div class="mb-4">
-                  <label for="space-type" class="form-label"><strong>Venue Space:</strong></label>
-                  <select class="form-select form-select-lg" id="space-type" name="space_type" required>
-                    <option value="">What type of space is this?</option>
-                    {% for value, label in space_types %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Transform Button -->
-                <div class="d-grid">
-                  <button type="submit" class="btn btn-primary btn-lg" id="transformBtn" disabled>
-                    <i class="bi bi-magic"></i> Transform This Venue
-                  </button>
-                </div>
-                
-                <!-- Advanced Options (Hidden) -->
-                <div class="mt-3">
-                  <a href="#" id="showAdvanced" class="text-muted small">Show advanced options</a>
-                  <div id="advancedOptions" style="display: none;" class="mt-3">
-                    <div class="mb-3">
-                      <label for="cfg_scale" class="form-label">Style Strength</label>
-                      <input type="range" class="form-range" id="cfg_scale" min="1" max="20" step="0.5" value="7">
-                      <small class="text-muted">Current: <span id="cfgValue">7.0</span></small>
-                    </div>
-                    <div class="mb-3">
-                      <label for="steps" class="form-label">Quality</label>
-                      <input type="range" class="form-range" id="steps" min="10" max="150" step="10" value="50">
-                      <small class="text-muted">Current: <span id="stepsValue">50</span></small>
-                    </div>
-                  </div>
-                </div>
-              </form>
-            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Visualize Button - Always Visible -->
+      <div class="card">
+        <div class="card-body">
+          <div class="d-grid">
+            <button type="button" class="btn btn-primary btn-lg" id="visualizeBtn" disabled>
+              <i class="bi bi-magic"></i> Visualize My Venue
+            </button>
+          </div>
+          
+          <div class="mt-3 text-center">
+            <small class="text-muted" id="statusText">Select a photo and wedding style to get started</small>
           </div>
         </div>
       </div>
@@ -190,17 +205,13 @@
   <!-- Processing Status -->
   <div id="processingStatus" class="row mt-4" style="display: none;">
     <div class="col-12">
-      <div class="card border-warning">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <div class="spinner-border text-warning me-3" role="status">
-              <span class="visually-hidden">Processing...</span>
-            </div>
-            <div>
-              <h5 class="mb-1">Creating Your Wedding Vision...</h5>
-              <p class="mb-0 text-muted">This may take 1-2 minutes. You can check progress in your history.</p>
-            </div>
-          </div>
+      <div class="alert alert-warning d-flex align-items-center">
+        <div class="spinner-border text-warning me-3" role="status">
+          <span class="visually-hidden">Processing...</span>
+        </div>
+        <div>
+          <h6 class="mb-1">Creating Your Wedding Vision...</h6>
+          <small>This may take 1-2 minutes. You can check progress in your history.</small>
         </div>
       </div>
     </div>
@@ -212,30 +223,33 @@
     <div class="col-12">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transformations</h5>
+          <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transformations</h6>
           <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">View All</a>
         </div>
         <div class="card-body">
-          <div class="list-group list-group-flush">
-            {% for job in recent_jobs %}
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                  <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                       class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" alt="Venue">
-                  <div>
-                    <strong>{{ job.user_image.original_filename }}</strong>
-                    {% if job.wedding_theme and job.space_type %}
-                      <small class="text-muted d-block">
-                        {{ job.get_wedding_theme_display }} • {{ job.get_space_type_display }}
-                      </small>
-                    {% endif %}
+          <div class="row">
+            {% for job in recent_jobs|slice:":3" %}
+              <div class="col-md-4 mb-3">
+                <div class="card">
+                  <div class="row g-0">
+                    <div class="col-5">
+                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                           class="img-fluid rounded-start h-100" 
+                           style="object-fit: cover;" 
+                           alt="Venue">
+                    </div>
+                    <div class="col-7">
+                      <div class="card-body p-2">
+                        <h6 class="card-title small">{{ job.user_image.original_filename|truncatechars:15 }}</h6>
+                        {% if job.wedding_theme and job.space_type %}
+                          <small class="text-muted d-block">{{ job.get_wedding_theme_display|truncatechars:15 }}</small>
+                        {% endif %}
+                        <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %} small">
+                          {{ job.get_status_display }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div class="text-end">
-                  <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %}">
-                    {{ job.get_status_display }}
-                  </span>
-                  <small class="text-muted d-block">{{ job.created_at|timesince }} ago</small>
                 </div>
               </div>
             {% endfor %}
@@ -251,119 +265,242 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
     
-    // Handle file upload
+    console.log('Wedding Studio JS loaded');
+    
+    // Get all necessary elements
     const fileInput = document.getElementById('id_image');
-    fileInput.addEventListener('change', function() {
-        if (this.files[0]) {
-            document.getElementById('uploadForm').submit();
-        }
+    const backupFileInput = document.getElementById('backupFileInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadMainBtn = document.getElementById('uploadMainBtn');
+    const uploadNewBtn = document.getElementById('uploadNewBtn');
+    const backupUploadBtn = document.getElementById('backupUploadBtn');
+    const imagePlaceholder = document.getElementById('imagePlaceholder');
+    const selectedImageDisplay = document.getElementById('selectedImageDisplay');
+    const selectedImage = document.getElementById('selectedImage');
+    const selectedImageName = document.getElementById('selectedImageName');
+    const selectedImageDetails = document.getElementById('selectedImageDetails');
+    const visualizeBtn = document.getElementById('visualizeBtn');
+    const statusText = document.getElementById('statusText');
+    const weddingTheme = document.getElementById('wedding-theme');
+    const spaceType = document.getElementById('space-type');
+    
+    console.log('Elements found:', {
+        fileInput: !!fileInput,
+        uploadForm: !!uploadForm,
+        uploadMainBtn: !!uploadMainBtn,
+        backupFileInput: !!backupFileInput
     });
     
-    // Handle image selection
-    document.querySelectorAll('.venue-image-card').forEach(card => {
-        card.addEventListener('click', function() {
+    // Multiple upload button handlers for reliability
+    function triggerFileInput() {
+        console.log('Triggering file input...');
+        if (fileInput) {
+            fileInput.click();
+        } else {
+            console.error('File input not found!');
+            alert('Upload form not found. Please try the backup method below.');
+        }
+    }
+    
+    // Main upload button
+    if (uploadMainBtn) {
+        uploadMainBtn.addEventListener('click', triggerFileInput);
+    }
+    
+    // Header upload button
+    if (uploadNewBtn) {
+        uploadNewBtn.addEventListener('click', triggerFileInput);
+    }
+    
+    // Backup upload method
+    if (backupUploadBtn && backupFileInput) {
+        backupUploadBtn.addEventListener('click', function() {
+            console.log('Using backup upload method...');
+            if (backupFileInput.files.length > 0) {
+                const file = backupFileInput.files[0];
+                
+                // Validate file
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file');
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File too large (max 5MB)');
+                    return;
+                }
+                
+                // Copy file to main input and submit
+                if (fileInput && uploadForm) {
+                    // Create a new FileList with the selected file
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    
+                    console.log('Submitting form with backup method...');
+                    uploadForm.submit();
+                } else {
+                    alert('Main upload form not found');
+                }
+            } else {
+                alert('Please select a file first');
+            }
+        });
+    }
+    
+    // Handle main file input change
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            console.log('Main file input changed, files:', this.files.length);
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                console.log('File selected:', file.name);
+                
+                // Validate file
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file');
+                    this.value = '';
+                    return;
+                }
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File too large (max 5MB)');
+                    this.value = '';
+                    return;
+                }
+                
+                console.log('Valid file, submitting form...');
+                if (uploadForm) {
+                    uploadForm.submit();
+                } else {
+                    console.error('Upload form not found!');
+                    alert('Upload form error. Please refresh the page and try again.');
+                }
+            }
+        });
+    }
+    
+    // Handle recent image selection
+    document.querySelectorAll('.venue-thumbnail').forEach(thumbnail => {
+        thumbnail.addEventListener('click', function() {
             selectImage(this);
         });
     });
     
-    // Handle form submission
-    document.getElementById('transformForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        transformVenue();
-    });
-    
-    // Form validation
-    document.getElementById('wedding-theme').addEventListener('change', updateTransformButton);
-    document.getElementById('space-type').addEventListener('change', updateTransformButton);
-    
-    // Advanced options toggle
-    document.getElementById('showAdvanced').addEventListener('click', function(e) {
-        e.preventDefault();
-        const advanced = document.getElementById('advancedOptions');
-        if (advanced.style.display === 'none') {
-            advanced.style.display = 'block';
-            this.textContent = 'Hide advanced options';
-        } else {
-            advanced.style.display = 'none';
-            this.textContent = 'Show advanced options';
+    // Handle form field changes
+    [weddingTheme, spaceType].forEach(field => {
+        if (field) {
+            field.addEventListener('change', updateVisualizeBtnState);
         }
     });
     
-    // Range sliders
-    document.getElementById('cfg_scale').addEventListener('input', function() {
-        document.getElementById('cfgValue').textContent = this.value;
-    });
+    // Handle advanced options sliders
+    const cfgScale = document.getElementById('cfg_scale');
+    const steps = document.getElementById('steps');
     
-    document.getElementById('steps').addEventListener('input', function() {
-        document.getElementById('stepsValue').textContent = this.value;
-    });
+    if (cfgScale) {
+        cfgScale.addEventListener('input', function() {
+            document.getElementById('cfgValue').textContent = this.value;
+        });
+    }
     
-    function selectImage(card) {
+    if (steps) {
+        steps.addEventListener('input', function() {
+            document.getElementById('stepsValue').textContent = this.value;
+        });
+    }
+    
+    // Handle visualize button
+    if (visualizeBtn) {
+        visualizeBtn.addEventListener('click', function() {
+            visualizeVenue();
+        });
+    }
+    
+    function selectImage(thumbnail) {
+        console.log('Selecting image:', thumbnail.dataset.imageId);
+        
         // Clear previous selections
-        document.querySelectorAll('.venue-image-card').forEach(c => {
-            c.classList.remove('border-success');
-            c.querySelector('.selected-indicator').style.display = 'none';
+        document.querySelectorAll('.venue-thumbnail').forEach(t => {
+            t.classList.remove('border-primary');
+            t.style.borderWidth = '';
         });
         
         // Mark as selected
-        card.classList.add('border-success');
-        card.querySelector('.selected-indicator').style.display = 'block';
+        thumbnail.classList.add('border-primary');
+        thumbnail.style.borderWidth = '3px';
         
         // Store selected image data
-        selectedImageId = card.dataset.imageId;
+        selectedImageId = thumbnail.dataset.imageId;
         
-        // Update preview
-        document.getElementById('selectedImage').src = card.dataset.imageUrl;
-        document.getElementById('selectedImageName').textContent = card.dataset.imageName;
-        document.getElementById('selectedImageDetails').textContent = 
-            `${card.dataset.imageDimensions} • ${formatFileSize(card.dataset.imageSize)}`;
+        // Update display
+        if (selectedImage && selectedImageName && selectedImageDetails) {
+            selectedImage.src = thumbnail.dataset.imageUrl;
+            selectedImageName.textContent = thumbnail.dataset.imageName;
+            selectedImageDetails.textContent = `${thumbnail.dataset.imageDimensions} • ${formatFileSize(thumbnail.dataset.imageSize)}`;
+            
+            // Show selected image, hide placeholder
+            if (imagePlaceholder && selectedImageDisplay) {
+                imagePlaceholder.style.display = 'none';
+                selectedImageDisplay.style.display = 'block';
+            }
+        }
         
-        // Show step 2
-        document.getElementById('selectedVenueSection').style.display = 'block';
-        
-        // Scroll to step 2
-        document.getElementById('selectedVenueSection').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-        
-        updateTransformButton();
+        updateVisualizeBtnState();
     }
     
-    function updateTransformButton() {
-        const theme = document.getElementById('wedding-theme').value;
-        const space = document.getElementById('space-type').value;
-        const btn = document.getElementById('transformBtn');
+    function updateVisualizeBtnState() {
+        const hasImage = selectedImageId !== null;
+        const hasTheme = weddingTheme && weddingTheme.value;
+        const hasSpace = spaceType && spaceType.value;
         
-        btn.disabled = !selectedImageId || !theme || !space;
+        const canVisualize = hasImage && hasTheme && hasSpace;
+        
+        if (visualizeBtn) {
+            visualizeBtn.disabled = !canVisualize;
+        }
+        
+        if (statusText) {
+            statusText.classList.remove('text-success');
+            if (!hasImage) {
+                statusText.textContent = 'Select a photo to get started';
+            } else if (!hasTheme || !hasSpace) {
+                statusText.textContent = 'Choose wedding style and space type';
+            } else {
+                statusText.textContent = 'Ready to visualize your venue!';
+                statusText.classList.add('text-success');
+            }
+        }
     }
     
-    function transformVenue() {
+    function visualizeVenue() {
         if (!selectedImageId) {
             alert('Please select a venue photo first');
             return;
         }
         
-        const theme = document.getElementById('wedding-theme').value;
-        const space = document.getElementById('space-type').value;
+        const theme = weddingTheme.value;
+        const space = spaceType.value;
         
         if (!theme || !space) {
-            alert('Please select both wedding style and venue space');
+            alert('Please select both wedding style and space type');
             return;
         }
         
         // Show processing status
         document.getElementById('processingStatus').style.display = 'block';
-        document.getElementById('transformBtn').disabled = true;
-        document.getElementById('transformBtn').innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+        visualizeBtn.disabled = true;
+        visualizeBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
         
         // Prepare data
         const data = {
             wedding_theme: theme,
             space_type: space,
-            cfg_scale: parseFloat(document.getElementById('cfg_scale').value),
-            steps: parseInt(document.getElementById('steps').value)
+            cfg_scale: parseFloat(cfgScale ? cfgScale.value : 7.0),
+            steps: parseInt(steps ? steps.value : 50)
         };
+        
+        console.log('Submitting visualization request:', data);
         
         // Submit transformation request
         fetch(`/studio/image/${selectedImageId}/process/`, {
@@ -377,26 +514,26 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Show success and redirect
                 setTimeout(() => {
                     window.location.href = data.redirect_url;
                 }, 2000);
             } else {
                 alert('Error: ' + data.error);
-                resetTransformButton();
+                resetVisualizeBtn();
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while processing your venue');
-            resetTransformButton();
+            resetVisualizeBtn();
         });
     }
     
-    function resetTransformButton() {
+    function resetVisualizeBtn() {
         document.getElementById('processingStatus').style.display = 'none';
-        document.getElementById('transformBtn').disabled = false;
-        document.getElementById('transformBtn').innerHTML = '<i class="bi bi-magic"></i> Transform This Venue';
+        visualizeBtn.disabled = false;
+        visualizeBtn.innerHTML = '<i class="bi bi-magic"></i> Visualize My Venue';
+        updateVisualizeBtnState();
     }
     
     function formatFileSize(bytes) {
@@ -406,38 +543,39 @@ document.addEventListener('DOMContentLoaded', function() {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
+    
+    // Initialize button state
+    updateVisualizeBtnState();
+    
+    console.log('Wedding Studio JS initialization complete');
 });
 </script>
 
 <style>
-.venue-image-card {
+.venue-thumbnail {
     transition: all 0.2s ease;
 }
 
-.venue-image-card:hover {
+.venue-thumbnail:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.venue-image-card.border-success {
-    border-width: 3px !important;
+.venue-thumbnail.border-primary {
+    border-color: #0d6efd !important;
 }
 
-.upload-area:hover {
-    background-color: #f8f9fa !important;
-}
-
-.card-header {
-    border-bottom: 2px solid #dee2e6;
-}
-
-#selectedVenueSection {
-    animation: fadeIn 0.5s ease-in-out;
+#selectedImageDisplay {
+    animation: fadeIn 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 </style>
 

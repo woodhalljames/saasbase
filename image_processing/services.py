@@ -324,13 +324,13 @@ class StabilityAIService:
 
 
 class ImageProcessingService:
-    """Service for handling image processing workflows with advanced parameters"""
+    """Service for handling single image wedding venue processing"""
     
     def __init__(self):
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a wedding venue image with comprehensive parameters"""
+        """Process a single wedding venue image with comprehensive parameters"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -342,34 +342,34 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            # Process using the new comprehensive system
+            # Process using the wedding venue transformation system
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
             )
             
             if result["success"] and result["results"]:
-                # Save the processed image
-                for img_result in result["results"]:
-                    processed_image = ProcessedImage(
-                        processing_job=processing_job,
-                        stability_seed=img_result.get("seed"),
-                        finish_reason=img_result.get("finish_reason")
-                    )
-                    
-                    # Save the image file with wedding context in filename
-                    theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                    model_used = result.get("model", "SD3")
-                    filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timezone.now().timestamp()}.png"
-                    
-                    processed_image.processed_image.save(
-                        filename,
-                        ContentFile(img_result["image_data"]),
-                        save=False
-                    )
-                    processed_image.save()
-                    
-                    logger.info(f"Successfully saved wedding processed image: {filename}")
+                # Save the single processed image
+                img_result = result["results"][0]  # Only process one image now
+                processed_image = ProcessedImage(
+                    processing_job=processing_job,
+                    stability_seed=img_result.get("seed"),
+                    finish_reason=img_result.get("finish_reason")
+                )
+                
+                # Save the image file with wedding context in filename
+                theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
+                model_used = result.get("model", "SD3")
+                filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timezone.now().timestamp()}.png"
+                
+                processed_image.processed_image.save(
+                    filename,
+                    ContentFile(img_result["image_data"]),
+                    save=False
+                )
+                processed_image.save()
+                
+                logger.info(f"Successfully saved wedding processed image: {filename}")
                 
                 # Update job status to completed
                 processing_job.status = 'completed'
@@ -380,7 +380,7 @@ class ImageProcessingService:
                 return True
             else:
                 # No successful results
-                error_msg = result.get('error', 'No images were successfully processed')
+                error_msg = result.get('error', 'Wedding venue transformation failed')
                 processing_job.status = 'failed'
                 processing_job.error_message = error_msg
                 processing_job.completed_at = timezone.now()

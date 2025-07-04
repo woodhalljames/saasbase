@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Process Image: {{ user_image.original_filename }}{% endblock %}
+{% block title %}Transform: {{ user_image.original_filename }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
@@ -10,12 +10,12 @@
     <div class="col-12">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'image_processing:dashboard' %}">Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
           <li class="breadcrumb-item"><a href="{% url 'image_processing:image_gallery' %}">Gallery</a></li>
           <li class="breadcrumb-item active">{{ user_image.original_filename }}</li>
         </ol>
       </nav>
-      <h1>Process Image</h1>
+      <h1>Transform Your Venue</h1>
     </div>
   </div>
 
@@ -24,7 +24,7 @@
     <div class="col-md-6 mb-4">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Original Image</h5>
+          <h5 class="mb-0">Original Venue Photo</h5>
         </div>
         <div class="card-body text-center">
           <img src="{{ user_image.image.url }}" 
@@ -43,53 +43,58 @@
       </div>
     </div>
 
-    <!-- Processing Options -->
+    <!-- Wedding Transformation Options -->
     <div class="col-md-6 mb-4">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">AI Processing Options</h5>
+          <h5 class="mb-0">Wedding Transformation</h5>
         </div>
         <div class="card-body">
-          <!-- Tier Info -->
+          <!-- Usage Info -->
           <div class="alert alert-info">
-            <strong>Your Tier:</strong> You can select up to <strong>{{ max_prompts }}</strong> prompt{{ max_prompts|pluralize }} per image.
-            {% if max_prompts < 5 %}
-              <a href="{% url 'subscriptions:pricing' %}" class="alert-link">Upgrade for more prompts</a>
+            <strong>Your Usage:</strong> {{ usage_data.current }}/{{ usage_data.limit }} transformations this month
+            {% if usage_data.remaining <= 3 %}
+              <br><small class="text-warning">⚠️ Only {{ usage_data.remaining }} transformations remaining this month</small>
             {% endif %}
           </div>
 
-          <!-- Prompt Selection -->
-          <form id="processingForm">
+          <!-- Wedding Transformation Form -->
+          <form id="transformForm">
             {% csrf_token %}
-            <div class="mb-3">
-              <label class="form-label"><strong>Select Prompts:</strong></label>
-              <div class="row">
-                {% regroup prompts by category as prompt_groups %}
-                {% for group in prompt_groups %}
-                  <div class="col-12 mb-3">
-                    <h6 class="text-muted">{{ group.grouper|capfirst }}</h6>
-                    {% for prompt in group.list %}
-                      <div class="form-check">
-                        <input class="form-check-input prompt-checkbox" 
-                               type="checkbox" 
-                               value="{{ prompt.id }}" 
-                               id="prompt{{ prompt.id }}">
-                        <label class="form-check-label" for="prompt{{ prompt.id }}">
-                          <strong>{{ prompt.name }}</strong>
-                          <small class="text-muted d-block">{{ prompt.description }}</small>
-                        </label>
-                      </div>
-                    {% endfor %}
-                  </div>
+            
+            <!-- Wedding Style -->
+            <div class="mb-4">
+              <label for="wedding-theme" class="form-label"><strong>Wedding Style:</strong></label>
+              <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
+                <option value="">Choose your wedding style...</option>
+                {% for value, label in wedding_themes %}
+                  <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
-              </div>
-              <small class="form-text text-muted">
-                Selected: <span id="selectedCount">0</span> / {{ max_prompts }}
-              </small>
+              </select>
+              <small class="form-text text-muted">Select the overall aesthetic for your venue</small>
+            </div>
+            
+            <!-- Venue Space -->
+            <div class="mb-4">
+              <label for="space-type" class="form-label"><strong>Venue Space:</strong></label>
+              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
+                <option value="">What type of space is this?</option>
+                {% for value, label in space_types %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">Tell us what kind of venue space we're transforming</small>
+            </div>
+            
+            <!-- Transform Button -->
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg" id="transformBtn" disabled>
+                <i class="bi bi-magic"></i> Transform This Venue
+              </button>
             </div>
 
             <!-- Advanced Options -->
-            <div class="mb-3">
+            <div class="mt-3">
               <div class="accordion" id="advancedOptions">
                 <div class="accordion-item">
                   <h2 class="accordion-header">
@@ -101,18 +106,18 @@
                     <div class="accordion-body">
                       <div class="row">
                         <div class="col-md-6 mb-3">
-                          <label for="cfg_scale" class="form-label">CFG Scale</label>
+                          <label for="cfg_scale" class="form-label">Style Strength</label>
                           <input type="range" class="form-range" id="cfg_scale" min="1" max="20" step="0.5" value="7">
                           <small class="form-text text-muted">Current: <span id="cfgValue">7.0</span></small>
                         </div>
                         <div class="col-md-6 mb-3">
-                          <label for="steps" class="form-label">Steps</label>
+                          <label for="steps" class="form-label">Quality</label>
                           <input type="range" class="form-range" id="steps" min="10" max="150" step="10" value="50">
                           <small class="form-text text-muted">Current: <span id="stepsValue">50</span></small>
                         </div>
                       </div>
                       <div class="mb-3">
-                        <label for="seed" class="form-label">Seed (Optional)</label>
+                        <label for="seed" class="form-label">Random Seed (Optional)</label>
                         <input type="number" class="form-control" id="seed" placeholder="Leave empty for random">
                         <small class="form-text text-muted">Use the same seed for consistent results</small>
                       </div>
@@ -121,11 +126,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Process Button -->
-            <button type="submit" class="btn btn-primary btn-lg w-100" id="processBtn" disabled>
-              <i class="bi bi-magic"></i> Process Image with AI
-            </button>
           </form>
         </div>
       </div>
@@ -135,15 +135,15 @@
   <!-- Processing Status -->
   <div id="processingStatus" class="row" style="display: none;">
     <div class="col-12">
-      <div class="card">
+      <div class="card border-warning">
         <div class="card-body">
           <div class="d-flex align-items-center">
-            <div class="spinner-border text-primary me-3" role="status">
-              <span class="visually-hidden">Loading...</span>
+            <div class="spinner-border text-warning me-3" role="status">
+              <span class="visually-hidden">Processing...</span>
             </div>
             <div>
-              <h5 class="mb-1">Processing your image...</h5>
-              <p class="mb-0 text-muted">This may take a few minutes. You can leave this page and check back later.</p>
+              <h5 class="mb-1">Creating Your Wedding Vision...</h5>
+              <p class="mb-0 text-muted">This may take 1-2 minutes. You can check progress in your history.</p>
             </div>
           </div>
         </div>
@@ -151,26 +151,34 @@
     </div>
   </div>
 
-  <!-- Processing History -->
+  <!-- Processing History for this Image -->
   {% if processing_jobs %}
   <div class="row mt-4">
     <div class="col-12">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Processing History for this Image</h5>
+          <h5 class="mb-0">Previous Transformations of This Image</h5>
         </div>
         <div class="card-body">
           {% for job in processing_jobs %}
             <div class="border rounded p-3 mb-3">
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                  <h6>Job #{{ job.id }}</h6>
+                  <h6>Transformation #{{ job.id }}</h6>
+                  {% if job.wedding_theme and job.space_type %}
+                    <div class="mb-2">
+                      <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
+                      <span class="badge bg-secondary">{{ job.space_display }}</span>
+                    </div>
+                  {% endif %}
                   <small class="text-muted">
-                    {{ job.created_at|date:"M d, Y H:i" }} • 
-                    {{ job.prompt_count }} prompt{{ job.prompt_count|pluralize }}
+                    {{ job.created_at|date:"M d, Y H:i" }}
+                    {% if job.completed_at %}
+                      • Completed in {{ job.completed_at|timeuntil:job.created_at }}
+                    {% endif %}
                   </small>
                 </div>
-                <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %}">
+                <span class="badge fs-6 {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                   {{ job.get_status_display }}
                 </span>
               </div>
@@ -178,19 +186,25 @@
               {% if job.status == 'completed' and job.processed_images.all %}
                 <div class="row">
                   {% for processed_img in job.processed_images.all %}
-                    <div class="col-md-3 col-sm-4 col-6 mb-2">
+                    <div class="col-md-4 col-sm-6 mb-2">
                       <div class="card">
                         <img src="{{ processed_img.processed_image.url }}" 
                              class="card-img-top" 
-                             style="height: 120px; object-fit: cover;"
-                             alt="{{ processed_img.prompt_template.name }}">
+                             style="height: 150px; object-fit: cover;"
+                             alt="Wedding Transformation">
                         <div class="card-body p-2">
-                          <small class="text-muted">{{ processed_img.prompt_template.name }}</small>
-                          <a href="{{ processed_img.processed_image.url }}" 
-                             class="btn btn-sm btn-outline-primary w-100 mt-1" 
-                             target="_blank">
-                            View Full
-                          </a>
+                          <div class="d-flex justify-content-between">
+                            <a href="{{ processed_img.processed_image.url }}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               target="_blank">
+                              View
+                            </a>
+                            <a href="{{ processed_img.processed_image.url }}" 
+                               class="btn btn-sm btn-outline-secondary" 
+                               download>
+                              Download
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -199,6 +213,13 @@
               {% elif job.status == 'failed' %}
                 <div class="alert alert-danger">
                   <strong>Error:</strong> {{ job.error_message|default:"Processing failed" }}
+                </div>
+              {% elif job.status == 'processing' %}
+                <div class="alert alert-warning">
+                  <i class="bi bi-hourglass-split"></i> Still processing... 
+                  <button class="btn btn-sm btn-outline-warning ms-2" onclick="checkJobStatus({{ job.id }})">
+                    Check Status
+                  </button>
                 </div>
               {% endif %}
             </div>
@@ -212,15 +233,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const checkboxes = document.querySelectorAll('.prompt-checkbox');
-    const selectedCount = document.getElementById('selectedCount');
-    const processBtn = document.getElementById('processBtn');
-    const maxPrompts = {{ max_prompts }};
-    const form = document.getElementById('processingForm');
+    const form = document.getElementById('transformForm');
     const cfgSlider = document.getElementById('cfg_scale');
     const stepsSlider = document.getElementById('steps');
     const cfgValue = document.getElementById('cfgValue');
     const stepsValue = document.getElementById('stepsValue');
+    const transformBtn = document.getElementById('transformBtn');
 
     // Update slider values
     cfgSlider.addEventListener('input', function() {
@@ -231,47 +249,31 @@ document.addEventListener('DOMContentLoaded', function() {
         stepsValue.textContent = this.value;
     });
 
-    // Handle checkbox selection
-    function updateSelection() {
-        const selected = document.querySelectorAll('.prompt-checkbox:checked');
-        selectedCount.textContent = selected.length;
-        
-        if (selected.length > maxPrompts) {
-            // Uncheck the last selected if over limit
-            selected[selected.length - 1].checked = false;
-            selectedCount.textContent = maxPrompts;
-        }
-        
-        processBtn.disabled = selected.length === 0;
-        
-        // Disable other checkboxes if at limit
-        checkboxes.forEach(checkbox => {
-            if (!checkbox.checked && document.querySelectorAll('.prompt-checkbox:checked').length >= maxPrompts) {
-                checkbox.disabled = true;
-            } else {
-                checkbox.disabled = false;
-            }
-        });
+    // Enable transform button when both fields are selected
+    function updateTransformButton() {
+        const theme = document.getElementById('wedding-theme').value;
+        const space = document.getElementById('space-type').value;
+        transformBtn.disabled = !theme || !space;
     }
 
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelection);
-    });
+    document.getElementById('wedding-theme').addEventListener('change', updateTransformButton);
+    document.getElementById('space-type').addEventListener('change', updateTransformButton);
 
     // Handle form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const selectedPrompts = Array.from(document.querySelectorAll('.prompt-checkbox:checked'))
-            .map(cb => parseInt(cb.value));
+        const theme = document.getElementById('wedding-theme').value;
+        const space = document.getElementById('space-type').value;
         
-        if (selectedPrompts.length === 0) {
-            alert('Please select at least one prompt');
+        if (!theme || !space) {
+            alert('Please select both wedding style and venue space');
             return;
         }
 
         const data = {
-            prompt_ids: selectedPrompts,
+            wedding_theme: theme,
+            space_type: space,
             cfg_scale: parseFloat(cfgSlider.value),
             steps: parseInt(stepsSlider.value),
             seed: document.getElementById('seed').value || null
@@ -279,11 +281,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Show processing status
         document.getElementById('processingStatus').style.display = 'block';
-        processBtn.disabled = true;
-        processBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+        transformBtn.disabled = true;
+        transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
 
         // Submit the processing request
-        fetch('{% url "image_processing:process_image" user_image.pk %}', {
+        fetch('{% url "image_processing:process_wedding_image" user_image.pk %}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -296,23 +298,42 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Show success message and redirect
                 setTimeout(() => {
-                    window.location.href = '{% url "image_processing:processing_history" %}';
+                    window.location.href = data.redirect_url;
                 }, 2000);
             } else {
                 alert('Error: ' + data.error);
-                document.getElementById('processingStatus').style.display = 'none';
-                processBtn.disabled = false;
-                processBtn.innerHTML = '<i class="bi bi-magic"></i> Process Image with AI';
+                resetTransformButton();
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while processing your image');
-            document.getElementById('processingStatus').style.display = 'none';
-            processBtn.disabled = false;
-            processBtn.innerHTML = '<i class="bi bi-magic"></i> Process Image with AI';
+            resetTransformButton();
         });
     });
+
+    function resetTransformButton() {
+        document.getElementById('processingStatus').style.display = 'none';
+        transformBtn.disabled = false;
+        transformBtn.innerHTML = '<i class="bi bi-magic"></i> Transform This Venue';
+    }
+
+    // Global function for checking job status
+    window.checkJobStatus = function(jobId) {
+        fetch(`/studio/job/${jobId}/status/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'processing') {
+                    // Reload the page to show updated status
+                    window.location.reload();
+                } else {
+                    alert('Still processing... please check back in a moment.');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking job status:', error);
+            });
+    };
 });
 </script>
 
