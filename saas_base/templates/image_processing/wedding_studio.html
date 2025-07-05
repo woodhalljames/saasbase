@@ -14,189 +14,128 @@
     </div>
   </div>
 
-  <!-- Usage Indicator -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card border-primary">
-        <div class="card-body py-2">
-          <div class="d-flex justify-content-between align-items-center">
-            <span><strong>Monthly Usage:</strong></span>
-            <span class="text-muted">{{ usage_data.current }} / {{ usage_data.limit }} transformations</span>
-          </div>
-          <div class="progress mt-2" style="height: 8px;">
-            <div class="progress-bar {% if usage_data.percentage >= 90 %}bg-danger{% elif usage_data.percentage >= 75 %}bg-warning{% else %}bg-success{% endif %}"
-                 style="width: {{ usage_data.percentage }}%;">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Hidden Upload Form - Keep it simple and working -->
-  <form method="post" enctype="multipart/form-data" action="{% url 'image_processing:wedding_studio' %}" id="uploadForm" style="display: none;">
-    {% csrf_token %}
-    {{ upload_form.image }}
-  </form>
 
-  <!-- Main Studio Interface -->
+  <!-- Main Layout: Image Area + Sidebar -->
   <div class="row">
-    <!-- Left Side: Image Preview -->
-    <div class="col-md-8">
-      <div class="card h-100">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Your Venue Photo</h5>
-          <button class="btn btn-outline-primary btn-sm" id="uploadNewBtn">
-            <i class="bi bi-plus-circle"></i> Upload New
-          </button>
-        </div>
-        <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 400px;">
-          
-          <!-- Image Preview Area -->
-          <div id="imagePreviewArea" class="text-center w-100">
-            <!-- Placeholder when no image selected -->
-            <div id="imagePlaceholder">
-              <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
-              <h4 class="text-muted mt-3">Select or Upload Your Venue Photo</h4>
-              <p class="text-muted">Choose from recent uploads or upload a new venue photo to get started</p>
-              
-              <button class="btn btn-primary btn-lg" id="uploadMainBtn">
-                <i class="bi bi-upload"></i> Upload Venue Photo
-              </button>
-              
-              <!-- Backup: Simple file input (in case JavaScript fails) -->
-              <div class="mt-3">
-                <input type="file" class="form-control" accept="image/*" id="backupFileInput" style="max-width: 300px; margin: 0 auto;">
-                <button type="button" class="btn btn-secondary mt-2" id="backupUploadBtn">
-                  Upload Selected File
-                </button>
-              </div>
+    <!-- Right: Sidebar (shown first on mobile) -->
+    <div class="col-md-4 col-lg-3 order-md-2 mb-4">
+      
+        <div class="card mb-3">
+            <div class="card-header">
+              <h6 class="mb-0">Recent Uploads</h6>
             </div>
-            
-            <!-- Selected image display -->
-            <div id="selectedImageDisplay" style="display: none;">
-              <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 400px; max-width: 100%;" alt="Selected Venue">
-              <div class="mt-3">
-                <h6 id="selectedImageName">Venue Photo</h6>
-                <small class="text-muted" id="selectedImageDetails">Ready for transformation</small>
-              </div>
+            <div class="card-body">
+              {% if recent_images %}
+                <div class="row g-2">
+                  {% for image in recent_images|slice:":3" %}
+                    <div class="col-4">
+                      <div class="card venue-thumbnail" 
+                           data-image-id="{{ image.id }}"
+                           data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
+                           data-image-name="{{ image.original_filename }}"
+                           data-image-size="{{ image.file_size }}"
+                           data-image-dimensions="{{ image.width }}x{{ image.height }}"
+                           style="cursor: pointer; transition: all 0.2s;">
+                        <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                             class="card-img-top" 
+                             style="height: 80px; object-fit: cover;" 
+                             alt="{{ image.original_filename }}">
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                {% if recent_images|length > 3 %}
+                  <div class="text-center mt-2">
+                    <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
+                      View All ({{ recent_images|length }})
+                    </a>
+                  </div>
+                {% endif %}
+              {% else %}
+                <div class="text-center py-3">
+                  <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
+                  <p class="text-muted mt-2 mb-0">No uploads yet</p>
+                </div>
+              {% endif %}
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Side: Controls -->
-    <div class="col-md-4">
-      
-      <!-- Recent Uploads -->
-      <div class="card mb-3">
+      <!-- Transform Controls (Made Bigger) -->
+      <div class="card">
         <div class="card-header">
-          <h6 class="mb-0">Recent Uploads</h6>
+          <h5 class="mb-0">Visualization Options</h5>
         </div>
-        <div class="card-body">
-          {% if recent_images %}
-            <div class="row g-2">
-              {% for image in recent_images|slice:":3" %}
-                <div class="col-4">
-                  <div class="card venue-thumbnail" 
-                       data-image-id="{{ image.id }}"
-                       data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
-                       data-image-name="{{ image.original_filename }}"
-                       data-image-size="{{ image.file_size }}"
-                       data-image-dimensions="{{ image.width }}x{{ image.height }}"
-                       style="cursor: pointer; transition: all 0.2s;">
-                    <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
-                         class="card-img-top" 
-                         style="height: 80px; object-fit: cover;" 
-                         alt="{{ image.original_filename }}">
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-            {% if recent_images|length > 3 %}
-              <div class="text-center mt-2">
-                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
-                  View All ({{ recent_images|length }})
-                </a>
-              </div>
-            {% endif %}
-          {% else %}
-            <div class="text-center py-3">
-              <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
-              <p class="text-muted mt-2 mb-0">No uploads yet</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Wedding Style Options - Always Visible -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h6 class="mb-0">Wedding Style</h6>
-        </div>
-        <div class="card-body">
+        <div class="card-body p-4">
           <form id="transformForm">
             {% csrf_token %}
             
-            <!-- Theme Selection -->
-            <div class="mb-3">
-              <label for="wedding-theme" class="form-label"><strong>Theme:</strong></label>
-              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
-                <option value="">Choose your wedding style...</option>
+            <div class="mb-4">
+              <label for="wedding-theme" class="form-label fs-5"><strong>Theme/Style</strong></label>
+              <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
+                <option value="">Choose style...</option>
                 {% for value, label in wedding_themes %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
             </div>
             
-            <!-- Space Type Selection -->
-            <div class="mb-3">
-              <label for="space-type" class="form-label"><strong>Space Type:</strong></label>
-              <select class="form-select" id="space-type" name="space_type" required>
-                <option value="">What type of space?</option>
+            <div class="mb-4">
+              <label for="space-type" class="form-label fs-5"><strong>Space/Room</strong></label>
+              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
+                <option value="">Choose space...</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
             </div>
             
-            <!-- Advanced Options Toggle -->
-            <div class="mb-3">
-              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
-                <i class="bi bi-gear"></i> Advanced Options
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg py-3" id="transformBtn" disabled>
+                <i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>
               </button>
-            </div>
-            
-            <!-- Advanced Options (Collapsed) -->
-            <div class="collapse" id="advancedOptions">
-              <div class="card card-body bg-light">
-                <div class="mb-2">
-                  <label for="cfg_scale" class="form-label">Style Strength: <span id="cfgValue">7.0</span></label>
-                  <input type="range" class="form-range" id="cfg_scale" min="1" max="20" step="0.5" value="7">
-                </div>
-                <div class="mb-2">
-                  <label for="steps" class="form-label">Quality: <span id="stepsValue">50</span></label>
-                  <input type="range" class="form-range" id="steps" min="10" max="150" step="10" value="50">
-                </div>
-              </div>
             </div>
           </form>
         </div>
       </div>
 
-      <!-- Visualize Button - Always Visible -->
-      <div class="card">
-        <div class="card-body">
-          <div class="d-grid">
-            <button type="button" class="btn btn-primary btn-lg" id="visualizeBtn" disabled>
-              <i class="bi bi-magic"></i> Visualize My Venue
-            </button>
-          </div>
+    </div>
+
+    <!-- Left: Main Image Upload/Preview Area -->
+    <div class="col-md-8 col-lg-9 order-md-1 mb-4">
+      <div class="card h-100">
+        <div class="card-body d-flex align-items-center justify-content-center position-relative" style="min-height: 500px;">
           
-          <div class="mt-3 text-center">
-            <small class="text-muted" id="statusText">Select a photo and wedding style to get started</small>
+          <!-- Upload Area (shown when no image selected) -->
+          <div id="uploadArea" class="text-center w-100">
+            <form id="uploadForm" class="h-100 d-flex flex-column justify-content-center">
+              {% csrf_token %}
+              <div class="upload-zone border-2 border-dashed rounded p-5" 
+                   style="cursor: pointer; border-color: #dee2e6; min-height: 400px;"
+                   onclick="document.getElementById('id_image').click()">
+                <i class="bi bi-cloud-upload text-primary" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Upload Your Venue Photo</h4>
+                <p class="text-muted mb-4">Drop your image here or click to browse</p>
+                <p class="text-muted"><small>JPG, PNG, GIF, WebP • Max 5MB</small></p>
+                {{ upload_form.image }}
+              </div>
+            </form>
           </div>
+
+          <!-- Upload Progress (shown during upload) -->
+          <div id="uploadProgress" class="text-center w-100" style="display: none;">
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Uploading...</span>
+            </div>
+            <h5>Uploading your photo...</h5>
+            <p class="text-muted">Please wait while we process your image</p>
+          </div>
+
+          <!-- Selected Image Preview (hidden initially) -->
+          <div id="imagePreview" class="text-center w-100" style="display: none;">
+            <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
+            <p class="mt-3 mb-0"><strong id="selectedImageName">Selected Image</strong></p>
+          </div>
+
         </div>
       </div>
     </div>
@@ -205,13 +144,17 @@
   <!-- Processing Status -->
   <div id="processingStatus" class="row mt-4" style="display: none;">
     <div class="col-12">
-      <div class="alert alert-warning d-flex align-items-center">
-        <div class="spinner-border text-warning me-3" role="status">
-          <span class="visually-hidden">Processing...</span>
-        </div>
-        <div>
-          <h6 class="mb-1">Creating Your Wedding Vision...</h6>
-          <small>This may take 1-2 minutes. You can check progress in your history.</small>
+      <div class="card border-warning">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="spinner-border text-warning me-3" role="status">
+              <span class="visually-hidden">Processing...</span>
+            </div>
+            <div>
+              <h5 class="mb-1">Creating Your Wedding Vision...</h5>
+              <p class="mb-0 text-muted">This may take 1-2 minutes. You can check progress in your history.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -223,33 +166,30 @@
     <div class="col-12">
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transformations</h6>
+          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transformations</h5>
           <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">View All</a>
         </div>
         <div class="card-body">
-          <div class="row">
-            {% for job in recent_jobs|slice:":3" %}
-              <div class="col-md-4 mb-3">
-                <div class="card">
-                  <div class="row g-0">
-                    <div class="col-5">
-                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                           class="img-fluid rounded-start h-100" 
-                           style="object-fit: cover;" 
-                           alt="Venue">
-                    </div>
-                    <div class="col-7">
-                      <div class="card-body p-2">
-                        <h6 class="card-title small">{{ job.user_image.original_filename|truncatechars:15 }}</h6>
-                        {% if job.wedding_theme and job.space_type %}
-                          <small class="text-muted d-block">{{ job.get_wedding_theme_display|truncatechars:15 }}</small>
-                        {% endif %}
-                        <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %} small">
-                          {{ job.get_status_display }}
-                        </span>
-                      </div>
-                    </div>
+          <div class="list-group list-group-flush">
+            {% for job in recent_jobs %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                  <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                       class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" alt="Venue">
+                  <div>
+                    <strong>{{ job.user_image.original_filename }}</strong>
+                    {% if job.wedding_theme and job.space_type %}
+                      <small class="text-muted d-block">
+                        {{ job.theme_display }} • {{ job.space_display }}
+                      </small>
+                    {% endif %}
                   </div>
+                </div>
+                <div class="text-end">
+                  <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %}">
+                    {{ job.get_status_display }}
+                  </span>
+                  <small class="text-muted d-block">{{ job.created_at|timesince }} ago</small>
                 </div>
               </div>
             {% endfor %}
@@ -318,37 +258,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Using backup upload method...');
             if (backupFileInput.files.length > 0) {
                 const file = backupFileInput.files[0];
-                
-                // Validate file
-                if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file');
-                    return;
-                }
-                
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File too large (max 5MB)');
-                    return;
-                }
-                
-                // Copy file to main input and submit
-                if (fileInput && uploadForm) {
-                    // Create a new FileList with the selected file
-                    const dt = new DataTransfer();
-                    dt.items.add(file);
-                    fileInput.files = dt.files;
-                    
-                    console.log('Submitting form with backup method...');
-                    uploadForm.submit();
-                } else {
-                    alert('Main upload form not found');
-                }
+                uploadFileWithAjax(file);
             } else {
                 alert('Please select a file first');
             }
         });
     }
     
-    // Handle main file input change
+    // Handle main file input change with AJAX upload
     if (fileInput) {
         fileInput.addEventListener('change', function() {
             console.log('Main file input changed, files:', this.files.length);
@@ -369,15 +286,119 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                console.log('Valid file, submitting form...');
-                if (uploadForm) {
-                    uploadForm.submit();
-                } else {
-                    console.error('Upload form not found!');
-                    alert('Upload form error. Please refresh the page and try again.');
-                }
+                console.log('Valid file, uploading with AJAX...');
+                uploadFileWithAjax(file);
             }
         });
+    }
+    
+    // AJAX file upload function
+    function uploadFileWithAjax(file) {
+        console.log('Starting AJAX upload for:', file.name);
+        
+        // Show loading state
+        if (uploadMainBtn) {
+            uploadMainBtn.disabled = true;
+            uploadMainBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
+        }
+        
+        // Create FormData
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            formData.append('csrfmiddlewaretoken', csrfToken.value);
+        }
+        
+        // Upload with fetch
+        fetch('/studio/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'  // Mark as AJAX request
+            }
+        })
+        .then(response => {
+            console.log('Upload response status:', response.status);
+            
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(`Upload failed with status ${response.status}`);
+            }
+        })
+        .then(data => {
+            console.log('Upload successful:', data);
+            
+            if (data.success) {
+                // Add the new image to the recent uploads section
+                addNewImageToRecent(data.image);
+                
+                // Show success message
+                showToast('Image uploaded successfully!', 'success');
+                
+                // Reset file input
+                if (fileInput) fileInput.value = '';
+                if (backupFileInput) backupFileInput.value = '';
+                
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            showToast(error.message || 'Upload failed', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            if (uploadMainBtn) {
+                uploadMainBtn.disabled = false;
+                uploadMainBtn.innerHTML = '<i class="bi bi-upload"></i> Upload Venue Photo';
+            }
+        });
+    }
+    
+    // Add new image to recent uploads section
+    function addNewImageToRecent(imageData) {
+        const recentUploadsContainer = document.querySelector('.card-body .row.g-2');
+        if (!recentUploadsContainer) return;
+        
+        // Create new thumbnail element
+        const newThumbnail = document.createElement('div');
+        newThumbnail.className = 'col-4';
+        newThumbnail.innerHTML = `
+            <div class="card venue-thumbnail" 
+                 data-image-id="${imageData.id}"
+                 data-image-url="${imageData.thumbnail_url || imageData.image_url}"
+                 data-image-name="${imageData.original_filename}"
+                 data-image-size="${imageData.file_size}"
+                 data-image-dimensions="${imageData.width}x${imageData.height}"
+                 style="cursor: pointer; transition: all 0.2s;">
+                <img src="${imageData.thumbnail_url || imageData.image_url}" 
+                     class="card-img-top" 
+                     style="height: 80px; object-fit: cover;" 
+                     alt="${imageData.original_filename}">
+            </div>
+        `;
+        
+        // Add click handler
+        newThumbnail.querySelector('.venue-thumbnail').addEventListener('click', function() {
+            selectImage(this);
+        });
+        
+        // Insert at the beginning
+        recentUploadsContainer.insertBefore(newThumbnail, recentUploadsContainer.firstChild);
+        
+        // Remove excess items (keep only 3)
+        const thumbnails = recentUploadsContainer.querySelectorAll('.col-4');
+        if (thumbnails.length > 3) {
+            thumbnails[3].remove();
+        }
+        
+        // Auto-select the new image
+        selectImage(newThumbnail.querySelector('.venue-thumbnail'));
     }
     
     // Handle recent image selection
@@ -544,6 +565,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
     
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+    
     // Initialize button state
     updateVisualizeBtnState();
     
@@ -552,17 +591,82 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-.venue-thumbnail {
-    transition: all 0.2s ease;
-}
-
-.venue-thumbnail:hover {
+.venue-image-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
+.venue-image-card.border-primary {
+    border-width: 2px !important;
+}
+
+.upload-zone:hover {
+    border-color: #007bff !important;
+    background-color: #f8f9fa !important;
+}
+
+.upload-zone {
+    transition: all 0.3s ease;
+}
+
+#imagePreview {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+#uploadProgress {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Mobile responsiveness - Recent images above upload */
+@media (max-width: 767.98px) {
+    .order-md-1 {
+        order: 2;
+    }
+    .order-md-2 {
+        order: 1;
+    }
+}
+
+/* Larger visualization controls */
+.card-body.p-4 {
+    padding: 2rem !important;
+}
+
+.form-label.fs-5 {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.btn-lg.py-3 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+.venue-thumbnail {
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    border-radius: 0.375rem;
+}
+
+.venue-thumbnail:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
 .venue-thumbnail.border-primary {
     border-color: #0d6efd !important;
+    border-width: 3px !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    transform: translateY(-1px);
+}
+
+.venue-thumbnail img {
+    border-radius: 0.25rem;
 }
 
 #selectedImageDisplay {
@@ -576,6 +680,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .card {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Button state improvements */
+.btn-primary:disabled {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Status text improvements */
+.text-success {
+    color: #198754 !important;
+    font-weight: 500;
 }
 </style>
 

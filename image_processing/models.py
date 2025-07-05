@@ -1,4 +1,5 @@
-# image_processing/models.py - Updated with advanced prompt system
+# Replace the entire image_processing/models.py file with this updated version
+
 import os
 import uuid
 from datetime import timedelta
@@ -7,6 +8,9 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def user_image_upload_path(instance, filename):
@@ -49,11 +53,75 @@ SPACE_TYPES = [
 
 def generate_wedding_prompt(theme, space_type, additional_details=None):
     """Generate comprehensive AI prompt for wedding venue transformation using advanced system"""
-    from .prompt_generator import WeddingPromptGenerator
+    try:
+        from .prompt_generator import WeddingPromptGenerator
+        
+        return WeddingPromptGenerator.generate_comprehensive_prompt(
+            theme, space_type, additional_details
+        )
+    except ImportError as e:
+        # Fallback prompt generation if import fails
+        logger.warning(f"Could not import WeddingPromptGenerator: {e}")
+        return generate_fallback_prompt(theme, space_type, additional_details)
+
+
+def generate_fallback_prompt(theme, space_type, additional_details=None):
+    """Fallback prompt generation if the advanced system is not available"""
     
-    return WeddingPromptGenerator.generate_comprehensive_prompt(
-        theme, space_type, additional_details
-    )
+    # Basic theme descriptions
+    theme_descriptions = {
+        'rustic': 'rustic farmhouse wedding with wooden elements, burlap, mason jars, wildflowers, and warm lighting',
+        'modern': 'modern minimalist wedding with clean lines, contemporary furniture, and sleek design',
+        'vintage': 'vintage romantic wedding with antique lace, classic roses, and old-world charm',
+        'bohemian': 'bohemian chic wedding with macrame, colorful textiles, pampas grass, and natural elements',
+        'classic': 'classic traditional wedding with elegant white flowers, formal settings, and timeless luxury',
+        'garden': 'garden party wedding with abundant fresh flowers, greenery, and natural outdoor elements',
+        'beach': 'beach wedding with coastal elements, driftwood, seashells, and ocean-inspired colors',
+        'industrial': 'industrial chic wedding with exposed brick, metal fixtures, and urban aesthetic'
+    }
+    
+    # Basic space descriptions
+    space_descriptions = {
+        'indoor_ceremony': 'indoor ceremony space with wedding aisle and altar',
+        'outdoor_ceremony': 'outdoor ceremony space with natural backdrop',
+        'reception_hall': 'reception hall with dining tables and dance floor',
+        'garden': 'garden venue with natural landscaping',
+        'beach': 'beach venue with ocean views',
+        'barn': 'rustic barn interior with wooden beams',
+        'ballroom': 'elegant ballroom with formal setting',
+        'rooftop': 'rooftop venue with city views'
+    }
+    
+    # Construct basic prompt
+    prompt_parts = [
+        "professional wedding photography, high resolution, photorealistic, detailed,",
+        "Transform this space into a beautiful wedding venue,",
+        f"decorated in {theme_descriptions.get(theme, 'elegant')} style,",
+        f"configured as a {space_descriptions.get(space_type, 'wedding venue')},",
+        "elegant wedding setup, romantic atmosphere, celebration ready,",
+        "maintain original architecture, enhance with wedding decorations,",
+        "wedding reception ready, romantic ambiance"
+    ]
+    
+    if additional_details:
+        prompt_parts.append(additional_details)
+    
+    main_prompt = " ".join(prompt_parts)
+    
+    # Basic negative prompt
+    negative_prompt = "people, faces, crowd, guests, bride, groom, blurry, low quality, pixelated, distorted, dark, dim, poor lighting, messy, cluttered, text, watermark, signature"
+    
+    return {
+        'prompt': main_prompt,
+        'negative_prompt': negative_prompt,
+        'recommended_params': {
+            'aspect_ratio': '16:9',
+            'cfg_scale': 7.0,
+            'steps': 50,
+            'output_format': 'png',
+            'strength': 0.35,
+        }
+    }
 
 
 def get_wedding_choices():
@@ -113,8 +181,7 @@ class UserImage(models.Model):
             self.save(update_fields=['thumbnail'])
         except Exception as e:
             # Log error but don't fail the save
-            import logging
-            logging.error(f"Error creating thumbnail: {str(e)}")
+            logger.error(f"Error creating thumbnail: {str(e)}")
     
     def get_absolute_url(self):
         return reverse('image_processing:image_detail', kwargs={'pk': self.pk})
@@ -170,22 +237,31 @@ class ImageProcessingJob(models.Model):
     def save(self, *args, **kwargs):
         # Generate comprehensive prompt if wedding theme and space type are provided
         if self.wedding_theme and self.space_type and not self.generated_prompt:
-            prompt_data = generate_wedding_prompt(
-                self.wedding_theme, 
-                self.space_type, 
-                self.additional_details
-            )
-            
-            self.generated_prompt = prompt_data['prompt']
-            self.negative_prompt = prompt_data['negative_prompt']
-            
-            # Update parameters with recommendations
-            recommended_params = prompt_data['recommended_params']
-            self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
-            self.steps = recommended_params.get('steps', self.steps)
-            self.aspect_ratio = recommended_params.get('aspect_ratio', self.aspect_ratio)
-            self.strength = recommended_params.get('strength', self.strength)
-            self.output_format = recommended_params.get('output_format', self.output_format)
+            try:
+                prompt_data = generate_wedding_prompt(
+                    self.wedding_theme, 
+                    self.space_type, 
+                    self.additional_details
+                )
+                
+                self.generated_prompt = prompt_data['prompt']
+                self.negative_prompt = prompt_data['negative_prompt']
+                
+                # Update parameters with recommendations
+                recommended_params = prompt_data['recommended_params']
+                self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
+                self.steps = recommended_params.get('steps', self.steps)
+                self.aspect_ratio = recommended_params.get('aspect_ratio', self.aspect_ratio)
+                self.strength = recommended_params.get('strength', self.strength)
+                self.output_format = recommended_params.get('output_format', self.output_format)
+                
+                logger.info(f"Generated prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                
+            except Exception as e:
+                logger.error(f"Error generating prompt for job {self.id}: {str(e)}")
+                # Set a basic prompt as fallback
+                self.generated_prompt = f"Transform this {self.space_type} into a beautiful {self.wedding_theme} wedding venue, professional wedding photography, high quality, elegant decoration"
+                self.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
         
         super().save(*args, **kwargs)
     

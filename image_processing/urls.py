@@ -19,7 +19,7 @@ urlpatterns = [
     
     # Job Status
     path('job/<int:job_id>/status/', views.job_status, name='job_status'),
-    
+    path('ajax-upload/', views.ajax_upload_image, name='ajax_upload'),
     # Processed Images - Save/Keep functionality
     path('processed/<int:pk>/', views.processed_image_detail, name='processed_image_detail'),
     path('processed/<int:pk>/save/', views.save_processed_image, name='save_processed_image'),

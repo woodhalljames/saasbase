@@ -5,16 +5,16 @@ from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
 
 
 class ImageUploadForm(forms.ModelForm):
-    """Simple form for single image upload"""
+    """Simplified form for single image upload - MVP version"""
     
     class Meta:
         model = UserImage
         fields = ['image']
         widgets = {
             'image': forms.FileInput(attrs={
-                'class': 'form-control',
+                'class': 'form-control form-control-lg',
                 'accept': 'image/*',
-                'id': 'imageUpload'
+                'id': 'id_image',  # Standard Django field ID
             })
         }
     
@@ -31,6 +31,7 @@ class ImageUploadForm(forms.ModelForm):
                 raise ValidationError("File must be an image.")
                 
         return image
+
 
 
 class WeddingTransformForm(forms.Form):

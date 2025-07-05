@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def process_image_async(self, job_id):
     """
-    Asynchronously process a single wedding venue image
+    Asynchronously process a single wedding venue image with enhanced error handling
     """
     try:
         # Get the processing job
         job = ImageProcessingJob.objects.get(id=job_id)
+        
+        logger.info(f"Starting processing job {job_id} for user {job.user_image.user.username}")
         
         # Update job status
         job.status = 'processing'
@@ -25,18 +27,37 @@ def process_image_async(self, job_id):
         job.save()
         
         # Initialize the processing service
+        from .services import ImageProcessingService
         processing_service = ImageProcessingService()
         
-        # Use the generated prompt from the job
-        prompt_text = job.generated_prompt
-        if not prompt_text:
-            # Fallback: regenerate prompt if missing
-            from .models import generate_wedding_prompt
-            prompt_data = generate_wedding_prompt(job.wedding_theme, job.space_type, job.additional_details)
-            job.generated_prompt = prompt_data['prompt']
-            job.negative_prompt = prompt_data['negative_prompt']
-            job.save()
+        # Ensure we have a generated prompt
+        if not job.generated_prompt:
+            logger.info(f"Generating prompt for job {job_id}")
+            try:
+                from .models import generate_wedding_prompt
+                prompt_data = generate_wedding_prompt(job.wedding_theme, job.space_type, job.additional_details)
+                job.generated_prompt = prompt_data['prompt']
+                job.negative_prompt = prompt_data['negative_prompt']
+                
+                # Update parameters with recommendations
+                recommended_params = prompt_data['recommended_params']
+                job.cfg_scale = recommended_params.get('cfg_scale', job.cfg_scale)
+                job.steps = recommended_params.get('steps', job.steps)
+                job.aspect_ratio = recommended_params.get('aspect_ratio', job.aspect_ratio)
+                job.strength = recommended_params.get('strength', job.strength)
+                job.output_format = recommended_params.get('output_format', job.output_format)
+                
+                job.save()
+                logger.info(f"Generated prompt for job {job_id}: {job.generated_prompt[:100]}...")
+                
+            except Exception as e:
+                logger.error(f"Error generating prompt for job {job_id}: {str(e)}")
+                # Create a basic fallback prompt
+                job.generated_prompt = f"Transform this {job.space_type} into a beautiful {job.wedding_theme} wedding venue, professional wedding photography, high quality, elegant decoration"
+                job.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
+                job.save()
         
+        prompt_text = job.generated_prompt
         logger.info(f"Processing wedding venue with prompt: {prompt_text[:100]}...")
         
         # Process the image using the service
@@ -66,13 +87,13 @@ def process_image_async(self, job_id):
         }
         
     except Exception as exc:
-        logger.error(f"Error processing wedding job {job_id}: {str(exc)}")
+        logger.error(f"Error processing wedding job {job_id}: {str(exc)}", exc_info=True)
         
         # Retry logic
         if self.request.retries < self.max_retries:
             # Exponential backoff: 60s, 120s, 240s
             countdown = 60 * (2 ** self.request.retries)
-            logger.info(f"Retrying wedding job {job_id} in {countdown} seconds")
+            logger.info(f"Retrying wedding job {job_id} in {countdown} seconds (attempt {self.request.retries + 1})")
             raise self.retry(countdown=countdown, exc=exc)
         
         # Mark job as failed if all retries exhausted
@@ -82,8 +103,9 @@ def process_image_async(self, job_id):
             job.error_message = f"Processing failed after {self.max_retries} retries: {str(exc)}"
             job.completed_at = timezone.now()
             job.save()
-        except Exception:
-            pass
+            logger.error(f"Job {job_id} marked as failed after {self.max_retries} retries")
+        except Exception as save_error:
+            logger.error(f"Failed to update job status: {str(save_error)}")
         
         return {
             'success': False,

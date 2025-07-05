@@ -94,9 +94,11 @@ class StabilityAIService:
                           output_format: str = "png") -> Dict[str, Any]:
         """
         Perform image-to-image generation using Stability AI SD3
-        Uses the v2beta/stable-image/generate/sd3 endpoint
+        Fixed implementation with proper multipart/form-data handling
         """
         try:
+            logger.info(f"Starting SD3 image-to-image generation with prompt: {prompt[:100]}...")
+            
             # Prepare the image with optimal resolution
             resolution_map = {
                 "1:1": (1024, 1024),
@@ -111,16 +113,34 @@ class StabilityAIService:
             }
             
             target_resolution = resolution_map.get(aspect_ratio, (1344, 768))
-            init_image_b64 = self.prepare_image_for_api(image_path, target_resolution)
             
-            # Prepare form data for SD3 API
+            # Read and prepare image
+            with open(image_path, 'rb') as image_file:
+                # Resize image if needed
+                with Image.open(image_file) as img:
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+                    
+                    # Resize to target resolution
+                    img = img.resize(target_resolution, Image.Resampling.LANCZOS)
+                    
+                    # Convert to bytes
+                    img_buffer = io.BytesIO()
+                    img.save(img_buffer, format='PNG')
+                    img_buffer.seek(0)
+                    image_bytes = img_buffer.getvalue()
+            
+            # Prepare multipart form data
+            files = {
+                'image': ('image.png', image_bytes, 'image/png'),
+            }
+            
             data = {
-                "prompt": prompt,
-                "mode": "image-to-image",
-                "image": init_image_b64,
-                "strength": strength,
-                "aspect_ratio": aspect_ratio,
-                "output_format": output_format,
+                'prompt': prompt,
+                'mode': 'image-to-image',
+                'strength': str(strength),
+                'aspect_ratio': aspect_ratio,
+                'output_format': output_format,
             }
             
             # Add optional parameters
@@ -128,43 +148,36 @@ class StabilityAIService:
                 data["negative_prompt"] = negative_prompt
             
             if seed is not None:
-                data["seed"] = seed
-            
-            # Note: SD3 doesn't use traditional cfg_scale and steps parameters
-            # These are handled internally by the model
+                data["seed"] = str(seed)
             
             # Make the API request to SD3 endpoint
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
-            # SD3 uses multipart/form-data instead of JSON
-            files = {}
-            for key, value in data.items():
-                if key == "image":
-                    # Image data needs to be sent as bytes
-                    files[key] = base64.b64decode(value)
-                else:
-                    files[key] = (None, str(value))
+            logger.info(f"Making SD3 API request to {url}")
             
             response = requests.post(
                 url,
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 files=files,
-                timeout=120  # SD3 can take longer
+                data=data,
+                timeout=120
             )
+            
+            logger.info(f"SD3 API response status: {response.status_code}")
             
             if response.status_code != 200:
                 error_msg = f"Stability AI SD3 API error: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 raise Exception(error_msg)
             
-            # SD3 returns the image directly
+            # SD3 returns the image directly as bytes
             image_data = response.content
             
             return {
                 "success": True,
                 "results": [{
                     "image_data": image_data,
-                    "seed": seed,  # SD3 doesn't return seed in response
+                    "seed": seed,
                     "finish_reason": "SUCCESS"
                 }],
                 "prompt": prompt,
@@ -196,7 +209,9 @@ class StabilityAIService:
         Fallback to legacy image-to-image API if SD3 is not available
         """
         try:
-            # Use the existing logic but with updated parameters
+            logger.info(f"Using legacy API with prompt: {prompt[:100]}...")
+            
+            # Prepare image as base64
             init_image_b64 = self.prepare_image_for_api(image_path)
             
             data = {
@@ -231,6 +246,8 @@ class StabilityAIService:
                 json=data,
                 timeout=60
             )
+            
+            logger.info(f"Legacy API response status: {response.status_code}")
             
             if response.status_code != 200:
                 error_msg = f"Stability AI Legacy API error: {response.status_code} - {response.text}"
@@ -270,6 +287,9 @@ class StabilityAIService:
         """
         # Get all parameters from the job
         params = processing_job.get_stability_ai_params()
+        
+        logger.info(f"Processing wedding venue for job {processing_job.id}")
+        logger.info(f"Generated prompt: {params['prompt'][:200]}...")
         
         try:
             # Try SD3 first (recommended for realistic images)
@@ -396,3 +416,94 @@ class ImageProcessingService:
             processing_job.save()
             logger.error(f"Error in processing job {processing_job.id}: {str(exc)}")
             return False
+        
+
+    def enhanced_process_wedding_image(self, processing_job):
+        """Process a single wedding venue image with comprehensive error handling"""
+        from .models import ProcessedImage
+        from django.utils import timezone
+        
+        try:
+            # Update job status
+            processing_job.status = 'processing'
+            processing_job.started_at = timezone.now()
+            processing_job.save()
+            
+            user_image = processing_job.user_image
+            
+            logger.info(f"Starting image processing for job {processing_job.id}")
+            logger.info(f"Image path: {user_image.image.path}")
+            logger.info(f"Generated prompt: {processing_job.generated_prompt[:200]}...")
+            
+            # Validate image file exists
+            import os
+            if not os.path.exists(user_image.image.path):
+                raise FileNotFoundError(f"Image file not found: {user_image.image.path}")
+            
+            # Process using the wedding venue transformation system
+            result = self.stability_service.process_wedding_venue(
+                image_path=user_image.image.path,
+                processing_job=processing_job
+            )
+            
+            logger.info(f"Stability AI result: success={result.get('success')}, model={result.get('model')}")
+            
+            if result["success"] and result["results"]:
+                # Save the single processed image
+                img_result = result["results"][0]  # Only process one image now
+                processed_image = ProcessedImage(
+                    processing_job=processing_job,
+                    stability_seed=img_result.get("seed"),
+                    finish_reason=img_result.get("finish_reason")
+                )
+                
+                # Save the image file with wedding context in filename
+                theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
+                model_used = result.get("model", "SD3")
+                timestamp = int(timezone.now().timestamp())
+                filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
+                
+                # Validate image data
+                image_data = img_result["image_data"]
+                if not image_data or len(image_data) < 1000:  # Basic validation
+                    raise ValueError("Generated image data is too small or empty")
+                
+                processed_image.processed_image.save(
+                    filename,
+                    ContentFile(image_data),
+                    save=False
+                )
+                processed_image.save()
+                
+                logger.info(f"Successfully saved wedding processed image: {filename}")
+                logger.info(f"Image size: {processed_image.file_size} bytes, dimensions: {processed_image.width}x{processed_image.height}")
+                
+                # Update job status to completed
+                processing_job.status = 'completed'
+                processing_job.completed_at = timezone.now()
+                processing_job.save()
+                
+                logger.info(f"Successfully completed wedding processing job {processing_job.id}")
+                return True
+            else:
+                # No successful results
+                error_msg = result.get('error', 'Wedding venue transformation failed - no results generated')
+                logger.error(f"Processing failed for job {processing_job.id}: {error_msg}")
+                
+                processing_job.status = 'failed'
+                processing_job.error_message = error_msg
+                processing_job.completed_at = timezone.now()
+                processing_job.save()
+                
+                return False
+                    
+        except Exception as exc:
+            logger.error(f"Error in processing job {processing_job.id}: {str(exc)}", exc_info=True)
+            
+            processing_job.status = 'failed'
+            processing_job.error_message = f"Processing error: {str(exc)}"
+            processing_job.completed_at = timezone.now()
+            processing_job.save()
+            
+            return False
+

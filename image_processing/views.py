@@ -21,12 +21,13 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def wedding_studio(request):
-    """Main wedding venue visualization studio - matches wireframe"""
+    """Main wedding venue visualization studio - handles both regular and AJAX uploads"""
     
     # Handle image upload
     if request.method == 'POST':
         print(f"POST request received: {request.POST}")
         print(f"Files in request: {request.FILES}")
+        print(f"Is AJAX: {request.headers.get('x-requested-with') == 'XMLHttpRequest'}")
         
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -36,17 +37,55 @@ def wedding_studio(request):
                 user_image.original_filename = form.cleaned_data['image'].name
                 user_image.save()
                 print(f"Image saved successfully: {user_image.id}")
+                
+                # Handle AJAX requests
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'"{user_image.original_filename}" uploaded successfully!',
+                        'image': {
+                            'id': user_image.id,
+                            'original_filename': user_image.original_filename,
+                            'image_url': user_image.image.url,
+                            'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                            'width': user_image.width,
+                            'height': user_image.height,
+                            'file_size': user_image.file_size,
+                        }
+                    })
+                
+                # Handle regular form submissions (fallback)
                 messages.success(request, f'"{user_image.original_filename}" uploaded successfully!')
                 return redirect('image_processing:wedding_studio')
+                
             except Exception as e:
                 print(f"Error saving image: {str(e)}")
-                messages.error(request, f'Failed to upload image: {str(e)}')
+                error_msg = f'Failed to upload image: {str(e)}'
+                
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': error_msg
+                    }, status=400)
+                
+                messages.error(request, error_msg)
         else:
             print(f"Form errors: {form.errors}")
+            error_messages = []
             for field, errors in form.errors.items():
                 for error in errors:
-                    messages.error(request, error)
+                    error_messages.append(str(error))
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': '; '.join(error_messages)
+                }, status=400)
+            
+            for error in error_messages:
+                messages.error(request, error)
     
+    # GET request - display the studio
     # Get user's recent images (for image selection grid)
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
@@ -69,6 +108,7 @@ def wedding_studio(request):
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
+
 
 @login_required
 def image_detail(request, pk):
@@ -100,7 +140,7 @@ def image_detail(request, pk):
 @require_POST
 @usage_limit_required(tokens=1)  # 1 token per image processed
 def process_wedding_image(request, pk):
-    """Process a single image with wedding theme and space type"""
+    """Process a single image with wedding theme and space type - simplified"""
     user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
     
     try:
@@ -124,15 +164,15 @@ def process_wedding_image(request, pk):
         if space_type not in valid_spaces:
             return JsonResponse({'error': 'Invalid space type'}, status=400)
         
-        # Create processing job
+        # Create processing job with default parameters for MVP
         with transaction.atomic():
             job = ImageProcessingJob.objects.create(
                 user_image=user_image,
                 wedding_theme=wedding_theme,
                 space_type=space_type,
-                cfg_scale=data.get('cfg_scale', 7.0),
-                steps=data.get('steps', 50),
-                seed=data.get('seed') if data.get('seed') else None
+                cfg_scale=7.0,  # Default value
+                steps=50,       # Default value
+                seed=None       # Random seed
             )
         
         # Process asynchronously
@@ -586,3 +626,41 @@ def collection_detail(request, collection_id):
     }
     
     return render(request, 'image_processing/collection_detail.html', context)
+
+
+@login_required
+@require_POST
+def ajax_upload_image(request):
+    """Handle AJAX image uploads without page reload"""
+    upload_form = ImageUploadForm(request.POST, request.FILES)
+    
+    if upload_form.is_valid():
+        try:
+            user_image = upload_form.save(commit=False)
+            user_image.user = request.user
+            user_image.original_filename = request.FILES['image'].name
+            user_image.save()
+            
+            return JsonResponse({
+                'success': True,
+                'image_id': user_image.id,
+                'image_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                'image_name': user_image.original_filename,
+                'message': f'"{user_image.original_filename}" uploaded successfully!'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error uploading image: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Failed to upload image: {str(e)}'
+            }, status=500)
+    else:
+        errors = []
+        for field, field_errors in upload_form.errors.items():
+            errors.extend(field_errors)
+        
+        return JsonResponse({
+            'success': False,
+            'error': ' '.join(errors)
+        }, status=400)
