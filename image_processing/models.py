@@ -242,7 +242,7 @@ class ImageProcessingJob(models.Model):
 
     # Template tracking  
     used_prompt_template = models.ForeignKey('PromptTemplate', null=True, blank=True, on_delete=models.SET_NULL)
-    """
+    
         
     class Meta:
         ordering = ['-created_at']
