@@ -18,9 +18,6 @@ def usage_limit_required(tokens=1, redirect_url=None):
     def decorator(view_func):
         @functools.wraps(view_func)
         def wrapped_view(request, *args, **kwargs):
-            # Skip check for staff/admin users
-            if request.user.is_staff or request.user.is_superuser:
-                return view_func(request, *args, **kwargs)
             
             # Try to increment usage
             if UsageTracker.increment_usage(request.user, tokens):

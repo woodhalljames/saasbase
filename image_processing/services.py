@@ -1,4 +1,4 @@
-# image_processing/services.py - Updated for Stability AI SD3 with comprehensive parameters
+# image_processing/services.py - Updated for SD3 Turbo with optimized parameters
 import io
 import base64
 import requests
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class StabilityAIService:
-    """Service for interacting with Stability AI SD3 API with full parameter support"""
+    """Service for interacting with Stability AI SD3 Turbo API for fast wedding venue processing"""
     
     def __init__(self):
         self.api_key = getattr(settings, 'STABILITY_API_KEY', None)
@@ -30,8 +30,8 @@ class StabilityAIService:
     
     def prepare_image_for_api(self, image_path: str, target_resolution: tuple = None):
         """
-        Prepare image for Stability AI API with optimal resolution
-        SD3 works best with specific resolutions
+        Prepare image for Stability AI API with optimal resolution for SD3 Turbo
+        SD3 Turbo works best with specific resolutions around 1024x1024
         """
         try:
             with Image.open(image_path) as img:
@@ -39,16 +39,16 @@ class StabilityAIService:
                 if img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # SD3 optimal resolutions based on aspect ratio
+                # SD3 Turbo optimal resolutions (simpler than regular SD3)
                 if target_resolution:
                     img = img.resize(target_resolution, Image.Resampling.LANCZOS)
                 else:
-                    # Auto-determine best resolution based on aspect ratio
-                    optimal_size = self._get_optimal_resolution(img.size)
+                    # Auto-determine best resolution for SD3 Turbo (prefer 1024x1024)
+                    optimal_size = self._get_optimal_resolution_turbo(img.size)
                     if optimal_size != img.size:
                         img = img.resize(optimal_size, Image.Resampling.LANCZOS)
                 
-                # Convert to base64
+                # Convert to base64 for legacy fallback
                 buffer = io.BytesIO()
                 img.save(buffer, format='PNG')
                 image_data = buffer.getvalue()
@@ -58,71 +58,43 @@ class StabilityAIService:
             logger.error(f"Error preparing image: {str(e)}")
             raise
     
-    def _get_optimal_resolution(self, current_size):
-        """Get optimal resolution for SD3 based on current image size"""
+    def _get_optimal_resolution_turbo(self, current_size):
+        """Get optimal resolution for SD3 Turbo (simpler than regular SD3)"""
         width, height = current_size
         aspect_ratio = width / height
         
-        # SD3 optimal resolutions (maintaining aspect ratios)
-        optimal_resolutions = {
-            '1:1': (1024, 1024),
-            '16:9': (1344, 768),
-            '21:9': (1536, 640),
-            '2:3': (832, 1216),
-            '3:2': (1216, 832),
-            '4:5': (896, 1152),
-            '5:4': (1152, 896),
-            '9:16': (768, 1344),
-            '9:21': (640, 1536),
-        }
-        
-        # Find closest aspect ratio
-        closest_ratio = min(optimal_resolutions.keys(), 
-                          key=lambda x: abs(aspect_ratio - eval(x.replace(':', '/'))))
-        
-        return optimal_resolutions[closest_ratio]
+        # SD3 Turbo optimal resolutions (focused on 1024x1024 and close variants)
+        if aspect_ratio > 1.5:  # Wide
+            return (1344, 768)
+        elif aspect_ratio < 0.75:  # Tall
+            return (768, 1344)
+        else:  # Square-ish
+            return (1024, 1024)
     
-    def image_to_image_sd3(self, 
-                          image_path: str, 
-                          prompt: str, 
-                          negative_prompt: str = None,
-                          strength: float = 0.35,
-                          cfg_scale: float = 7.0,
-                          steps: int = 50,
-                          seed: int = None,
-                          aspect_ratio: str = "16:9",
-                          output_format: str = "png") -> Dict[str, Any]:
+    def image_to_image_sd3_turbo(self, 
+                                image_path: str, 
+                                prompt: str, 
+                                negative_prompt: str = None,
+                                strength: float = 0.35,
+                                aspect_ratio: str = "1:1",
+                                seed: int = None,
+                                output_format: str = "png") -> Dict[str, Any]:
         """
-        Perform image-to-image generation using Stability AI SD3
-        Fixed implementation with proper multipart/form-data handling
+        Perform image-to-image generation using Stability AI SD3 Turbo
+        Optimized for speed with simplified parameters
         """
         try:
-            logger.info(f"Starting SD3 image-to-image generation with prompt: {prompt[:100]}...")
-            
-            # Prepare the image with optimal resolution
-            resolution_map = {
-                "1:1": (1024, 1024),
-                "16:9": (1344, 768), 
-                "21:9": (1536, 640),
-                "2:3": (832, 1216),
-                "3:2": (1216, 832),
-                "4:5": (896, 1152),
-                "5:4": (1152, 896),
-                "9:16": (768, 1344),
-                "9:21": (640, 1536),
-            }
-            
-            target_resolution = resolution_map.get(aspect_ratio, (1344, 768))
+            logger.info(f"Starting SD3 Turbo image-to-image generation with prompt: {prompt[:100]}...")
             
             # Read and prepare image
             with open(image_path, 'rb') as image_file:
-                # Resize image if needed
+                # Resize image to optimal resolution for turbo processing
                 with Image.open(image_file) as img:
                     if img.mode != 'RGB':
                         img = img.convert('RGB')
                     
-                    # Resize to target resolution
-                    img = img.resize(target_resolution, Image.Resampling.LANCZOS)
+                    # For SD3 Turbo, use 1024x1024 as default optimal size
+                    img = img.resize((1024, 1024), Image.Resampling.LANCZOS)
                     
                     # Convert to bytes
                     img_buffer = io.BytesIO()
@@ -130,13 +102,15 @@ class StabilityAIService:
                     img_buffer.seek(0)
                     image_bytes = img_buffer.getvalue()
             
-            # Prepare multipart form data
+            # Prepare multipart form data for SD3 Turbo
             files = {
                 'image': ('image.png', image_bytes, 'image/png'),
             }
             
+            # SD3 Turbo optimized parameters
             data = {
                 'prompt': prompt,
+                'model': 'sd3-turbo',  # KEY CHANGE: Use turbo model
                 'mode': 'image-to-image',
                 'strength': str(strength),
                 'aspect_ratio': aspect_ratio,
@@ -150,48 +124,52 @@ class StabilityAIService:
             if seed is not None:
                 data["seed"] = str(seed)
             
-            # Make the API request to SD3 endpoint
+            # Make the API request to SD3 endpoint (same endpoint, different model)
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
-            logger.info(f"Making SD3 API request to {url}")
+            logger.info(f"Making SD3 Turbo API request to {url}")
             
             response = requests.post(
                 url,
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 files=files,
                 data=data,
-                timeout=120
+                timeout=60  # Reduced timeout since turbo is much faster
             )
             
-            logger.info(f"SD3 API response status: {response.status_code}")
+            logger.info(f"SD3 Turbo API response status: {response.status_code}")
             
             if response.status_code != 200:
-                error_msg = f"Stability AI SD3 API error: {response.status_code} - {response.text}"
+                error_msg = f"Stability AI SD3 Turbo API error: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 raise Exception(error_msg)
             
-            # SD3 returns the image directly as bytes
+            # SD3 Turbo returns the image directly as bytes
             image_data = response.content
+            
+            # Get seed from response headers if available
+            response_seed = response.headers.get("seed", seed)
+            finish_reason = response.headers.get("finish-reason", "SUCCESS")
             
             return {
                 "success": True,
                 "results": [{
                     "image_data": image_data,
-                    "seed": seed,
-                    "finish_reason": "SUCCESS"
+                    "seed": response_seed,
+                    "finish_reason": finish_reason
                 }],
                 "prompt": prompt,
-                "model": "SD3"
+                "model": "SD3-Turbo"
             }
             
         except requests.exceptions.Timeout:
-            logger.error("Stability AI SD3 API timeout")
+            logger.error("Stability AI SD3 Turbo API timeout")
             return {
                 "success": False,
-                "error": "API request timed out"
+                "error": "API request timed out (this is unusual for SD3 Turbo)"
             }
         except Exception as e:
-            logger.error(f"Stability AI SD3 service error: {str(e)}")
+            logger.error(f"Stability AI SD3 Turbo service error: {str(e)}")
             return {
                 "success": False,
                 "error": str(e)
@@ -206,7 +184,7 @@ class StabilityAIService:
                              steps: int = 50,
                              seed: int = None) -> Dict[str, Any]:
         """
-        Fallback to legacy image-to-image API if SD3 is not available
+        Fallback to legacy image-to-image API if SD3 Turbo fails
         """
         try:
             logger.info(f"Using legacy API with prompt: {prompt[:100]}...")
@@ -283,34 +261,34 @@ class StabilityAIService:
     
     def process_wedding_venue(self, image_path: str, processing_job):
         """
-        Process wedding venue using optimal API based on parameters
+        Process wedding venue using SD3 Turbo for fast results
         """
         # Get all parameters from the job
         params = processing_job.get_stability_ai_params()
         
-        logger.info(f"Processing wedding venue for job {processing_job.id}")
+        logger.info(f"Processing wedding venue for job {processing_job.id} with SD3 Turbo")
         logger.info(f"Generated prompt: {params['prompt'][:200]}...")
         
         try:
-            # Try SD3 first (recommended for realistic images)
-            result = self.image_to_image_sd3(
+            # Use SD3 Turbo for fast processing
+            result = self.image_to_image_sd3_turbo(
                 image_path=image_path,
                 prompt=params['prompt'],
                 negative_prompt=params['negative_prompt'],
                 strength=params['strength'],
                 aspect_ratio=params['aspect_ratio'],
-                output_format=params['output_format'],
-                seed=params['seed']
+                seed=params['seed'],
+                output_format=params['output_format']
             )
             
             if result["success"]:
-                logger.info(f"Successfully processed with SD3 for job {processing_job.id}")
+                logger.info(f"Successfully processed with SD3 Turbo for job {processing_job.id}")
                 return result
                 
         except Exception as e:
-            logger.warning(f"SD3 failed, falling back to legacy API: {str(e)}")
+            logger.warning(f"SD3 Turbo failed, falling back to legacy API: {str(e)}")
         
-        # Fallback to legacy API
+        # Fallback to legacy API only if SD3 Turbo fails
         result = self.image_to_image_legacy(
             image_path=image_path,
             prompt=params['prompt'],
@@ -344,13 +322,13 @@ class StabilityAIService:
 
 
 class ImageProcessingService:
-    """Service for handling single image wedding venue processing"""
+    """Service for handling single image wedding venue processing with SD3 Turbo"""
     
     def __init__(self):
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a single wedding venue image with comprehensive parameters"""
+        """Process a single wedding venue image with SD3 Turbo for speed"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -362,7 +340,7 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            # Process using the wedding venue transformation system
+            # Process using the wedding venue transformation system with SD3 Turbo
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
@@ -379,7 +357,7 @@ class ImageProcessingService:
                 
                 # Save the image file with wedding context in filename
                 theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                model_used = result.get("model", "SD3")
+                model_used = result.get("model", "SD3-Turbo")
                 filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timezone.now().timestamp()}.png"
                 
                 processed_image.processed_image.save(
@@ -396,7 +374,7 @@ class ImageProcessingService:
                 processing_job.completed_at = timezone.now()
                 processing_job.save()
                 
-                logger.info(f"Successfully completed wedding processing job {processing_job.id}")
+                logger.info(f"Successfully completed wedding processing job {processing_job.id} with SD3 Turbo")
                 return True
             else:
                 # No successful results
@@ -416,10 +394,9 @@ class ImageProcessingService:
             processing_job.save()
             logger.error(f"Error in processing job {processing_job.id}: {str(exc)}")
             return False
-        
 
     def enhanced_process_wedding_image(self, processing_job):
-        """Process a single wedding venue image with comprehensive error handling"""
+        """Process a single wedding venue image with enhanced error handling using SD3 Turbo"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -431,7 +408,7 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            logger.info(f"Starting image processing for job {processing_job.id}")
+            logger.info(f"Starting SD3 Turbo image processing for job {processing_job.id}")
             logger.info(f"Image path: {user_image.image.path}")
             logger.info(f"Generated prompt: {processing_job.generated_prompt[:200]}...")
             
@@ -440,13 +417,13 @@ class ImageProcessingService:
             if not os.path.exists(user_image.image.path):
                 raise FileNotFoundError(f"Image file not found: {user_image.image.path}")
             
-            # Process using the wedding venue transformation system
+            # Process using the wedding venue transformation system with SD3 Turbo
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
             )
             
-            logger.info(f"Stability AI result: success={result.get('success')}, model={result.get('model')}")
+            logger.info(f"SD3 Turbo result: success={result.get('success')}, model={result.get('model')}")
             
             if result["success"] and result["results"]:
                 # Save the single processed image
@@ -459,7 +436,7 @@ class ImageProcessingService:
                 
                 # Save the image file with wedding context in filename
                 theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                model_used = result.get("model", "SD3")
+                model_used = result.get("model", "SD3-Turbo")
                 timestamp = int(timezone.now().timestamp())
                 filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
                 
@@ -483,7 +460,7 @@ class ImageProcessingService:
                 processing_job.completed_at = timezone.now()
                 processing_job.save()
                 
-                logger.info(f"Successfully completed wedding processing job {processing_job.id}")
+                logger.info(f"Successfully completed wedding processing job {processing_job.id} with SD3 Turbo")
                 return True
             else:
                 # No successful results
@@ -506,4 +483,3 @@ class ImageProcessingService:
             processing_job.save()
             
             return False
-

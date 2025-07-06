@@ -1,4 +1,3 @@
-<!-- image_processing/templates/image_processing/wedding_studio.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -14,53 +13,53 @@
     </div>
   </div>
 
-
-
   <!-- Main Layout: Image Area + Sidebar -->
   <div class="row">
     <!-- Right: Sidebar (shown first on mobile) -->
     <div class="col-md-4 col-lg-3 order-md-2 mb-4">
       
-        <div class="card mb-3">
-            <div class="card-header">
-              <h6 class="mb-0">Recent Uploads</h6>
-            </div>
-            <div class="card-body">
-              {% if recent_images %}
-                <div class="row g-2">
-                  {% for image in recent_images|slice:":3" %}
-                    <div class="col-4">
-                      <div class="card venue-thumbnail" 
-                           data-image-id="{{ image.id }}"
-                           data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
-                           data-image-name="{{ image.original_filename }}"
-                           data-image-size="{{ image.file_size }}"
-                           data-image-dimensions="{{ image.width }}x{{ image.height }}"
-                           style="cursor: pointer; transition: all 0.2s;">
-                        <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
-                             class="card-img-top" 
-                             style="height: 80px; object-fit: cover;" 
-                             alt="{{ image.original_filename }}">
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-                {% if recent_images|length > 3 %}
-                  <div class="text-center mt-2">
-                    <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
-                      View All ({{ recent_images|length }})
-                    </a>
+      <!-- Recent Uploads -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Recent Uploads</h6>
+        </div>
+        <div class="card-body">
+          {% if recent_images %}
+            <div class="row g-2" id="recentImagesContainer">
+              {% for image in recent_images|slice:":3" %}
+                <div class="col-4">
+                  <div class="card venue-thumbnail" 
+                       data-image-id="{{ image.id }}"
+                       data-image-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
+                       data-image-name="{{ image.original_filename }}"
+                       data-image-size="{{ image.file_size }}"
+                       data-image-dimensions="{{ image.width }}x{{ image.height }}"
+                       style="cursor: pointer; transition: all 0.2s; border: 2px solid transparent;">
+                    <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                         class="card-img-top" 
+                         style="height: 80px; object-fit: cover; border-radius: 0.25rem;" 
+                         alt="{{ image.original_filename }}">
                   </div>
-                {% endif %}
-              {% else %}
-                <div class="text-center py-3">
-                  <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
-                  <p class="text-muted mt-2 mb-0">No uploads yet</p>
                 </div>
-              {% endif %}
+              {% endfor %}
             </div>
-          </div>
-      <!-- Transform Controls (Made Bigger) -->
+            {% if recent_images|length > 3 %}
+              <div class="text-center mt-2">
+                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
+                  View All ({{ recent_images|length }})
+                </a>
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="text-center py-3">
+              <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
+              <p class="text-muted mt-2 mb-0">No uploads yet</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Transform Controls -->
       <div class="card">
         <div class="card-header">
           <h5 class="mb-0">Visualization Options</h5>
@@ -97,7 +96,6 @@
           </form>
         </div>
       </div>
-
     </div>
 
     <!-- Left: Main Image Upload/Preview Area -->
@@ -131,11 +129,20 @@
           </div>
 
           <!-- Selected Image Preview (hidden initially) -->
-          <div id="imagePreview" class="text-center w-100" style="display: none;">
+          <div id="imagePreview" class="text-center w-100 position-relative" style="display: none;">
+            <!-- Small upload button in corner -->
+            <button id="uploadNewBtn" class="btn btn-sm btn-outline-primary position-absolute" 
+                    style="top: 10px; right: 10px; z-index: 10;"
+                    title="Upload a different image">
+              <i class="bi bi-camera"></i>
+            </button>
+            
             <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
-            <p class="mt-3 mb-0"><strong id="selectedImageName">Selected Image</strong></p>
+            <div class="mt-3">
+              <p class="mb-1"><strong id="selectedImageName">Selected Image</strong></p>
+              <p class="text-muted mb-0" id="selectedImageDetails">Image details</p>
+            </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -209,66 +216,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get all necessary elements
     const fileInput = document.getElementById('id_image');
-    const backupFileInput = document.getElementById('backupFileInput');
-    const uploadForm = document.getElementById('uploadForm');
-    const uploadMainBtn = document.getElementById('uploadMainBtn');
-    const uploadNewBtn = document.getElementById('uploadNewBtn');
-    const backupUploadBtn = document.getElementById('backupUploadBtn');
-    const imagePlaceholder = document.getElementById('imagePlaceholder');
-    const selectedImageDisplay = document.getElementById('selectedImageDisplay');
+    const uploadArea = document.getElementById('uploadArea');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const imagePreview = document.getElementById('imagePreview');
     const selectedImage = document.getElementById('selectedImage');
     const selectedImageName = document.getElementById('selectedImageName');
     const selectedImageDetails = document.getElementById('selectedImageDetails');
-    const visualizeBtn = document.getElementById('visualizeBtn');
-    const statusText = document.getElementById('statusText');
+    const transformBtn = document.getElementById('transformBtn');
     const weddingTheme = document.getElementById('wedding-theme');
     const spaceType = document.getElementById('space-type');
+    const uploadNewBtn = document.getElementById('uploadNewBtn');
+    const recentImagesContainer = document.getElementById('recentImagesContainer');
     
     console.log('Elements found:', {
         fileInput: !!fileInput,
-        uploadForm: !!uploadForm,
-        uploadMainBtn: !!uploadMainBtn,
-        backupFileInput: !!backupFileInput
+        uploadArea: !!uploadArea,
+        imagePreview: !!imagePreview
     });
     
-    // Multiple upload button handlers for reliability
-    function triggerFileInput() {
-        console.log('Triggering file input...');
-        if (fileInput) {
-            fileInput.click();
-        } else {
-            console.error('File input not found!');
-            alert('Upload form not found. Please try the backup method below.');
-        }
-    }
-    
-    // Main upload button
-    if (uploadMainBtn) {
-        uploadMainBtn.addEventListener('click', triggerFileInput);
-    }
-    
-    // Header upload button
-    if (uploadNewBtn) {
-        uploadNewBtn.addEventListener('click', triggerFileInput);
-    }
-    
-    // Backup upload method
-    if (backupUploadBtn && backupFileInput) {
-        backupUploadBtn.addEventListener('click', function() {
-            console.log('Using backup upload method...');
-            if (backupFileInput.files.length > 0) {
-                const file = backupFileInput.files[0];
-                uploadFileWithAjax(file);
-            } else {
-                alert('Please select a file first');
-            }
-        });
-    }
-    
-    // Handle main file input change with AJAX upload
+    // Handle file input change with AJAX upload
     if (fileInput) {
         fileInput.addEventListener('change', function() {
-            console.log('Main file input changed, files:', this.files.length);
+            console.log('File input changed, files:', this.files.length);
             if (this.files.length > 0) {
                 const file = this.files[0];
                 console.log('File selected:', file.name);
@@ -292,15 +261,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Handle upload new button (when image is already selected)
+    if (uploadNewBtn) {
+        uploadNewBtn.addEventListener('click', function() {
+            console.log('Upload new button clicked');
+            if (fileInput) {
+                fileInput.click();
+            }
+        });
+    }
+    
     // AJAX file upload function
     function uploadFileWithAjax(file) {
         console.log('Starting AJAX upload for:', file.name);
         
-        // Show loading state
-        if (uploadMainBtn) {
-            uploadMainBtn.disabled = true;
-            uploadMainBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Uploading...';
-        }
+        // Show upload progress
+        showUploadProgress();
         
         // Create FormData
         const formData = new FormData();
@@ -336,12 +312,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Add the new image to the recent uploads section
                 addNewImageToRecent(data.image);
                 
+                // Auto-select the newly uploaded image
+                setTimeout(() => {
+                    const newThumbnail = document.querySelector(`[data-image-id="${data.image.id}"]`);
+                    if (newThumbnail) {
+                        selectImage(newThumbnail);
+                    }
+                }, 100);
+                
                 // Show success message
                 showToast('Image uploaded successfully!', 'success');
                 
                 // Reset file input
                 if (fileInput) fileInput.value = '';
-                if (backupFileInput) backupFileInput.value = '';
                 
             } else {
                 throw new Error(data.error || 'Upload failed');
@@ -350,20 +333,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Upload error:', error);
             showToast(error.message || 'Upload failed', 'error');
-        })
-        .finally(() => {
-            // Reset button state
-            if (uploadMainBtn) {
-                uploadMainBtn.disabled = false;
-                uploadMainBtn.innerHTML = '<i class="bi bi-upload"></i> Upload Venue Photo';
-            }
+            hideUploadProgress();
         });
     }
     
     // Add new image to recent uploads section
     function addNewImageToRecent(imageData) {
-        const recentUploadsContainer = document.querySelector('.card-body .row.g-2');
-        if (!recentUploadsContainer) return;
+        if (!recentImagesContainer) return;
         
         // Create new thumbnail element
         const newThumbnail = document.createElement('div');
@@ -375,10 +351,10 @@ document.addEventListener('DOMContentLoaded', function() {
                  data-image-name="${imageData.original_filename}"
                  data-image-size="${imageData.file_size}"
                  data-image-dimensions="${imageData.width}x${imageData.height}"
-                 style="cursor: pointer; transition: all 0.2s;">
+                 style="cursor: pointer; transition: all 0.2s; border: 2px solid transparent;">
                 <img src="${imageData.thumbnail_url || imageData.image_url}" 
                      class="card-img-top" 
-                     style="height: 80px; object-fit: cover;" 
+                     style="height: 80px; object-fit: cover; border-radius: 0.25rem;" 
                      alt="${imageData.original_filename}">
             </div>
         `;
@@ -389,16 +365,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Insert at the beginning
-        recentUploadsContainer.insertBefore(newThumbnail, recentUploadsContainer.firstChild);
+        recentImagesContainer.insertBefore(newThumbnail, recentImagesContainer.firstChild);
         
         // Remove excess items (keep only 3)
-        const thumbnails = recentUploadsContainer.querySelectorAll('.col-4');
+        const thumbnails = recentImagesContainer.querySelectorAll('.col-4');
         if (thumbnails.length > 3) {
             thumbnails[3].remove();
         }
-        
-        // Auto-select the new image
-        selectImage(newThumbnail.querySelector('.venue-thumbnail'));
     }
     
     // Handle recent image selection
@@ -411,29 +384,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form field changes
     [weddingTheme, spaceType].forEach(field => {
         if (field) {
-            field.addEventListener('change', updateVisualizeBtnState);
+            field.addEventListener('change', updateTransformBtnState);
         }
     });
     
-    // Handle advanced options sliders
-    const cfgScale = document.getElementById('cfg_scale');
-    const steps = document.getElementById('steps');
-    
-    if (cfgScale) {
-        cfgScale.addEventListener('input', function() {
-            document.getElementById('cfgValue').textContent = this.value;
-        });
-    }
-    
-    if (steps) {
-        steps.addEventListener('input', function() {
-            document.getElementById('stepsValue').textContent = this.value;
-        });
-    }
-    
     // Handle visualize button
-    if (visualizeBtn) {
-        visualizeBtn.addEventListener('click', function() {
+    if (transformBtn) {
+        transformBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             visualizeVenue();
         });
     }
@@ -443,13 +401,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
-            t.classList.remove('border-primary');
-            t.style.borderWidth = '';
+            t.style.borderColor = 'transparent';
+            t.style.borderWidth = '2px';
+            t.style.transform = 'none';
+            t.style.boxShadow = 'none';
         });
         
-        // Mark as selected
-        thumbnail.classList.add('border-primary');
+        // Mark as selected with enhanced styling
+        thumbnail.style.borderColor = '#0d6efd';
         thumbnail.style.borderWidth = '3px';
+        thumbnail.style.transform = 'translateY(-2px)';
+        thumbnail.style.boxShadow = '0 4px 8px rgba(13, 110, 253, 0.3)';
         
         // Store selected image data
         selectedImageId = thumbnail.dataset.imageId;
@@ -460,37 +422,49 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedImageName.textContent = thumbnail.dataset.imageName;
             selectedImageDetails.textContent = `${thumbnail.dataset.imageDimensions} • ${formatFileSize(thumbnail.dataset.imageSize)}`;
             
-            // Show selected image, hide placeholder
-            if (imagePlaceholder && selectedImageDisplay) {
-                imagePlaceholder.style.display = 'none';
-                selectedImageDisplay.style.display = 'block';
-            }
+            // Show selected image, hide upload area
+            showImagePreview();
         }
         
-        updateVisualizeBtnState();
+        updateTransformBtnState();
     }
     
-    function updateVisualizeBtnState() {
+    function showUploadProgress() {
+        if (uploadArea) uploadArea.style.display = 'none';
+        if (imagePreview) imagePreview.style.display = 'none';
+        if (uploadProgress) uploadProgress.style.display = 'block';
+    }
+    
+    function hideUploadProgress() {
+        if (uploadProgress) uploadProgress.style.display = 'none';
+        if (selectedImageId) {
+            showImagePreview();
+        } else {
+            showUploadArea();
+        }
+    }
+    
+    function showImagePreview() {
+        if (uploadArea) uploadArea.style.display = 'none';
+        if (uploadProgress) uploadProgress.style.display = 'none';
+        if (imagePreview) imagePreview.style.display = 'block';
+    }
+    
+    function showUploadArea() {
+        if (imagePreview) imagePreview.style.display = 'none';
+        if (uploadProgress) uploadProgress.style.display = 'none';
+        if (uploadArea) uploadArea.style.display = 'block';
+    }
+    
+    function updateTransformBtnState() {
         const hasImage = selectedImageId !== null;
         const hasTheme = weddingTheme && weddingTheme.value;
         const hasSpace = spaceType && spaceType.value;
         
         const canVisualize = hasImage && hasTheme && hasSpace;
         
-        if (visualizeBtn) {
-            visualizeBtn.disabled = !canVisualize;
-        }
-        
-        if (statusText) {
-            statusText.classList.remove('text-success');
-            if (!hasImage) {
-                statusText.textContent = 'Select a photo to get started';
-            } else if (!hasTheme || !hasSpace) {
-                statusText.textContent = 'Choose wedding style and space type';
-            } else {
-                statusText.textContent = 'Ready to visualize your venue!';
-                statusText.classList.add('text-success');
-            }
+        if (transformBtn) {
+            transformBtn.disabled = !canVisualize;
         }
     }
     
@@ -510,15 +484,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show processing status
         document.getElementById('processingStatus').style.display = 'block';
-        visualizeBtn.disabled = true;
-        visualizeBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+        transformBtn.disabled = true;
+        transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
         
         // Prepare data
         const data = {
             wedding_theme: theme,
             space_type: space,
-            cfg_scale: parseFloat(cfgScale ? cfgScale.value : 7.0),
-            steps: parseInt(steps ? steps.value : 50)
+            cfg_scale: 7.0,
+            steps: 50
         };
         
         console.log('Submitting visualization request:', data);
@@ -540,21 +514,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 2000);
             } else {
                 alert('Error: ' + data.error);
-                resetVisualizeBtn();
+                resetTransformBtn();
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while processing your venue');
-            resetVisualizeBtn();
+            resetTransformBtn();
         });
     }
     
-    function resetVisualizeBtn() {
+    function resetTransformBtn() {
         document.getElementById('processingStatus').style.display = 'none';
-        visualizeBtn.disabled = false;
-        visualizeBtn.innerHTML = '<i class="bi bi-magic"></i> Visualize My Venue';
-        updateVisualizeBtnState();
+        transformBtn.disabled = false;
+        transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>';
+        updateTransformBtnState();
     }
     
     function formatFileSize(bytes) {
@@ -584,20 +558,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Initialize button state
-    updateVisualizeBtnState();
+    updateTransformBtnState();
     
     console.log('Wedding Studio JS initialization complete');
 });
 </script>
 
 <style>
-.venue-image-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+.venue-thumbnail {
+    transition: all 0.2s ease;
+    border-radius: 0.375rem;
 }
 
-.venue-image-card.border-primary {
-    border-width: 2px !important;
+.venue-thumbnail:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border-color: rgba(13, 110, 253, 0.3) !important;
 }
 
 .upload-zone:hover {
@@ -622,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
     to { opacity: 1; transform: scale(1); }
 }
 
-/* Mobile responsiveness - Recent images above upload */
+/* Mobile responsiveness */
 @media (max-width: 767.98px) {
     .order-md-1 {
         order: 2;
@@ -632,68 +608,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-/* Larger visualization controls */
-.card-body.p-4 {
-    padding: 2rem !important;
-}
-
-.form-label.fs-5 {
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-}
-
-.btn-lg.py-3 {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-}
-.venue-thumbnail {
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-    border-radius: 0.375rem;
-}
-
-.venue-thumbnail:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    border-color: rgba(13, 110, 253, 0.3);
-}
-
-.venue-thumbnail.border-primary {
-    border-color: #0d6efd !important;
-    border-width: 3px !important;
-    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-    transform: translateY(-1px);
-}
-
-.venue-thumbnail img {
-    border-radius: 0.25rem;
-}
-
-#selectedImageDisplay {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
 .card {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Button state improvements */
 .btn-primary:disabled {
     background-color: #6c757d;
     border-color: #6c757d;
 }
 
-.btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-/* Status text improvements */
 .text-success {
     color: #198754 !important;
     font-weight: 500;

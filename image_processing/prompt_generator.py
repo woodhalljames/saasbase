@@ -1,214 +1,204 @@
-# image_processing/prompt_generator.py
 """
 Advanced prompt generation system for realistic wedding venue transformations
-Utilizes Stability AI SD3 parameters for professional results
+Optimized for Stability AI SD3 Turbo for faster processing
 """
 
 class WeddingPromptGenerator:
-    """Generate comprehensive prompts for wedding venue transformations"""
+    """Generate comprehensive prompts for wedding venue transformations optimized for SD3 Turbo"""
     
-    # Base style descriptions with lighting and atmosphere details
+    # Streamlined style descriptions optimized for SD3 Turbo
     THEME_STYLES = {
         'rustic': {
-            'description': 'rustic farmhouse wedding style with warm wooden elements, vintage mason jars, burlap table runners, string lights, wildflower bouquets, antique furniture, weathered wood signs, cozy intimate lighting',
-            'lighting': 'warm golden hour lighting, soft string lights, candles, natural warm tones',
-            'colors': 'warm earth tones, cream, sage green, dusty rose, natural wood',
-            'textures': 'weathered wood, burlap, lace, natural fabrics, vintage metals'
+            'description': 'rustic farmhouse wedding with wooden elements, mason jars, burlap, string lights, wildflowers, vintage charm',
+            'lighting': 'warm golden lighting, string lights, candles',
+            'colors': 'warm earth tones, cream, sage green, dusty rose',
+            'atmosphere': 'cozy intimate rustic celebration'
         },
         'modern': {
-            'description': 'contemporary minimalist wedding with clean geometric lines, sleek furniture, monochromatic color palette, modern floral arrangements, architectural lighting, sophisticated elegance',
-            'lighting': 'clean architectural lighting, LED strips, spotlights, modern chandeliers',
-            'colors': 'white, black, grey, metallic accents, monochromatic palette',
-            'textures': 'smooth surfaces, glass, metal, silk, modern fabrics'
+            'description': 'contemporary minimalist wedding with clean lines, sleek furniture, geometric elements, modern floral arrangements',
+            'lighting': 'clean architectural lighting, modern chandeliers',
+            'colors': 'white, black, grey, metallic accents',
+            'atmosphere': 'sophisticated contemporary elegance'
         },
         'vintage': {
-            'description': 'romantic vintage wedding with antique lace, classic roses, ornate candelabras, vintage china, pearl details, old-world charm, soft romantic lighting',
-            'lighting': 'soft romantic lighting, vintage chandeliers, candles, warm ambient glow',
-            'colors': 'blush pink, ivory, gold, dusty blue, antique bronze',
-            'textures': 'vintage lace, silk, velvet, ornate metals, delicate fabrics'
+            'description': 'romantic vintage wedding with antique lace, classic roses, ornate details, vintage china, old-world charm',
+            'lighting': 'soft romantic lighting, vintage chandeliers, warm glow',
+            'colors': 'blush pink, ivory, gold, dusty blue',
+            'atmosphere': 'romantic vintage elegance'
         },
         'bohemian': {
-            'description': 'free-spirited boho wedding with macrame hangings, colorful textiles, eclectic mix of patterns, pampas grass, dreamcatchers, floor cushions, natural elements',
-            'lighting': 'warm ambient lighting, lanterns, fairy lights, natural sunlight',
-            'colors': 'terracotta, sage, mustard, deep jewel tones, earth colors',
-            'textures': 'woven textiles, macrame, natural fibers, mixed patterns'
+            'description': 'bohemian wedding with macrame, colorful textiles, pampas grass, natural elements, eclectic patterns',
+            'lighting': 'warm ambient lighting, lanterns, fairy lights',
+            'colors': 'terracotta, sage, mustard, jewel tones',
+            'atmosphere': 'free-spirited boho celebration'
         },
         'classic': {
-            'description': 'timeless traditional wedding with elegant white flowers, formal table settings, classic drapery, crystal chandeliers, refined luxury, sophisticated grandeur',
-            'lighting': 'crystal chandeliers, elegant uplighting, classic warm lighting',
-            'colors': 'white, ivory, gold, champagne, classic neutrals',
-            'textures': 'silk, satin, crystal, fine china, elegant fabrics'
+            'description': 'timeless traditional wedding with elegant white flowers, formal settings, crystal details, refined luxury',
+            'lighting': 'crystal chandeliers, elegant uplighting',
+            'colors': 'white, ivory, gold, champagne',
+            'atmosphere': 'grand formal celebration'
         },
         'garden': {
-            'description': 'natural garden wedding with abundant fresh flowers, greenery garlands, natural wood, botanical elements, organic arrangements, outdoor garden party feel',
-            'lighting': 'natural daylight, garden string lights, soft outdoor lighting',
-            'colors': 'green, white, soft pastels, natural flower colors',
-            'textures': 'natural wood, fresh flowers, organic materials, garden elements'
+            'description': 'natural garden wedding with abundant flowers, greenery, botanical elements, organic arrangements',
+            'lighting': 'natural daylight, garden string lights',
+            'colors': 'green, white, soft pastels, natural colors',
+            'atmosphere': 'natural garden party celebration'
         },
         'beach': {
-            'description': 'coastal beach wedding with driftwood, seashells, flowing fabrics, nautical elements, ocean-inspired colors, breezy natural materials',
-            'lighting': 'natural beach lighting, lanterns, soft coastal ambiance',
-            'colors': 'ocean blue, sandy beige, coral, seafoam, natural coastal tones',
-            'textures': 'weathered wood, flowing fabrics, natural beach materials'
+            'description': 'coastal beach wedding with driftwood, flowing fabrics, nautical elements, ocean-inspired colors',
+            'lighting': 'natural beach lighting, soft coastal ambiance',
+            'colors': 'ocean blue, sandy beige, coral, seafoam',
+            'atmosphere': 'coastal beach celebration'
         },
         'industrial': {
-            'description': 'urban industrial wedding with exposed brick, metal fixtures, Edison bulb lighting, concrete elements, modern urban aesthetic, raw materials',
-            'lighting': 'Edison bulbs, industrial fixtures, warm urban lighting',
-            'colors': 'grey, black, copper, warm metallics, urban neutrals',
-            'textures': 'exposed brick, metal, concrete, industrial materials'
+            'description': 'urban industrial wedding with exposed brick, metal fixtures, Edison bulbs, concrete elements, modern urban aesthetic',
+            'lighting': 'Edison bulbs, industrial fixtures, urban lighting',
+            'colors': 'grey, black, copper, warm metallics',
+            'atmosphere': 'urban industrial celebration'
         }
     }
     
-    # Space-specific considerations
+    # Simplified space details for faster processing
     SPACE_DETAILS = {
         'indoor_ceremony': {
-            'focus': 'ceremony aisle, altar area, seating arrangement',
-            'elements': 'wedding arch, aisle petals, ceremony chairs, altar decorations',
-            'atmosphere': 'intimate sacred space, focused lighting on altar'
+            'focus': 'ceremony aisle and altar area',
+            'elements': 'wedding arch, aisle decorations, ceremony seating',
+            'setup': 'intimate sacred ceremony space'
         },
         'outdoor_ceremony': {
-            'focus': 'natural backdrop, outdoor seating, ceremony arch',
+            'focus': 'outdoor ceremony with natural backdrop',
             'elements': 'outdoor wedding arch, natural landscaping, ceremony seating',
-            'atmosphere': 'natural outdoor setting, harmony with landscape'
+            'setup': 'natural outdoor ceremony setting'
         },
         'reception_hall': {
-            'focus': 'dining tables, dance floor, entertainment area',
-            'elements': 'round dining tables, centerpieces, dance floor, DJ area',
-            'atmosphere': 'celebration space, party lighting, festive mood'
+            'focus': 'dining tables and celebration space',
+            'elements': 'round dining tables, centerpieces, dance floor',
+            'setup': 'festive reception celebration'
         },
         'garden': {
-            'focus': 'natural garden setting, outdoor dining',
-            'elements': 'garden pathways, natural landscaping, outdoor furniture',
-            'atmosphere': 'natural garden party, organic outdoor celebration'
+            'focus': 'garden setting with natural elements',
+            'elements': 'garden landscaping, outdoor furniture, natural pathways',
+            'setup': 'natural garden party atmosphere'
         },
         'beach': {
-            'focus': 'oceanview, beach setting, coastal elements',
-            'elements': 'beach chairs, coastal decorations, ocean backdrop',
-            'atmosphere': 'coastal celebration, ocean breeze, natural beach setting'
+            'focus': 'beach setting with ocean views',
+            'elements': 'beach decorations, coastal elements, ocean backdrop',
+            'setup': 'coastal beach celebration'
         },
         'barn': {
-            'focus': 'rustic barn interior, wooden beams, country setting',
+            'focus': 'rustic barn interior with wooden beams',
             'elements': 'wooden beams, barn doors, country decorations',
-            'atmosphere': 'rustic country celebration, barn charm'
+            'setup': 'rustic country celebration'
         },
         'ballroom': {
-            'focus': 'elegant ballroom, formal dining, grand space',
+            'focus': 'elegant ballroom with formal atmosphere',
             'elements': 'elegant tables, ballroom lighting, formal decorations',
-            'atmosphere': 'grand formal celebration, elegant sophistication'
+            'setup': 'grand formal ballroom celebration'
         },
         'rooftop': {
-            'focus': 'city views, urban setting, skyline backdrop',
-            'elements': 'rooftop furniture, city views, urban decorations',
-            'atmosphere': 'urban celebration, city lights, elevated setting'
+            'focus': 'rooftop venue with city views',
+            'elements': 'rooftop furniture, city skyline, urban decorations',
+            'setup': 'elevated urban celebration'
         }
     }
     
     @classmethod
     def generate_comprehensive_prompt(cls, wedding_theme, space_type, additional_details=None):
-        """Generate a comprehensive prompt for Stability AI SD3"""
+        """Generate a comprehensive prompt optimized for SD3 Turbo processing"""
         
         theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
         space_data = cls.SPACE_DETAILS.get(space_type, cls.SPACE_DETAILS['reception_hall'])
         
-        # Main prompt construction
+        # Streamlined prompt construction for SD3 Turbo
         prompt_parts = [
-            # Quality and style indicators
-            "professional wedding photography, high resolution, photorealistic, detailed",
+            # Quality indicators (simplified for turbo)
+            "professional wedding photography, photorealistic, detailed",
             
-            # Space description
-            f"Transform this {space_type.replace('_', ' ')} into a beautiful wedding venue,",
+            # Core transformation description
+            f"Transform this {space_type.replace('_', ' ')} into a beautiful {wedding_theme} wedding venue,",
             
-            # Theme application
-            f"decorated in {wedding_theme} wedding style:",
-            theme_data['description'],
+            # Theme and space integration
+            f"{theme_data['description']},",
+            f"{space_data['setup']},",
             
-            # Space-specific elements
-            f"Focus on {space_data['focus']},",
-            f"include {space_data['elements']},",
+            # Essential elements
+            f"featuring {space_data['elements']},",
+            f"{theme_data['lighting']},",
+            f"color palette: {theme_data['colors']},",
             
-            # Lighting description
-            f"Lighting: {theme_data['lighting']},",
-            
-            # Color palette
-            f"Color palette: {theme_data['colors']},",
-            
-            # Atmosphere
-            f"Atmosphere: {space_data['atmosphere']},",
-            
-            # Quality descriptors
-            "elegant wedding setup, professionally decorated, realistic wedding venue transformation,",
-            "maintain original architecture, enhance with wedding decorations,",
-            "wedding reception ready, celebration space, romantic ambiance"
+            # Final atmosphere
+            f"{theme_data['atmosphere']}, elegant wedding setup, celebration ready"
         ]
         
+        # Add user details if provided
         if additional_details:
             prompt_parts.append(additional_details)
         
+        # Join with spaces for cleaner prompt
         main_prompt = " ".join(prompt_parts)
         
-        # Negative prompt to avoid unwanted elements
+        # Streamlined negative prompt for SD3 Turbo
         negative_prompt = cls.generate_negative_prompt()
         
         return {
             'prompt': main_prompt,
             'negative_prompt': negative_prompt,
-            'recommended_params': cls.get_recommended_parameters(wedding_theme, space_type)
+            'recommended_params': cls.get_recommended_parameters_turbo(wedding_theme, space_type)
         }
     
     @classmethod
     def generate_negative_prompt(cls):
-        """Generate negative prompt to avoid unwanted elements"""
+        """Generate streamlined negative prompt optimized for SD3 Turbo"""
         negative_elements = [
+            # People and faces (core exclusions)
+            "people, faces, crowd, guests, bride, groom",
+            
             # Quality issues
-            "blurry, low quality, pixelated, distorted, artifacts",
+            "blurry, low quality, distorted, pixelated",
             
             # Unwanted content
-            "people, faces, crowd, guests, bride, groom",
-            "text, watermark, signature, logo",
+            "text, watermark, signature",
             
-            # Bad lighting/atmosphere
-            "dark, dim, poor lighting, harsh shadows",
-            "cluttered, messy, disorganized, chaotic",
+            # Bad atmosphere
+            "dark, dim, messy, cluttered, chaotic",
             
-            # Technical issues
-            "oversaturated, undersaturated, noise, grain",
-            "deformed, malformed, unrealistic proportions",
-            
-            # Unwanted styles
-            "cartoon, anime, painting, sketch, drawing",
-            "gothic, scary, halloween, inappropriate themes"
+            # Style issues
+            "cartoon, anime, unrealistic"
         ]
         
         return ", ".join(negative_elements)
     
     @classmethod
-    def get_recommended_parameters(cls, wedding_theme, space_type):
-        """Get recommended Stability AI parameters for wedding venue generation"""
+    def get_recommended_parameters_turbo(cls, wedding_theme, space_type):
+        """Get optimized parameters for SD3 Turbo processing"""
         
-        # Base parameters optimized for realistic wedding venues
+        # Base parameters optimized for SD3 Turbo speed and quality
         base_params = {
-            'aspect_ratio': '16:9',  # Good for venue photography
-            'cfg_scale': 7.0,        # Balanced adherence to prompt
-            'steps': 50,             # Good quality/speed balance
-            'output_format': 'png',   # High quality output
+            'aspect_ratio': '1:1',     # 1024x1024 optimal for SD3 Turbo
+            'strength': 0.35,          # Good balance for venue transformation
+            'output_format': 'png',    # High quality output
             'mode': 'image-to-image',
-            'strength': 0.35,        # Preserve original architecture while adding decorations
         }
         
-        # Theme-specific adjustments
+        # Theme-specific adjustments for turbo processing
         theme_adjustments = {
-            'modern': {'cfg_scale': 8.0, 'strength': 0.4},  # More precise for clean lines
-            'vintage': {'cfg_scale': 6.5, 'strength': 0.3}, # Softer for romantic feel
-            'industrial': {'cfg_scale': 7.5, 'strength': 0.4}, # Precise for industrial elements
-            'bohemian': {'cfg_scale': 6.0, 'strength': 0.3},  # More organic/flowing
+            'modern': {'strength': 0.4},      # More transformation for clean modern look
+            'vintage': {'strength': 0.3},     # Preserve more original for vintage feel
+            'industrial': {'strength': 0.4},  # Strong transformation for industrial elements
+            'bohemian': {'strength': 0.3},    # Preserve natural elements
+            'classic': {'strength': 0.35},    # Balanced transformation
+            'garden': {'strength': 0.25},     # Preserve natural setting
+            'beach': {'strength': 0.3},       # Preserve coastal elements
+            'rustic': {'strength': 0.35},     # Balanced rustic transformation
         }
         
         # Space-specific adjustments
         space_adjustments = {
-            'outdoor_ceremony': {'strength': 0.25},  # Preserve natural setting more
-            'ballroom': {'cfg_scale': 8.0},         # More formal precision
-            'garden': {'strength': 0.25},           # Preserve natural elements
-            'beach': {'strength': 0.3},             # Preserve coastal setting
+            'outdoor_ceremony': {'strength': 0.25},  # Preserve natural outdoor setting
+            'garden': {'strength': 0.25},            # Preserve garden elements
+            'beach': {'strength': 0.3},              # Preserve beach setting
+            'ballroom': {'aspect_ratio': '16:9'},    # Better for large ballrooms
+            'reception_hall': {'aspect_ratio': '16:9'}, # Better for reception spaces
         }
         
         # Apply adjustments
@@ -223,38 +213,61 @@ class WeddingPromptGenerator:
         return final_params
     
     @classmethod
-    def generate_variation_prompts(cls, wedding_theme, space_type, base_prompt_data):
-        """Generate prompt variations for different aspects of the same venue"""
+    def generate_quick_prompt(cls, wedding_theme, space_type):
+        """Generate a quick, simplified prompt for ultra-fast processing"""
         
-        variations = []
+        theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
+        space_data = cls.SPACE_DETAILS.get(space_type, cls.SPACE_DETAILS['reception_hall'])
         
-        # Variation 1: Focus on lighting
-        lighting_prompt = base_prompt_data['prompt'] + f", emphasis on {cls.THEME_STYLES[wedding_theme]['lighting']}, dramatic lighting effects, ambient mood lighting"
+        # Ultra-simplified prompt for maximum speed
+        quick_prompt = f"Transform into {wedding_theme} wedding {space_type.replace('_', ' ')}, {theme_data['description']}, {theme_data['atmosphere']}, professional wedding photography"
         
-        # Variation 2: Focus on details
-        details_prompt = base_prompt_data['prompt'] + f", close-up details of {cls.THEME_STYLES[wedding_theme]['textures']}, intricate decorative elements, fine details"
+        # Minimal negative prompt
+        quick_negative = "people, faces, guests, blurry, low quality, text"
         
-        # Variation 3: Wide angle view
-        wide_prompt = base_prompt_data['prompt'] + ", wide angle view, full venue overview, comprehensive wedding setup, spacious layout"
+        return {
+            'prompt': quick_prompt,
+            'negative_prompt': quick_negative,
+            'recommended_params': {
+                'aspect_ratio': '1:1',
+                'strength': 0.35,
+                'output_format': 'png',
+                'mode': 'image-to-image',
+            }
+        }
+    
+    @classmethod
+    def generate_speed_optimized_variations(cls, wedding_theme, space_type):
+        """Generate multiple speed-optimized prompt variations for A/B testing"""
+        
+        base_prompt_data = cls.generate_comprehensive_prompt(wedding_theme, space_type)
         
         variations = [
+            # Standard comprehensive
             {
-                'name': 'Lighting Focus',
-                'prompt': lighting_prompt,
+                'name': 'Comprehensive',
+                'prompt': base_prompt_data['prompt'],
                 'negative_prompt': base_prompt_data['negative_prompt'],
-                'params': {**base_prompt_data['recommended_params'], 'cfg_scale': 7.5}
+                'params': base_prompt_data['recommended_params']
             },
+            
+            # Quick version
             {
-                'name': 'Detail Focus', 
-                'prompt': details_prompt,
-                'negative_prompt': base_prompt_data['negative_prompt'],
-                'params': {**base_prompt_data['recommended_params'], 'strength': 0.4}
+                'name': 'Quick',
+                **cls.generate_quick_prompt(wedding_theme, space_type)
             },
+            
+            # Focused version (emphasize key elements)
             {
-                'name': 'Wide View',
-                'prompt': wide_prompt,
-                'negative_prompt': base_prompt_data['negative_prompt'],
-                'params': {**base_prompt_data['recommended_params'], 'aspect_ratio': '21:9'}
+                'name': 'Focused',
+                'prompt': f"{wedding_theme} wedding venue transformation, {cls.THEME_STYLES[wedding_theme]['description']}, professional photography",
+                'negative_prompt': "people, faces, blurry, low quality",
+                'params': {
+                    'aspect_ratio': '1:1',
+                    'strength': 0.4,
+                    'output_format': 'png',
+                    'mode': 'image-to-image',
+                }
             }
         ]
         

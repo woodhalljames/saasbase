@@ -1,11 +1,50 @@
-# image_processing/forms.py - Updated to remove batch processing
+# image_processing/forms.py - Enhanced with dynamic inputs
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
 
+# New choices for enhanced features
+GUEST_COUNT_CHOICES = [
+    ('intimate', 'Intimate (1-50 guests)'),
+    ('medium', 'Medium (51-150 guests)'),
+    ('large', 'Large (151-300 guests)'),
+    ('grand', 'Grand (300+ guests)'),
+]
+
+BUDGET_CHOICES = [
+    ('budget', 'Budget-Friendly'),
+    ('moderate', 'Moderate'),
+    ('luxury', 'Luxury'),
+    ('ultra_luxury', 'Ultra Luxury'),
+]
+
+SEASON_CHOICES = [
+    ('spring', 'Spring'),
+    ('summer', 'Summer'),
+    ('fall', 'Fall'),
+    ('winter', 'Winter'),
+]
+
+TIME_OF_DAY_CHOICES = [
+    ('morning', 'Morning Ceremony'),
+    ('afternoon', 'Afternoon'),
+    ('evening', 'Evening/Sunset'),
+    ('night', 'Night'),
+]
+
+COLOR_SCHEME_CHOICES = [
+    ('neutral', 'Neutral (Whites, Creams, Beiges)'),
+    ('pastels', 'Soft Pastels'),
+    ('jewel_tones', 'Rich Jewel Tones'),
+    ('earth_tones', 'Earth Tones'),
+    ('monochrome', 'Black & White'),
+    ('bold_colors', 'Bold & Vibrant'),
+    ('custom', 'Custom Colors'),
+]
+
 
 class ImageUploadForm(forms.ModelForm):
-    """Simplified form for single image upload - MVP version"""
+    """Simplified form for single image upload"""
     
     class Meta:
         model = UserImage
@@ -14,7 +53,7 @@ class ImageUploadForm(forms.ModelForm):
             'image': forms.FileInput(attrs={
                 'class': 'form-control form-control-lg',
                 'accept': 'image/*',
-                'id': 'id_image',  # Standard Django field ID
+                'id': 'id_image',
             })
         }
     
@@ -33,9 +72,8 @@ class ImageUploadForm(forms.ModelForm):
         return image
 
 
-
-class WeddingTransformForm(forms.Form):
-    """Simplified form for wedding venue transformation with advanced options"""
+class EnhancedWeddingTransformForm(forms.Form):
+    """Enhanced form with dynamic inputs for comprehensive wedding venue transformation"""
     
     # Basic wedding configuration
     wedding_theme = forms.ChoiceField(
@@ -58,19 +96,95 @@ class WeddingTransformForm(forms.Form):
         help_text="Select the type of space you want to transform"
     )
     
+    # NEW: Dynamic inputs
+    guest_count = forms.ChoiceField(
+        choices=GUEST_COUNT_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'guest-count'
+        }),
+        label="Expected Guest Count",
+        help_text="This affects table arrangements and space layout"
+    )
+    
+    budget_level = forms.ChoiceField(
+        choices=BUDGET_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'budget-level'
+        }),
+        label="Budget Level",
+        help_text="Influences decoration quality and style complexity"
+    )
+    
+    season = forms.ChoiceField(
+        choices=SEASON_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'season'
+        }),
+        label="Wedding Season",
+        help_text="Affects flower choices and decoration elements",
+        required=False
+    )
+    
+    time_of_day = forms.ChoiceField(
+        choices=TIME_OF_DAY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'time-of-day'
+        }),
+        label="Time of Day",
+        help_text="Influences lighting and atmosphere",
+        required=False
+    )
+    
+    color_scheme = forms.ChoiceField(
+        choices=COLOR_SCHEME_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'color-scheme'
+        }),
+        label="Preferred Color Scheme",
+        help_text="Choose your preferred color palette",
+        required=False
+    )
+    
+    custom_colors = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., blush pink, gold, sage green',
+            'id': 'custom-colors'
+        }),
+        label="Custom Colors",
+        help_text="Specify custom colors if 'Custom Colors' is selected above"
+    )
+    
     # Additional details
     additional_details = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 3,
-            'placeholder': 'Any specific details you want to include? (e.g., "add more flowers", "brighter lighting", "vintage furniture")'
+            'placeholder': 'Any specific requirements? (e.g., "wheelchair accessible", "outdoor cocktail area", "live band space")'
         }),
-        label="Additional Details (Optional)",
-        help_text="Describe any specific elements you want to emphasize"
+        label="Special Requirements (Optional)",
+        help_text="Describe any specific needs or preferences"
     )
     
-    # Advanced Stability AI Parameters
+    # Generation options
+    generate_variations = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'generate-variations'
+        }),
+        label="Generate Multiple Variations",
+        help_text="Create 3 different style variations (uses 3 credits)"
+    )
+    
+    # Advanced Stability AI Parameters (collapsed by default)
     strength = forms.FloatField(
         initial=0.35,
         min_value=0.1,
@@ -85,31 +199,20 @@ class WeddingTransformForm(forms.Form):
         help_text="How much to change the original image (0.1=subtle, 0.9=dramatic)"
     )
     
-    cfg_scale = forms.FloatField(
-        initial=7.0,
-        min_value=1.0,
-        max_value=20.0,
+    aspect_ratio = forms.ChoiceField(
+        choices=[
+            ('1:1', 'Square (1:1)'),
+            ('16:9', 'Widescreen (16:9)'),
+            ('4:3', 'Standard (4:3)'),
+            ('3:2', 'Photo (3:2)'),
+        ],
+        initial='1:1',
         required=False,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'step': '0.5',
-            'type': 'range'
+        widget=forms.Select(attrs={
+            'class': 'form-control'
         }),
-        label="Style Precision",
-        help_text="How precisely to follow the style description (1-20, default: 7)"
-    )
-    
-    steps = forms.IntegerField(
-        initial=50,
-        min_value=20,
-        max_value=100,
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'type': 'range'
-        }),
-        label="Processing Quality",
-        help_text="Higher values = better quality but slower processing (20-100, default: 50)"
+        label="Aspect Ratio",
+        help_text="Choose the image dimensions"
     )
     
     seed = forms.IntegerField(
@@ -121,7 +224,7 @@ class WeddingTransformForm(forms.Form):
         label="Random Seed (Optional)",
         help_text="Use same number for reproducible results"
     )
-    
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -139,22 +242,19 @@ class WeddingTransformForm(forms.Form):
             'oninput': 'updateRangeDisplay(this)'
         })
         
-        self.fields['cfg_scale'].widget.attrs.update({
-            'data-display-target': 'cfgValue',
-            'oninput': 'updateRangeDisplay(this)'
+        # Hide custom colors initially
+        self.fields['custom_colors'].widget.attrs.update({
+            'style': 'display: none;'
         })
-        
-        self.fields['steps'].widget.attrs.update({
-            'data-display-target': 'stepsValue',
-            'oninput': 'updateRangeDisplay(this)'
-        })
-    
+
     def clean(self):
         cleaned_data = super().clean()
         
         # Validate that required basic fields are provided
         wedding_theme = cleaned_data.get('wedding_theme')
         space_type = cleaned_data.get('space_type')
+        guest_count = cleaned_data.get('guest_count')
+        budget_level = cleaned_data.get('budget_level')
         
         if not wedding_theme:
             raise ValidationError("Please select a wedding theme.")
@@ -162,14 +262,23 @@ class WeddingTransformForm(forms.Form):
         if not space_type:
             raise ValidationError("Please select a venue space type.")
         
-        # Validate advanced parameters
+        if not guest_count:
+            raise ValidationError("Please select expected guest count.")
+        
+        if not budget_level:
+            raise ValidationError("Please select a budget level.")
+        
+        # Validate custom colors if custom color scheme is selected
+        color_scheme = cleaned_data.get('color_scheme')
+        custom_colors = cleaned_data.get('custom_colors')
+        
+        if color_scheme == 'custom' and not custom_colors:
+            raise ValidationError("Please specify custom colors when 'Custom Colors' is selected.")
+        
+        # Validate strength parameter
         strength = cleaned_data.get('strength', 0.35)
         if strength < 0.1 or strength > 0.9:
             raise ValidationError("Transformation strength must be between 0.1 and 0.9")
-        
-        cfg_scale = cleaned_data.get('cfg_scale', 7.0)
-        if cfg_scale < 1.0 or cfg_scale > 20.0:
-            raise ValidationError("Style precision must be between 1.0 and 20.0")
         
         return cleaned_data
     
@@ -179,12 +288,25 @@ class WeddingTransformForm(forms.Form):
             return None
         
         return {
+            # Basic parameters
             'wedding_theme': self.cleaned_data['wedding_theme'],
             'space_type': self.cleaned_data['space_type'],
+            
+            # Dynamic parameters
+            'guest_count': self.cleaned_data['guest_count'],
+            'budget_level': self.cleaned_data['budget_level'],
+            'season': self.cleaned_data.get('season', ''),
+            'time_of_day': self.cleaned_data.get('time_of_day', ''),
+            'color_scheme': self.cleaned_data.get('color_scheme', ''),
+            'custom_colors': self.cleaned_data.get('custom_colors', ''),
+            
+            # Details
             'additional_details': self.cleaned_data.get('additional_details', ''),
+            'generate_variations': self.cleaned_data.get('generate_variations', False),
+            
+            # Technical parameters
             'strength': self.cleaned_data.get('strength', 0.35),
-            'cfg_scale': self.cleaned_data.get('cfg_scale', 7.0),
-            'steps': self.cleaned_data.get('steps', 50),
+            'aspect_ratio': self.cleaned_data.get('aspect_ratio', '1:1'),
             'seed': self.cleaned_data.get('seed'),
         }
 
@@ -208,55 +330,34 @@ class QuickTransformForm(forms.Form):
         label="Venue Space"
     )
     
-    # Quality preset
-    QUALITY_PRESETS = [
-        ('fast', 'Fast (Good quality, 30 seconds)'),
-        ('balanced', 'Balanced (High quality, 60 seconds)'),
-        ('premium', 'Premium (Best quality, 2 minutes)'),
-    ]
-    
-    quality_preset = forms.ChoiceField(
-        choices=QUALITY_PRESETS,
-        initial='balanced',
-        widget=forms.RadioSelect(attrs={
-            'class': 'form-check-input'
+    guest_count = forms.ChoiceField(
+        choices=GUEST_COUNT_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
         }),
-        label="Processing Quality"
+        label="Guest Count"
     )
     
-    def get_preset_parameters(self, preset):
-        """Get parameters based on quality preset"""
-        presets = {
-            'fast': {
-                'steps': 25,
-                'cfg_scale': 6.0,
-                'strength': 0.3,
-            },
-            'balanced': {
-                'steps': 50,
-                'cfg_scale': 7.0,
-                'strength': 0.35,
-            },
-            'premium': {
-                'steps': 75,
-                'cfg_scale': 8.0,
-                'strength': 0.4,
-            }
-        }
-        return presets.get(preset, presets['balanced'])
+    budget_level = forms.ChoiceField(
+        choices=BUDGET_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        label="Budget Level"
+    )
     
     def get_processing_parameters(self):
-        """Get parameters with preset applied"""
+        """Get parameters with preset optimizations"""
         if not self.is_valid():
             return None
-        
-        preset_params = self.get_preset_parameters(
-            self.cleaned_data.get('quality_preset', 'balanced')
-        )
         
         return {
             'wedding_theme': self.cleaned_data['wedding_theme'],
             'space_type': self.cleaned_data['space_type'],
+            'guest_count': self.cleaned_data['guest_count'],
+            'budget_level': self.cleaned_data['budget_level'],
             'additional_details': '',
-            **preset_params
+            'strength': 0.35,
+            'aspect_ratio': '1:1',
+            'generate_variations': False,
         }

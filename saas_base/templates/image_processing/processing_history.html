@@ -34,35 +34,20 @@
           <div class="card mb-4 border-0 shadow-sm">
             <div class="card-body">
               <div class="row">
-                <!-- Original Image -->
-                <div class="col-md-4">
-                  <h6 class="text-muted mb-2">Original Venue</h6>
-                  <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                       class="img-fluid rounded shadow-sm" 
-                       alt="{{ job.user_image.original_filename }}"
-                       style="max-height: 200px; width: 100%; object-fit: cover;">
-                  <div class="mt-2">
-                    <small class="text-muted">
-                      <strong>{{ job.user_image.original_filename }}</strong><br>
-                      {{ job.user_image.width }}x{{ job.user_image.height }} • 
-                      {{ job.user_image.file_size|filesizeformat }}
-                    </small>
-                  </div>
-                </div>
-
-                <!-- Processing Status & Result -->
-                <div class="col-md-4">
-                  <h6 class="text-muted mb-2">Wedding Transformation</h6>
+                <!-- Wedding Transformation Result (Main Focus) -->
+                <div class="col-md-6">
+                  <h6 class="text-muted mb-3">Wedding Transformation</h6>
                   
                   {% if job.status == 'completed' %}
                     {% with processed_images=job.processed_images.all %}
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
                           <div class="position-relative">
+                            <!-- Large processed image -->
                             <img src="{{ processed_img.processed_image.url }}" 
-                                 class="img-fluid rounded shadow-sm mb-2" 
+                                 class="img-fluid rounded shadow-sm mb-3" 
                                  alt="Wedding transformation"
-                                 style="max-height: 200px; width: 100%; object-fit: cover;">
+                                 style="width: 100%; max-height: 400px; object-fit: cover;">
                             
                             <!-- Save/Temporary Status Badge -->
                             {% if processed_img.is_saved %}
@@ -87,7 +72,7 @@
                     {% endwith %}
                     
                   {% elif job.status == 'processing' %}
-                    <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <div class="d-flex align-items-center justify-content-center" style="height: 300px;">
                       <div class="text-center">
                         <div class="spinner-border text-warning mb-2" role="status">
                           <span class="visually-hidden">Processing...</span>
@@ -109,7 +94,7 @@
                     </div>
                     
                   {% else %}
-                    <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <div class="d-flex align-items-center justify-content-center" style="height: 300px;">
                       <div class="text-center text-muted">
                         <i class="bi bi-clock" style="font-size: 2rem;"></i>
                         <div>Waiting to start...</div>
@@ -119,7 +104,8 @@
                 </div>
 
                 <!-- Details & Actions -->
-                <div class="col-md-4">
+                <div class="col-md-6">
+                  <!-- Wedding Style & Status -->
                   <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
                       <h6>Wedding Style</h6>
@@ -144,13 +130,29 @@
                     </span>
                   </div>
                   
+                  <!-- Date -->
                   <div class="mb-3">
                     <small class="text-muted">
-                      <i class="bi bi-calendar"></i> {{ job.created_at|date:"M d, Y H:i" }}<br>
-                      {% if job.completed_at %}
-                        <i class="bi bi-clock"></i> Completed in {{ job.completed_at|timeuntil:job.created_at }}
-                      {% endif %}
+                      <i class="bi bi-calendar"></i> {{ job.created_at|date:"M d, Y" }}
                     </small>
+                  </div>
+
+                  <!-- Original Image Thumbnail (Small, below date) -->
+                  <div class="mb-3">
+                    <h6 class="small text-muted mb-2">Original Venue:</h6>
+                    <div class="d-flex align-items-center">
+                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                           class="rounded me-3" 
+                           alt="{{ job.user_image.original_filename }}"
+                           style="width: 80px; height: 60px; object-fit: cover;">
+                      <div>
+                        <small class="text-muted">
+                          <strong>{{ job.user_image.original_filename }}</strong><br>
+                          {{ job.user_image.width }}x{{ job.user_image.height }} • 
+                          {{ job.user_image.file_size|filesizeformat }}
+                        </small>
+                      </div>
+                    </div>
                   </div>
                   
                   <!-- Actions -->
@@ -510,44 +512,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Discard buttons
-    document.querySelectorAll('.discard-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            if (!confirm('Are you sure you want to discard this transformation? This cannot be undone.')) {
-                return;
-            }
-            
-            const imageId = this.dataset.imageId;
-            const btn = this;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Discarding...';
-            
-            fetch(`/studio/processed/${imageId}/discard/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    showToast(data.message, 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Error discarding image', 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
-            });
-        });
     // Discard buttons
     document.querySelectorAll('.discard-btn').forEach(button => {
         button.addEventListener('click', function() {

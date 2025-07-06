@@ -9,8 +9,11 @@ from django.urls import reverse
 from django.utils import timezone
 from PIL import Image
 import logging
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
+
+User = get_user_model()
 
 
 def user_image_upload_path(instance, filename):
@@ -225,7 +228,22 @@ class ImageProcessingJob(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(blank=True, null=True)
     completed_at = models.DateTimeField(blank=True, null=True)
-    
+
+        # Dynamic parameters (new fields to add)
+    guest_count = models.CharField(max_length=20, blank=True, help_text="Guest count category")
+    budget_level = models.CharField(max_length=20, blank=True, help_text="Budget level")
+    season = models.CharField(max_length=20, blank=True, help_text="Wedding season")
+    time_of_day = models.CharField(max_length=20, blank=True, help_text="Time of day")
+    color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme")
+    custom_colors = models.CharField(max_length=200, blank=True, help_text="Custom colors")
+
+    # Generation options
+    generate_variations = models.BooleanField(default=False)
+
+    # Template tracking  
+    used_prompt_template = models.ForeignKey('PromptTemplate', null=True, blank=True, on_delete=models.SET_NULL)
+    """
+        
     class Meta:
         ordering = ['-created_at']
     
@@ -266,17 +284,15 @@ class ImageProcessingJob(models.Model):
         super().save(*args, **kwargs)
     
     def get_stability_ai_params(self):
-        """Get all parameters formatted for Stability AI API call"""
+        """Get all parameters formatted for Stability AI SD3 Turbo API call"""
         return {
             'prompt': self.generated_prompt,
             'negative_prompt': self.negative_prompt,
-            'cfg_scale': self.cfg_scale,
-            'steps': self.steps,
-            'seed': self.seed,
-            'aspect_ratio': self.aspect_ratio,
             'strength': self.strength,
+            'aspect_ratio': self.aspect_ratio,
+            'seed': self.seed,
             'output_format': self.output_format,
-        }
+            }
 
 
 class ProcessedImage(models.Model):
@@ -469,3 +485,130 @@ class Favorite(models.Model):
             return self.processed_image.processed_image.url
         else:
             return self.user_image.thumbnail.url if self.user_image.thumbnail else self.user_image.image.url
+        
+
+class PromptTemplate(models.Model):
+    """Admin-manageable prompt templates for wedding transformations"""
+    
+    TEMPLATE_TYPES = [
+        ('theme', 'Wedding Theme Template'),
+        ('space', 'Space Type Template'),
+        ('guest_modifier', 'Guest Count Modifier'),
+        ('budget_modifier', 'Budget Level Modifier'),
+        ('season_modifier', 'Season Modifier'),
+        ('time_modifier', 'Time of Day Modifier'),
+        ('color_modifier', 'Color Scheme Modifier'),
+        ('base_prompt', 'Base Prompt Template'),
+        ('negative_prompt', 'Negative Prompt Template'),
+    ]
+    
+    name = models.CharField(max_length=100, help_text="Descriptive name for this template")
+    template_type = models.CharField(max_length=20, choices=TEMPLATE_TYPES)
+    identifier = models.CharField(max_length=50, help_text="Unique identifier (e.g., 'rustic', 'budget', 'spring')")
+    
+    # Prompt content
+    prompt_text = models.TextField(help_text="The actual prompt text. Use {variables} for dynamic content.")
+    description = models.TextField(blank=True, help_text="Description of what this template does")
+    
+    # Settings
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0, help_text="Higher priority templates are used first")
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Parameters for SD3 Turbo optimization
+    recommended_strength = models.FloatField(default=0.35, help_text="Recommended transformation strength for this template")
+    recommended_aspect_ratio = models.CharField(max_length=10, default='1:1', help_text="Recommended aspect ratio")
+    
+    class Meta:
+        ordering = ['-priority', 'name']
+        unique_together = ['template_type', 'identifier']
+    
+    def __str__(self):
+        return f"{self.get_template_type_display()}: {self.name}"
+
+
+class PromptVariation(models.Model):
+    """Different variations of the same prompt for A/B testing"""
+    
+    template = models.ForeignKey(PromptTemplate, related_name='variations', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    prompt_text = models.TextField(help_text="Alternative prompt text")
+    
+    # Performance tracking
+    usage_count = models.PositiveIntegerField(default=0)
+    success_rate = models.FloatField(default=0.0, help_text="Success rate based on user ratings")
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-success_rate', '-usage_count']
+    
+    def __str__(self):
+        return f"{self.template.name} - {self.name}"
+
+
+class GenerationPreset(models.Model):
+    """Pre-configured settings for different types of generations"""
+    
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    
+    # Default parameters
+    default_strength = models.FloatField(default=0.35)
+    default_aspect_ratio = models.CharField(max_length=10, default='1:1')
+    
+    # Theme and space combinations this preset works well with
+    compatible_themes = models.JSONField(default=list, help_text="List of wedding themes this preset works well with")
+    compatible_spaces = models.JSONField(default=list, help_text="List of space types this preset works well with")
+    
+    # Usage context
+    recommended_for_guest_counts = models.JSONField(default=list, help_text="Guest count categories this works well for")
+    recommended_for_budgets = models.JSONField(default=list, help_text="Budget levels this works well for")
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.name
+
+
+class ProcessingJobEnhanced(models.Model):
+    """Enhanced processing job with dynamic parameters - extend your existing ImageProcessingJob"""
+    
+    # Link to existing job
+    base_job = models.OneToOneField('ImageProcessingJob', on_delete=models.CASCADE, related_name='enhanced_data')
+    
+    # Dynamic parameters
+    guest_count = models.CharField(max_length=20, blank=True, help_text="intimate, medium, large, grand")
+    budget_level = models.CharField(max_length=20, blank=True, help_text="budget, moderate, luxury, ultra_luxury")
+    season = models.CharField(max_length=20, blank=True, help_text="spring, summer, fall, winter")
+    time_of_day = models.CharField(max_length=20, blank=True, help_text="morning, afternoon, evening, night")
+    color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme choice")
+    custom_colors = models.CharField(max_length=200, blank=True, help_text="Custom color specification")
+    
+    # Generation options
+    generate_variations = models.BooleanField(default=False)
+    used_preset = models.ForeignKey(GenerationPreset, null=True, blank=True, on_delete=models.SET_NULL)
+    
+    # Prompt tracking
+    used_prompt_templates = models.ManyToManyField(PromptTemplate, blank=True)
+    final_compiled_prompt = models.TextField(blank=True, help_text="The final prompt sent to AI")
+    
+    def get_dynamic_context(self):
+        """Get all dynamic parameters as a context dictionary"""
+        return {
+            'guest_count': self.guest_count,
+            'budget_level': self.budget_level,
+            'season': self.season,
+            'time_of_day': self.time_of_day,
+            'color_scheme': self.color_scheme,
+            'custom_colors': self.custom_colors,
+            'wedding_theme': self.base_job.wedding_theme,
+            'space_type': self.base_job.space_type,
+            'additional_details': self.base_job.additional_details,
+        }
