@@ -274,17 +274,18 @@ class ImageProcessingJob(models.Model):
         
         super().save(*args, **kwargs)
     
+    
     def get_stability_ai_params(self):
         """Get all parameters formatted for Stability AI SD3 Turbo API call"""
+        # Note: aspect_ratio is not included for image-to-image mode
+        # The output aspect ratio will match the input image
         return {
             'prompt': self.generated_prompt,
             'negative_prompt': self.negative_prompt,
             'strength': self.strength,
-            'aspect_ratio': self.aspect_ratio,
             'seed': self.seed,
             'output_format': self.output_format,
         }
-
 
 def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
                                         budget_level=None, season=None, time_of_day=None,

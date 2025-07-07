@@ -1,3 +1,5 @@
+# image_processing/views.py - Fixed transaction handling for Celery tasks
+
 import json
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
@@ -103,7 +105,7 @@ def wedding_studio(request):
 @require_POST
 @usage_limit_required(tokens=1)
 def process_wedding_image(request, pk):
-    """Process a single image with enhanced wedding parameters"""
+    """Process a single image with enhanced wedding parameters - FIXED TRANSACTION HANDLING"""
     user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
     
     try:
@@ -134,7 +136,10 @@ def process_wedding_image(request, pk):
         custom_colors = data.get('custom_colors', '')
         additional_details = data.get('additional_details', '')
         
-        # Create processing job with dynamic parameters
+        # Create processing job with proper transaction handling
+        job = None
+        
+        # Create the job first
         with transaction.atomic():
             job = ImageProcessingJob.objects.create(
                 user_image=user_image,
@@ -152,13 +157,19 @@ def process_wedding_image(request, pk):
                 aspect_ratio='1:1',
                 seed=None
             )
+            
+            # Log job creation
+            logger.info(f"Created processing job {job.id} for user {request.user.username}")
         
-        # Process asynchronously
-        process_image_async.delay(job.id)
+        # Queue the task AFTER the transaction is committed
+        # This ensures the job exists in the database when the worker tries to find it
+        transaction.on_commit(lambda: process_image_async.delay(job.id))
         
         # Get display names
         theme_display = dict(WEDDING_THEMES)[wedding_theme]
         space_display = dict(SPACE_TYPES)[space_type]
+        
+        logger.info(f"Queued processing task for job {job.id}")
         
         return JsonResponse({
             'success': True,

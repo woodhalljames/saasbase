@@ -1,4 +1,4 @@
-# image_processing/services.py - Fixed for SD3 Turbo
+# image_processing/services.py - Fixed for SD3 Turbo API headers
 import io
 import base64
 import requests
@@ -25,7 +25,7 @@ class StabilityAIService:
         """Get headers for API requests"""
         return {
             "Authorization": f"Bearer {self.api_key}",
-            "Accept": "application/json"
+            "Accept": "application/json"  # SD3 Turbo expects this
         }
     
     def image_to_image_sd3_turbo(self, 
@@ -33,7 +33,6 @@ class StabilityAIService:
                                 prompt: str, 
                                 negative_prompt: str = None,
                                 strength: float = 0.35,
-                                aspect_ratio: str = "1:1",
                                 seed: int = None,
                                 output_format: str = "png") -> Dict[str, Any]:
         """
@@ -62,15 +61,16 @@ class StabilityAIService:
                 'image': ('image.png', image_bytes, 'image/png'),
             }
             
-            # SD3 Turbo parameters (NO cfg_scale or steps)
+            # SD3 Turbo parameters (NO cfg_scale, steps, or aspect_ratio for image-to-image)
             data = {
                 'prompt': prompt,
                 'model': 'sd3-turbo',
                 'mode': 'image-to-image',
                 'strength': str(strength),
-                'aspect_ratio': aspect_ratio,
                 'output_format': output_format,
             }
+            # Note: aspect_ratio is NOT allowed in image-to-image mode
+            # The output will match the input image's aspect ratio
             
             # Add optional parameters
             if negative_prompt:
@@ -79,28 +79,50 @@ class StabilityAIService:
             if seed is not None:
                 data["seed"] = str(seed)
             
-            # Make the API request
+            # Make the API request with proper headers
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
             logger.info(f"Making SD3 Turbo API request to {url}")
             
+            # Use the headers method and ensure proper Accept header
+            headers = self._get_headers()
+            
             response = requests.post(
                 url,
-                headers={"Authorization": f"Bearer {self.api_key}"},
+                headers=headers,  # Use the proper headers with Accept: application/json
                 files=files,
                 data=data,
                 timeout=60
             )
             
             logger.info(f"SD3 Turbo API response status: {response.status_code}")
+            logger.info(f"SD3 Turbo API response headers: {dict(response.headers)}")
             
             if response.status_code != 200:
                 error_msg = f"Stability AI SD3 Turbo API error: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 raise Exception(error_msg)
             
-            # SD3 Turbo returns the image directly as bytes
-            image_data = response.content
+            # Check if response is JSON (error) or binary (image)
+            content_type = response.headers.get('content-type', '')
+            
+            if 'application/json' in content_type:
+                # JSON response - might be an error or JSON-wrapped image
+                json_response = response.json()
+                if 'errors' in json_response:
+                    error_msg = f"SD3 Turbo API error: {json_response['errors']}"
+                    logger.error(error_msg)
+                    raise Exception(error_msg)
+                
+                # If JSON contains base64 image data
+                if 'image' in json_response:
+                    image_data = base64.b64decode(json_response['image'])
+                else:
+                    logger.error("Unexpected JSON response format")
+                    raise Exception("Unexpected API response format")
+            else:
+                # Binary image response
+                image_data = response.content
             
             # Get seed from response headers if available
             response_seed = response.headers.get("seed", seed)
@@ -139,10 +161,10 @@ class StabilityAIService:
             'prompt': processing_job.generated_prompt,
             'negative_prompt': processing_job.negative_prompt,
             'strength': processing_job.strength,
-            'aspect_ratio': processing_job.aspect_ratio,
             'seed': processing_job.seed,
             'output_format': processing_job.output_format
         }
+        # Note: aspect_ratio removed - not supported in image-to-image mode
         
         logger.info(f"Processing wedding venue for job {processing_job.id} with SD3 Turbo")
         logger.info(f"Generated prompt: {params['prompt'][:200]}...")

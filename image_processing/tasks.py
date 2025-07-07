@@ -1,4 +1,4 @@
-# image_processing/tasks.py - Updated for dynamic parameters and SD3 Turbo
+# image_processing/tasks.py - Fixed for proper function imports
 
 import logging
 from celery import shared_task
@@ -32,10 +32,12 @@ def process_image_async(self, job_id):
         if not job.generated_prompt:
             logger.info(f"Generating transformation prompt for job {job_id}")
             try:
-                from .models import generate_transformation_prompt
-                prompt_data = generate_transformation_prompt(
+                # Import the function here to avoid circular imports
+                from .models import generate_wedding_prompt_with_dynamics
+                
+                prompt_data = generate_wedding_prompt_with_dynamics(
                     wedding_theme=job.wedding_theme,
-                    space_to_become=job.space_to_become,
+                    space_type=job.space_type,
                     guest_count=job.guest_count,
                     budget_level=job.budget_level,
                     season=job.season,
@@ -60,7 +62,7 @@ def process_image_async(self, job_id):
             except Exception as e:
                 logger.error(f"Error generating transformation prompt for job {job_id}: {str(e)}")
                 # Create a basic fallback prompt
-                job.generated_prompt = f"Transform this space to become a beautiful {job.space_to_become} with {job.wedding_theme} wedding style, professional wedding photography, high quality, elegant transformation"
+                job.generated_prompt = f"Transform this space to become a beautiful {job.space_type} with {job.wedding_theme} wedding style, professional wedding photography, high quality, elegant transformation"
                 job.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
                 job.save()
         
@@ -89,7 +91,7 @@ def process_image_async(self, job_id):
                 'success': True,
                 'job_id': job_id,
                 'theme': job.wedding_theme,
-                'space_to_become': job.space_to_become,
+                'space_type': job.space_type,
                 'dynamic_params': used_params
             }
         else:
@@ -193,23 +195,23 @@ def cleanup_failed_jobs():
 
 
 @shared_task
-def generate_wedding_preview(theme, space_to_become, **dynamic_params):
+def generate_wedding_preview(theme, space_type, **dynamic_params):
     """
     Generate a preview prompt for a wedding theme + space transformation with dynamic params
     """
-    from .models import generate_transformation_prompt
+    from .models import generate_wedding_prompt_with_dynamics
     
-    prompt_data = generate_transformation_prompt(
+    prompt_data = generate_wedding_prompt_with_dynamics(
         wedding_theme=theme,
-        space_to_become=space_to_become,
+        space_type=space_type,
         **dynamic_params
     )
     
-    logger.info(f"Generated transformation preview prompt for {theme} + {space_to_become} with dynamic params")
+    logger.info(f"Generated transformation preview prompt for {theme} + {space_type} with dynamic params")
     
     return {
         'theme': theme,
-        'space_to_become': space_to_become,
+        'space_type': space_type,
         'dynamic_params': dynamic_params,
         'prompt': prompt_data['prompt'],
         'negative_prompt': prompt_data['negative_prompt']
