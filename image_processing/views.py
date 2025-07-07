@@ -13,7 +13,7 @@ from .models import (
     UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, Favorite,
     WEDDING_THEMES, SPACE_TYPES
 )
-from .forms import ImageUploadForm, WeddingTransformForm
+from .forms import ImageUploadForm, WeddingTransformForm, GUEST_COUNT_CHOICES, BUDGET_CHOICES, SEASON_CHOICES, TIME_OF_DAY_CHOICES, COLOR_SCHEME_CHOICES
 from .tasks import process_image_async
 
 logger = logging.getLogger(__name__)
@@ -21,14 +21,10 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def wedding_studio(request):
-    """Main wedding venue visualization studio - handles both regular and AJAX uploads"""
+    """Main wedding venue visualization studio with dynamic options"""
     
     # Handle image upload
     if request.method == 'POST':
-        print(f"POST request received: {request.POST}")
-        print(f"Files in request: {request.FILES}")
-        print(f"Is AJAX: {request.headers.get('x-requested-with') == 'XMLHttpRequest'}")
-        
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
@@ -36,7 +32,6 @@ def wedding_studio(request):
                 user_image.user = request.user
                 user_image.original_filename = form.cleaned_data['image'].name
                 user_image.save()
-                print(f"Image saved successfully: {user_image.id}")
                 
                 # Handle AJAX requests
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -54,46 +49,35 @@ def wedding_studio(request):
                         }
                     })
                 
-                # Handle regular form submissions (fallback)
                 messages.success(request, f'"{user_image.original_filename}" uploaded successfully!')
                 return redirect('image_processing:wedding_studio')
                 
             except Exception as e:
-                print(f"Error saving image: {str(e)}")
                 error_msg = f'Failed to upload image: {str(e)}'
-                
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'error': error_msg
-                    }, status=400)
-                
+                    return JsonResponse({'success': False, 'error': error_msg}, status=400)
                 messages.error(request, error_msg)
         else:
-            print(f"Form errors: {form.errors}")
+            # Handle form errors
             error_messages = []
             for field, errors in form.errors.items():
                 for error in errors:
                     error_messages.append(str(error))
             
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': False,
-                    'error': '; '.join(error_messages)
-                }, status=400)
+                return JsonResponse({'success': False, 'error': '; '.join(error_messages)}, status=400)
             
             for error in error_messages:
                 messages.error(request, error)
     
     # GET request - display the studio
-    # Get user's recent images (for image selection grid)
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
     # Get user's usage data
     from usage_limits.usage_tracker import UsageTracker
     usage_data = UsageTracker.get_usage_data(request.user)
     
-    # Get recent processing jobs for status display
+    # Get recent processing jobs
     recent_jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
     ).select_related('user_image').order_by('-created_at')[:5]
@@ -104,6 +88,11 @@ def wedding_studio(request):
         'recent_jobs': recent_jobs,
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
+        'guest_count_choices': GUEST_COUNT_CHOICES,
+        'budget_choices': BUDGET_CHOICES,
+        'season_choices': SEASON_CHOICES,
+        'time_choices': TIME_OF_DAY_CHOICES,
+        'color_choices': COLOR_SCHEME_CHOICES,
         'upload_form': ImageUploadForm(),
     }
     
@@ -111,44 +100,19 @@ def wedding_studio(request):
 
 
 @login_required
-def image_detail(request, pk):
-    """Display single image with wedding processing options"""
-    user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
-    
-    # Get user's usage data
-    from usage_limits.usage_tracker import UsageTracker
-    usage_data = UsageTracker.get_usage_data(request.user)
-    
-    # Get processing history for this image
-    processing_jobs = ImageProcessingJob.objects.filter(
-        user_image=user_image
-    ).order_by('-created_at')
-    
-    context = {
-        'user_image': user_image,
-        'usage_data': usage_data,
-        'processing_jobs': processing_jobs,
-        'transform_form': WeddingTransformForm(),
-        'wedding_themes': WEDDING_THEMES,
-        'space_types': SPACE_TYPES,
-    }
-    
-    return render(request, 'image_processing/image_detail.html', context)
-
-
-@login_required
 @require_POST
-@usage_limit_required(tokens=1)  # 1 token per image processed
+@usage_limit_required(tokens=1)
 def process_wedding_image(request, pk):
-    """Process a single image with wedding theme and space type - simplified"""
+    """Process a single image with enhanced wedding parameters"""
     user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
     
     try:
         data = json.loads(request.body)
+        
+        # Required fields
         wedding_theme = data.get('wedding_theme')
         space_type = data.get('space_type')
         
-        # Validate required fields
         if not wedding_theme or not space_type:
             return JsonResponse({
                 'error': 'Both wedding theme and space type are required'
@@ -158,27 +122,41 @@ def process_wedding_image(request, pk):
         valid_themes = [choice[0] for choice in WEDDING_THEMES]
         valid_spaces = [choice[0] for choice in SPACE_TYPES]
         
-        if wedding_theme not in valid_themes:
-            return JsonResponse({'error': 'Invalid wedding theme'}, status=400)
+        if wedding_theme not in valid_themes or space_type not in valid_spaces:
+            return JsonResponse({'error': 'Invalid wedding theme or space type'}, status=400)
         
-        if space_type not in valid_spaces:
-            return JsonResponse({'error': 'Invalid space type'}, status=400)
+        # Optional dynamic parameters
+        guest_count = data.get('guest_count', '')
+        budget_level = data.get('budget_level', '')
+        season = data.get('season', '')
+        time_of_day = data.get('time_of_day', '')
+        color_scheme = data.get('color_scheme', '')
+        custom_colors = data.get('custom_colors', '')
+        additional_details = data.get('additional_details', '')
         
-        # Create processing job with default parameters for MVP
+        # Create processing job with dynamic parameters
         with transaction.atomic():
             job = ImageProcessingJob.objects.create(
                 user_image=user_image,
                 wedding_theme=wedding_theme,
                 space_type=space_type,
-                cfg_scale=7.0,  # Default value
-                steps=50,       # Default value
-                seed=None       # Random seed
+                guest_count=guest_count,
+                budget_level=budget_level,
+                season=season,
+                time_of_day=time_of_day,
+                color_scheme=color_scheme,
+                custom_colors=custom_colors,
+                additional_details=additional_details,
+                # SD3 Turbo defaults
+                strength=0.35,
+                aspect_ratio='1:1',
+                seed=None
             )
         
         # Process asynchronously
         process_image_async.delay(job.id)
         
-        # Get theme and space display names
+        # Get display names
         theme_display = dict(WEDDING_THEMES)[wedding_theme]
         space_display = dict(SPACE_TYPES)[space_type]
         
@@ -195,6 +173,51 @@ def process_wedding_image(request, pk):
         logger.error(f"Error processing wedding image: {str(e)}")
         return JsonResponse({'error': 'Processing failed'}, status=500)
 
+
+@login_required
+def image_detail(request, pk):
+    """Display single image with enhanced wedding processing options"""
+    user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
+    
+    # Get user's usage data
+    from usage_limits.usage_tracker import UsageTracker
+    usage_data = UsageTracker.get_usage_data(request.user)
+    
+    # Get processing history for this image
+    processing_jobs = ImageProcessingJob.objects.filter(
+        user_image=user_image
+    ).order_by('-created_at')
+    
+    # Get suggestions based on theme/space if available
+    suggestions = None
+    if processing_jobs.exists():
+        latest_job = processing_jobs.first()
+        if latest_job.wedding_theme and latest_job.space_type:
+            try:
+                from .prompt_generator import WeddingPromptGenerator
+                suggestions = WeddingPromptGenerator.get_quick_suggestions(
+                    latest_job.wedding_theme, 
+                    latest_job.space_type
+                )
+            except ImportError:
+                pass
+    
+    context = {
+        'user_image': user_image,
+        'usage_data': usage_data,
+        'processing_jobs': processing_jobs,
+        'suggestions': suggestions,
+        'transform_form': WeddingTransformForm(),
+        'wedding_themes': WEDDING_THEMES,
+        'space_types': SPACE_TYPES,
+        'guest_count_choices': GUEST_COUNT_CHOICES,
+        'budget_choices': BUDGET_CHOICES,
+        'season_choices': SEASON_CHOICES,
+        'time_choices': TIME_OF_DAY_CHOICES,
+        'color_choices': COLOR_SCHEME_CHOICES,
+    }
+    
+    return render(request, 'image_processing/image_detail.html', context)
 
 @login_required
 def job_status(request, job_id):

@@ -13,9 +13,9 @@
     </div>
   </div>
 
-  <!-- Main Layout: Image Area + Sidebar -->
+  <!-- Main Layout -->
   <div class="row">
-    <!-- Right: Sidebar (shown first on mobile) -->
+    <!-- Right Sidebar: Controls -->
     <div class="col-md-4 col-lg-3 order-md-2 mb-4">
       
       <!-- Recent Uploads -->
@@ -68,9 +68,10 @@
           <form id="transformForm">
             {% csrf_token %}
             
+            <!-- Core Options -->
             <div class="mb-4">
-              <label for="wedding-theme" class="form-label fs-5"><strong>Theme/Style</strong></label>
-              <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
+              <label for="wedding-theme" class="form-label fs-6"><strong>Wedding Style</strong></label>
+              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
                 <option value="">Choose style...</option>
                 {% for value, label in wedding_themes %}
                   <option value="{{ value }}">{{ label }}</option>
@@ -79,8 +80,8 @@
             </div>
             
             <div class="mb-4">
-              <label for="space-type" class="form-label fs-5"><strong>Space/Room</strong></label>
-              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
+              <label for="space-type" class="form-label fs-6"><strong>Space Type</strong></label>
+              <select class="form-select" id="space-type" name="space_type" required>
                 <option value="">Choose space...</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
@@ -88,6 +89,84 @@
               </select>
             </div>
             
+            <!-- Dynamic Options Toggle -->
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-secondary btn-sm w-100" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
+                <i class="bi bi-sliders"></i> More Options
+              </button>
+            </div>
+            
+            <!-- Advanced/Dynamic Options -->
+            <div class="collapse" id="advancedOptions">
+              <div class="border rounded p-3 mb-4" style="background-color: #f8f9fa;">
+                
+                <!-- Guest Count -->
+                <div class="mb-3">
+                  <label for="guest-count" class="form-label small">Guest Count</label>
+                  <select class="form-select form-select-sm" id="guest-count" name="guest_count">
+                    {% for value, label in guest_count_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <!-- Budget Level -->
+                <div class="mb-3">
+                  <label for="budget-level" class="form-label small">Budget Level</label>
+                  <select class="form-select form-select-sm" id="budget-level" name="budget_level">
+                    {% for value, label in budget_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <!-- Season -->
+                <div class="mb-3">
+                  <label for="season" class="form-label small">Season</label>
+                  <select class="form-select form-select-sm" id="season" name="season">
+                    {% for value, label in season_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <!-- Time of Day -->
+                <div class="mb-3">
+                  <label for="time-of-day" class="form-label small">Time of Day</label>
+                  <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
+                    {% for value, label in time_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <!-- Color Scheme -->
+                <div class="mb-3">
+                  <label for="color-scheme" class="form-label small">Color Scheme</label>
+                  <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
+                    {% for value, label in color_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                
+                <!-- Custom Colors (hidden by default) -->
+                <div class="mb-3" id="custom-colors-container" style="display: none;">
+                  <label for="custom-colors" class="form-label small">Custom Colors</label>
+                  <input type="text" class="form-control form-control-sm" id="custom-colors" name="custom_colors" 
+                         placeholder="e.g., blush pink, sage green, gold">
+                </div>
+                
+                <!-- Additional Details -->
+                <div class="mb-3">
+                  <label for="additional-details" class="form-label small">Additional Details</label>
+                  <textarea class="form-control form-control-sm" id="additional-details" name="additional_details" 
+                            rows="2" placeholder="Any specific requirements..."></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Generate Button -->
             <div class="d-grid">
               <button type="submit" class="btn btn-primary btn-lg py-3" id="transformBtn" disabled>
                 <i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>
@@ -103,7 +182,7 @@
       <div class="card h-100">
         <div class="card-body d-flex align-items-center justify-content-center position-relative" style="min-height: 500px;">
           
-          <!-- Upload Area (shown when no image selected) -->
+          <!-- Upload Area -->
           <div id="uploadArea" class="text-center w-100">
             <form id="uploadForm" class="h-100 d-flex flex-column justify-content-center">
               {% csrf_token %}
@@ -119,7 +198,7 @@
             </form>
           </div>
 
-          <!-- Upload Progress (shown during upload) -->
+          <!-- Upload Progress -->
           <div id="uploadProgress" class="text-center w-100" style="display: none;">
             <div class="spinner-border text-primary mb-3" role="status">
               <span class="visually-hidden">Uploading...</span>
@@ -128,9 +207,8 @@
             <p class="text-muted">Please wait while we process your image</p>
           </div>
 
-          <!-- Selected Image Preview (hidden initially) -->
+          <!-- Selected Image Preview -->
           <div id="imagePreview" class="text-center w-100 position-relative" style="display: none;">
-            <!-- Small upload button in corner -->
             <button id="uploadNewBtn" class="btn btn-sm btn-outline-primary position-absolute" 
                     style="top: 10px; right: 10px; z-index: 10;"
                     title="Upload a different image">
@@ -159,7 +237,7 @@
             </div>
             <div>
               <h5 class="mb-1">Creating Your Wedding Vision...</h5>
-              <p class="mb-0 text-muted">This may take 1-2 minutes. You can check progress in your history.</p>
+              <p class="mb-0 text-muted">This may take 1-2 minutes using SD3 Turbo AI.</p>
             </div>
           </div>
         </div>
@@ -212,8 +290,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
     
-    console.log('Wedding Studio JS loaded');
-    
     // Get all necessary elements
     const fileInput = document.getElementById('id_image');
     const uploadArea = document.getElementById('uploadArea');
@@ -227,20 +303,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const spaceType = document.getElementById('space-type');
     const uploadNewBtn = document.getElementById('uploadNewBtn');
     const recentImagesContainer = document.getElementById('recentImagesContainer');
+    const colorScheme = document.getElementById('color-scheme');
+    const customColorsContainer = document.getElementById('custom-colors-container');
     
-    console.log('Elements found:', {
-        fileInput: !!fileInput,
-        uploadArea: !!uploadArea,
-        imagePreview: !!imagePreview
-    });
+    // Handle custom colors visibility
+    if (colorScheme) {
+        colorScheme.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customColorsContainer.style.display = 'block';
+            } else {
+                customColorsContainer.style.display = 'none';
+            }
+        });
+    }
     
     // Handle file input change with AJAX upload
     if (fileInput) {
         fileInput.addEventListener('change', function() {
-            console.log('File input changed, files:', this.files.length);
             if (this.files.length > 0) {
                 const file = this.files[0];
-                console.log('File selected:', file.name);
                 
                 // Validate file
                 if (!file.type.startsWith('image/')) {
@@ -255,16 +336,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                console.log('Valid file, uploading with AJAX...');
                 uploadFileWithAjax(file);
             }
         });
     }
     
-    // Handle upload new button (when image is already selected)
+    // Handle upload new button
     if (uploadNewBtn) {
         uploadNewBtn.addEventListener('click', function() {
-            console.log('Upload new button clicked');
             if (fileInput) {
                 fileInput.click();
             }
@@ -273,59 +352,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // AJAX file upload function
     function uploadFileWithAjax(file) {
-        console.log('Starting AJAX upload for:', file.name);
-        
-        // Show upload progress
         showUploadProgress();
         
-        // Create FormData
         const formData = new FormData();
         formData.append('image', file);
         
-        // Add CSRF token
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
         if (csrfToken) {
             formData.append('csrfmiddlewaretoken', csrfToken.value);
         }
         
-        // Upload with fetch
         fetch('/studio/', {
             method: 'POST',
             body: formData,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'  // Mark as AJAX request
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            console.log('Upload response status:', response.status);
-            
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error(`Upload failed with status ${response.status}`);
-            }
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Upload successful:', data);
-            
             if (data.success) {
-                // Add the new image to the recent uploads section
                 addNewImageToRecent(data.image);
-                
-                // Auto-select the newly uploaded image
                 setTimeout(() => {
                     const newThumbnail = document.querySelector(`[data-image-id="${data.image.id}"]`);
                     if (newThumbnail) {
                         selectImage(newThumbnail);
                     }
                 }, 100);
-                
-                // Show success message
                 showToast('Image uploaded successfully!', 'success');
-                
-                // Reset file input
                 if (fileInput) fileInput.value = '';
-                
             } else {
                 throw new Error(data.error || 'Upload failed');
             }
@@ -337,11 +392,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add new image to recent uploads section
+    // Add new image to recent uploads
     function addNewImageToRecent(imageData) {
         if (!recentImagesContainer) return;
         
-        // Create new thumbnail element
         const newThumbnail = document.createElement('div');
         newThumbnail.className = 'col-4';
         newThumbnail.innerHTML = `
@@ -359,15 +413,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Add click handler
         newThumbnail.querySelector('.venue-thumbnail').addEventListener('click', function() {
             selectImage(this);
         });
         
-        // Insert at the beginning
         recentImagesContainer.insertBefore(newThumbnail, recentImagesContainer.firstChild);
         
-        // Remove excess items (keep only 3)
         const thumbnails = recentImagesContainer.querySelectorAll('.col-4');
         if (thumbnails.length > 3) {
             thumbnails[3].remove();
@@ -397,8 +448,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function selectImage(thumbnail) {
-        console.log('Selecting image:', thumbnail.dataset.imageId);
-        
         // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
             t.style.borderColor = 'transparent';
@@ -407,22 +456,18 @@ document.addEventListener('DOMContentLoaded', function() {
             t.style.boxShadow = 'none';
         });
         
-        // Mark as selected with enhanced styling
+        // Mark as selected
         thumbnail.style.borderColor = '#0d6efd';
         thumbnail.style.borderWidth = '3px';
         thumbnail.style.transform = 'translateY(-2px)';
         thumbnail.style.boxShadow = '0 4px 8px rgba(13, 110, 253, 0.3)';
         
-        // Store selected image data
         selectedImageId = thumbnail.dataset.imageId;
         
-        // Update display
         if (selectedImage && selectedImageName && selectedImageDetails) {
             selectedImage.src = thumbnail.dataset.imageUrl;
             selectedImageName.textContent = thumbnail.dataset.imageName;
             selectedImageDetails.textContent = `${thumbnail.dataset.imageDimensions} • ${formatFileSize(thumbnail.dataset.imageSize)}`;
-            
-            // Show selected image, hide upload area
             showImagePreview();
         }
         
@@ -487,15 +532,18 @@ document.addEventListener('DOMContentLoaded', function() {
         transformBtn.disabled = true;
         transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
         
-        // Prepare data
+        // Collect all form data including dynamic options
         const data = {
             wedding_theme: theme,
             space_type: space,
-            cfg_scale: 7.0,
-            steps: 50
+            guest_count: document.getElementById('guest-count')?.value || '',
+            budget_level: document.getElementById('budget-level')?.value || '',
+            season: document.getElementById('season')?.value || '',
+            time_of_day: document.getElementById('time-of-day')?.value || '',
+            color_scheme: document.getElementById('color-scheme')?.value || '',
+            custom_colors: document.getElementById('custom-colors')?.value || '',
+            additional_details: document.getElementById('additional-details')?.value || ''
         };
-        
-        console.log('Submitting visualization request:', data);
         
         // Submit transformation request
         fetch(`/studio/image/${selectedImageId}/process/`, {
@@ -559,69 +607,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize button state
     updateTransformBtnState();
-    
-    console.log('Wedding Studio JS initialization complete');
 });
 </script>
-
-<style>
-.venue-thumbnail {
-    transition: all 0.2s ease;
-    border-radius: 0.375rem;
-}
-
-.venue-thumbnail:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    border-color: rgba(13, 110, 253, 0.3) !important;
-}
-
-.upload-zone:hover {
-    border-color: #007bff !important;
-    background-color: #f8f9fa !important;
-}
-
-.upload-zone {
-    transition: all 0.3s ease;
-}
-
-#imagePreview {
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-#uploadProgress {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-/* Mobile responsiveness */
-@media (max-width: 767.98px) {
-    .order-md-1 {
-        order: 2;
-    }
-    .order-md-2 {
-        order: 1;
-    }
-}
-
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.btn-primary:disabled {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-.text-success {
-    color: #198754 !important;
-    font-weight: 500;
-}
-</style>
 
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">

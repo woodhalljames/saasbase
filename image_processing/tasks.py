@@ -1,9 +1,8 @@
-# image_processing/tasks.py - Updated to remove batch processing
+# image_processing/tasks.py - Updated for dynamic parameters and SD3 Turbo
 
 import logging
 from celery import shared_task
 from django.utils import timezone
-from django.core.files.base import ContentFile
 from .models import ImageProcessingJob, ProcessedImage
 from .services import ImageProcessingService
 
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def process_image_async(self, job_id):
     """
-    Asynchronously process a single wedding venue image with enhanced error handling
+    Asynchronously process a wedding venue image with dynamic parameters
     """
     try:
         # Get the processing job
@@ -27,56 +26,78 @@ def process_image_async(self, job_id):
         job.save()
         
         # Initialize the processing service
-        from .services import ImageProcessingService
         processing_service = ImageProcessingService()
         
-        # Ensure we have a generated prompt
+        # Ensure we have a generated prompt (with dynamic parameters)
         if not job.generated_prompt:
-            logger.info(f"Generating prompt for job {job_id}")
+            logger.info(f"Generating transformation prompt for job {job_id}")
             try:
-                from .models import generate_wedding_prompt
-                prompt_data = generate_wedding_prompt(job.wedding_theme, job.space_type, job.additional_details)
+                from .models import generate_transformation_prompt
+                prompt_data = generate_transformation_prompt(
+                    wedding_theme=job.wedding_theme,
+                    space_to_become=job.space_to_become,
+                    guest_count=job.guest_count,
+                    budget_level=job.budget_level,
+                    season=job.season,
+                    time_of_day=job.time_of_day,
+                    color_scheme=job.color_scheme,
+                    custom_colors=job.custom_colors,
+                    additional_details=job.additional_details
+                )
+                
                 job.generated_prompt = prompt_data['prompt']
                 job.negative_prompt = prompt_data['negative_prompt']
                 
-                # Update parameters with recommendations
+                # Update SD3 Turbo parameters
                 recommended_params = prompt_data['recommended_params']
-                job.cfg_scale = recommended_params.get('cfg_scale', job.cfg_scale)
-                job.steps = recommended_params.get('steps', job.steps)
                 job.aspect_ratio = recommended_params.get('aspect_ratio', job.aspect_ratio)
                 job.strength = recommended_params.get('strength', job.strength)
                 job.output_format = recommended_params.get('output_format', job.output_format)
                 
                 job.save()
-                logger.info(f"Generated prompt for job {job_id}: {job.generated_prompt[:100]}...")
+                logger.info(f"Generated dynamic prompt for job {job_id}: {job.generated_prompt[:100]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating prompt for job {job_id}: {str(e)}")
+                logger.error(f"Error generating transformation prompt for job {job_id}: {str(e)}")
                 # Create a basic fallback prompt
-                job.generated_prompt = f"Transform this {job.space_type} into a beautiful {job.wedding_theme} wedding venue, professional wedding photography, high quality, elegant decoration"
+                job.generated_prompt = f"Transform this space to become a beautiful {job.space_to_become} with {job.wedding_theme} wedding style, professional wedding photography, high quality, elegant transformation"
                 job.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
                 job.save()
         
         prompt_text = job.generated_prompt
-        logger.info(f"Processing wedding venue with prompt: {prompt_text[:100]}...")
+        logger.info(f"Processing wedding venue with SD3 Turbo using prompt: {prompt_text[:100]}...")
         
-        # Process the image using the service
+        # Log dynamic parameters being used
+        dynamic_params = {
+            'guest_count': job.guest_count,
+            'budget_level': job.budget_level,
+            'season': job.season,
+            'time_of_day': job.time_of_day,
+            'color_scheme': job.color_scheme,
+            'custom_colors': job.custom_colors
+        }
+        used_params = {k: v for k, v in dynamic_params.items() if v}
+        if used_params:
+            logger.info(f"Using dynamic parameters: {used_params}")
+        
+        # Process the image using the service (SD3 Turbo)
         success = processing_service.process_wedding_image(job)
         
         if success:
-            logger.info(f"Successfully completed wedding processing job {job_id}")
+            logger.info(f"Successfully completed wedding processing job {job_id} with SD3 Turbo")
             return {
                 'success': True,
                 'job_id': job_id,
                 'theme': job.wedding_theme,
-                'space': job.space_type
+                'space_to_become': job.space_to_become,
+                'dynamic_params': used_params
             }
         else:
             logger.error(f"Wedding processing failed for job {job_id}")
             return {
                 'success': False,
                 'job_id': job_id,
-                'error': 'Processing failed'
+                'error': 'SD3 Turbo processing failed'
             }
             
     except ImageProcessingJob.DoesNotExist:
@@ -89,10 +110,9 @@ def process_image_async(self, job_id):
     except Exception as exc:
         logger.error(f"Error processing wedding job {job_id}: {str(exc)}", exc_info=True)
         
-        # Retry logic
+        # Retry logic with exponential backoff
         if self.request.retries < self.max_retries:
-            # Exponential backoff: 60s, 120s, 240s
-            countdown = 60 * (2 ** self.request.retries)
+            countdown = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
             logger.info(f"Retrying wedding job {job_id} in {countdown} seconds (attempt {self.request.retries + 1})")
             raise self.retry(countdown=countdown, exc=exc)
         
@@ -100,7 +120,7 @@ def process_image_async(self, job_id):
         try:
             job = ImageProcessingJob.objects.get(id=job_id)
             job.status = 'failed'
-            job.error_message = f"Processing failed after {self.max_retries} retries: {str(exc)}"
+            job.error_message = f"SD3 Turbo processing failed after {self.max_retries} retries: {str(exc)}"
             job.completed_at = timezone.now()
             job.save()
             logger.error(f"Job {job_id} marked as failed after {self.max_retries} retries")
@@ -118,16 +138,13 @@ def process_image_async(self, job_id):
 def cleanup_temporary_images():
     """
     Clean up temporary (unsaved) processed images older than 48 hours
-    Run this daily to keep storage manageable
     """
     from datetime import timedelta
     import os
     from django.conf import settings
     
-    # Delete unsaved processed images older than 48 hours
     cutoff_date = timezone.now() - timedelta(hours=48)
     
-    from .models import ProcessedImage
     temporary_images = ProcessedImage.objects.filter(
         is_saved=False,
         created_at__lt=cutoff_date
@@ -158,7 +175,6 @@ def cleanup_temporary_images():
 def cleanup_failed_jobs():
     """
     Clean up failed processing jobs older than 7 days
-    These don't have processed images so just clean up the job records
     """
     from datetime import timedelta
     
@@ -177,18 +193,24 @@ def cleanup_failed_jobs():
 
 
 @shared_task
-def generate_wedding_preview(theme, space_type):
+def generate_wedding_preview(theme, space_to_become, **dynamic_params):
     """
-    Generate a preview of what a wedding theme + space combination might look like
-    This could be used for showing examples before processing
+    Generate a preview prompt for a wedding theme + space transformation with dynamic params
     """
-    from .models import generate_wedding_prompt
+    from .models import generate_transformation_prompt
     
-    prompt_data = generate_wedding_prompt(theme, space_type)
-    logger.info(f"Generated wedding preview prompt for {theme} + {space_type}")
+    prompt_data = generate_transformation_prompt(
+        wedding_theme=theme,
+        space_to_become=space_to_become,
+        **dynamic_params
+    )
+    
+    logger.info(f"Generated transformation preview prompt for {theme} + {space_to_become} with dynamic params")
     
     return {
         'theme': theme,
-        'space_type': space_type,
-        'prompt': prompt_data['prompt']
+        'space_to_become': space_to_become,
+        'dynamic_params': dynamic_params,
+        'prompt': prompt_data['prompt'],
+        'negative_prompt': prompt_data['negative_prompt']
     }

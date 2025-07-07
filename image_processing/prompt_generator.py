@@ -1,12 +1,13 @@
+# image_processing/prompt_generator.py - Enhanced with dynamic parameters
 """
 Advanced prompt generation system for realistic wedding venue transformations
-Optimized for Stability AI SD3 Turbo for faster processing
+Optimized for Stability AI SD3 Turbo with dynamic parameters
 """
 
 class WeddingPromptGenerator:
-    """Generate comprehensive prompts for wedding venue transformations optimized for SD3 Turbo"""
+    """Generate comprehensive prompts for wedding venue transformations with dynamic options"""
     
-    # Streamlined style descriptions optimized for SD3 Turbo
+    # Enhanced style descriptions
     THEME_STYLES = {
         'rustic': {
             'description': 'rustic farmhouse wedding with wooden elements, mason jars, burlap, string lights, wildflowers, vintage charm',
@@ -58,217 +59,195 @@ class WeddingPromptGenerator:
         }
     }
     
-    # Simplified space details for faster processing
-    SPACE_DETAILS = {
-        'indoor_ceremony': {
-            'focus': 'ceremony aisle and altar area',
-            'elements': 'wedding arch, aisle decorations, ceremony seating',
-            'setup': 'intimate sacred ceremony space'
-        },
-        'outdoor_ceremony': {
-            'focus': 'outdoor ceremony with natural backdrop',
-            'elements': 'outdoor wedding arch, natural landscaping, ceremony seating',
-            'setup': 'natural outdoor ceremony setting'
-        },
-        'reception_hall': {
-            'focus': 'dining tables and celebration space',
-            'elements': 'round dining tables, centerpieces, dance floor',
-            'setup': 'festive reception celebration'
-        },
-        'garden': {
-            'focus': 'garden setting with natural elements',
-            'elements': 'garden landscaping, outdoor furniture, natural pathways',
-            'setup': 'natural garden party atmosphere'
-        },
-        'beach': {
-            'focus': 'beach setting with ocean views',
-            'elements': 'beach decorations, coastal elements, ocean backdrop',
-            'setup': 'coastal beach celebration'
-        },
-        'barn': {
-            'focus': 'rustic barn interior with wooden beams',
-            'elements': 'wooden beams, barn doors, country decorations',
-            'setup': 'rustic country celebration'
-        },
-        'ballroom': {
-            'focus': 'elegant ballroom with formal atmosphere',
-            'elements': 'elegant tables, ballroom lighting, formal decorations',
-            'setup': 'grand formal ballroom celebration'
-        },
-        'rooftop': {
-            'focus': 'rooftop venue with city views',
-            'elements': 'rooftop furniture, city skyline, urban decorations',
-            'setup': 'elevated urban celebration'
-        }
+    # Guest count modifiers
+    GUEST_COUNT_MODIFIERS = {
+        'intimate': 'intimate small gathering setup, cozy seating arrangements, personal details',
+        'medium': 'medium-sized celebration setup, balanced seating, moderate scale decorations',
+        'large': 'large celebration setup, grand seating arrangements, impressive scale decorations',
+        'grand': 'grand spectacular celebration setup, elaborate seating, magnificent large-scale decorations'
+    }
+    
+    # Budget level modifiers
+    BUDGET_MODIFIERS = {
+        'budget': 'tasteful affordable decorations, DIY elements, simple elegant touches',
+        'moderate': 'quality decorations, professional setup, refined details',
+        'luxury': 'luxury high-end decorations, premium materials, sophisticated elegant details',
+        'ultra_luxury': 'ultra-luxury opulent decorations, exquisite premium materials, lavish spectacular details'
+    }
+    
+    # Season modifiers
+    SEASON_MODIFIERS = {
+        'spring': 'fresh spring flowers, pastel colors, light fabrics, renewal theme',
+        'summer': 'vibrant summer blooms, bright colors, outdoor elements, sunny atmosphere',
+        'fall': 'autumn foliage, warm colors, harvest elements, cozy atmosphere',
+        'winter': 'winter elegance, rich colors, warm textures, festive elements'
+    }
+    
+    # Time of day modifiers
+    TIME_MODIFIERS = {
+        'morning': 'bright morning light, fresh atmosphere, breakfast reception setup',
+        'afternoon': 'natural daylight, relaxed atmosphere, lunch reception setup',
+        'evening': 'golden hour lighting, romantic atmosphere, dinner reception setup',
+        'night': 'dramatic evening lighting, elegant atmosphere, formal dinner setup'
+    }
+    
+    # Color scheme modifiers
+    COLOR_MODIFIERS = {
+        'neutral': 'neutral color palette with whites, creams, beiges, and soft tones',
+        'pastels': 'soft pastel color palette with gentle pinks, blues, and lavenders',
+        'jewel_tones': 'rich jewel tone palette with emerald, sapphire, and ruby colors',
+        'earth_tones': 'natural earth tone palette with browns, tans, and forest greens',
+        'monochrome': 'elegant black and white monochrome palette',
+        'bold_colors': 'vibrant bold color palette with bright striking colors'
     }
     
     @classmethod
-    def generate_comprehensive_prompt(cls, wedding_theme, space_type, additional_details=None):
-        """Generate a comprehensive prompt optimized for SD3 Turbo processing"""
+    def generate_dynamic_prompt(cls, wedding_theme, space_type, guest_count=None, 
+                               budget_level=None, season=None, time_of_day=None,
+                               color_scheme=None, custom_colors=None, additional_details=None):
+        """Generate a comprehensive prompt with dynamic parameters for SD3 Turbo"""
         
         theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
-        space_data = cls.SPACE_DETAILS.get(space_type, cls.SPACE_DETAILS['reception_hall'])
         
-        # Streamlined prompt construction for SD3 Turbo
+        # Build dynamic prompt parts
         prompt_parts = [
-            # Quality indicators (simplified for turbo)
-            "professional wedding photography, photorealistic, detailed",
+            # Core quality indicators
+            "professional wedding photography, photorealistic, detailed, high resolution",
             
-            # Core transformation description
+            # Core transformation
             f"Transform this {space_type.replace('_', ' ')} into a beautiful {wedding_theme} wedding venue,",
             
-            # Theme and space integration
+            # Theme description
             f"{theme_data['description']},",
-            f"{space_data['setup']},",
-            
-            # Essential elements
-            f"featuring {space_data['elements']},",
-            f"{theme_data['lighting']},",
-            f"color palette: {theme_data['colors']},",
-            
-            # Final atmosphere
-            f"{theme_data['atmosphere']}, elegant wedding setup, celebration ready"
         ]
+        
+        # Add guest count modifier
+        if guest_count and guest_count in cls.GUEST_COUNT_MODIFIERS:
+            prompt_parts.append(cls.GUEST_COUNT_MODIFIERS[guest_count])
+        
+        # Add budget modifier
+        if budget_level and budget_level in cls.BUDGET_MODIFIERS:
+            prompt_parts.append(cls.BUDGET_MODIFIERS[budget_level])
+        
+        # Add seasonal elements
+        if season and season in cls.SEASON_MODIFIERS:
+            prompt_parts.append(cls.SEASON_MODIFIERS[season])
+        
+        # Add time of day elements
+        if time_of_day and time_of_day in cls.TIME_MODIFIERS:
+            prompt_parts.append(cls.TIME_MODIFIERS[time_of_day])
+        
+        # Add color scheme
+        if color_scheme and color_scheme in cls.COLOR_MODIFIERS:
+            if color_scheme == 'custom' and custom_colors:
+                prompt_parts.append(f"custom color palette featuring {custom_colors}")
+            else:
+                prompt_parts.append(cls.COLOR_MODIFIERS[color_scheme])
+        else:
+            # Use theme default colors
+            prompt_parts.append(f"color palette: {theme_data['colors']}")
+        
+        # Add lighting
+        prompt_parts.append(f"{theme_data['lighting']}")
+        
+        # Add atmosphere
+        prompt_parts.append(f"{theme_data['atmosphere']}")
         
         # Add user details if provided
         if additional_details:
             prompt_parts.append(additional_details)
         
-        # Join with spaces for cleaner prompt
-        main_prompt = " ".join(prompt_parts)
+        # Final touches
+        prompt_parts.append("elegant wedding setup, celebration ready, no people visible")
         
-        # Streamlined negative prompt for SD3 Turbo
-        negative_prompt = cls.generate_negative_prompt()
+        # Join with proper spacing
+        main_prompt = " ".join([part.strip() for part in prompt_parts if part.strip()])
+        
+        # Enhanced negative prompt
+        negative_prompt = cls.generate_enhanced_negative_prompt()
         
         return {
             'prompt': main_prompt,
             'negative_prompt': negative_prompt,
-            'recommended_params': cls.get_recommended_parameters_turbo(wedding_theme, space_type)
+            'recommended_params': cls.get_dynamic_parameters(wedding_theme, space_type, guest_count)
         }
     
     @classmethod
-    def generate_negative_prompt(cls):
-        """Generate streamlined negative prompt optimized for SD3 Turbo"""
+    def generate_enhanced_negative_prompt(cls):
+        """Generate enhanced negative prompt for SD3 Turbo"""
         negative_elements = [
-            # People and faces (core exclusions)
-            "people, faces, crowd, guests, bride, groom",
+            # People and faces (critical for venue photos)
+            "people, faces, crowd, guests, bride, groom, wedding party, humans, person",
             
             # Quality issues
-            "blurry, low quality, distorted, pixelated",
+            "blurry, low quality, distorted, pixelated, artifacts, noise",
             
             # Unwanted content
-            "text, watermark, signature",
+            "text, watermark, signature, logo, copyright",
             
             # Bad atmosphere
-            "dark, dim, messy, cluttered, chaotic",
+            "dark, dim, messy, cluttered, chaotic, unorganized",
             
             # Style issues
-            "cartoon, anime, unrealistic"
+            "cartoon, anime, unrealistic, fake, artificial",
+            
+            # Composition issues
+            "cropped, cut off, partial, incomplete"
         ]
         
         return ", ".join(negative_elements)
     
     @classmethod
-    def get_recommended_parameters_turbo(cls, wedding_theme, space_type):
-        """Get optimized parameters for SD3 Turbo processing"""
+    def get_dynamic_parameters(cls, wedding_theme, space_type, guest_count):
+        """Get optimized parameters based on dynamic choices"""
         
-        # Base parameters optimized for SD3 Turbo speed and quality
+        # Base parameters for SD3 Turbo
         base_params = {
-            'aspect_ratio': '1:1',     # 1024x1024 optimal for SD3 Turbo
-            'strength': 0.35,          # Good balance for venue transformation
-            'output_format': 'png',    # High quality output
-            'mode': 'image-to-image',
+            'aspect_ratio': '1:1',
+            'strength': 0.35,
+            'output_format': 'png',
         }
         
-        # Theme-specific adjustments for turbo processing
-        theme_adjustments = {
-            'modern': {'strength': 0.4},      # More transformation for clean modern look
-            'vintage': {'strength': 0.3},     # Preserve more original for vintage feel
-            'industrial': {'strength': 0.4},  # Strong transformation for industrial elements
-            'bohemian': {'strength': 0.3},    # Preserve natural elements
-            'classic': {'strength': 0.35},    # Balanced transformation
-            'garden': {'strength': 0.25},     # Preserve natural setting
-            'beach': {'strength': 0.3},       # Preserve coastal elements
-            'rustic': {'strength': 0.35},     # Balanced rustic transformation
-        }
+        # Adjust strength based on guest count (more guests = more transformation needed)
+        if guest_count == 'intimate':
+            base_params['strength'] = 0.25  # Preserve more of original for intimate spaces
+        elif guest_count == 'grand':
+            base_params['strength'] = 0.45  # More transformation for grand celebrations
         
-        # Space-specific adjustments
-        space_adjustments = {
-            'outdoor_ceremony': {'strength': 0.25},  # Preserve natural outdoor setting
-            'garden': {'strength': 0.25},            # Preserve garden elements
-            'beach': {'strength': 0.3},              # Preserve beach setting
-            'ballroom': {'aspect_ratio': '16:9'},    # Better for large ballrooms
-            'reception_hall': {'aspect_ratio': '16:9'}, # Better for reception spaces
-        }
+        # Adjust aspect ratio for different spaces
+        if space_type in ['reception_hall', 'ballroom', 'barn']:
+            base_params['aspect_ratio'] = '16:9'  # Better for large horizontal spaces
+        elif space_type in ['rooftop', 'garden']:
+            base_params['aspect_ratio'] = '4:3'   # Good for outdoor spaces
         
-        # Apply adjustments
-        final_params = base_params.copy()
-        
-        if wedding_theme in theme_adjustments:
-            final_params.update(theme_adjustments[wedding_theme])
-            
-        if space_type in space_adjustments:
-            final_params.update(space_adjustments[space_type])
-        
-        return final_params
+        return base_params
     
     @classmethod
-    def generate_quick_prompt(cls, wedding_theme, space_type):
-        """Generate a quick, simplified prompt for ultra-fast processing"""
-        
-        theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
-        space_data = cls.SPACE_DETAILS.get(space_type, cls.SPACE_DETAILS['reception_hall'])
-        
-        # Ultra-simplified prompt for maximum speed
-        quick_prompt = f"Transform into {wedding_theme} wedding {space_type.replace('_', ' ')}, {theme_data['description']}, {theme_data['atmosphere']}, professional wedding photography"
-        
-        # Minimal negative prompt
-        quick_negative = "people, faces, guests, blurry, low quality, text"
-        
-        return {
-            'prompt': quick_prompt,
-            'negative_prompt': quick_negative,
-            'recommended_params': {
-                'aspect_ratio': '1:1',
-                'strength': 0.35,
-                'output_format': 'png',
-                'mode': 'image-to-image',
-            }
+    def get_quick_suggestions(cls, wedding_theme, space_type):
+        """Get quick suggestions for common combinations"""
+        suggestions = {
+            'guest_count': 'medium',
+            'budget_level': 'moderate',
+            'time_of_day': 'evening',
+            'color_scheme': 'neutral'
         }
-    
-    @classmethod
-    def generate_speed_optimized_variations(cls, wedding_theme, space_type):
-        """Generate multiple speed-optimized prompt variations for A/B testing"""
         
-        base_prompt_data = cls.generate_comprehensive_prompt(wedding_theme, space_type)
+        # Theme-specific suggestions
+        if wedding_theme == 'rustic':
+            suggestions.update({
+                'season': 'fall',
+                'color_scheme': 'earth_tones'
+            })
+        elif wedding_theme == 'beach':
+            suggestions.update({
+                'season': 'summer',
+                'time_of_day': 'afternoon',
+                'color_scheme': 'neutral'
+            })
+        elif wedding_theme == 'vintage':
+            suggestions.update({
+                'color_scheme': 'pastels',
+                'budget_level': 'luxury'
+            })
         
-        variations = [
-            # Standard comprehensive
-            {
-                'name': 'Comprehensive',
-                'prompt': base_prompt_data['prompt'],
-                'negative_prompt': base_prompt_data['negative_prompt'],
-                'params': base_prompt_data['recommended_params']
-            },
-            
-            # Quick version
-            {
-                'name': 'Quick',
-                **cls.generate_quick_prompt(wedding_theme, space_type)
-            },
-            
-            # Focused version (emphasize key elements)
-            {
-                'name': 'Focused',
-                'prompt': f"{wedding_theme} wedding venue transformation, {cls.THEME_STYLES[wedding_theme]['description']}, professional photography",
-                'negative_prompt': "people, faces, blurry, low quality",
-                'params': {
-                    'aspect_ratio': '1:1',
-                    'strength': 0.4,
-                    'output_format': 'png',
-                    'mode': 'image-to-image',
-                }
-            }
-        ]
-        
-        return variations
+        return suggestions

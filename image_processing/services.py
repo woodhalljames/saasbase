@@ -1,4 +1,4 @@
-# image_processing/services.py - Updated for SD3 Turbo with optimized parameters
+# image_processing/services.py - Fixed for SD3 Turbo
 import io
 import base64
 import requests
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class StabilityAIService:
-    """Service for interacting with Stability AI SD3 Turbo API for fast wedding venue processing"""
+    """Service for interacting with Stability AI SD3 Turbo API"""
     
     def __init__(self):
         self.api_key = getattr(settings, 'STABILITY_API_KEY', None)
@@ -28,49 +28,6 @@ class StabilityAIService:
             "Accept": "application/json"
         }
     
-    def prepare_image_for_api(self, image_path: str, target_resolution: tuple = None):
-        """
-        Prepare image for Stability AI API with optimal resolution for SD3 Turbo
-        SD3 Turbo works best with specific resolutions around 1024x1024
-        """
-        try:
-            with Image.open(image_path) as img:
-                # Convert to RGB if necessary
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
-                
-                # SD3 Turbo optimal resolutions (simpler than regular SD3)
-                if target_resolution:
-                    img = img.resize(target_resolution, Image.Resampling.LANCZOS)
-                else:
-                    # Auto-determine best resolution for SD3 Turbo (prefer 1024x1024)
-                    optimal_size = self._get_optimal_resolution_turbo(img.size)
-                    if optimal_size != img.size:
-                        img = img.resize(optimal_size, Image.Resampling.LANCZOS)
-                
-                # Convert to base64 for legacy fallback
-                buffer = io.BytesIO()
-                img.save(buffer, format='PNG')
-                image_data = buffer.getvalue()
-                
-                return base64.b64encode(image_data).decode()
-        except Exception as e:
-            logger.error(f"Error preparing image: {str(e)}")
-            raise
-    
-    def _get_optimal_resolution_turbo(self, current_size):
-        """Get optimal resolution for SD3 Turbo (simpler than regular SD3)"""
-        width, height = current_size
-        aspect_ratio = width / height
-        
-        # SD3 Turbo optimal resolutions (focused on 1024x1024 and close variants)
-        if aspect_ratio > 1.5:  # Wide
-            return (1344, 768)
-        elif aspect_ratio < 0.75:  # Tall
-            return (768, 1344)
-        else:  # Square-ish
-            return (1024, 1024)
-    
     def image_to_image_sd3_turbo(self, 
                                 image_path: str, 
                                 prompt: str, 
@@ -81,14 +38,12 @@ class StabilityAIService:
                                 output_format: str = "png") -> Dict[str, Any]:
         """
         Perform image-to-image generation using Stability AI SD3 Turbo
-        Optimized for speed with simplified parameters
         """
         try:
-            logger.info(f"Starting SD3 Turbo image-to-image generation with prompt: {prompt[:100]}...")
+            logger.info(f"Starting SD3 Turbo generation with prompt: {prompt[:100]}...")
             
             # Read and prepare image
             with open(image_path, 'rb') as image_file:
-                # Resize image to optimal resolution for turbo processing
                 with Image.open(image_file) as img:
                     if img.mode != 'RGB':
                         img = img.convert('RGB')
@@ -107,10 +62,10 @@ class StabilityAIService:
                 'image': ('image.png', image_bytes, 'image/png'),
             }
             
-            # SD3 Turbo optimized parameters
+            # SD3 Turbo parameters (NO cfg_scale or steps)
             data = {
                 'prompt': prompt,
-                'model': 'sd3-turbo',  # KEY CHANGE: Use turbo model
+                'model': 'sd3-turbo',
                 'mode': 'image-to-image',
                 'strength': str(strength),
                 'aspect_ratio': aspect_ratio,
@@ -124,7 +79,7 @@ class StabilityAIService:
             if seed is not None:
                 data["seed"] = str(seed)
             
-            # Make the API request to SD3 endpoint (same endpoint, different model)
+            # Make the API request
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
             logger.info(f"Making SD3 Turbo API request to {url}")
@@ -134,7 +89,7 @@ class StabilityAIService:
                 headers={"Authorization": f"Bearer {self.api_key}"},
                 files=files,
                 data=data,
-                timeout=60  # Reduced timeout since turbo is much faster
+                timeout=60
             )
             
             logger.info(f"SD3 Turbo API response status: {response.status_code}")
@@ -166,7 +121,7 @@ class StabilityAIService:
             logger.error("Stability AI SD3 Turbo API timeout")
             return {
                 "success": False,
-                "error": "API request timed out (this is unusual for SD3 Turbo)"
+                "error": "API request timed out"
             }
         except Exception as e:
             logger.error(f"Stability AI SD3 Turbo service error: {str(e)}")
@@ -175,160 +130,45 @@ class StabilityAIService:
                 "error": str(e)
             }
     
-    def image_to_image_legacy(self, 
-                             image_path: str, 
-                             prompt: str, 
-                             negative_prompt: str = None,
-                             image_strength: float = 0.35,
-                             cfg_scale: float = 7.0,
-                             steps: int = 50,
-                             seed: int = None) -> Dict[str, Any]:
-        """
-        Fallback to legacy image-to-image API if SD3 Turbo fails
-        """
-        try:
-            logger.info(f"Using legacy API with prompt: {prompt[:100]}...")
-            
-            # Prepare image as base64
-            init_image_b64 = self.prepare_image_for_api(image_path)
-            
-            data = {
-                "text_prompts": [
-                    {
-                        "text": prompt,
-                        "weight": 1.0
-                    }
-                ],
-                "cfg_scale": cfg_scale,
-                "image_strength": image_strength,
-                "init_image": init_image_b64,
-                "samples": 1,
-                "steps": steps,
-            }
-            
-            if negative_prompt:
-                data["text_prompts"].append({
-                    "text": negative_prompt,
-                    "weight": -1.0
-                })
-            
-            if seed is not None:
-                data["seed"] = seed
-            
-            # Use legacy endpoint
-            url = f"{self.base_url}/v1/generation/stable-diffusion-v1-6/image-to-image"
-            
-            response = requests.post(
-                url,
-                headers=self._get_headers(),
-                json=data,
-                timeout=60
-            )
-            
-            logger.info(f"Legacy API response status: {response.status_code}")
-            
-            if response.status_code != 200:
-                error_msg = f"Stability AI Legacy API error: {response.status_code} - {response.text}"
-                logger.error(error_msg)
-                raise Exception(error_msg)
-            
-            response_data = response.json()
-            
-            # Process the artifacts
-            results = []
-            for i, artifact in enumerate(response_data.get("artifacts", [])):
-                if artifact.get("finish_reason") == "SUCCESS":
-                    image_data = base64.b64decode(artifact["base64"])
-                    results.append({
-                        "image_data": image_data,
-                        "seed": artifact.get("seed"),
-                        "finish_reason": artifact.get("finish_reason")
-                    })
-            
-            return {
-                "success": True,
-                "results": results,
-                "prompt": prompt,
-                "model": "SD1.6"
-            }
-            
-        except Exception as e:
-            logger.error(f"Legacy API error: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
-    
     def process_wedding_venue(self, image_path: str, processing_job):
         """
-        Process wedding venue using SD3 Turbo for fast results
+        Process wedding venue using SD3 Turbo
         """
-        # Get all parameters from the job
-        params = processing_job.get_stability_ai_params()
+        # Get parameters from the job (only SD3 Turbo compatible ones)
+        params = {
+            'prompt': processing_job.generated_prompt,
+            'negative_prompt': processing_job.negative_prompt,
+            'strength': processing_job.strength,
+            'aspect_ratio': processing_job.aspect_ratio,
+            'seed': processing_job.seed,
+            'output_format': processing_job.output_format
+        }
         
         logger.info(f"Processing wedding venue for job {processing_job.id} with SD3 Turbo")
         logger.info(f"Generated prompt: {params['prompt'][:200]}...")
         
-        try:
-            # Use SD3 Turbo for fast processing
-            result = self.image_to_image_sd3_turbo(
-                image_path=image_path,
-                prompt=params['prompt'],
-                negative_prompt=params['negative_prompt'],
-                strength=params['strength'],
-                aspect_ratio=params['aspect_ratio'],
-                seed=params['seed'],
-                output_format=params['output_format']
-            )
-            
-            if result["success"]:
-                logger.info(f"Successfully processed with SD3 Turbo for job {processing_job.id}")
-                return result
-                
-        except Exception as e:
-            logger.warning(f"SD3 Turbo failed, falling back to legacy API: {str(e)}")
-        
-        # Fallback to legacy API only if SD3 Turbo fails
-        result = self.image_to_image_legacy(
+        # Use SD3 Turbo
+        result = self.image_to_image_sd3_turbo(
             image_path=image_path,
-            prompt=params['prompt'],
-            negative_prompt=params['negative_prompt'],
-            image_strength=params['strength'],
-            cfg_scale=params['cfg_scale'],
-            steps=params['steps'],
-            seed=params['seed']
+            **params
         )
         
         if result["success"]:
-            logger.info(f"Successfully processed with legacy API for job {processing_job.id}")
+            logger.info(f"Successfully processed with SD3 Turbo for job {processing_job.id}")
+        else:
+            logger.error(f"SD3 Turbo failed for job {processing_job.id}: {result.get('error')}")
         
         return result
-    
-    def get_account_balance(self) -> Dict[str, Any]:
-        """Get account balance from Stability AI"""
-        try:
-            url = f"{self.base_url}/v1/user/balance"
-            response = requests.get(url, headers=self._get_headers(), timeout=10)
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                logger.error(f"Failed to get balance: {response.status_code}")
-                return {"credits": 0}
-                
-        except Exception as e:
-            logger.error(f"Error getting balance: {str(e)}")
-            return {"credits": 0}
 
 
 class ImageProcessingService:
-    """Service for handling single image wedding venue processing with SD3 Turbo"""
+    """Service for handling wedding venue processing with SD3 Turbo"""
     
     def __init__(self):
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a single wedding venue image with SD3 Turbo for speed"""
+        """Process a wedding venue image with SD3 Turbo"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -340,25 +180,28 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            # Process using the wedding venue transformation system with SD3 Turbo
+            logger.info(f"Starting SD3 Turbo processing for job {processing_job.id}")
+            
+            # Process using SD3 Turbo
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
             )
             
             if result["success"] and result["results"]:
-                # Save the single processed image
-                img_result = result["results"][0]  # Only process one image now
+                # Save the processed image
+                img_result = result["results"][0]
                 processed_image = ProcessedImage(
                     processing_job=processing_job,
                     stability_seed=img_result.get("seed"),
                     finish_reason=img_result.get("finish_reason")
                 )
                 
-                # Save the image file with wedding context in filename
+                # Save with descriptive filename
                 theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
                 model_used = result.get("model", "SD3-Turbo")
-                filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timezone.now().timestamp()}.png"
+                timestamp = int(timezone.now().timestamp())
+                filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
                 
                 processed_image.processed_image.save(
                     filename,
@@ -374,10 +217,10 @@ class ImageProcessingService:
                 processing_job.completed_at = timezone.now()
                 processing_job.save()
                 
-                logger.info(f"Successfully completed wedding processing job {processing_job.id} with SD3 Turbo")
+                logger.info(f"Successfully completed wedding processing job {processing_job.id}")
                 return True
             else:
-                # No successful results
+                # Processing failed
                 error_msg = result.get('error', 'Wedding venue transformation failed')
                 processing_job.status = 'failed'
                 processing_job.error_message = error_msg
@@ -393,93 +236,4 @@ class ImageProcessingService:
             processing_job.completed_at = timezone.now()
             processing_job.save()
             logger.error(f"Error in processing job {processing_job.id}: {str(exc)}")
-            return False
-
-    def enhanced_process_wedding_image(self, processing_job):
-        """Process a single wedding venue image with enhanced error handling using SD3 Turbo"""
-        from .models import ProcessedImage
-        from django.utils import timezone
-        
-        try:
-            # Update job status
-            processing_job.status = 'processing'
-            processing_job.started_at = timezone.now()
-            processing_job.save()
-            
-            user_image = processing_job.user_image
-            
-            logger.info(f"Starting SD3 Turbo image processing for job {processing_job.id}")
-            logger.info(f"Image path: {user_image.image.path}")
-            logger.info(f"Generated prompt: {processing_job.generated_prompt[:200]}...")
-            
-            # Validate image file exists
-            import os
-            if not os.path.exists(user_image.image.path):
-                raise FileNotFoundError(f"Image file not found: {user_image.image.path}")
-            
-            # Process using the wedding venue transformation system with SD3 Turbo
-            result = self.stability_service.process_wedding_venue(
-                image_path=user_image.image.path,
-                processing_job=processing_job
-            )
-            
-            logger.info(f"SD3 Turbo result: success={result.get('success')}, model={result.get('model')}")
-            
-            if result["success"] and result["results"]:
-                # Save the single processed image
-                img_result = result["results"][0]  # Only process one image now
-                processed_image = ProcessedImage(
-                    processing_job=processing_job,
-                    stability_seed=img_result.get("seed"),
-                    finish_reason=img_result.get("finish_reason")
-                )
-                
-                # Save the image file with wedding context in filename
-                theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                model_used = result.get("model", "SD3-Turbo")
-                timestamp = int(timezone.now().timestamp())
-                filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
-                
-                # Validate image data
-                image_data = img_result["image_data"]
-                if not image_data or len(image_data) < 1000:  # Basic validation
-                    raise ValueError("Generated image data is too small or empty")
-                
-                processed_image.processed_image.save(
-                    filename,
-                    ContentFile(image_data),
-                    save=False
-                )
-                processed_image.save()
-                
-                logger.info(f"Successfully saved wedding processed image: {filename}")
-                logger.info(f"Image size: {processed_image.file_size} bytes, dimensions: {processed_image.width}x{processed_image.height}")
-                
-                # Update job status to completed
-                processing_job.status = 'completed'
-                processing_job.completed_at = timezone.now()
-                processing_job.save()
-                
-                logger.info(f"Successfully completed wedding processing job {processing_job.id} with SD3 Turbo")
-                return True
-            else:
-                # No successful results
-                error_msg = result.get('error', 'Wedding venue transformation failed - no results generated')
-                logger.error(f"Processing failed for job {processing_job.id}: {error_msg}")
-                
-                processing_job.status = 'failed'
-                processing_job.error_message = error_msg
-                processing_job.completed_at = timezone.now()
-                processing_job.save()
-                
-                return False
-                    
-        except Exception as exc:
-            logger.error(f"Error in processing job {processing_job.id}: {str(exc)}", exc_info=True)
-            
-            processing_job.status = 'failed'
-            processing_job.error_message = f"Processing error: {str(exc)}"
-            processing_job.completed_at = timezone.now()
-            processing_job.save()
-            
             return False

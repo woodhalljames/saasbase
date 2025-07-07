@@ -191,7 +191,7 @@ class UserImage(models.Model):
 
 
 class ImageProcessingJob(models.Model):
-    """Track wedding venue transformation jobs with advanced parameters"""
+    """Track wedding venue transformation jobs with SD3 Turbo parameters"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -207,43 +207,30 @@ class ImageProcessingJob(models.Model):
     wedding_theme = models.CharField(max_length=20, choices=WEDDING_THEMES, null=True, blank=True)
     space_type = models.CharField(max_length=20, choices=SPACE_TYPES, null=True, blank=True)
     
-    # Generated prompts and parameters
-    generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
-    negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
-    
-    # Advanced Stability AI parameters
-    cfg_scale = models.FloatField(default=7.0, help_text="How strictly the diffusion process adheres to the prompt text")
-    steps = models.IntegerField(default=50, help_text="Number of diffusion steps to run")
-    seed = models.BigIntegerField(blank=True, null=True, help_text="Random noise seed for generation")
-    
-    # New SD3 parameters
-    aspect_ratio = models.CharField(max_length=10, default='16:9', help_text="Aspect ratio for output image")
-    strength = models.FloatField(default=0.35, help_text="How much the input image influences the output (0.0-1.0)")
-    output_format = models.CharField(max_length=10, default='png', help_text="Output image format")
-    
-    # Additional customization
-    additional_details = models.TextField(blank=True, null=True, help_text="Additional user-specified details")
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    started_at = models.DateTimeField(blank=True, null=True)
-    completed_at = models.DateTimeField(blank=True, null=True)
-
-        # Dynamic parameters (new fields to add)
+    # Dynamic wedding parameters
     guest_count = models.CharField(max_length=20, blank=True, help_text="Guest count category")
     budget_level = models.CharField(max_length=20, blank=True, help_text="Budget level")
     season = models.CharField(max_length=20, blank=True, help_text="Wedding season")
     time_of_day = models.CharField(max_length=20, blank=True, help_text="Time of day")
     color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme")
     custom_colors = models.CharField(max_length=200, blank=True, help_text="Custom colors")
-
-    # Generation options
-    generate_variations = models.BooleanField(default=False)
-
-    # Template tracking  
-    used_prompt_template = models.ForeignKey('PromptTemplate', null=True, blank=True, on_delete=models.SET_NULL)
+    additional_details = models.TextField(blank=True, null=True, help_text="Additional user-specified details")
     
-        
+    # Generated prompts
+    generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
+    negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
+    
+    # SD3 Turbo parameters (NO cfg_scale or steps)
+    seed = models.BigIntegerField(blank=True, null=True, help_text="Random noise seed for generation")
+    aspect_ratio = models.CharField(max_length=10, default='1:1', help_text="Aspect ratio for output image")
+    strength = models.FloatField(default=0.35, help_text="How much the input image influences the output (0.0-1.0)")
+    output_format = models.CharField(max_length=10, default='png', help_text="Output image format")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    
     class Meta:
         ordering = ['-created_at']
     
@@ -256,10 +243,16 @@ class ImageProcessingJob(models.Model):
         # Generate comprehensive prompt if wedding theme and space type are provided
         if self.wedding_theme and self.space_type and not self.generated_prompt:
             try:
-                prompt_data = generate_wedding_prompt(
-                    self.wedding_theme, 
-                    self.space_type, 
-                    self.additional_details
+                prompt_data = generate_wedding_prompt_with_dynamics(
+                    wedding_theme=self.wedding_theme,
+                    space_type=self.space_type,
+                    guest_count=self.guest_count,
+                    budget_level=self.budget_level,
+                    season=self.season,
+                    time_of_day=self.time_of_day,
+                    color_scheme=self.color_scheme,
+                    custom_colors=self.custom_colors,
+                    additional_details=self.additional_details
                 )
                 
                 self.generated_prompt = prompt_data['prompt']
@@ -267,13 +260,11 @@ class ImageProcessingJob(models.Model):
                 
                 # Update parameters with recommendations
                 recommended_params = prompt_data['recommended_params']
-                self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
-                self.steps = recommended_params.get('steps', self.steps)
                 self.aspect_ratio = recommended_params.get('aspect_ratio', self.aspect_ratio)
                 self.strength = recommended_params.get('strength', self.strength)
                 self.output_format = recommended_params.get('output_format', self.output_format)
                 
-                logger.info(f"Generated prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                logger.info(f"Generated dynamic prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
             except Exception as e:
                 logger.error(f"Error generating prompt for job {self.id}: {str(e)}")
@@ -292,7 +283,30 @@ class ImageProcessingJob(models.Model):
             'aspect_ratio': self.aspect_ratio,
             'seed': self.seed,
             'output_format': self.output_format,
-            }
+        }
+
+
+def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
+                                        budget_level=None, season=None, time_of_day=None,
+                                        color_scheme=None, custom_colors=None, additional_details=None):
+    """Generate comprehensive AI prompt with dynamic parameters for SD3 Turbo"""
+    try:
+        from .prompt_generator import WeddingPromptGenerator
+        
+        return WeddingPromptGenerator.generate_dynamic_prompt(
+            wedding_theme=wedding_theme,
+            space_type=space_type,
+            guest_count=guest_count,
+            budget_level=budget_level,
+            season=season,
+            time_of_day=time_of_day,
+            color_scheme=color_scheme,
+            custom_colors=custom_colors,
+            additional_details=additional_details
+        )
+    except ImportError as e:
+        logger.warning(f"Could not import WeddingPromptGenerator: {e}")
+        return generate_fallback_prompt(wedding_theme, space_type, additional_details)
 
 
 class ProcessedImage(models.Model):
