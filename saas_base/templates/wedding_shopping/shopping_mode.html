@@ -576,6 +576,172 @@ document.addEventListener('DOMContentLoaded', function() {
     // Reset loading modal text
     document.getElementById('loadingText').textContent = 'Analyzing selection...';
     document.getElementById('loadingSubtext').textContent = 'This may take a moment';
+    function initializeSelectionWithTouch() {
+    const selectionOverlay = document.getElementById('selectionOverlay');
+    const selectionRectangle = document.getElementById('selectionRectangle');
+    
+    let isSelecting = false;
+    let startX, startY, currentSelection = null;
+    
+    // Unified event handlers for mouse and touch
+    function getEventCoordinates(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+        }
+        return { clientX: e.clientX, clientY: e.clientY };
+    }
+    
+    function startSelection(e) {
+        e.preventDefault();
+        const coords = getEventCoordinates(e);
+        const imgRect = weddingImage.getBoundingClientRect();
+        
+        startX = coords.clientX - imgRect.left;
+        startY = coords.clientY - imgRect.top;
+        
+        // Check bounds
+        if (startX < 0 || startY < 0 || startX > weddingImage.offsetWidth || startY > weddingImage.offsetHeight) {
+            return;
+        }
+        
+        isSelecting = true;
+        selectionRectangle.style.display = 'block';
+        selectionRectangle.style.left = startX + 'px';
+        selectionRectangle.style.top = startY + 'px';
+        selectionRectangle.style.width = '0px';
+        selectionRectangle.style.height = '0px';
+        
+        // Add visual feedback for mobile
+        if (e.touches) {
+            selectionOverlay.style.cursor = 'crosshair';
+            // Add haptic feedback if available
+            if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+        }
+    }
+    
+    function updateSelection(e) {
+        if (!isSelecting) return;
+        e.preventDefault();
+        
+        const coords = getEventCoordinates(e);
+        const imgRect = weddingImage.getBoundingClientRect();
+        
+        const currentX = Math.max(0, Math.min(coords.clientX - imgRect.left, weddingImage.offsetWidth));
+        const currentY = Math.max(0, Math.min(coords.clientY - imgRect.top, weddingImage.offsetHeight));
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        
+        selectionRectangle.style.left = left + 'px';
+        selectionRectangle.style.top = top + 'px';
+        selectionRectangle.style.width = width + 'px';
+        selectionRectangle.style.height = height + 'px';
+    }
+    
+    function endSelection(e) {
+        if (!isSelecting) return;
+        
+        isSelecting = false;
+        
+        const width = parseInt(selectionRectangle.style.width);
+        const height = parseInt(selectionRectangle.style.height);
+        
+        // Minimum selection size (larger for mobile)
+        const minSize = window.innerWidth <= 768 ? 30 : 20;
+        
+        if (width < minSize || height < minSize) {
+            clearCurrentSelection();
+            return;
+        }
+        
+        // Store selection and show mobile-friendly UI
+        currentSelection = {
+            x: parseInt(selectionRectangle.style.left),
+            y: parseInt(selectionRectangle.style.top),
+            width: width,
+            height: height
+        };
+        
+        // Calculate actual image coordinates
+        const scaleX = weddingImageActualWidth / weddingImage.offsetWidth;
+        const scaleY = weddingImageActualHeight / weddingImage.offsetHeight;
+        
+        currentSelection.actualX = Math.round(currentSelection.x * scaleX);
+        currentSelection.actualY = Math.round(currentSelection.y * scaleY);
+        currentSelection.actualWidth = Math.round(currentSelection.width * scaleX);
+        currentSelection.actualHeight = Math.round(currentSelection.height * scaleY);
+        
+        // Mobile-specific UI updates
+        if (window.innerWidth <= 768) {
+            // Scroll to selection panel on mobile
+            document.getElementById('currentSelectionCard').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+            
+            // Show mobile toast
+            showMobileToast('Item selected! Analyzing with AI...');
+        }
+        
+        // Enable action buttons
+        document.getElementById('analyzeSelection').disabled = false;
+        document.getElementById('clearSelection').disabled = false;
+        
+        showCurrentSelection();
+        
+        // Haptic feedback for successful selection
+        if (navigator.vibrate && e.touches) {
+            navigator.vibrate([50, 100, 50]);
+        }
+    }
+    
+    // Mouse events
+    selectionOverlay.addEventListener('mousedown', startSelection);
+    selectionOverlay.addEventListener('mousemove', updateSelection);
+    selectionOverlay.addEventListener('mouseup', endSelection);
+    selectionOverlay.addEventListener('mouseleave', endSelection);
+    
+    // Touch events  
+    selectionOverlay.addEventListener('touchstart', startSelection, { passive: false });
+    selectionOverlay.addEventListener('touchmove', updateSelection, { passive: false });
+    selectionOverlay.addEventListener('touchend', endSelection, { passive: false });
+    
+    // Prevent default touch behaviors that interfere with selection
+    selectionOverlay.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+    });
+}
+
+    function showMobileToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'mobile-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 25px;
+        font-size: 14px;
+        z-index: 9999;
+        animation: slideUp 0.3s ease;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideDown 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
 });
 </script>
 

@@ -18,6 +18,87 @@
     <!-- Right Sidebar: Controls -->
     <div class="col-md-4 col-lg-3 order-md-2 mb-4">
       
+      <!-- Mode Toggle -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Mode</h6>
+        </div>
+        <div class="card-body">
+          <div class="btn-group w-100" role="group">
+            <input type="radio" class="btn-check" name="appMode" id="visualizeMode" checked>
+            <label class="btn btn-outline-primary" for="visualizeMode">
+              <i class="bi bi-magic"></i> Visualize
+            </label>
+            
+            <input type="radio" class="btn-check" name="appMode" id="shoppingMode">
+            <label class="btn btn-outline-success" for="shoppingMode">
+              <i class="bi bi-cart"></i> Shop
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shopping Panel (hidden by default) -->
+      <div id="shoppingPanel" class="card mb-3" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0">🛍️ Wedding Shopping</h6>
+          <div class="tokens-display">
+            🪙 <span id="tokenCount">{{ user.userprofile.shopping_tokens|default:5 }}</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Shopping Instructions -->
+          <div class="alert alert-info alert-sm mb-3">
+            <small><i class="bi bi-info-circle"></i> Click and drag on your venue photo to select items for shopping</small>
+          </div>
+          
+          <!-- Selection Tools -->
+          <div class="mb-3">
+            <button class="btn btn-sm btn-success w-100 mb-2" id="enableSelectionBtn">
+              <i class="bi bi-crosshair"></i> Enable Item Selection
+            </button>
+            <button class="btn btn-sm btn-outline-secondary w-100" id="clearSelectionsBtn">
+              <i class="bi bi-trash"></i> Clear Selections
+            </button>
+          </div>
+          
+          <!-- Current Selection -->
+          <div class="mb-3">
+            <h6 class="small fw-bold">📱 Current Selection</h6>
+            <div id="currentSelection" class="small text-muted">
+              No item selected
+            </div>
+          </div>
+          
+          <!-- AI Analysis -->
+          <div class="mb-3">
+            <h6 class="small fw-bold">🤖 AI Analysis</h6>
+            <div id="aiAnalysis" class="small text-muted">
+              Select an item to analyze
+            </div>
+          </div>
+          
+          <!-- Search Results -->
+          <div class="mb-3">
+            <h6 class="small fw-bold">🔍 Product Search</h6>
+            <div id="searchResults" class="small" style="max-height: 200px; overflow-y: auto;">
+              No search performed yet
+            </div>
+          </div>
+          
+          <!-- Shopping List -->
+          <div class="mb-3">
+            <h6 class="small fw-bold">📝 Shopping List</h6>
+            <div id="shoppingList" class="small" style="max-height: 150px; overflow-y: auto;">
+              Your shopping list is empty
+            </div>
+            <button class="btn btn-sm btn-primary w-100 mt-2" id="exportListBtn">
+              <i class="bi bi-download"></i> Export List
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Recent Uploads -->
       <div class="card mb-3">
         <div class="card-header">
@@ -60,7 +141,7 @@
       </div>
 
       <!-- Transform Controls -->
-      <div class="card">
+      <div class="card" id="visualizationControls">
         <div class="card-header">
           <h5 class="mb-0">Visualization Options</h5>
         </div>
@@ -81,8 +162,8 @@
             
             <div class="mb-4">
               <label for="space-type" class="form-label fs-6"><strong>Celebration Purpose</strong></label>
-<select class="form-select" id="space-type" name="space_type" required>
-    <option value="">What will this space be used for?</option>
+              <select class="form-select" id="space-type" name="space_type" required>
+                <option value="">What will this space be used for?</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
@@ -214,8 +295,20 @@
                     title="Upload a different image">
               <i class="bi bi-camera"></i>
             </button>
+
+            <!-- Shopping Mode Indicator -->
+            <div id="shoppingModeIndicator" class="position-absolute top-0 start-0 m-2" style="display: none; z-index: 10;">
+              <div class="badge bg-success">
+                <i class="bi bi-crosshair"></i> Shopping Mode Active
+              </div>
+            </div>
             
-            <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
+            <!-- Image Container for Selection -->
+            <div id="imageContainer" class="position-relative d-inline-block">
+              <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
+              <!-- Selection rectangles will be added here dynamically -->
+            </div>
+            
             <div class="mt-3">
               <p class="mb-1"><strong id="selectedImageName">Selected Image</strong></p>
               <p class="text-muted mb-0" id="selectedImageDetails">Image details</p>
@@ -286,9 +379,112 @@
   {% endif %}
 </div>
 
+<style>
+/* Shopping-specific styles */
+.selection-rectangle {
+    position: absolute;
+    border: 2px solid #198754;
+    background: rgba(25, 135, 84, 0.1);
+    pointer-events: none;
+    border-radius: 4px;
+}
+
+.selection-marker {
+    position: absolute;
+    background: #198754;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    top: -12px;
+    left: -12px;
+}
+
+.product-item {
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin: 6px 0;
+    background: white;
+}
+
+.product-image {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.product-info {
+    flex: 1;
+    font-size: 12px;
+}
+
+.product-title {
+    font-weight: 500;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.product-price {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.ai-result {
+    background: #e3f2fd;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 6px 0;
+    border-left: 3px solid #2196f3;
+    font-size: 12px;
+}
+
+.tokens-display {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.shopping-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 12px;
+}
+
+#imageContainer {
+    cursor: default;
+}
+
+#imageContainer.selection-active {
+    cursor: crosshair;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
+    let isShoppingMode = false;
+    let isSelectionEnabled = false;
+    let isSelecting = false;
+    let currentSelection = null;
+    let selections = [];
+    let selectionCounter = 0;
+    let tokens = {{ user.userprofile.shopping_tokens|default:5 }};
+    let shoppingList = [];
     
     // Get all necessary elements
     const fileInput = document.getElementById('id_image');
@@ -306,7 +502,151 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorScheme = document.getElementById('color-scheme');
     const customColorsContainer = document.getElementById('custom-colors-container');
     
-    // Handle custom colors visibility
+    // Shopping elements
+    const visualizeModeBtn = document.getElementById('visualizeMode');
+    const shoppingModeBtn = document.getElementById('shoppingMode');
+    const shoppingPanel = document.getElementById('shoppingPanel');
+    const visualizationControls = document.getElementById('visualizationControls');
+    const shoppingModeIndicator = document.getElementById('shoppingModeIndicator');
+    const enableSelectionBtn = document.getElementById('enableSelectionBtn');
+    const clearSelectionsBtn = document.getElementById('clearSelectionsBtn');
+    const imageContainer = document.getElementById('imageContainer');
+    const tokenCount = document.getElementById('tokenCount');
+    const currentSelectionDiv = document.getElementById('currentSelection');
+    const aiAnalysisDiv = document.getElementById('aiAnalysis');
+    const searchResultsDiv = document.getElementById('searchResults');
+    const shoppingListDiv = document.getElementById('shoppingList');
+    const exportListBtn = document.getElementById('exportListBtn');
+    
+    // Mode switching
+    visualizeModeBtn.addEventListener('change', function() {
+        if (this.checked) {
+            isShoppingMode = false;
+            shoppingPanel.style.display = 'none';
+            visualizationControls.style.display = 'block';
+            shoppingModeIndicator.style.display = 'none';
+            disableSelection();
+        }
+    });
+    
+    shoppingModeBtn.addEventListener('change', function() {
+        if (this.checked) {
+            isShoppingMode = true;
+            shoppingPanel.style.display = 'block';
+            visualizationControls.style.display = 'none';
+            if (selectedImageId) {
+                shoppingModeIndicator.style.display = 'block';
+            }
+        }
+    });
+    
+    // Shopping controls
+    enableSelectionBtn.addEventListener('click', function() {
+        if (!selectedImageId) {
+            showToast('Please select an image first', 'warning');
+            return;
+        }
+        
+        isSelectionEnabled = !isSelectionEnabled;
+        
+        if (isSelectionEnabled) {
+            this.innerHTML = '<i class="bi bi-stop-circle"></i> Stop Selection';
+            this.className = 'btn btn-sm btn-danger w-100 mb-2';
+            imageContainer.classList.add('selection-active');
+        } else {
+            this.innerHTML = '<i class="bi bi-crosshair"></i> Enable Item Selection';
+            this.className = 'btn btn-sm btn-success w-100 mb-2';
+            imageContainer.classList.remove('selection-active');
+        }
+    });
+    
+    clearSelectionsBtn.addEventListener('click', function() {
+        clearAllSelections();
+    });
+    
+    exportListBtn.addEventListener('click', function() {
+        exportShoppingList();
+    });
+    
+    // Shopping selection events
+    imageContainer.addEventListener('mousedown', function(e) {
+        if (!isShoppingMode || !isSelectionEnabled || e.target !== selectedImage) return;
+        
+        isSelecting = true;
+        const rect = selectedImage.getBoundingClientRect();
+        const containerRect = imageContainer.getBoundingClientRect();
+        
+        const startX = e.clientX - containerRect.left;
+        const startY = e.clientY - containerRect.top;
+        
+        currentSelection = document.createElement('div');
+        currentSelection.className = 'selection-rectangle';
+        currentSelection.style.left = startX + 'px';
+        currentSelection.style.top = startY + 'px';
+        imageContainer.appendChild(currentSelection);
+        
+        const onMouseMove = function(e) {
+            if (!isSelecting) return;
+            
+            const currentX = e.clientX - containerRect.left;
+            const currentY = e.clientY - containerRect.top;
+            
+            const width = Math.abs(currentX - startX);
+            const height = Math.abs(currentY - startY);
+            const left = Math.min(currentX, startX);
+            const top = Math.min(currentY, startY);
+            
+            currentSelection.style.left = left + 'px';
+            currentSelection.style.top = top + 'px';
+            currentSelection.style.width = width + 'px';
+            currentSelection.style.height = height + 'px';
+        };
+        
+        const onMouseUp = function(e) {
+            if (!isSelecting) return;
+            
+            isSelecting = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            
+            const width = parseInt(currentSelection.style.width);
+            const height = parseInt(currentSelection.style.height);
+            
+            if (width > 20 && height > 20) {
+                selectionCounter++;
+                
+                // Add marker
+                const marker = document.createElement('div');
+                marker.className = 'selection-marker';
+                marker.textContent = selectionCounter;
+                currentSelection.appendChild(marker);
+                
+                // Store selection data
+                const selectionData = {
+                    id: selectionCounter,
+                    element: currentSelection,
+                    bounds: {
+                        left: parseInt(currentSelection.style.left),
+                        top: parseInt(currentSelection.style.top),
+                        width: width,
+                        height: height
+                    }
+                };
+                
+                selections.push(selectionData);
+                analyzeSelection(selectionData);
+            } else {
+                currentSelection.remove();
+            }
+            
+            currentSelection = null;
+        };
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+    
+    // Original functionality (unchanged)
     if (colorScheme) {
         colorScheme.addEventListener('change', function() {
             if (this.value === 'custom') {
@@ -317,13 +657,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle file input change with AJAX upload
     if (fileInput) {
         fileInput.addEventListener('change', function() {
             if (this.files.length > 0) {
                 const file = this.files[0];
                 
-                // Validate file
                 if (!file.type.startsWith('image/')) {
                     alert('Please select an image file');
                     this.value = '';
@@ -341,7 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle upload new button
     if (uploadNewBtn) {
         uploadNewBtn.addEventListener('click', function() {
             if (fileInput) {
@@ -350,7 +687,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // AJAX file upload function
     function uploadFileWithAjax(file) {
         showUploadProgress();
         
@@ -392,7 +728,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add new image to recent uploads
     function addNewImageToRecent(imageData) {
         if (!recentImagesContainer) return;
         
@@ -425,21 +760,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Handle recent image selection
     document.querySelectorAll('.venue-thumbnail').forEach(thumbnail => {
         thumbnail.addEventListener('click', function() {
             selectImage(this);
         });
     });
     
-    // Handle form field changes
     [weddingTheme, spaceType].forEach(field => {
         if (field) {
             field.addEventListener('change', updateTransformBtnState);
         }
     });
     
-    // Handle visualize button
     if (transformBtn) {
         transformBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -448,7 +780,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function selectImage(thumbnail) {
-        // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
             t.style.borderColor = 'transparent';
             t.style.borderWidth = '2px';
@@ -456,7 +787,6 @@ document.addEventListener('DOMContentLoaded', function() {
             t.style.boxShadow = 'none';
         });
         
-        // Mark as selected
         thumbnail.style.borderColor = '#0d6efd';
         thumbnail.style.borderWidth = '3px';
         thumbnail.style.transform = 'translateY(-2px)';
@@ -471,9 +801,193 @@ document.addEventListener('DOMContentLoaded', function() {
             showImagePreview();
         }
         
+        // Clear selections when switching images
+        clearAllSelections();
+        
+        // Show shopping mode indicator if in shopping mode
+        if (isShoppingMode) {
+            shoppingModeIndicator.style.display = 'block';
+        }
+        
         updateTransformBtnState();
     }
     
+    // Shopping functions
+    function analyzeSelection(selection) {
+        if (tokens <= 0) {
+            showToast('No tokens remaining for analysis', 'warning');
+            return;
+        }
+        
+        updateCurrentSelection(selection);
+        
+        // Mock AI analysis (replace with real API call)
+        setTimeout(() => {
+            const mockAnalysis = getMockAIAnalysis();
+            displayAIAnalysis(mockAnalysis);
+            searchProducts(mockAnalysis, selection);
+        }, 1500);
+    }
+    
+    function getMockAIAnalysis() {
+        const items = [
+            { item: 'Wedding Chair', description: 'elegant white chiavari chair with gold details' },
+            { item: 'Table Centerpiece', description: 'floral arrangement with roses and eucalyptus' },
+            { item: 'Wedding Candles', description: 'pillar candles in glass holders' },
+            { item: 'Table Linens', description: 'ivory tablecloth with lace details' },
+            { item: 'Wedding Arch', description: 'rustic wooden arch with white flowers' }
+        ];
+        
+        return items[Math.floor(Math.random() * items.length)];
+    }
+    
+    function updateCurrentSelection(selection) {
+        currentSelectionDiv.innerHTML = `
+            <div class="ai-result">
+                <strong>Selection #${selection.id}</strong><br>
+                Size: ${selection.bounds.width}x${selection.bounds.height}px
+            </div>
+        `;
+    }
+    
+    function displayAIAnalysis(analysis) {
+        aiAnalysisDiv.innerHTML = `
+            <div class="ai-result">
+                <strong>🎯 Item:</strong> ${analysis.item}<br>
+                <strong>📝 Description:</strong> ${analysis.description}
+            </div>
+        `;
+    }
+    
+    function searchProducts(analysis, selection) {
+        tokens--;
+        updateTokenDisplay();
+        
+        // Mock product search (replace with real API call)
+        setTimeout(() => {
+            const mockProducts = [
+                {
+                    id: Date.now() + 1,
+                    title: `Premium ${analysis.item}`,
+                    price: '$' + (Math.random() * 200 + 50).toFixed(2),
+                    image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=40&h=40&fit=crop',
+                    retailer: 'Amazon'
+                },
+                {
+                    id: Date.now() + 2,
+                    title: `Elegant ${analysis.item} Set`,
+                    price: '$' + (Math.random() * 150 + 30).toFixed(2),
+                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=40&h=40&fit=crop',
+                    retailer: 'Wayfair'
+                }
+            ];
+            
+            displaySearchResults(mockProducts, selection);
+        }, 2000);
+    }
+    
+    function displaySearchResults(products, selection) {
+        searchResultsDiv.innerHTML = products.map(product => `
+            <div class="product-item">
+                <img src="${product.image}" alt="${product.title}" class="product-image">
+                <div class="product-info">
+                    <div class="product-title">${product.title}</div>
+                    <div class="product-price">${product.price}</div>
+                    <small>${product.retailer}</small>
+                </div>
+                <button class="btn btn-sm btn-primary" onclick="addToShoppingList('${product.title}', '${product.price}', ${selection.id})">
+                    Add
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    window.addToShoppingList = function(title, price, selectionId) {
+        const item = {
+            id: Date.now(),
+            title,
+            price,
+            selectionId
+        };
+        
+        shoppingList.push(item);
+        updateShoppingListDisplay();
+        showToast(`Added "${title}" to shopping list`, 'success');
+    };
+    
+    function updateShoppingListDisplay() {
+        if (shoppingList.length === 0) {
+            shoppingListDiv.innerHTML = '<div class="text-muted">Your shopping list is empty</div>';
+            return;
+        }
+        
+        shoppingListDiv.innerHTML = shoppingList.map(item => `
+            <div class="shopping-list-item">
+                <div>
+                    <div class="product-title">${item.title}</div>
+                    <div class="product-price">${item.price}</div>
+                    <small>Selection #${item.selectionId}</small>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFromShoppingList(${item.id})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    window.removeFromShoppingList = function(itemId) {
+        shoppingList = shoppingList.filter(item => item.id !== itemId);
+        updateShoppingListDisplay();
+    };
+    
+    function exportShoppingList() {
+        if (shoppingList.length === 0) {
+            showToast('Shopping list is empty!', 'warning');
+            return;
+        }
+        
+        const exportData = {
+            wedding_registry: {
+                created: new Date().toISOString(),
+                total_items: shoppingList.length,
+                items: shoppingList
+            }
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'wedding_shopping_list.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showToast('Shopping list exported!', 'success');
+    }
+    
+    function clearAllSelections() {
+        selections.forEach(selection => {
+            selection.element.remove();
+        });
+        selections = [];
+        selectionCounter = 0;
+        currentSelectionDiv.innerHTML = '<div class="text-muted">No item selected</div>';
+        aiAnalysisDiv.innerHTML = '<div class="text-muted">Select an item to analyze</div>';
+        searchResultsDiv.innerHTML = '<div class="text-muted">No search performed yet</div>';
+    }
+    
+    function disableSelection() {
+        isSelectionEnabled = false;
+        enableSelectionBtn.innerHTML = '<i class="bi bi-crosshair"></i> Enable Item Selection';
+        enableSelectionBtn.className = 'btn btn-sm btn-success w-100 mb-2';
+        imageContainer.classList.remove('selection-active');
+    }
+    
+    function updateTokenDisplay() {
+        tokenCount.textContent = tokens;
+    }
+    
+    // Continue with original functions...
     function showUploadProgress() {
         if (uploadArea) uploadArea.style.display = 'none';
         if (imagePreview) imagePreview.style.display = 'none';
@@ -506,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasTheme = weddingTheme && weddingTheme.value;
         const hasSpace = spaceType && spaceType.value;
         
-        const canVisualize = hasImage && hasTheme && hasSpace;
+        const canVisualize = hasImage && hasTheme && hasSpace && !isShoppingMode;
         
         if (transformBtn) {
             transformBtn.disabled = !canVisualize;
@@ -527,12 +1041,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Show processing status
         document.getElementById('processingStatus').style.display = 'block';
         transformBtn.disabled = true;
         transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
         
-        // Collect all form data including dynamic options
         const data = {
             wedding_theme: theme,
             space_type: space,
@@ -545,7 +1057,6 @@ document.addEventListener('DOMContentLoaded', function() {
             additional_details: document.getElementById('additional-details')?.value || ''
         };
         
-        // Submit transformation request
         fetch(`/studio/image/${selectedImageId}/process/`, {
             method: 'POST',
             headers: {
@@ -589,7 +1100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showToast(message, type) {
         const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} position-fixed top-0 end-0 m-3`;
         toast.style.zIndex = '9999';
         toast.innerHTML = `
             ${message}
@@ -605,8 +1116,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
     
-    // Initialize button state
+    // Initialize
     updateTransformBtnState();
+    updateTokenDisplay();
 });
 </script>
 

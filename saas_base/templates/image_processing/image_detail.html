@@ -92,7 +92,22 @@
                 <i class="bi bi-magic"></i> Transform This Venue
               </button>
             </div>
-
+{% if processing_jobs %}
+  {% for job in processing_jobs %}
+    {% if job.status == 'completed' and job.processed_images.all %}
+      {% for processed_img in job.processed_images.all %}
+        <div class="d-grid mt-2">
+          <a href="{% url 'wedding_shopping:shopping_mode' processed_img.id %}" 
+             class="btn btn-success btn-lg">
+            <i class="bi bi-cart3"></i> Shop This Wedding Transformation
+          </a>
+        </div>
+        {% break %} <!-- Only show for first completed transformation -->
+      {% endfor %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
             <!-- Advanced Options -->
             <div class="mt-3">
               <div class="accordion" id="advancedOptions">

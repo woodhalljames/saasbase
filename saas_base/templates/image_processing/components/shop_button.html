@@ -1,0 +1,115 @@
+{% load static %}
+
+<!-- Smart shop button that adapts to image state -->
+{% if image_type == 'processed' %}
+  <!-- Direct shop button for processed images -->
+  <a href="{% url 'wedding_shopping:shopping_mode' processed_image.id %}" 
+     class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
+    <i class="bi bi-cart3"></i> 
+    {% if button_text %}{{ button_text }}{% else %}Shop This Wedding{% endif %}
+  </a>
+
+{% elif image_type == 'original' %}
+  <!-- Check if original image has transformations -->
+  {% with completed_jobs=user_image.processing_jobs.filter_completed %}
+    {% if completed_jobs %}
+      {% with latest_processed=completed_jobs.first.processed_images.first %}
+        <a href="{% url 'wedding_shopping:shopping_mode' latest_processed.id %}" 
+           class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
+          <i class="bi bi-cart3"></i> Shop Wedding
+        </a>
+      {% endwith %}
+    {% else %}
+      <!-- No transformations yet - show transform first button -->
+      <button class="btn btn-outline-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}" 
+              onclick="showTransformFirstModal({{ user_image.id }})">
+        <i class="bi bi-magic"></i> Transform to Shop
+      </button>
+    {% endif %}
+  {% endwith %}
+
+{% elif image_type == 'job' and job.status == 'completed' %}
+  <!-- Processing job with completed transformations -->
+  {% with processed_images=job.processed_images.all %}
+    {% if processed_images %}
+      {% with first_processed=processed_images.first %}
+        <a href="{% url 'wedding_shopping:shopping_mode' first_processed.id %}" 
+           class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
+          <i class="bi bi-cart3"></i> Shop This Wedding
+        </a>
+      {% endwith %}
+    {% endif %}
+  {% endwith %}
+
+{% elif image_type == 'job' and job.status == 'processing' %}
+  <!-- Processing in progress -->
+  <button class="btn btn-outline-secondary {{ button_size|default:'btn-sm' }} {{ extra_classes }}" disabled>
+    <i class="bi bi-hourglass-split"></i> Processing...
+  </button>
+
+{% elif image_type == 'job' and job.status == 'failed' %}
+  <!-- Failed processing -->
+  <button class="btn btn-outline-warning {{ button_size|default:'btn-sm' }} {{ extra_classes }}" 
+          onclick="retryProcessing({{ job.user_image.id }})">
+    <i class="bi bi-arrow-clockwise"></i> Retry & Shop
+  </button>
+
+{% endif %}
+
+<!-- Transform First Modal -->
+<div class="modal fade" id="transformFirstModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Transform Your Venue First</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="bi bi-magic text-primary" style="font-size: 3rem;"></i>
+        <h6 class="mt-3">Create a Wedding Transformation</h6>
+        <p class="text-muted">
+          To shop wedding items, we first need to transform your venue photo 
+          into a wedding-styled space using our AI.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="transformImageLink" class="btn btn-primary">
+          <i class="bi bi-magic"></i> Transform Now
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTransformFirstModal(userImageId) {
+    // Update the transform link
+    document.getElementById('transformImageLink').href = `/studio/image/${userImageId}/`;
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('transformFirstModal')).show();
+}
+
+function retryProcessing(userImageId) {
+    window.location.href = `/studio/image/${userImageId}/`;
+}
+</script>
+
+<!-- Usage Examples: -->
+
+<!-- In image_detail.html -->
+{% include 'image_processing/components/shop_button.html' with image_type='original' user_image=user_image button_size='btn-lg' button_text='Shop Wedding Items' %}
+
+<!-- In processed_image_detail.html -->
+{% include 'image_processing/components/shop_button.html' with image_type='processed' processed_image=processed_image button_size='btn-lg' %}
+
+<!-- In processing_history.html -->
+{% include 'image_processing/components/shop_button.html' with image_type='job' job=job %}
+
+<!-- In image_gallery.html -->
+{% if image.type == 'transformation' %}
+  {% include 'image_processing/components/shop_button.html' with image_type='processed' processed_image=image.object %}
+{% else %}
+  {% include 'image_processing/components/shop_button.html' with image_type='original' user_image=image.object %}
+{% endif %}

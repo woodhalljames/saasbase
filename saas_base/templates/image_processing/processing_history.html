@@ -166,6 +166,10 @@
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
                           <div class="mb-3">
+                             <a href="{% url 'wedding_shopping:shopping_mode' processed_img.id %}" 
+               class="btn btn-success btn-sm">
+              <i class="bi bi-cart3"></i> Shop This Wedding
+            </a>
                             <!-- Save/Discard buttons for temporary images -->
                             {% if not processed_img.is_saved %}
                               <div class="d-grid gap-2 mb-2">

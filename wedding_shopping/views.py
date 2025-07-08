@@ -1,350 +1,186 @@
 from django.shortcuts import render
-
-# Create your views here.
-# wedding_shopping/views.py
-import json
-import requests
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.urls import reverse
-from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.views.decorators.http import require_http_methods
+from django.utils.decorators import method_decorator
+from django.views import View
+import json
 from PIL import Image
 import io
 import base64
 
-from image_processing.models import ProcessedImage
-from .models import ShoppingList, ShoppingItem, ShoppingSession
-from .ai_analysis import analyze_item_selection  # We'll create this
-from .retailer_search import search_retailers  # We'll create this
-
+from .models import ShoppingSession, ItemSelection, ProductSearchResult, ShoppingList, ShoppingListItem, UserProfile
+from .services import AIAnalysisService, ProductSearchService
 
 @login_required
-def shopping_mode(request, processed_image_id):
-    """Shopping mode for a processed wedding image"""
-    processed_image = get_object_or_404(
-        ProcessedImage, 
-        id=processed_image_id,
-        processing_job__user_image__user=request.user
-    )
+def shopping_home(request, session_id=None):
+    """Main shopping interface"""
+    session = None
+    if session_id:
+        session = get_object_or_404(ShoppingSession, id=session_id, user=request.user)
     
-    # Get or create shopping list for this image
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    context = {
+        'session': session,
+        'user_tokens': user_profile.shopping_tokens,
+        'shopping_lists': ShoppingList.objects.filter(user=request.user)
+    }
+    return render(request, 'wedding_shopping/shopping_interface.html', context)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CreateShoppingSession(View):
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Authentication required'}, status=401)
+        
+        # Handle uploaded image or existing venue image
+        image_file = request.FILES.get('venue_image')
+        if not image_file:
+            return JsonResponse({'error': 'No image provided'}, status=400)
+            
+        session = ShoppingSession.objects.create(
+            user=request.user,
+            venue_image=image_file
+        )
+        
+        return JsonResponse({
+            'session_id': str(session.id),
+            'image_url': session.venue_image.url,
+            'success': True
+        })
+
+@method_decorator(csrf_exempt, name='dispatch') 
+class AnalyzeSelection(View):
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'error': 'Authentication required'}, status=401)
+            
+        # Check user tokens
+        user_profile = get_object_or_404(UserProfile, user=request.user)
+        if user_profile.shopping_tokens <= 0:
+            return JsonResponse({'error': 'No tokens remaining'}, status=402)
+        
+        data = json.loads(request.body)
+        session = get_object_or_404(ShoppingSession, id=data['session_id'], user=request.user)
+        
+        # Create selection record
+        selection = ItemSelection.objects.create(
+            session=session,
+            selection_number=data['selection_number'],
+            x_position=data['x_position'],
+            y_position=data['y_position'], 
+            width=data['width'],
+            height=data['height']
+        )
+        
+        # Crop image for AI analysis
+        cropped_image = self.crop_image(session.venue_image.path, data)
+        
+        # AI Analysis (implement your YOLO + CLIP here)
+        ai_service = AIAnalysisService()
+        analysis_result = ai_service.analyze_cropped_image(cropped_image)
+        
+        # Update selection with AI results
+        selection.ai_detected_item = analysis_result['item_type']
+        selection.ai_description = analysis_result['description']
+        selection.save()
+        
+        # Search products across retailers
+        search_service = ProductSearchService()
+        products = search_service.search_all_retailers(
+            query=analysis_result['search_query'],
+            context='wedding'
+        )
+        
+        # Save search results
+        for product_data in products:
+            ProductSearchResult.objects.create(
+                selection=selection,
+                retailer=product_data['retailer'],
+                product_title=product_data['title'],
+                product_price=product_data['price'],
+                product_image_url=product_data['image_url'],
+                affiliate_link=product_data['affiliate_link']
+            )
+        
+        # Deduct token
+        user_profile.shopping_tokens -= 1
+        user_profile.save()
+        
+        return JsonResponse({
+            'selection_id': selection.id,
+            'ai_analysis': {
+                'item_type': selection.ai_detected_item,
+                'description': selection.ai_description
+            },
+            'products': [
+                {
+                    'retailer': p.retailer,
+                    'title': p.product_title,
+                    'price': str(p.product_price),
+                    'image_url': p.product_image_url,
+                    'affiliate_link': p.affiliate_link,
+                    'product_id': p.id
+                } for p in selection.products.all()
+            ],
+            'remaining_tokens': user_profile.shopping_tokens
+        })
+    
+    def crop_image(self, image_path, selection_data):
+        """Crop image based on selection coordinates"""
+        with Image.open(image_path) as img:
+            box = (
+                selection_data['x_position'],
+                selection_data['y_position'],
+                selection_data['x_position'] + selection_data['width'],
+                selection_data['y_position'] + selection_data['height']
+            )
+            cropped = img.crop(box)
+            
+            # Convert to bytes for AI processing
+            buffer = io.BytesIO()
+            cropped.save(buffer, format='PNG')
+            return buffer.getvalue()
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def add_to_shopping_list(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required'}, status=401)
+    
+    data = json.loads(request.body)
+    
+    # Get or create shopping list
     shopping_list, created = ShoppingList.objects.get_or_create(
         user=request.user,
-        source_image=processed_image,
-        defaults={
-            'name': f"Shopping List for {processed_image.processing_job.user_image.original_filename}",
-            'description': f"Items from {processed_image.processing_job.wedding_theme} {processed_image.processing_job.space_type} transformation"
-        }
+        name=data.get('list_name', 'My Wedding Registry')
     )
     
-    # Start shopping session
-    session, session_created = ShoppingSession.objects.get_or_create(
-        user=request.user,
+    # Add product to list
+    product = get_object_or_404(ProductSearchResult, id=data['product_id'])
+    
+    item, created = ShoppingListItem.objects.get_or_create(
         shopping_list=shopping_list,
-        completed_at__isnull=True,
-        defaults={'items_selected': 0}
+        product=product,
+        defaults={'notes': data.get('notes', '')}
     )
     
-    context = {
-        'processed_image': processed_image,
-        'shopping_list': shopping_list,
-        'session': session,
-        'existing_items': shopping_list.items.all(),
-    }
-    
-    return render(request, 'wedding_shopping/shopping_mode.html', context)
+    return JsonResponse({
+        'success': True,
+        'list_id': str(shopping_list.id),
+        'item_added': created
+    })
 
-
-@login_required
-@require_POST
-def analyze_selection(request):
-    """Analyze a selected area of the image using AI"""
-    try:
-        data = json.loads(request.body)
-        shopping_list_id = data.get('shopping_list_id')
-        selection = data.get('selection')  # {x, y, width, height}
-        
-        shopping_list = get_object_or_404(ShoppingList, id=shopping_list_id, user=request.user)
-        
-        # Perform AI analysis on the selection
-        analysis_result = analyze_item_selection(
-            shopping_list.source_image.processed_image.path,
-            selection
-        )
-        
-        if analysis_result['success']:
-            # Create shopping item
-            item = ShoppingItem.objects.create(
-                shopping_list=shopping_list,
-                name=analysis_result['name'],
-                description=analysis_result['description'],
-                category=analysis_result['category'],
-                selection_x=selection['x'],
-                selection_y=selection['y'],
-                selection_width=selection['width'],
-                selection_height=selection['height'],
-                ai_description=analysis_result['ai_description'],
-                ai_confidence=analysis_result['confidence'],
-                ai_tags=analysis_result['tags']
-            )
-            
-            # Update session
-            session = ShoppingSession.objects.filter(
-                user=request.user,
-                shopping_list=shopping_list,
-                completed_at__isnull=True
-            ).first()
-            if session:
-                session.items_selected += 1
-                session.save()
-            
-            return JsonResponse({
-                'success': True,
-                'item_id': item.id,
-                'item': {
-                    'id': item.id,
-                    'name': item.name,
-                    'description': item.description,
-                    'category': item.category,
-                    'confidence': item.ai_confidence,
-                    'tags': item.ai_tags
-                }
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': analysis_result['error']
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
-
-
-@login_required
-@require_POST
-def search_item_retailers(request, item_id):
-    """Search retailers for a specific item"""
-    item = get_object_or_404(ShoppingItem, id=item_id, shopping_list__user=request.user)
-    
-    try:
-        # Search retailers using AI description and tags
-        search_results = search_retailers(
-            query=item.ai_description or item.name,
-            category=item.category,
-            tags=item.ai_tags
-        )
-        
-        if search_results['success'] and search_results['results']:
-            # Update item with best match
-            best_match = search_results['results'][0]
-            item.product_url = best_match.get('product_url')
-            item.affiliate_url = best_match.get('affiliate_url')
-            item.image_url = best_match.get('image_url')
-            item.price = best_match.get('price')
-            item.retailer = best_match.get('retailer', 'other')
-            item.save()
-            
-            return JsonResponse({
-                'success': True,
-                'results': search_results['results'][:5]  # Return top 5 results
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': search_results.get('error', 'No products found')
-            })
-            
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
-
-
-@login_required
-def shopping_list_detail(request, pk):
-    """View and manage a shopping list"""
-    shopping_list = get_object_or_404(ShoppingList, pk=pk, user=request.user)
-    
-    # Handle POST requests for updates
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'update_list':
-            shopping_list.name = request.POST.get('name', shopping_list.name)
-            shopping_list.description = request.POST.get('description', shopping_list.description)
-            shopping_list.privacy = request.POST.get('privacy', shopping_list.privacy)
-            shopping_list.wedding_date = request.POST.get('wedding_date') or None
-            shopping_list.bride_name = request.POST.get('bride_name', shopping_list.bride_name)
-            shopping_list.groom_name = request.POST.get('groom_name', shopping_list.groom_name)
-            shopping_list.save()
-            messages.success(request, 'Shopping list updated successfully!')
-        
-        elif action == 'update_item':
-            item_id = request.POST.get('item_id')
-            item = get_object_or_404(ShoppingItem, id=item_id, shopping_list=shopping_list)
-            item.name = request.POST.get('name', item.name)
-            item.description = request.POST.get('description', item.description)
-            item.category = request.POST.get('category', item.category)
-            item.priority = int(request.POST.get('priority', item.priority))
-            item.price = request.POST.get('price') or None
-            item.quantity = int(request.POST.get('quantity', item.quantity))
-            item.notes = request.POST.get('notes', item.notes)
-            item.save()
-            messages.success(request, 'Item updated successfully!')
-        
-        elif action == 'delete_item':
-            item_id = request.POST.get('item_id')
-            item = get_object_or_404(ShoppingItem, id=item_id, shopping_list=shopping_list)
-            item.delete()
-            messages.success(request, 'Item deleted successfully!')
-        
-        return redirect('wedding_shopping:shopping_list_detail', pk=pk)
-    
-    # Group items by category
-    items_by_category = {}
-    for category_code, category_name in ShoppingItem.CATEGORY_CHOICES:
-        items = shopping_list.items.filter(category=category_code)
-        if items.exists():
-            items_by_category[category_code] = {
-                'name': category_name,
-                'items': items
-            }
+def public_registry(request, share_url):
+    """Public view of shared wedding registry"""
+    shopping_list = get_object_or_404(ShoppingList, share_url=share_url, is_public=True)
     
     context = {
         'shopping_list': shopping_list,
-        'items_by_category': items_by_category,
-        'category_choices': ShoppingItem.CATEGORY_CHOICES,
-        'priority_choices': ShoppingItem.PRIORITY_CHOICES,
-        'retailer_choices': ShoppingItem.RETAILER_CHOICES,
+        'items': shopping_list.items.all(),
+        'total_estimated_cost': sum(item.product.product_price for item in shopping_list.items.all())
     }
-    
-    return render(request, 'wedding_shopping/shopping_list_detail.html', context)
-
-
-@login_required
-def shopping_lists(request):
-    """List all shopping lists for the user"""
-    lists = ShoppingList.objects.filter(user=request.user).annotate(
-        item_count=Count('items')
-    )
-    
-    # Pagination
-    paginator = Paginator(lists, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-    }
-    
-    return render(request, 'wedding_shopping/shopping_lists.html', context)
-
-
-def public_shopping_list(request, share_token):
-    """Public view of a shared shopping list (wedding registry)"""
-    shopping_list = get_object_or_404(
-        ShoppingList, 
-        share_token=share_token,
-        privacy__in=['shared', 'public']
-    )
-    
-    # Group items by category
-    items_by_category = {}
-    for category_code, category_name in ShoppingItem.CATEGORY_CHOICES:
-        items = shopping_list.items.filter(category=category_code)
-        if items.exists():
-            items_by_category[category_code] = items
-    
-    context = {
-        'shopping_list': shopping_list,
-        'items_by_category': items_by_category,
-    }
-    
-    return render(request, 'wedding_shopping/public_shopping_list.html', context)
-
-
-@require_POST
-@csrf_exempt
-def purchase_item(request, share_token, item_id):
-    """Mark an item as purchased (for public registries)"""
-    shopping_list = get_object_or_404(
-        ShoppingList, 
-        share_token=share_token,
-        privacy__in=['shared', 'public']
-    )
-    
-    item = get_object_or_404(ShoppingItem, id=item_id, shopping_list=shopping_list)
-    
-    try:
-        data = json.loads(request.body)
-        purchaser_name = data.get('purchaser_name', '').strip()
-        
-        if not purchaser_name:
-            return JsonResponse({'success': False, 'error': 'Purchaser name is required'})
-        
-        if item.is_purchased:
-            return JsonResponse({'success': False, 'error': 'Item is already purchased'})
-        
-        # Mark as purchased
-        from django.utils import timezone
-        item.is_purchased = True
-        item.purchased_by = purchaser_name
-        item.purchased_at = timezone.now()
-        item.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Thank you! "{item.name}" has been marked as purchased.'
-        })
-        
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-@login_required
-def create_shopping_list(request, processed_image_id):
-    """Create a new shopping list from a processed image"""
-    processed_image = get_object_or_404(
-        ProcessedImage, 
-        id=processed_image_id,
-        processing_job__user_image__user=request.user
-    )
-    
-    # Check if shopping list already exists
-    existing_list = ShoppingList.objects.filter(
-        user=request.user,
-        source_image=processed_image
-    ).first()
-    
-    if existing_list:
-        return redirect('wedding_shopping:shopping_mode', processed_image_id=processed_image_id)
-    
-    # Create new shopping list
-    shopping_list = ShoppingList.objects.create(
-        user=request.user,
-        source_image=processed_image,
-        name=f"Wedding Shopping - {processed_image.processing_job.user_image.original_filename}",
-        description=f"Items from {processed_image.processing_job.wedding_theme} {processed_image.processing_job.space_type} transformation"
-    )
-    
-    messages.success(request, 'Shopping list created! Start selecting items from your wedding photo.')
-    return redirect('wedding_shopping:shopping_mode', processed_image_id=processed_image_id)
-
-
-@login_required
-@require_POST
-def delete_shopping_list(request, pk):
-    """Delete a shopping list"""
-    shopping_list = get_object_or_404(ShoppingList, pk=pk, user=request.user)
-    shopping_list.delete()
-    messages.success(request, 'Shopping list deleted successfully!')
-    return redirect('wedding_shopping:shopping_lists')
+    return render(request, 'wedding_shopping/public_registry.html', context)
