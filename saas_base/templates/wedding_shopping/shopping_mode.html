@@ -1,0 +1,636 @@
+<!-- saas_base/templates/wedding_shopping/shopping_mode.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Shop This Wedding - {{ processed_image.processing_job.user_image.original_filename }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:processing_history' %}">Processing History</a></li>
+          <li class="breadcrumb-item active">Shop This Wedding</li>
+        </ol>
+      </nav>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1><i class="bi bi-cart3"></i> Shop This Wedding</h1>
+          <p class="text-muted">Click and drag to select items from your wedding transformation</p>
+        </div>
+        <div>
+          <a href="{% url 'wedding_shopping:shopping_list_detail' shopping_list.pk %}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-list-ul"></i> View Shopping List ({{ shopping_list.items.count }})
+          </a>
+          <button class="btn btn-secondary" id="toggleInstructions">
+            <i class="bi bi-question-circle"></i> Help
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Panel -->
+  <div class="row mb-3" id="instructionsPanel" style="display: none;">
+    <div class="col-12">
+      <div class="alert alert-info">
+        <h6><i class="bi bi-info-circle"></i> How to Shop This Wedding:</h6>
+        <ol class="mb-0">
+          <li><strong>Select Items:</strong> Click and drag rectangles around items you want to shop for</li>
+          <li><strong>AI Analysis:</strong> Our AI will identify the item and suggest similar products</li>
+          <li><strong>Find Products:</strong> Browse matching products from top retailers</li>
+          <li><strong>Build Lists:</strong> Add items to your shopping list or wedding registry</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Image Selection Area -->
+    <div class="col-lg-8 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-crosshair"></i> Select Items to Shop
+            <small class="text-muted ms-2">({{ processed_image.width }}x{{ processed_image.height }})</small>
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <div id="imageContainer" class="position-relative">
+            <!-- Main wedding image -->
+            <img id="weddingImage" 
+                 src="{{ processed_image.processed_image.url }}" 
+                 class="img-fluid w-100" 
+                 alt="Wedding transformation"
+                 draggable="false"
+                 style="display: block; max-height: 800px; object-fit: contain;">
+            
+            <!-- Selection overlay -->
+            <div id="selectionOverlay" class="position-absolute top-0 start-0 w-100 h-100" 
+                 style="cursor: crosshair; user-select: none;"></div>
+            
+            <!-- Selection rectangle -->
+            <div id="selectionRectangle" class="position-absolute" 
+                 style="border: 2px dashed #007bff; background: rgba(0, 123, 255, 0.1); display: none; z-index: 10;"></div>
+            
+            <!-- Existing item markers -->
+            {% for item in existing_items %}
+              <div class="item-marker position-absolute" 
+                   style="left: {{ item.selection_x }}px; 
+                          top: {{ item.selection_y }}px; 
+                          width: {{ item.selection_width }}px; 
+                          height: {{ item.selection_height }}px;
+                          border: 2px solid #28a745;
+                          background: rgba(40, 167, 69, 0.1);
+                          z-index: 5;"
+                   data-item-id="{{ item.id }}"
+                   title="{{ item.name }}">
+                <span class="badge bg-success position-absolute" style="top: -25px; left: 0;">
+                  {{ item.name }}
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+              <i class="bi bi-mouse"></i> Click and drag to select items • 
+              <span class="text-success">Green areas</span> are already selected
+            </small>
+            <div>
+              <button id="clearSelection" class="btn btn-sm btn-outline-secondary me-2" disabled>
+                <i class="bi bi-eraser"></i> Clear Selection
+              </button>
+              <button id="analyzeSelection" class="btn btn-sm btn-primary" disabled>
+                <i class="bi bi-search"></i> Analyze Selection
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shopping Panel -->
+    <div class="col-lg-4">
+      <!-- Current Selection -->
+      <div class="card mb-3" id="currentSelectionCard" style="display: none;">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-crosshair"></i> Current Selection</h6>
+        </div>
+        <div class="card-body">
+          <div id="selectionPreview">
+            <!-- Selection preview will be inserted here -->
+          </div>
+          <div class="d-grid">
+            <button id="analyzeCurrentSelection" class="btn btn-primary">
+              <i class="bi bi-cpu"></i> Analyze with AI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analysis Results -->
+      <div class="card mb-3" id="analysisResultsCard" style="display: none;">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-cpu"></i> AI Analysis</h6>
+        </div>
+        <div class="card-body" id="analysisResults">
+          <!-- Analysis results will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Product Search Results -->
+      <div class="card mb-3" id="productResultsCard" style="display: none;">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-shop"></i> Similar Products</h6>
+        </div>
+        <div class="card-body" id="productResults">
+          <!-- Product search results will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Shopping List Summary -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-list-ul"></i> Shopping List Summary
+            <span class="badge bg-primary ms-2">{{ shopping_list.items.count }}</span>
+          </h6>
+        </div>
+        <div class="card-body">
+          {% if shopping_list.items.exists %}
+            <div class="list-group list-group-flush">
+              {% for item in shopping_list.items.all|slice:":5" %}
+                <div class="list-group-item p-2">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h6 class="mb-1">{{ item.name }}</h6>
+                      <small class="text-muted">{{ item.get_category_display }}</small>
+                    </div>
+                    {% if item.price %}
+                      <span class="text-primary">${{ item.price }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+              {% if shopping_list.items.count > 5 %}
+                <div class="list-group-item p-2 text-center">
+                  <small class="text-muted">+ {{ shopping_list.items.count|add:"-5" }} more items</small>
+                </div>
+              {% endif %}
+            </div>
+            <div class="d-grid mt-3">
+              <a href="{% url 'wedding_shopping:shopping_list_detail' shopping_list.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-eye"></i> View Full List
+              </a>
+            </div>
+          {% else %}
+            <div class="text-center py-3">
+              <i class="bi bi-cart-x text-muted" style="font-size: 2rem;"></i>
+              <p class="text-muted mt-2 mb-0">No items selected yet</p>
+              <small class="text-muted">Start selecting items from the image</small>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h6 id="loadingText">Analyzing selection...</h6>
+        <p class="text-muted mb-0" id="loadingSubtext">This may take a moment</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Shopping mode functionality
+    const imageContainer = document.getElementById('imageContainer');
+    const weddingImage = document.getElementById('weddingImage');
+    const selectionOverlay = document.getElementById('selectionOverlay');
+    const selectionRectangle = document.getElementById('selectionRectangle');
+    const analyzeBtn = document.getElementById('analyzeSelection');
+    const clearBtn = document.getElementById('clearSelection');
+    const currentSelectionCard = document.getElementById('currentSelectionCard');
+    const analysisResultsCard = document.getElementById('analysisResultsCard');
+    const productResultsCard = document.getElementById('productResultsCard');
+    
+    let isSelecting = false;
+    let startX, startY, currentSelection = null;
+    
+    // Selection event handlers
+    selectionOverlay.addEventListener('mousedown', startSelection);
+    selectionOverlay.addEventListener('mousemove', updateSelection);
+    selectionOverlay.addEventListener('mouseup', endSelection);
+    selectionOverlay.addEventListener('mouseleave', endSelection);
+    
+    // Button event handlers
+    analyzeBtn.addEventListener('click', analyzeCurrentSelection);
+    clearBtn.addEventListener('click', clearCurrentSelection);
+    document.getElementById('toggleInstructions').addEventListener('click', toggleInstructions);
+    
+    function startSelection(e) {
+        e.preventDefault();
+        const rect = imageContainer.getBoundingClientRect();
+        const imgRect = weddingImage.getBoundingClientRect();
+        
+        // Calculate position relative to image
+        startX = e.clientX - imgRect.left;
+        startY = e.clientY - imgRect.top;
+        
+        // Make sure we're within image bounds
+        if (startX < 0 || startY < 0 || startX > weddingImage.offsetWidth || startY > weddingImage.offsetHeight) {
+            return;
+        }
+        
+        isSelecting = true;
+        selectionRectangle.style.display = 'block';
+        selectionRectangle.style.left = startX + 'px';
+        selectionRectangle.style.top = startY + 'px';
+        selectionRectangle.style.width = '0px';
+        selectionRectangle.style.height = '0px';
+        
+        selectionOverlay.style.cursor = 'crosshair';
+    }
+    
+    function updateSelection(e) {
+        if (!isSelecting) return;
+        
+        e.preventDefault();
+        const imgRect = weddingImage.getBoundingClientRect();
+        
+        const currentX = Math.max(0, Math.min(e.clientX - imgRect.left, weddingImage.offsetWidth));
+        const currentY = Math.max(0, Math.min(e.clientY - imgRect.top, weddingImage.offsetHeight));
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        
+        selectionRectangle.style.left = left + 'px';
+        selectionRectangle.style.top = top + 'px';
+        selectionRectangle.style.width = width + 'px';
+        selectionRectangle.style.height = height + 'px';
+    }
+    
+    function endSelection(e) {
+        if (!isSelecting) return;
+        
+        isSelecting = false;
+        selectionOverlay.style.cursor = 'crosshair';
+        
+        const width = parseInt(selectionRectangle.style.width);
+        const height = parseInt(selectionRectangle.style.height);
+        
+        // Minimum selection size
+        if (width < 20 || height < 20) {
+            clearCurrentSelection();
+            return;
+        }
+        
+        // Store current selection
+        currentSelection = {
+            x: parseInt(selectionRectangle.style.left),
+            y: parseInt(selectionRectangle.style.top),
+            width: width,
+            height: height
+        };
+        
+        // Calculate scale factor between displayed image and actual image
+        const scaleX = {{ processed_image.width }} / weddingImage.offsetWidth;
+        const scaleY = {{ processed_image.height }} / weddingImage.offsetHeight;
+        
+        // Scale selection to actual image coordinates
+        currentSelection.actualX = Math.round(currentSelection.x * scaleX);
+        currentSelection.actualY = Math.round(currentSelection.y * scaleY);
+        currentSelection.actualWidth = Math.round(currentSelection.width * scaleX);
+        currentSelection.actualHeight = Math.round(currentSelection.height * scaleY);
+        
+        // Update UI
+        analyzeBtn.disabled = false;
+        clearBtn.disabled = false;
+        showCurrentSelection();
+    }
+    
+    function showCurrentSelection() {
+        const preview = document.getElementById('selectionPreview');
+        preview.innerHTML = `
+            <div class="text-center mb-3">
+                <div class="border rounded p-2" style="background: #f8f9fa;">
+                    <i class="bi bi-crop text-primary" style="font-size: 2rem;"></i>
+                    <div class="mt-2">
+                        <strong>Selection Area</strong><br>
+                        <small class="text-muted">
+                            ${currentSelection.actualWidth} × ${currentSelection.actualHeight} pixels<br>
+                            Position: (${currentSelection.actualX}, ${currentSelection.actualY})
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        currentSelectionCard.style.display = 'block';
+        
+        // Scroll to selection panel on mobile
+        if (window.innerWidth < 992) {
+            currentSelectionCard.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    function clearCurrentSelection() {
+        selectionRectangle.style.display = 'none';
+        currentSelection = null;
+        analyzeBtn.disabled = true;
+        clearBtn.disabled = true;
+        currentSelectionCard.style.display = 'none';
+        analysisResultsCard.style.display = 'none';
+        productResultsCard.style.display = 'none';
+    }
+    
+    function analyzeCurrentSelection() {
+        if (!currentSelection) return;
+        
+        // Show loading modal
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        // Prepare selection data
+        const selectionData = {
+            shopping_list_id: {{ shopping_list.id }},
+            selection: {
+                x: currentSelection.actualX,
+                y: currentSelection.actualY,
+                width: currentSelection.actualWidth,
+                height: currentSelection.actualHeight
+            }
+        };
+        
+        // Call AI analysis
+        fetch('{% url "wedding_shopping:analyze_selection" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(selectionData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            
+            if (data.success) {
+                displayAnalysisResults(data.item);
+                searchRetailers(data.item_id);
+                
+                // Add selection to existing markers
+                addSelectionMarker(currentSelection, data.item);
+                
+                // Clear current selection
+                clearCurrentSelection();
+                
+                // Update shopping list count
+                updateShoppingListCount();
+                
+                showToast('Item analyzed and added to your shopping list!', 'success');
+            } else {
+                showToast('Analysis failed: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            console.error('Error:', error);
+            showToast('Error analyzing selection', 'error');
+        });
+    }
+    
+    function displayAnalysisResults(item) {
+        const resultsContainer = document.getElementById('analysisResults');
+        resultsContainer.innerHTML = `
+            <div class="text-center mb-3">
+                <h6>${item.name}</h6>
+                <p class="text-muted">${item.description}</p>
+                <div class="d-flex justify-content-center gap-2 mb-2">
+                    <span class="badge bg-primary">${item.category}</span>
+                    <span class="badge bg-success">${Math.round(item.confidence * 100)}% confident</span>
+                </div>
+                <div class="mt-2">
+                    ${item.tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('')}
+                </div>
+            </div>
+            <div class="d-grid">
+                <button class="btn btn-outline-primary btn-sm" onclick="searchRetailers(${item.id})">
+                    <i class="bi bi-search"></i> Find Similar Products
+                </button>
+            </div>
+        `;
+        
+        analysisResultsCard.style.display = 'block';
+    }
+    
+    function searchRetailers(itemId) {
+        const loadingText = document.getElementById('loadingText');
+        const loadingSubtext = document.getElementById('loadingSubtext');
+        loadingText.textContent = 'Searching retailers...';
+        loadingSubtext.textContent = 'Finding similar products for you';
+        
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        loadingModal.show();
+        
+        fetch(`/wedding-shopping/search-retailers/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            
+            if (data.success && data.results.length > 0) {
+                displayProductResults(data.results);
+            } else {
+                showToast('No similar products found', 'warning');
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            console.error('Error:', error);
+            showToast('Error searching for products', 'error');
+        });
+    }
+    
+    function displayProductResults(results) {
+        const resultsContainer = document.getElementById('productResults');
+        const resultsHtml = results.map(product => `
+            <div class="card mb-2">
+                <div class="row g-0">
+                    <div class="col-4">
+                        <img src="${product.image_url}" class="img-fluid rounded-start" style="height: 100px; object-fit: cover;" alt="${product.name}">
+                    </div>
+                    <div class="col-8">
+                        <div class="card-body p-2">
+                            <h6 class="card-title text-truncate">${product.name}</h6>
+                            <p class="card-text small text-muted">${product.description}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-primary">$${product.price}</span>
+                                <div class="btn-group" role="group">
+                                    <a href="${product.product_url}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="${product.affiliate_url || product.product_url}" class="btn btn-sm btn-primary" target="_blank">
+                                        <i class="bi bi-cart"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="mt-1">
+                                <small class="text-muted">
+                                    <i class="bi bi-shop"></i> ${product.retailer.replace('_', ' ')}
+                                    ${product.rating ? `• <i class="bi bi-star-fill"></i> ${product.rating}` : ''}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        resultsContainer.innerHTML = resultsHtml;
+        productResultsCard.style.display = 'block';
+    }
+    
+    function addSelectionMarker(selection, item) {
+        const marker = document.createElement('div');
+        marker.className = 'item-marker position-absolute';
+        marker.style.left = selection.x + 'px';
+        marker.style.top = selection.y + 'px';
+        marker.style.width = selection.width + 'px';
+        marker.style.height = selection.height + 'px';
+        marker.style.border = '2px solid #28a745';
+        marker.style.background = 'rgba(40, 167, 69, 0.1)';
+        marker.style.zIndex = '5';
+        marker.dataset.itemId = item.id;
+        marker.title = item.name;
+        
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-success position-absolute';
+        badge.style.top = '-25px';
+        badge.style.left = '0';
+        badge.textContent = item.name;
+        marker.appendChild(badge);
+        
+        imageContainer.appendChild(marker);
+    }
+    
+    function updateShoppingListCount() {
+        // This would typically reload the shopping list summary
+        // For now, we'll just increment the badge count
+        const badge = document.querySelector('.badge.bg-primary');
+        if (badge) {
+            const currentCount = parseInt(badge.textContent) || 0;
+            badge.textContent = currentCount + 1;
+        }
+    }
+    
+    function toggleInstructions() {
+        const panel = document.getElementById('instructionsPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    function showToast(message, type) {
+        // Create and show toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 5000);
+    }
+    
+    // Make function globally available
+    window.searchRetailers = searchRetailers;
+    
+    // Reset loading modal text
+    document.getElementById('loadingText').textContent = 'Analyzing selection...';
+    document.getElementById('loadingSubtext').textContent = 'This may take a moment';
+});
+</script>
+
+<style>
+.item-marker {
+    pointer-events: none;
+}
+
+.item-marker:hover {
+    background: rgba(40, 167, 69, 0.2) !important;
+}
+
+#selectionOverlay {
+    cursor: crosshair;
+}
+
+#selectionRectangle {
+    pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    #imageContainer {
+        margin-bottom: 2rem;
+    }
+    
+    .card-body {
+        padding: 1rem !important;
+    }
+}
+
+/* Selection animation */
+@keyframes selection-pulse {
+    0% { border-color: #007bff; }
+    50% { border-color: #0056b3; }
+    100% { border-color: #007bff; }
+}
+
+#selectionRectangle {
+    animation: selection-pulse 1s infinite;
+}
+
+/* Loading states */
+.btn:disabled {
+    opacity: 0.6;
+}
+
+/* Product card hover effects */
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+</style>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

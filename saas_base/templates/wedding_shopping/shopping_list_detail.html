@@ -1,0 +1,376 @@
+<!-- saas_base/templates/wedding_shopping/shopping_list_detail.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ shopping_list.name }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'wedding_shopping:shopping_lists' %}">Shopping Lists</a></li>
+          <li class="breadcrumb-item active">{{ shopping_list.name }}</li>
+        </ol>
+      </nav>
+      <h1>{{ shopping_list.name }}</h1>
+      {% if shopping_list.description %}
+        <p class="text-muted">{{ shopping_list.description }}</p>
+      {% endif %}
+      <div class="d-flex gap-3">
+        <small class="text-muted">
+          {{ shopping_list.total_items }} item{{ shopping_list.total_items|pluralize }} • 
+          {{ shopping_list.purchased_items }} purchased • 
+          Created {{ shopping_list.created_at|timesince }} ago
+        </small>
+      </div>
+    </div>
+    <div class="col-md-4 text-end">
+      <a href="{% url 'wedding_shopping:shopping_mode' shopping_list.source_image.id %}" class="btn btn-primary me-2">
+        <i class="bi bi-plus-circle"></i> Add More Items
+      </a>
+      <div class="dropdown d-inline">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-three-dots"></i>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#shareModal">
+            <i class="bi bi-share"></i> Share List
+          </a></li>
+          <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#settingsModal">
+            <i class="bi bi-gear"></i> Settings
+          </a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item text-danger" href="{% url 'wedding_shopping:delete_shopping_list' shopping_list.pk %}" 
+                 onclick="return confirm('Are you sure you want to delete this shopping list?')">
+            <i class="bi bi-trash"></i> Delete List
+          </a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          <h3 class="text-primary">{{ shopping_list.total_items }}</h3>
+          <small class="text-muted">Total Items</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          <h3 class="text-success">{{ shopping_list.purchased_items }}</h3>
+          <small class="text-muted">Purchased</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          <h3 class="text-info">{{ shopping_list.total_items|add:shopping_list.purchased_items|add:"-"|add:shopping_list.purchased_items }}</h3>
+          <small class="text-muted">Remaining</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body text-center">
+          <h3 class="text-warning">${{ shopping_list.total_price|floatformat:0 }}</h3>
+          <small class="text-muted">Total Value</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shopping Items by Category -->
+  {% if items_by_category %}
+    {% for category_code, category_data in items_by_category.items %}
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-{% if category_code == 'ceremony' %}heart{% elif category_code == 'reception' %}people{% elif category_code == 'lighting' %}lightbulb{% elif category_code == 'furniture' %}chair{% elif category_code == 'textiles' %}palette{% elif category_code == 'tableware' %}cup{% elif category_code == 'flowers' %}flower1{% else %}star{% endif %}"></i>
+            {{ category_data.name }} 
+            <span class="badge bg-secondary">{{ category_data.items|length }}</span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for item in category_data.items %}
+              <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 {% if item.is_purchased %}border-success{% endif %}">
+                  {% if item.cropped_image %}
+                    <img src="{{ item.cropped_image.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ item.name }}">
+                  {% elif item.image_url %}
+                    <img src="{{ item.image_url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ item.name }}">
+                  {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                      <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                    </div>
+                  {% endif %}
+                  
+                  {% if item.is_purchased %}
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-success bg-opacity-75 text-white">
+                      <div class="text-center">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <div class="mt-2">
+                          <strong>Purchased!</strong><br>
+                          <small>by {{ item.purchased_by }}</small>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  <div class="card-body">
+                    <h6 class="card-title">{{ item.name }}</h6>
+                    {% if item.description %}
+                      <p class="card-text small text-muted">{{ item.description|truncatewords:15 }}</p>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      {% if item.price %}
+                        <span class="text-primary h6">${{ item.price }}</span>
+                      {% else %}
+                        <span class="text-muted">No price set</span>
+                      {% endif %}
+                      
+                      {% if item.quantity > 1 %}
+                        <span class="badge bg-info">Need {{ item.quantity }}</span>
+                      {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                      <small class="text-muted">{{ item.get_retailer_display }}</small>
+                      <div class="priority-indicator">
+                        {% if item.priority == 1 %}
+                          <span class="badge bg-danger">Must Have</span>
+                        {% elif item.priority == 2 %}
+                          <span class="badge bg-warning">Important</span>
+                        {% elif item.priority == 3 %}
+                          <span class="badge bg-info">Nice to Have</span>
+                        {% endif %}
+                      </div>
+                    </div>
+                    
+                    {% if item.ai_description %}
+                      <div class="alert alert-light py-2 mt-2">
+                        <small><i class="bi bi-cpu"></i> {{ item.ai_description|truncatewords:10 }}</small>
+                      </div>
+                    {% endif %}
+                    
+                    {% if item.notes %}
+                      <div class="alert alert-light py-2 mt-2">
+                        <small><i class="bi bi-chat-left-text"></i> {{ item.notes }}</small>
+                      </div>
+                    {% endif %}
+                  </div>
+                  
+                  <div class="card-footer">
+                    <div class="btn-group w-100">
+                      {% if item.product_url %}
+                        <a href="{{ item.affiliate_url|default:item.product_url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                          <i class="bi bi-box-arrow-up-right"></i> View Product
+                        </a>
+                      {% endif %}
+                      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="editItem({{ item.id }})">
+                          <i class="bi bi-pencil"></i> Edit Item
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" onclick="searchForItem({{ item.id }})">
+                          <i class="bi bi-search"></i> Find Products
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteItem({{ item.id }})">
+                          <i class="bi bi-trash"></i> Remove Item
+                        </a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <!-- Empty State -->
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="bi bi-cart-x text-muted" style="font-size: 4rem;"></i>
+        <h4 class="mt-3 text-muted">No Items Yet</h4>
+        <p class="text-muted">Start adding items to your wedding shopping list</p>
+        <div class="mt-4">
+          <a href="{% url 'wedding_shopping:shopping_mode' shopping_list.source_image.id %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> Add Items from Photo
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Share Shopping List</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        {% if shopping_list.privacy == 'private' %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            This list is currently private. Change the privacy setting to share it.
+          </div>
+        {% else %}
+          <p>Share this shopping list with friends and family:</p>
+          
+          <div class="mb-3">
+            <label class="form-label">Public Link</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="shareUrl" value="{{ request.build_absolute_uri:shopping_list.get_public_url }}" readonly>
+              <button class="btn btn-outline-secondary" onclick="copyShareUrl()">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+            </div>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <a href="mailto:?subject=Check out my wedding shopping list&body=View my wedding shopping list: {{ request.build_absolute_uri:shopping_list.get_public_url }}" class="btn btn-outline-primary">
+              <i class="bi bi-envelope"></i> Email
+            </a>
+            <a href="https://twitter.com/intent/tweet?text=Check out my wedding shopping list&url={{ request.build_absolute_uri:shopping_list.get_public_url }}" class="btn btn-outline-info" target="_blank">
+              <i class="bi bi-twitter"></i> Twitter
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri:shopping_list.get_public_url }}" class="btn btn-outline-primary" target="_blank">
+              <i class="bi bi-facebook"></i> Facebook
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal fade" id="settingsModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">List Settings</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_list">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="listName" class="form-label">List Name</label>
+            <input type="text" class="form-control" id="listName" name="name" value="{{ shopping_list.name }}" required>
+          </div>
+          
+          <div class="mb-3">
+            <label for="listDescription" class="form-label">Description</label>
+            <textarea class="form-control" id="listDescription" name="description" rows="3">{{ shopping_list.description }}</textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label for="privacy" class="form-label">Privacy</label>
+            <select class="form-select" id="privacy" name="privacy">
+              <option value="private" {% if shopping_list.privacy == 'private' %}selected{% endif %}>Private (only you can see)</option>
+              <option value="shared" {% if shopping_list.privacy == 'shared' %}selected{% endif %}>Shared with link</option>
+              <option value="public" {% if shopping_list.privacy == 'public' %}selected{% endif %}>Public registry</option>
+            </select>
+          </div>
+          
+          {% if shopping_list.privacy == 'public' %}
+            <div class="mb-3">
+              <label for="weddingDate" class="form-label">Wedding Date</label>
+              <input type="date" class="form-control" id="weddingDate" name="wedding_date" value="{{ shopping_list.wedding_date|date:'Y-m-d' }}">
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="brideName" class="form-label">Bride's Name</label>
+                  <input type="text" class="form-control" id="brideName" name="bride_name" value="{{ shopping_list.bride_name }}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="groomName" class="form-label">Groom's Name</label>
+                  <input type="text" class="form-control" id="groomName" name="groom_name" value="{{ shopping_list.groom_name }}">
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyShareUrl() {
+    const shareUrl = document.getElementById('shareUrl');
+    shareUrl.select();
+    document.execCommand('copy');
+    
+    // Show feedback
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i> Copied!';
+    button.classList.remove('btn-outline-secondary');
+    button.classList.add('btn-success');
+    
+    setTimeout(() => {
+        button.innerHTML = originalText;
+        button.classList.remove('btn-success');
+        button.classList.add('btn-outline-secondary');
+    }, 2000);
+}
+
+function editItem(itemId) {
+    // This would open an edit modal for the item
+    alert('Edit item functionality would go here');
+}
+
+function searchForItem(itemId) {
+    // This would trigger a new retailer search for the item
+    alert('Product search functionality would go here');
+}
+
+function deleteItem(itemId) {
+    if (confirm('Are you sure you want to remove this item?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.innerHTML = `
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_item">
+            <input type="hidden" name="item_id" value="${itemId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}

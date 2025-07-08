@@ -150,7 +150,11 @@
                target="_blank">
               <i class="bi bi-arrows-fullscreen"></i> View Full Size
             </a>
-            
+            <!-- Shop This Wedding -->
+            <a href="{% url 'wedding_shopping:shopping_mode' processed_image.id %}" 
+               class="btn btn-success">
+              <i class="bi bi-cart3"></i> Shop This Wedding
+            </a>
             <!-- Download -->
             <a href="{{ processed_image.processed_image.url }}" 
                class="btn btn-outline-secondary" 
