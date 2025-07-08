@@ -91,13 +91,13 @@ class WeddingTransformForm(forms.Form):
     )
     
     space_type = forms.ChoiceField(
-        choices=[('', 'Choose space type...')] + SPACE_TYPES,
-        required=True,
-        widget=forms.Select(attrs={
-            'class': 'form-select form-select-lg',
-            'id': 'space-type'
-        })
-    )
+    choices=[('', 'Choose celebration purpose...')] + SPACE_TYPES,
+    required=True,
+    widget=forms.Select(attrs={
+        'class': 'form-select form-select-lg',
+        'id': 'space-type'
+    })
+)
     
     # Dynamic options
     guest_count = forms.ChoiceField(

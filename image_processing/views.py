@@ -524,33 +524,26 @@ def collections_list(request):
     }
     
     return render(request, 'image_processing/collections_list.html', context)
-
 @login_required
 @require_POST
 def toggle_favorite(request):
-    """Toggle favorite status for wedding images"""
-    user_image_id = request.POST.get('user_image_id')
+    """Toggle favorite status for wedding transformations (processed images only)"""
     processed_image_id = request.POST.get('processed_image_id')
     
+    if not processed_image_id:
+        return JsonResponse({'success': False, 'error': 'No image specified'})
+    
     try:
-        if user_image_id:
-            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
-            favorite, created = Favorite.objects.get_or_create(
-                user=request.user,
-                user_image=user_image
-            )
-        elif processed_image_id:
-            processed_image = get_object_or_404(
-                ProcessedImage,
-                id=processed_image_id,
-                processing_job__user_image__user=request.user
-            )
-            favorite, created = Favorite.objects.get_or_create(
-                user=request.user,
-                processed_image=processed_image
-            )
-        else:
-            return JsonResponse({'success': False, 'error': 'No image specified'})
+        processed_image = get_object_or_404(
+            ProcessedImage,
+            id=processed_image_id,
+            processing_job__user_image__user=request.user
+        )
+        
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user,
+            processed_image=processed_image
+        )
         
         if not created:
             favorite.delete()
@@ -567,15 +560,18 @@ def toggle_favorite(request):
         })
         
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        logger.error(f"Error toggling favorite: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Error updating favorite'})
 
 
 @login_required
 def favorites_list(request):
-    """Display user's favorite wedding images"""
+    """Display user's favorite wedding transformations"""
     from django.core.paginator import Paginator
     
-    favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')
+    favorites = Favorite.objects.filter(user=request.user).select_related(
+        'processed_image__processing_job__user_image'
+    ).order_by('-created_at')
     
     # Pagination
     paginator = Paginator(favorites, 12)
@@ -589,6 +585,37 @@ def favorites_list(request):
     return render(request, 'image_processing/favorites_list.html', context)
 
 
+# Helper function to check if a processed image is favorited
+def get_favorite_status(user, processed_image_id):
+    """Check if a processed image is favorited by the user"""
+    if not user.is_authenticated:
+        return False
+    
+    return Favorite.objects.filter(
+        user=user,
+        processed_image_id=processed_image_id
+    ).exists()
+
+
+# Add this helper function for template context
+def add_favorite_status_to_processed_images(user, processed_images):
+    """Add is_favorited attribute to processed images"""
+    if not user.is_authenticated:
+        for img in processed_images:
+            img.is_favorited = False
+        return processed_images
+    
+    # Get all favorite IDs for this user
+    favorite_ids = set(
+        Favorite.objects.filter(user=user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    # Add is_favorited attribute to each image
+    for img in processed_images:
+        img.is_favorited = img.id in favorite_ids
+    
+    return processed_images
 
 @login_required
 @require_POST
@@ -698,3 +725,157 @@ def ajax_upload_image(request):
             'success': False,
             'error': ' '.join(errors)
         }, status=400)
+    
+@login_required 
+def image_gallery(request):
+    """Display user's uploaded images and saved transformations"""
+    # Original uploaded images
+    uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
+    
+    # Saved processed images with favorite status
+    saved_transformations = ProcessedImage.objects.filter(
+        processing_job__user_image__user=request.user,
+        is_saved=True
+    ).select_related('processing_job__user_image').order_by('-saved_at')
+    
+    # Add favorite status to processed images
+    add_favorite_status_to_processed_images(request.user, saved_transformations)
+    
+    # Get usage data
+    from usage_limits.usage_tracker import UsageTracker
+    usage_data = UsageTracker.get_usage_data(request.user)
+    
+    # Combine and paginate all images
+    from itertools import chain
+    from django.core.paginator import Paginator
+    
+    # Create a combined list with type indicators
+    all_images = []
+    for img in uploaded_images:
+        all_images.append({
+            'type': 'original',
+            'object': img,
+            'date': img.uploaded_at,
+            'title': img.original_filename,
+            'url': img.thumbnail.url if img.thumbnail else img.image.url
+        })
+    
+    for transformation in saved_transformations:
+        job = transformation.processing_job
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
+        space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
+        all_images.append({
+            'type': 'transformation',
+            'object': transformation,
+            'date': transformation.saved_at,
+            'title': f"{theme_display} {space_display}",
+            'url': transformation.processed_image.url
+        })
+    
+    # Sort by date (newest first)
+    all_images.sort(key=lambda x: x['date'], reverse=True)
+    
+    # Pagination
+    paginator = Paginator(all_images, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'total_images': len(all_images),
+        'uploaded_count': uploaded_images.count(),
+        'saved_count': saved_transformations.count(),
+        'usage_data': usage_data,
+        'wedding_themes': WEDDING_THEMES,
+        'space_types': SPACE_TYPES,
+    }
+    
+    return render(request, 'image_processing/image_gallery.html', context)
+
+
+@login_required
+def processing_history(request):
+    """View all wedding processing jobs for the user"""
+    jobs = ImageProcessingJob.objects.filter(
+        user_image__user=request.user
+    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
+    
+    # Add display names to jobs and favorite status to processed images
+    for job in jobs:
+        if job.wedding_theme:
+            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
+        if job.space_type:
+            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+        
+        # Add favorite status to processed images for this job
+        processed_images = list(job.processed_images.all())
+        add_favorite_status_to_processed_images(request.user, processed_images)
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(jobs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'image_processing/processing_history.html', context)
+
+
+@login_required
+def collection_detail(request, collection_id):
+    """Display a specific collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    # Get all items in the collection
+    items = collection.items.select_related(
+        'user_image', 
+        'processed_image__processing_job'
+    ).order_by('order', '-added_at')
+    
+    # Add display information and favorite status to each item
+    processed_images_for_favorites = []
+    for item in items:
+        if item.processed_image:
+            job = item.processed_image.processing_job
+            item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
+            item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+            processed_images_for_favorites.append(item.processed_image)
+    
+    # Add favorite status to all processed images in this collection
+    add_favorite_status_to_processed_images(request.user, processed_images_for_favorites)
+    
+    context = {
+        'collection': collection,
+        'items': items,
+    }
+    
+    return render(request, 'image_processing/collection_detail.html', context)
+
+
+@login_required
+def processed_image_detail(request, pk):
+    """View details of a processed wedding image with save/discard options"""
+    processed_image = get_object_or_404(
+        ProcessedImage, 
+        pk=pk, 
+        processing_job__user_image__user=request.user
+    )
+    
+    # Add favorite status
+    add_favorite_status_to_processed_images(request.user, [processed_image])
+    
+    # Add display names
+    job = processed_image.processing_job
+    theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
+    space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
+    
+    context = {
+        'processed_image': processed_image,
+        'theme_display': theme_display,
+        'space_display': space_display,
+    }
+    
+    return render(request, 'image_processing/processed_image_detail.html', context)

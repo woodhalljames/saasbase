@@ -159,12 +159,8 @@ class FavoriteAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at',)
     
     def image_title(self, obj):
-        if obj.processed_image:
-            job = obj.processed_image.processing_job
-            theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
-            space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
-            return f"Wedding: {theme_display} {space_display}"
-        elif obj.user_image:
-            return f"Original: {obj.user_image.original_filename}"
-        return "Unknown"
+        job = obj.processed_image.processing_job
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
+        space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+        return f"Wedding: {theme_display} {space_display}"
     image_title.short_description = "Image"

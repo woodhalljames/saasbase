@@ -1,4 +1,4 @@
-<!-- image_processing/templates/image_processing/collection_detail.html -->
+<!-- saas_base/templates/image_processing/collection_detail.html - COMPLETE -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -65,6 +65,13 @@
                   </span>
                 {% endif %}
               </div>
+              
+              <!-- Favorite Heart for Processed Images -->
+              {% if item.processed_image %}
+                <div class="position-absolute bottom-0 start-0 p-2">
+                  {% include 'image_processing/components/favorite_heart.html' with processed_image=item.processed_image %}
+                </div>
+              {% endif %}
               
               <!-- Remove from Collection -->
               <div class="position-absolute top-0 end-0 p-2">

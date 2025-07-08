@@ -1,4 +1,4 @@
-<!-- image_processing/templates/image_processing/processing_history.html -->
+<!-- saas_base/templates/image_processing/processing_history.html - COMPLETE WITH FAVORITES -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -49,17 +49,22 @@
                                  alt="Wedding transformation"
                                  style="width: 100%; max-height: 400px; object-fit: cover;">
                             
+                            <!-- Favorite Heart -->
+                            <div class="position-absolute top-0 start-0 p-2">
+                              {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_img %}
+                            </div>
+                            
                             <!-- Save/Temporary Status Badge -->
                             {% if processed_img.is_saved %}
-                              <span class="position-absolute top-0 start-0 badge bg-success m-2">
+                              <span class="position-absolute top-0 end-0 badge bg-success m-2">
                                 <i class="bi bi-check-circle"></i> Saved
                               </span>
                             {% else %}
-                              <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-2">
+                              <span class="position-absolute top-0 end-0 badge bg-warning text-dark m-2">
                                 <i class="bi bi-clock"></i> Temporary
                               </span>
                               {% if processed_img.time_until_deletion %}
-                                <span class="position-absolute top-0 end-0 badge bg-danger m-2">
+                                <span class="position-absolute top-0 end-0 badge bg-danger m-2" style="margin-top: 32px !important;">
                                   <i class="bi bi-hourglass-split"></i> {{ processed_img.time_until_deletion }} left
                                 </span>
                               {% endif %}

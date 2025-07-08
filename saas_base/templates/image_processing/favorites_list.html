@@ -1,4 +1,4 @@
-<!-- image_processing/templates/image_processing/favorites_list.html -->
+<!-- saas_base/templates/image_processing/favorites_list.html - COMPLETE -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -16,12 +16,12 @@
           <li class="breadcrumb-item active">Favorites</li>
         </ol>
       </nav>
-      <h1>❤️ My Favorite Images</h1>
-      <p class="text-muted">Your favorite wedding venue photos and transformations</p>
+      <h1>❤️ My Favorite Wedding Transformations</h1>
+      <p class="text-muted">Your favorite AI-generated wedding venue transformations</p>
     </div>
     <div class="col-md-6 text-end">
       <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Upload & Transform
+        <i class="bi bi-plus-circle"></i> Create New Transformation
       </a>
     </div>
   </div>
@@ -36,79 +36,47 @@
               <!-- Image Display -->
               <img src="{{ favorite.image_url }}" 
                    class="card-img-top" 
-                   alt="Favorite Image"
+                   alt="Favorite Wedding Transformation"
                    style="height: 200px; object-fit: cover;">
               
               <!-- Type Badge -->
               <div class="position-absolute top-0 start-0 p-2">
-                {% if favorite.processed_image %}
-                  <span class="badge bg-success">
-                    <i class="bi bi-magic"></i> Wedding Transformation
-                  </span>
-                {% else %}
-                  <span class="badge bg-primary">
-                    <i class="bi bi-image"></i> Original Venue
-                  </span>
-                {% endif %}
+                <span class="badge bg-success">
+                  <i class="bi bi-magic"></i> Wedding Transformation
+                </span>
               </div>
               
               <!-- Favorite Heart -->
               <div class="position-absolute top-0 end-0 p-2">
-                <button class="btn btn-sm btn-danger favorite-btn" 
-                        data-image-type="{% if favorite.processed_image %}processed{% else %}user{% endif %}"
-                        data-image-id="{% if favorite.processed_image %}{{ favorite.processed_image.id }}{% else %}{{ favorite.user_image.id }}{% endif %}"
-                        title="Remove from favorites">
-                  <i class="bi bi-heart-fill"></i>
-                </button>
+                {% include 'image_processing/components/favorite_heart.html' with processed_image=favorite.processed_image %}
               </div>
             </div>
             
             <div class="card-body">
               <!-- Title -->
               <h6 class="card-title text-truncate">
-                {% if favorite.processed_image %}
-                  {% with job=favorite.processed_image.processing_job %}
-                    {% if job.wedding_theme and job.space_type %}
-                      {{ job.get_wedding_theme_display }} {{ job.get_space_type_display }}
-                    {% else %}
-                      Wedding Transformation
-                    {% endif %}
-                  {% endwith %}
-                {% else %}
-                  {{ favorite.user_image.original_filename }}
-                {% endif %}
+                {{ favorite.image_title }}
               </h6>
               
-              <!-- Details -->
-              {% if favorite.processed_image %}
-                <!-- Wedding Transformation Details -->
-                {% with job=favorite.processed_image.processing_job %}
-                  {% if job.wedding_theme and job.space_type %}
-                    <div class="mb-2">
-                      <span class="badge bg-primary me-1">{{ job.get_wedding_theme_display }}</span>
-                      <span class="badge bg-secondary">{{ job.get_space_type_display }}</span>
-                    </div>
-                  {% endif %}
-                  
-                  <small class="text-muted">
-                    <i class="bi bi-magic"></i> Transformation<br>
-                    <i class="bi bi-calendar"></i> Created {{ favorite.processed_image.created_at|date:"M d, Y" }}<br>
-                    {% if favorite.processed_image.is_saved %}
-                      <i class="bi bi-collection-fill text-success"></i> Saved
-                    {% else %}
-                      <i class="bi bi-clock text-warning"></i> Temporary
-                    {% endif %}
-                  </small>
-                {% endwith %}
-              {% else %}
-                <!-- Original Image Details -->
+              <!-- Wedding Transformation Details -->
+              {% with job=favorite.processed_image.processing_job %}
+                {% if job.wedding_theme and job.space_type %}
+                  <div class="mb-2">
+                    <span class="badge bg-primary me-1">{{ job.get_wedding_theme_display }}</span>
+                    <span class="badge bg-secondary">{{ job.get_space_type_display }}</span>
+                  </div>
+                {% endif %}
+                
                 <small class="text-muted">
-                  <i class="bi bi-image"></i> Original Venue<br>
-                  <i class="bi bi-calendar"></i> Uploaded {{ favorite.user_image.uploaded_at|date:"M d, Y" }}<br>
-                  <i class="bi bi-arrows-fullscreen"></i> {{ favorite.user_image.width }}x{{ favorite.user_image.height }}<br>
-                  <i class="bi bi-hdd"></i> {{ favorite.user_image.file_size|filesizeformat }}
+                  <i class="bi bi-magic"></i> Transformation<br>
+                  <i class="bi bi-calendar"></i> Created {{ favorite.processed_image.created_at|date:"M d, Y" }}<br>
+                  {% if favorite.processed_image.is_saved %}
+                    <i class="bi bi-collection-fill text-success"></i> Saved
+                  {% else %}
+                    <i class="bi bi-clock text-warning"></i> Temporary
+                  {% endif %}
                 </small>
-              {% endif %}
+              {% endwith %}
               
               <small class="text-muted d-block mt-2">
                 <i class="bi bi-heart-fill text-danger"></i> Favorited {{ favorite.created_at|timesince }} ago
@@ -117,39 +85,21 @@
             
             <div class="card-footer bg-transparent">
               <div class="btn-group w-100" role="group">
-                {% if favorite.processed_image %}
-                  <!-- Processed Image Actions -->
-                  <a href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}" 
-                     class="btn btn-sm btn-success">
-                    <i class="bi bi-eye"></i> View
-                  </a>
-                  <a href="{{ favorite.processed_image.processed_image.url }}" 
-                     class="btn btn-sm btn-outline-secondary" 
-                     target="_blank">
-                    <i class="bi bi-arrows-fullscreen"></i>
-                  </a>
-                  <a href="{{ favorite.processed_image.processed_image.url }}" 
-                     class="btn btn-sm btn-outline-primary" 
-                     download>
-                    <i class="bi bi-download"></i>
-                  </a>
-                {% else %}
-                  <!-- Original Image Actions -->
-                  <a href="{% url 'image_processing:image_detail' favorite.user_image.pk %}" 
-                     class="btn btn-sm btn-primary">
-                    <i class="bi bi-magic"></i> Transform
-                  </a>
-                  <a href="{{ favorite.user_image.image.url }}" 
-                     class="btn btn-sm btn-outline-secondary" 
-                     target="_blank">
-                    <i class="bi bi-arrows-fullscreen"></i>
-                  </a>
-                  <a href="{{ favorite.user_image.image.url }}" 
-                     class="btn btn-sm btn-outline-primary" 
-                     download="{{ favorite.user_image.original_filename }}">
-                    <i class="bi bi-download"></i>
-                  </a>
-                {% endif %}
+                <!-- Link to Processed Image Detail Page -->
+                <a href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}" 
+                   class="btn btn-sm btn-success">
+                  <i class="bi bi-eye"></i> View Details
+                </a>
+                <a href="{{ favorite.processed_image.processed_image.url }}" 
+                   class="btn btn-sm btn-outline-secondary" 
+                   target="_blank">
+                  <i class="bi bi-arrows-fullscreen"></i>
+                </a>
+                <a href="{{ favorite.processed_image.processed_image.url }}" 
+                   class="btn btn-sm btn-outline-primary" 
+                   download>
+                  <i class="bi bi-download"></i>
+                </a>
               </div>
             </div>
           </div>
@@ -201,10 +151,10 @@
         <div class="text-center py-5">
           <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
           <h3 class="mt-3 text-muted">No Favorites Yet</h3>
-          <p class="text-muted">Start adding wedding venue photos and transformations to your favorites</p>
+          <p class="text-muted">Start creating wedding venue transformations and add your favorites here</p>
           <div class="mt-4">
             <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg me-3">
-              <i class="bi bi-plus-circle"></i> Upload & Transform
+              <i class="bi bi-plus-circle"></i> Create Transformation
             </a>
             <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-secondary btn-lg">
               <i class="bi bi-images"></i> Browse Gallery
@@ -217,81 +167,50 @@
 </div>
 
 <script>
+// Auto-refresh functionality if needed
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle favorite buttons (remove from favorites)
-    document.querySelectorAll('.favorite-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const imageType = this.dataset.imageType;
-            const imageId = this.dataset.imageId;
-            toggleFavorite(imageType, imageId, this);
-        });
+    // The favorite heart functionality is handled by the component
+    console.log('Favorites page loaded with', document.querySelectorAll('.favorite-heart-btn').length, 'favorite buttons');
+    
+    // Optional: Check for removed favorites and refresh page if needed
+    const favoriteButtons = document.querySelectorAll('.favorite-heart-btn');
+    
+    // Listen for when a favorite is removed
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.favorite-heart-btn')) {
+            const button = e.target.closest('.favorite-heart-btn');
+            const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
+            
+            if (isCurrentlyFavorited) {
+                // This will be unfavorited, so we might want to remove it from the page
+                // The component will handle the API call, but we can listen for the result
+                setTimeout(() => {
+                    // Check if the button still shows as favorited after the API call
+                    if (button.dataset.isFavorited === 'false') {
+                        // Remove the card with animation
+                        const card = button.closest('.col-lg-3, .col-md-4, .col-sm-6');
+                        if (card) {
+                            card.style.transition = 'all 0.3s ease';
+                            card.style.opacity = '0';
+                            card.style.transform = 'scale(0.95)';
+                            
+                            setTimeout(() => {
+                                card.remove();
+                                
+                                // Check if there are no more favorites
+                                const remainingCards = document.querySelectorAll('.col-lg-3, .col-md-4, .col-sm-6');
+                                if (remainingCards.length === 0) {
+                                    // Reload page to show empty state
+                                    setTimeout(() => window.location.reload(), 500);
+                                }
+                            }, 300);
+                        }
+                    }
+                }, 1000); // Wait for the API call to complete
+            }
+        }
     });
 });
-
-function toggleFavorite(imageType, imageId, button) {
-    const formData = new FormData();
-    if (imageType === 'processed') {
-        formData.append('processed_image_id', imageId);
-    } else {
-        formData.append('user_image_id', imageId);
-    }
-    
-    fetch('{% url "image_processing:toggle_favorite" %}', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove the card from the page since it's no longer a favorite
-            const card = button.closest('.col-lg-3');
-            card.style.opacity = '0.5';
-            card.style.transform = 'scale(0.95)';
-            
-            setTimeout(() => {
-                card.remove();
-                
-                // Check if there are no more favorites
-                const remainingCards = document.querySelectorAll('.col-lg-3');
-                if (remainingCards.length === 0) {
-                    // Reload page to show empty state
-                    window.location.reload();
-                }
-            }, 300);
-            
-            showToast(data.message, 'success');
-        } else {
-            showToast(data.error || 'Failed to update favorite', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Network error', 'error');
-    });
-}
-
-function showToast(message, type) {
-    // Simple toast notification
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 3000);
-}
 </script>
 
 <!-- Bootstrap Icons -->

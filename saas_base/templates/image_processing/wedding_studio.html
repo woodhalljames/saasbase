@@ -8,9 +8,9 @@
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12 text-center">
-      <h1 class="display-5">💍 Wedding Venue Visualizer</h1>
-      <p class="lead">Transform your venue photos with AI-powered wedding styling</p>
-    </div>
+      <h1 class="display-5">💍</h1>
+      <p class="lead">Transform any space into your perfect wedding celebration area</p>
+  </div>
   </div>
 
   <!-- Main Layout -->
@@ -80,9 +80,9 @@
             </div>
             
             <div class="mb-4">
-              <label for="space-type" class="form-label fs-6"><strong>Space Type</strong></label>
-              <select class="form-select" id="space-type" name="space_type" required>
-                <option value="">Choose space...</option>
+              <label for="space-type" class="form-label fs-6"><strong>Celebration Purpose</strong></label>
+<select class="form-select" id="space-type" name="space_type" required>
+    <option value="">What will this space be used for?</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
@@ -237,7 +237,7 @@
             </div>
             <div>
               <h5 class="mb-1">Creating Your Wedding Vision...</h5>
-              <p class="mb-0 text-muted">This may take 1-2 minutes using SD3 Turbo AI.</p>
+              <p class="mb-0 text-muted">This may take some time...</p>
             </div>
           </div>
         </div>

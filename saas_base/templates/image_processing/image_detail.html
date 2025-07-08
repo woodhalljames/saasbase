@@ -76,14 +76,14 @@
             
             <!-- Venue Space -->
             <div class="mb-4">
-              <label for="space-type" class="form-label"><strong>Venue Space:</strong></label>
-              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
-                <option value="">What type of space is this?</option>
-                {% for value, label in space_types %}
+              <label for="space-type" class="form-label"><strong>Celebration Purpose:</strong></label>
+<select class="form-select form-select-lg" id="space-type" name="space_type" required>
+    <option value="">What will this space be used for?</option>
+    {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
-              <small class="form-text text-muted">Tell us what kind of venue space we're transforming</small>
+              <small class="form-text text-muted">Tell us what you want to use this space for at your wedding</small>
             </div>
             
             <!-- Transform Button -->

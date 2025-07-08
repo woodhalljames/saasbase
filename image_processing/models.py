@@ -43,16 +43,15 @@ WEDDING_THEMES = [
 ]
 
 SPACE_TYPES = [
-    ('indoor_ceremony', 'Indoor Ceremony'),
-    ('outdoor_ceremony', 'Outdoor Ceremony'),
-    ('reception_hall', 'Reception Hall'),
-    ('garden', 'Garden/Outdoor'),
-    ('beach', 'Beach'),
-    ('barn', 'Barn'),
-    ('ballroom', 'Ballroom'),
-    ('rooftop', 'Rooftop'),
+    ('wedding_ceremony', 'Wedding Ceremony'),
+    ('reception_area', 'Reception Area'),
+    ('dance_floor', 'Dance Floor'),
+    ('dinner_party', 'Dinner Party'),
+    ('cocktail_hour', 'Cocktail Hour'),
+    ('bridal_suite', 'Bridal Suite'),
+    ('photo_backdrop', 'Photo Backdrop'),
+    ('lounge_area', 'Lounge Area'),
 ]
-
 
 def generate_wedding_prompt(theme, space_type, additional_details=None):
     """Generate comprehensive AI prompt for wedding venue transformation using advanced system"""
@@ -71,7 +70,7 @@ def generate_wedding_prompt(theme, space_type, additional_details=None):
 def generate_fallback_prompt(theme, space_type, additional_details=None):
     """Fallback prompt generation if the advanced system is not available"""
     
-    # Basic theme descriptions
+    # Basic theme descriptions (keep existing)
     theme_descriptions = {
         'rustic': 'rustic farmhouse wedding with wooden elements, burlap, mason jars, wildflowers, and warm lighting',
         'modern': 'modern minimalist wedding with clean lines, contemporary furniture, and sleek design',
@@ -83,27 +82,25 @@ def generate_fallback_prompt(theme, space_type, additional_details=None):
         'industrial': 'industrial chic wedding with exposed brick, metal fixtures, and urban aesthetic'
     }
     
-    # Basic space descriptions
+    # Updated space descriptions - what the space should BECOME
     space_descriptions = {
-        'indoor_ceremony': 'indoor ceremony space with wedding aisle and altar',
-        'outdoor_ceremony': 'outdoor ceremony space with natural backdrop',
-        'reception_hall': 'reception hall with dining tables and dance floor',
-        'garden': 'garden venue with natural landscaping',
-        'beach': 'beach venue with ocean views',
-        'barn': 'rustic barn interior with wooden beams',
-        'ballroom': 'elegant ballroom with formal setting',
-        'rooftop': 'rooftop venue with city views'
+        'ceremony': 'beautiful wedding ceremony setup with aisle, altar, seating for guests, and romantic atmosphere',
+        'reception': 'elegant wedding reception with dining tables, centerpieces, and celebration space',
+        'dance_area': 'spacious dance floor area with proper lighting and entertainment setup',
+        'dinner_party': 'intimate dinner party setup with elegant table settings and warm ambiance',
+        'cocktail_hour': 'sophisticated cocktail hour space with mingling areas and refreshment stations',
+        'brunch': 'charming wedding brunch setup with bright, airy atmosphere and brunch-appropriate decor'
     }
     
     # Construct basic prompt
     prompt_parts = [
         "professional wedding photography, high resolution, photorealistic, detailed,",
         "Transform this space into a beautiful wedding venue,",
+        f"set up as a {space_descriptions.get(space_type, 'wedding celebration area')},",
         f"decorated in {theme_descriptions.get(theme, 'elegant')} style,",
-        f"configured as a {space_descriptions.get(space_type, 'wedding venue')},",
         "elegant wedding setup, romantic atmosphere, celebration ready,",
         "maintain original architecture, enhance with wedding decorations,",
-        "wedding reception ready, romantic ambiance"
+        "wedding ready, romantic ambiance"
     ]
     
     if additional_details:
@@ -125,7 +122,6 @@ def generate_fallback_prompt(theme, space_type, additional_details=None):
             'strength': 0.35,
         }
     }
-
 
 def get_wedding_choices():
     """Get wedding theme and space type choices for forms"""
@@ -474,33 +470,33 @@ class CollectionItem(models.Model):
 
 
 class Favorite(models.Model):
-    """User favorites for quick access to wedding inspiration"""
+    """User favorites for wedding transformations - processed images only"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
-    user_image = models.ForeignKey(UserImage, on_delete=models.CASCADE, null=True, blank=True)
-    processed_image = models.ForeignKey('ProcessedImage', on_delete=models.CASCADE, null=True, blank=True)
+    processed_image = models.ForeignKey('ProcessedImage', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        unique_together = [
-            ['user', 'user_image'],
-            ['user', 'processed_image']
-        ]
+        unique_together = ['user', 'processed_image']
         ordering = ['-created_at']
     
     def __str__(self):
-        if self.processed_image:
-            return f"{self.user.username} ❤️ Wedding Transformation"
-        else:
-            return f"{self.user.username} ❤️ {self.user_image.original_filename}"
+        job = self.processed_image.processing_job
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
+        space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+        return f"{self.user.username} ❤️ {theme_display} {space_display}"
     
     @property
     def image_url(self):
-        """Get the image URL regardless of type"""
-        if self.processed_image:
-            return self.processed_image.processed_image.url
-        else:
-            return self.user_image.thumbnail.url if self.user_image.thumbnail else self.user_image.image.url
-        
+        """Get the processed image URL"""
+        return self.processed_image.processed_image.url
+    
+    @property
+    def image_title(self):
+        """Get a display title for the transformation"""
+        job = self.processed_image.processing_job
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
+        space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
+        return f"{theme_display} {space_display}"
 
 class PromptTemplate(models.Model):
     """Admin-manageable prompt templates for wedding transformations"""
