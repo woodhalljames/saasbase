@@ -10,7 +10,7 @@
     <div class="col-12 text-center">
       <h1 class="display-5">💍</h1>
       <p class="lead">Transform any space into your perfect wedding celebration area</p>
-  </div>
+    </div>
   </div>
 
   <!-- Main Layout -->
@@ -18,84 +18,41 @@
     <!-- Right Sidebar: Controls -->
     <div class="col-md-4 col-lg-3 order-md-2 mb-4">
       
-      <!-- Mode Toggle -->
+      <!-- Usage Display -->
       <div class="card mb-3">
         <div class="card-header">
-          <h6 class="mb-0">Mode</h6>
+          <h6 class="mb-0">Your Usage</h6>
         </div>
         <div class="card-body">
-          <div class="btn-group w-100" role="group">
-            <input type="radio" class="btn-check" name="appMode" id="visualizeMode" checked>
-            <label class="btn btn-outline-primary" for="visualizeMode">
-              <i class="bi bi-magic"></i> Visualize
-            </label>
-            
-            <input type="radio" class="btn-check" name="appMode" id="shoppingMode">
-            <label class="btn btn-outline-success" for="shoppingMode">
-              <i class="bi bi-cart"></i> Shop
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- Shopping Panel (hidden by default) -->
-      <div id="shoppingPanel" class="card mb-3" style="display: none;">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h6 class="mb-0">🛍️ Wedding Shopping</h6>
-          <div class="tokens-display">
-            🪙 <span id="tokenCount">{{ user.userprofile.shopping_tokens|default:5 }}</span>
-          </div>
-        </div>
-        <div class="card-body">
-          <!-- Shopping Instructions -->
-          <div class="alert alert-info alert-sm mb-3">
-            <small><i class="bi bi-info-circle"></i> Click and drag on your venue photo to select items for shopping</small>
-          </div>
-          
-          <!-- Selection Tools -->
-          <div class="mb-3">
-            <button class="btn btn-sm btn-success w-100 mb-2" id="enableSelectionBtn">
-              <i class="bi bi-crosshair"></i> Enable Item Selection
-            </button>
-            <button class="btn btn-sm btn-outline-secondary w-100" id="clearSelectionsBtn">
-              <i class="bi bi-trash"></i> Clear Selections
-            </button>
-          </div>
-          
-          <!-- Current Selection -->
-          <div class="mb-3">
-            <h6 class="small fw-bold">📱 Current Selection</h6>
-            <div id="currentSelection" class="small text-muted">
-              No item selected
+          {% with usage=request.user.subscription.get_usage_data %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span>This Month:</span>
+              <span class="text-muted">{{ usage.current }} / {{ usage.limit }}</span>
             </div>
-          </div>
-          
-          <!-- AI Analysis -->
-          <div class="mb-3">
-            <h6 class="small fw-bold">🤖 AI Analysis</h6>
-            <div id="aiAnalysis" class="small text-muted">
-              Select an item to analyze
+            <div class="progress mb-2" style="height: 20px;">
+              <div class="progress-bar 
+                {% if usage.percentage >= 90 %}bg-danger
+                {% elif usage.percentage >= 75 %}bg-warning  
+                {% else %}bg-success{% endif %}"
+                role="progressbar" 
+                style="width: {{ usage.percentage }}%;"
+                aria-valuenow="{{ usage.percentage }}" 
+                aria-valuemin="0" 
+                aria-valuemax="100">
+                {{ usage.percentage }}%
+              </div>
             </div>
-          </div>
-          
-          <!-- Search Results -->
-          <div class="mb-3">
-            <h6 class="small fw-bold">🔍 Product Search</h6>
-            <div id="searchResults" class="small" style="max-height: 200px; overflow-y: auto;">
-              No search performed yet
-            </div>
-          </div>
-          
-          <!-- Shopping List -->
-          <div class="mb-3">
-            <h6 class="small fw-bold">📝 Shopping List</h6>
-            <div id="shoppingList" class="small" style="max-height: 150px; overflow-y: auto;">
-              Your shopping list is empty
-            </div>
-            <button class="btn btn-sm btn-primary w-100 mt-2" id="exportListBtn">
-              <i class="bi bi-download"></i> Export List
-            </button>
-          </div>
+            <small class="text-muted">
+              {{ usage.remaining }} transformations remaining
+            </small>
+            {% if usage.remaining <= 3 %}
+              <div class="mt-2">
+                <a href="{% url 'subscriptions:pricing' %}" class="btn btn-sm btn-outline-primary w-100">
+                  <i class="bi bi-lightning"></i> Get More Credits
+                </a>
+              </div>
+            {% endif %}
+          {% endwith %}
         </div>
       </div>
 
@@ -250,8 +207,15 @@
             <!-- Generate Button -->
             <div class="d-grid">
               <button type="submit" class="btn btn-primary btn-lg py-3" id="transformBtn" disabled>
-                <i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>
+                <i class="bi bi-magic"></i> <span class="fs-5">Transform Venue</span>
               </button>
+            </div>
+            
+            <!-- Usage reminder -->
+            <div class="text-center mt-2">
+              <small class="text-muted">
+                <i class="bi bi-lightning"></i> Uses 1 transformation credit
+              </small>
             </div>
           </form>
         </div>
@@ -295,23 +259,26 @@
                     title="Upload a different image">
               <i class="bi bi-camera"></i>
             </button>
-
-            <!-- Shopping Mode Indicator -->
-            <div id="shoppingModeIndicator" class="position-absolute top-0 start-0 m-2" style="display: none; z-index: 10;">
-              <div class="badge bg-success">
-                <i class="bi bi-crosshair"></i> Shopping Mode Active
-              </div>
-            </div>
             
-            <!-- Image Container for Selection -->
+            <!-- Image Container -->
             <div id="imageContainer" class="position-relative d-inline-block">
               <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
-              <!-- Selection rectangles will be added here dynamically -->
             </div>
             
             <div class="mt-3">
               <p class="mb-1"><strong id="selectedImageName">Selected Image</strong></p>
               <p class="text-muted mb-0" id="selectedImageDetails">Image details</p>
+              
+              <!-- Shopping Button for completed transformations -->
+              <div id="shoppingOptions" class="mt-3" style="display: none;">
+                <div class="alert alert-success">
+                  <h6><i class="bi bi-cart3"></i> Shop This Wedding</h6>
+                  <p class="mb-2">Your venue has been transformed! You can now shop for wedding items.</p>
+                  <div id="shopButtonContainer">
+                    <!-- Shop buttons will be inserted here -->
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -368,6 +335,15 @@
                     {{ job.get_status_display }}
                   </span>
                   <small class="text-muted d-block">{{ job.created_at|timesince }} ago</small>
+                  
+                  <!-- Add shop button for completed jobs -->
+                  {% if job.status == 'completed' and job.processed_images.all %}
+                    {% with first_processed=job.processed_images.first %}
+                      <div class="mt-1">
+                        {% include 'image_processing/components/shop_button.html' with image_type='processed' processed_image=first_processed button_size='btn-sm' %}
+                      </div>
+                    {% endwith %}
+                  {% endif %}
                 </div>
               </div>
             {% endfor %}
@@ -379,112 +355,9 @@
   {% endif %}
 </div>
 
-<style>
-/* Shopping-specific styles */
-.selection-rectangle {
-    position: absolute;
-    border: 2px solid #198754;
-    background: rgba(25, 135, 84, 0.1);
-    pointer-events: none;
-    border-radius: 4px;
-}
-
-.selection-marker {
-    position: absolute;
-    background: #198754;
-    color: white;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    top: -12px;
-    left: -12px;
-}
-
-.product-item {
-    display: flex;
-    gap: 8px;
-    padding: 8px;
-    border: 1px solid #e9ecef;
-    border-radius: 6px;
-    margin: 6px 0;
-    background: white;
-}
-
-.product-image {
-    width: 40px;
-    height: 40px;
-    object-fit: cover;
-    border-radius: 4px;
-}
-
-.product-info {
-    flex: 1;
-    font-size: 12px;
-}
-
-.product-title {
-    font-weight: 500;
-    margin-bottom: 2px;
-    line-height: 1.2;
-}
-
-.product-price {
-    color: #28a745;
-    font-weight: bold;
-}
-
-.ai-result {
-    background: #e3f2fd;
-    padding: 8px;
-    border-radius: 4px;
-    margin: 6px 0;
-    border-left: 3px solid #2196f3;
-    font-size: 12px;
-}
-
-.tokens-display {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.shopping-list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px;
-    border-bottom: 1px solid #e9ecef;
-    font-size: 12px;
-}
-
-#imageContainer {
-    cursor: default;
-}
-
-#imageContainer.selection-active {
-    cursor: crosshair;
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
-    let isShoppingMode = false;
-    let isSelectionEnabled = false;
-    let isSelecting = false;
-    let currentSelection = null;
-    let selections = [];
-    let selectionCounter = 0;
-    let tokens = {{ user.userprofile.shopping_tokens|default:5 }};
-    let shoppingList = [];
     
     // Get all necessary elements
     const fileInput = document.getElementById('id_image');
@@ -501,152 +374,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const recentImagesContainer = document.getElementById('recentImagesContainer');
     const colorScheme = document.getElementById('color-scheme');
     const customColorsContainer = document.getElementById('custom-colors-container');
+    const shoppingOptions = document.getElementById('shoppingOptions');
+    const shopButtonContainer = document.getElementById('shopButtonContainer');
     
-    // Shopping elements
-    const visualizeModeBtn = document.getElementById('visualizeMode');
-    const shoppingModeBtn = document.getElementById('shoppingMode');
-    const shoppingPanel = document.getElementById('shoppingPanel');
-    const visualizationControls = document.getElementById('visualizationControls');
-    const shoppingModeIndicator = document.getElementById('shoppingModeIndicator');
-    const enableSelectionBtn = document.getElementById('enableSelectionBtn');
-    const clearSelectionsBtn = document.getElementById('clearSelectionsBtn');
-    const imageContainer = document.getElementById('imageContainer');
-    const tokenCount = document.getElementById('tokenCount');
-    const currentSelectionDiv = document.getElementById('currentSelection');
-    const aiAnalysisDiv = document.getElementById('aiAnalysis');
-    const searchResultsDiv = document.getElementById('searchResults');
-    const shoppingListDiv = document.getElementById('shoppingList');
-    const exportListBtn = document.getElementById('exportListBtn');
-    
-    // Mode switching
-    visualizeModeBtn.addEventListener('change', function() {
-        if (this.checked) {
-            isShoppingMode = false;
-            shoppingPanel.style.display = 'none';
-            visualizationControls.style.display = 'block';
-            shoppingModeIndicator.style.display = 'none';
-            disableSelection();
-        }
-    });
-    
-    shoppingModeBtn.addEventListener('change', function() {
-        if (this.checked) {
-            isShoppingMode = true;
-            shoppingPanel.style.display = 'block';
-            visualizationControls.style.display = 'none';
-            if (selectedImageId) {
-                shoppingModeIndicator.style.display = 'block';
-            }
-        }
-    });
-    
-    // Shopping controls
-    enableSelectionBtn.addEventListener('click', function() {
-        if (!selectedImageId) {
-            showToast('Please select an image first', 'warning');
-            return;
-        }
-        
-        isSelectionEnabled = !isSelectionEnabled;
-        
-        if (isSelectionEnabled) {
-            this.innerHTML = '<i class="bi bi-stop-circle"></i> Stop Selection';
-            this.className = 'btn btn-sm btn-danger w-100 mb-2';
-            imageContainer.classList.add('selection-active');
-        } else {
-            this.innerHTML = '<i class="bi bi-crosshair"></i> Enable Item Selection';
-            this.className = 'btn btn-sm btn-success w-100 mb-2';
-            imageContainer.classList.remove('selection-active');
-        }
-    });
-    
-    clearSelectionsBtn.addEventListener('click', function() {
-        clearAllSelections();
-    });
-    
-    exportListBtn.addEventListener('click', function() {
-        exportShoppingList();
-    });
-    
-    // Shopping selection events
-    imageContainer.addEventListener('mousedown', function(e) {
-        if (!isShoppingMode || !isSelectionEnabled || e.target !== selectedImage) return;
-        
-        isSelecting = true;
-        const rect = selectedImage.getBoundingClientRect();
-        const containerRect = imageContainer.getBoundingClientRect();
-        
-        const startX = e.clientX - containerRect.left;
-        const startY = e.clientY - containerRect.top;
-        
-        currentSelection = document.createElement('div');
-        currentSelection.className = 'selection-rectangle';
-        currentSelection.style.left = startX + 'px';
-        currentSelection.style.top = startY + 'px';
-        imageContainer.appendChild(currentSelection);
-        
-        const onMouseMove = function(e) {
-            if (!isSelecting) return;
-            
-            const currentX = e.clientX - containerRect.left;
-            const currentY = e.clientY - containerRect.top;
-            
-            const width = Math.abs(currentX - startX);
-            const height = Math.abs(currentY - startY);
-            const left = Math.min(currentX, startX);
-            const top = Math.min(currentY, startY);
-            
-            currentSelection.style.left = left + 'px';
-            currentSelection.style.top = top + 'px';
-            currentSelection.style.width = width + 'px';
-            currentSelection.style.height = height + 'px';
-        };
-        
-        const onMouseUp = function(e) {
-            if (!isSelecting) return;
-            
-            isSelecting = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            
-            const width = parseInt(currentSelection.style.width);
-            const height = parseInt(currentSelection.style.height);
-            
-            if (width > 20 && height > 20) {
-                selectionCounter++;
-                
-                // Add marker
-                const marker = document.createElement('div');
-                marker.className = 'selection-marker';
-                marker.textContent = selectionCounter;
-                currentSelection.appendChild(marker);
-                
-                // Store selection data
-                const selectionData = {
-                    id: selectionCounter,
-                    element: currentSelection,
-                    bounds: {
-                        left: parseInt(currentSelection.style.left),
-                        top: parseInt(currentSelection.style.top),
-                        width: width,
-                        height: height
-                    }
-                };
-                
-                selections.push(selectionData);
-                analyzeSelection(selectionData);
-            } else {
-                currentSelection.remove();
-            }
-            
-            currentSelection = null;
-        };
-        
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    });
-    
-    // Original functionality (unchanged)
+    // Color scheme handling
     if (colorScheme) {
         colorScheme.addEventListener('change', function() {
             if (this.value === 'custom') {
@@ -657,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // File input handling
     if (fileInput) {
         fileInput.addEventListener('change', function() {
             if (this.files.length > 0) {
@@ -780,6 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function selectImage(thumbnail) {
+        // Clear previous selection styling
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
             t.style.borderColor = 'transparent';
             t.style.borderWidth = '2px';
@@ -787,6 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
             t.style.boxShadow = 'none';
         });
         
+        // Apply selection styling
         thumbnail.style.borderColor = '#0d6efd';
         thumbnail.style.borderWidth = '3px';
         thumbnail.style.transform = 'translateY(-2px)';
@@ -801,193 +535,20 @@ document.addEventListener('DOMContentLoaded', function() {
             showImagePreview();
         }
         
-        // Clear selections when switching images
-        clearAllSelections();
-        
-        // Show shopping mode indicator if in shopping mode
-        if (isShoppingMode) {
-            shoppingModeIndicator.style.display = 'block';
-        }
+        // Check if this image has completed transformations for shopping
+        checkForShoppingOptions(selectedImageId);
         
         updateTransformBtnState();
     }
     
-    // Shopping functions
-    function analyzeSelection(selection) {
-        if (tokens <= 0) {
-            showToast('No tokens remaining for analysis', 'warning');
-            return;
+    function checkForShoppingOptions(imageId) {
+        // This would be an AJAX call to check if the image has completed transformations
+        // For now, we'll hide the shopping options
+        if (shoppingOptions) {
+            shoppingOptions.style.display = 'none';
         }
-        
-        updateCurrentSelection(selection);
-        
-        // Mock AI analysis (replace with real API call)
-        setTimeout(() => {
-            const mockAnalysis = getMockAIAnalysis();
-            displayAIAnalysis(mockAnalysis);
-            searchProducts(mockAnalysis, selection);
-        }, 1500);
     }
     
-    function getMockAIAnalysis() {
-        const items = [
-            { item: 'Wedding Chair', description: 'elegant white chiavari chair with gold details' },
-            { item: 'Table Centerpiece', description: 'floral arrangement with roses and eucalyptus' },
-            { item: 'Wedding Candles', description: 'pillar candles in glass holders' },
-            { item: 'Table Linens', description: 'ivory tablecloth with lace details' },
-            { item: 'Wedding Arch', description: 'rustic wooden arch with white flowers' }
-        ];
-        
-        return items[Math.floor(Math.random() * items.length)];
-    }
-    
-    function updateCurrentSelection(selection) {
-        currentSelectionDiv.innerHTML = `
-            <div class="ai-result">
-                <strong>Selection #${selection.id}</strong><br>
-                Size: ${selection.bounds.width}x${selection.bounds.height}px
-            </div>
-        `;
-    }
-    
-    function displayAIAnalysis(analysis) {
-        aiAnalysisDiv.innerHTML = `
-            <div class="ai-result">
-                <strong>🎯 Item:</strong> ${analysis.item}<br>
-                <strong>📝 Description:</strong> ${analysis.description}
-            </div>
-        `;
-    }
-    
-    function searchProducts(analysis, selection) {
-        tokens--;
-        updateTokenDisplay();
-        
-        // Mock product search (replace with real API call)
-        setTimeout(() => {
-            const mockProducts = [
-                {
-                    id: Date.now() + 1,
-                    title: `Premium ${analysis.item}`,
-                    price: '$' + (Math.random() * 200 + 50).toFixed(2),
-                    image: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=40&h=40&fit=crop',
-                    retailer: 'Amazon'
-                },
-                {
-                    id: Date.now() + 2,
-                    title: `Elegant ${analysis.item} Set`,
-                    price: '$' + (Math.random() * 150 + 30).toFixed(2),
-                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=40&h=40&fit=crop',
-                    retailer: 'Wayfair'
-                }
-            ];
-            
-            displaySearchResults(mockProducts, selection);
-        }, 2000);
-    }
-    
-    function displaySearchResults(products, selection) {
-        searchResultsDiv.innerHTML = products.map(product => `
-            <div class="product-item">
-                <img src="${product.image}" alt="${product.title}" class="product-image">
-                <div class="product-info">
-                    <div class="product-title">${product.title}</div>
-                    <div class="product-price">${product.price}</div>
-                    <small>${product.retailer}</small>
-                </div>
-                <button class="btn btn-sm btn-primary" onclick="addToShoppingList('${product.title}', '${product.price}', ${selection.id})">
-                    Add
-                </button>
-            </div>
-        `).join('');
-    }
-    
-    window.addToShoppingList = function(title, price, selectionId) {
-        const item = {
-            id: Date.now(),
-            title,
-            price,
-            selectionId
-        };
-        
-        shoppingList.push(item);
-        updateShoppingListDisplay();
-        showToast(`Added "${title}" to shopping list`, 'success');
-    };
-    
-    function updateShoppingListDisplay() {
-        if (shoppingList.length === 0) {
-            shoppingListDiv.innerHTML = '<div class="text-muted">Your shopping list is empty</div>';
-            return;
-        }
-        
-        shoppingListDiv.innerHTML = shoppingList.map(item => `
-            <div class="shopping-list-item">
-                <div>
-                    <div class="product-title">${item.title}</div>
-                    <div class="product-price">${item.price}</div>
-                    <small>Selection #${item.selectionId}</small>
-                </div>
-                <button class="btn btn-sm btn-outline-danger" onclick="removeFromShoppingList(${item.id})">
-                    <i class="bi bi-trash"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-    
-    window.removeFromShoppingList = function(itemId) {
-        shoppingList = shoppingList.filter(item => item.id !== itemId);
-        updateShoppingListDisplay();
-    };
-    
-    function exportShoppingList() {
-        if (shoppingList.length === 0) {
-            showToast('Shopping list is empty!', 'warning');
-            return;
-        }
-        
-        const exportData = {
-            wedding_registry: {
-                created: new Date().toISOString(),
-                total_items: shoppingList.length,
-                items: shoppingList
-            }
-        };
-        
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'wedding_shopping_list.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast('Shopping list exported!', 'success');
-    }
-    
-    function clearAllSelections() {
-        selections.forEach(selection => {
-            selection.element.remove();
-        });
-        selections = [];
-        selectionCounter = 0;
-        currentSelectionDiv.innerHTML = '<div class="text-muted">No item selected</div>';
-        aiAnalysisDiv.innerHTML = '<div class="text-muted">Select an item to analyze</div>';
-        searchResultsDiv.innerHTML = '<div class="text-muted">No search performed yet</div>';
-    }
-    
-    function disableSelection() {
-        isSelectionEnabled = false;
-        enableSelectionBtn.innerHTML = '<i class="bi bi-crosshair"></i> Enable Item Selection';
-        enableSelectionBtn.className = 'btn btn-sm btn-success w-100 mb-2';
-        imageContainer.classList.remove('selection-active');
-    }
-    
-    function updateTokenDisplay() {
-        tokenCount.textContent = tokens;
-    }
-    
-    // Continue with original functions...
     function showUploadProgress() {
         if (uploadArea) uploadArea.style.display = 'none';
         if (imagePreview) imagePreview.style.display = 'none';
@@ -1020,7 +581,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasTheme = weddingTheme && weddingTheme.value;
         const hasSpace = spaceType && spaceType.value;
         
-        const canVisualize = hasImage && hasTheme && hasSpace && !isShoppingMode;
+        const canVisualize = hasImage && hasTheme && hasSpace;
         
         if (transformBtn) {
             transformBtn.disabled = !canVisualize;
@@ -1086,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetTransformBtn() {
         document.getElementById('processingStatus').style.display = 'none';
         transformBtn.disabled = false;
-        transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>';
+        transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Transform Venue</span>';
         updateTransformBtnState();
     }
     
@@ -1118,7 +679,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize
     updateTransformBtnState();
-    updateTokenDisplay();
 });
 </script>
 

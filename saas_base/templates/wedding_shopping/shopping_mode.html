@@ -234,15 +234,26 @@ document.addEventListener('DOMContentLoaded', function() {
     let startX, startY, currentSelection = null;
     
     // Selection event handlers
-    selectionOverlay.addEventListener('mousedown', startSelection);
-    selectionOverlay.addEventListener('mousemove', updateSelection);
-    selectionOverlay.addEventListener('mouseup', endSelection);
-    selectionOverlay.addEventListener('mouseleave', endSelection);
+    if (selectionOverlay) {
+        selectionOverlay.addEventListener('mousedown', startSelection);
+        selectionOverlay.addEventListener('mousemove', updateSelection);
+        selectionOverlay.addEventListener('mouseup', endSelection);
+        selectionOverlay.addEventListener('mouseleave', endSelection);
+    }
     
     // Button event handlers
-    analyzeBtn.addEventListener('click', analyzeCurrentSelection);
-    clearBtn.addEventListener('click', clearCurrentSelection);
-    document.getElementById('toggleInstructions').addEventListener('click', toggleInstructions);
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', analyzeCurrentSelection);
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearCurrentSelection);
+    }
+    
+    // Toggle instructions
+    const toggleInstructionsBtn = document.getElementById('toggleInstructions');
+    if (toggleInstructionsBtn) {
+        toggleInstructionsBtn.addEventListener('click', toggleInstructions);
+    }
     
     function startSelection(e) {
         e.preventDefault();
@@ -322,48 +333,54 @@ document.addEventListener('DOMContentLoaded', function() {
         currentSelection.actualHeight = Math.round(currentSelection.height * scaleY);
         
         // Update UI
-        analyzeBtn.disabled = false;
-        clearBtn.disabled = false;
+        if (analyzeBtn) analyzeBtn.disabled = false;
+        if (clearBtn) clearBtn.disabled = false;
         showCurrentSelection();
     }
     
     function showCurrentSelection() {
         const preview = document.getElementById('selectionPreview');
-        preview.innerHTML = `
-            <div class="text-center mb-3">
-                <div class="border rounded p-2" style="background: #f8f9fa;">
-                    <i class="bi bi-crop text-primary" style="font-size: 2rem;"></i>
-                    <div class="mt-2">
-                        <strong>Selection Area</strong><br>
-                        <small class="text-muted">
-                            ${currentSelection.actualWidth} × ${currentSelection.actualHeight} pixels<br>
-                            Position: (${currentSelection.actualX}, ${currentSelection.actualY})
-                        </small>
+        if (preview) {
+            preview.innerHTML = `
+                <div class="text-center mb-3">
+                    <div class="border rounded p-2" style="background: #f8f9fa;">
+                        <i class="bi bi-crop text-primary" style="font-size: 2rem;"></i>
+                        <div class="mt-2">
+                            <strong>Selection Area</strong><br>
+                            <small class="text-muted">
+                                ${currentSelection.actualWidth} × ${currentSelection.actualHeight} pixels<br>
+                                Position: (${currentSelection.actualX}, ${currentSelection.actualY})
+                            </small>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
         
-        currentSelectionCard.style.display = 'block';
+        if (currentSelectionCard) {
+            currentSelectionCard.style.display = 'block';
+        }
         
         // Scroll to selection panel on mobile
-        if (window.innerWidth < 992) {
+        if (window.innerWidth < 992 && currentSelectionCard) {
             currentSelectionCard.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
     function clearCurrentSelection() {
-        selectionRectangle.style.display = 'none';
+        if (selectionRectangle) selectionRectangle.style.display = 'none';
         currentSelection = null;
-        analyzeBtn.disabled = true;
-        clearBtn.disabled = true;
-        currentSelectionCard.style.display = 'none';
-        analysisResultsCard.style.display = 'none';
-        productResultsCard.style.display = 'none';
+        if (analyzeBtn) analyzeBtn.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+        if (currentSelectionCard) currentSelectionCard.style.display = 'none';
+        if (analysisResultsCard) analysisResultsCard.style.display = 'none';
+        if (productResultsCard) productResultsCard.style.display = 'none';
     }
     
     function analyzeCurrentSelection() {
         if (!currentSelection) return;
+        
+        console.log('Starting analysis...');
         
         // Show loading modal
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
@@ -380,6 +397,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         
+        console.log('Sending selection data:', selectionData);
+        
         // Call AI analysis
         fetch('{% url "wedding_shopping:analyze_selection" %}', {
             method: 'POST',
@@ -389,12 +408,16 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(selectionData)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Analysis response status:', response.status);
+            return response.json();
+        })
         .then(data => {
-            loadingModal.hide();
+            console.log('Analysis response data:', data);
             
             if (data.success) {
                 displayAnalysisResults(data.item);
+                // Automatically search for products
                 searchRetailers(data.item_id);
                 
                 // Add selection to existing markers
@@ -408,58 +431,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 showToast('Item analyzed and added to your shopping list!', 'success');
             } else {
+                loadingModal.hide();
                 showToast('Analysis failed: ' + data.error, 'error');
             }
         })
         .catch(error => {
+            console.error('Analysis error:', error);
             loadingModal.hide();
-            console.error('Error:', error);
             showToast('Error analyzing selection', 'error');
         });
     }
     
     function displayAnalysisResults(item) {
         const resultsContainer = document.getElementById('analysisResults');
-        resultsContainer.innerHTML = `
-            <div class="text-center mb-3">
-                <h6>${item.name}</h6>
-                <p class="text-muted">${item.description}</p>
-                <div class="d-flex justify-content-center gap-2 mb-2">
-                    <span class="badge bg-primary">${item.category}</span>
-                    <span class="badge bg-success">${Math.round(item.confidence * 100)}% confident</span>
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `
+                <div class="text-center mb-3">
+                    <h6>${item.name}</h6>
+                    <p class="text-muted">${item.description}</p>
+                    <div class="d-flex justify-content-center gap-2 mb-2">
+                        <span class="badge bg-primary">${item.category}</span>
+                        <span class="badge bg-success">${Math.round(item.confidence * 100)}% confident</span>
+                    </div>
+                    <div class="mt-2">
+                        ${item.tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('')}
+                    </div>
                 </div>
-                <div class="mt-2">
-                    ${item.tags.map(tag => `<span class="badge bg-light text-dark me-1">${tag}</span>`).join('')}
-                </div>
-            </div>
-            <div class="d-grid">
-                <button class="btn btn-outline-primary btn-sm" onclick="searchRetailers(${item.id})">
-                    <i class="bi bi-search"></i> Find Similar Products
-                </button>
-            </div>
-        `;
+            `;
+        }
         
-        analysisResultsCard.style.display = 'block';
+        if (analysisResultsCard) {
+            analysisResultsCard.style.display = 'block';
+        }
     }
     
     function searchRetailers(itemId) {
+        console.log('Searching retailers for item:', itemId);
+        
+        // Update loading modal text
         const loadingText = document.getElementById('loadingText');
         const loadingSubtext = document.getElementById('loadingSubtext');
-        loadingText.textContent = 'Searching retailers...';
-        loadingSubtext.textContent = 'Finding similar products for you';
+        if (loadingText) loadingText.textContent = 'Searching retailers...';
+        if (loadingSubtext) loadingSubtext.textContent = 'Finding similar products for you';
         
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        loadingModal.show();
-        
-        fetch(`/wedding-shopping/search-retailers/${itemId}/`, {
+        fetch(`{% url "wedding_shopping:search_retailers" 999 %}`.replace('999', itemId), {
             method: 'POST',
             headers: {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Retailer search response status:', response.status);
+            return response.json();
+        })
         .then(data => {
-            loadingModal.hide();
+            console.log('Retailer search response data:', data);
+            
+            // Hide loading modal
+            const loadingModal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+            if (loadingModal) {
+                loadingModal.hide();
+            }
             
             if (data.success && data.results.length > 0) {
                 displayProductResults(data.results);
@@ -468,14 +500,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            loadingModal.hide();
-            console.error('Error:', error);
+            console.error('Retailer search error:', error);
+            
+            // Hide loading modal
+            const loadingModal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
+            if (loadingModal) {
+                loadingModal.hide();
+            }
+            
             showToast('Error searching for products', 'error');
         });
     }
     
     function displayProductResults(results) {
+        console.log('Displaying product results:', results);
+        
         const resultsContainer = document.getElementById('productResults');
+        if (!resultsContainer) {
+            console.error('Product results container not found');
+            return;
+        }
+        
         const resultsHtml = results.map(product => `
             <div class="card mb-2">
                 <div class="row g-0">
@@ -510,7 +555,12 @@ document.addEventListener('DOMContentLoaded', function() {
         `).join('');
         
         resultsContainer.innerHTML = resultsHtml;
-        productResultsCard.style.display = 'block';
+        
+        if (productResultsCard) {
+            productResultsCard.style.display = 'block';
+        }
+        
+        console.log('Product results displayed successfully');
     }
     
     function addSelectionMarker(selection, item) {
@@ -533,7 +583,9 @@ document.addEventListener('DOMContentLoaded', function() {
         badge.textContent = item.name;
         marker.appendChild(badge);
         
-        imageContainer.appendChild(marker);
+        if (imageContainer) {
+            imageContainer.appendChild(marker);
+        }
     }
     
     function updateShoppingListCount() {
@@ -548,10 +600,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function toggleInstructions() {
         const panel = document.getElementById('instructionsPanel');
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
     }
     
     function showToast(message, type) {
+        console.log('Showing toast:', message, type);
+        
         // Create and show toast notification
         const toast = document.createElement('div');
         toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed top-0 end-0 m-3`;
@@ -570,178 +626,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
     
-    // Make function globally available
+    // Make function globally available for manual calls
     window.searchRetailers = searchRetailers;
     
     // Reset loading modal text
-    document.getElementById('loadingText').textContent = 'Analyzing selection...';
-    document.getElementById('loadingSubtext').textContent = 'This may take a moment';
-    function initializeSelectionWithTouch() {
-    const selectionOverlay = document.getElementById('selectionOverlay');
-    const selectionRectangle = document.getElementById('selectionRectangle');
+    const loadingText = document.getElementById('loadingText');
+    const loadingSubtext = document.getElementById('loadingSubtext');
+    if (loadingText) loadingText.textContent = 'Analyzing selection...';
+    if (loadingSubtext) loadingSubtext.textContent = 'This may take a moment';
     
-    let isSelecting = false;
-    let startX, startY, currentSelection = null;
-    
-    // Unified event handlers for mouse and touch
-    function getEventCoordinates(e) {
-        if (e.touches && e.touches.length > 0) {
-            return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
-        }
-        return { clientX: e.clientX, clientY: e.clientY };
-    }
-    
-    function startSelection(e) {
-        e.preventDefault();
-        const coords = getEventCoordinates(e);
-        const imgRect = weddingImage.getBoundingClientRect();
-        
-        startX = coords.clientX - imgRect.left;
-        startY = coords.clientY - imgRect.top;
-        
-        // Check bounds
-        if (startX < 0 || startY < 0 || startX > weddingImage.offsetWidth || startY > weddingImage.offsetHeight) {
-            return;
-        }
-        
-        isSelecting = true;
-        selectionRectangle.style.display = 'block';
-        selectionRectangle.style.left = startX + 'px';
-        selectionRectangle.style.top = startY + 'px';
-        selectionRectangle.style.width = '0px';
-        selectionRectangle.style.height = '0px';
-        
-        // Add visual feedback for mobile
-        if (e.touches) {
-            selectionOverlay.style.cursor = 'crosshair';
-            // Add haptic feedback if available
-            if (navigator.vibrate) {
-                navigator.vibrate(50);
-            }
-        }
-    }
-    
-    function updateSelection(e) {
-        if (!isSelecting) return;
-        e.preventDefault();
-        
-        const coords = getEventCoordinates(e);
-        const imgRect = weddingImage.getBoundingClientRect();
-        
-        const currentX = Math.max(0, Math.min(coords.clientX - imgRect.left, weddingImage.offsetWidth));
-        const currentY = Math.max(0, Math.min(coords.clientY - imgRect.top, weddingImage.offsetHeight));
-        
-        const width = Math.abs(currentX - startX);
-        const height = Math.abs(currentY - startY);
-        const left = Math.min(startX, currentX);
-        const top = Math.min(startY, currentY);
-        
-        selectionRectangle.style.left = left + 'px';
-        selectionRectangle.style.top = top + 'px';
-        selectionRectangle.style.width = width + 'px';
-        selectionRectangle.style.height = height + 'px';
-    }
-    
-    function endSelection(e) {
-        if (!isSelecting) return;
-        
-        isSelecting = false;
-        
-        const width = parseInt(selectionRectangle.style.width);
-        const height = parseInt(selectionRectangle.style.height);
-        
-        // Minimum selection size (larger for mobile)
-        const minSize = window.innerWidth <= 768 ? 30 : 20;
-        
-        if (width < minSize || height < minSize) {
-            clearCurrentSelection();
-            return;
-        }
-        
-        // Store selection and show mobile-friendly UI
-        currentSelection = {
-            x: parseInt(selectionRectangle.style.left),
-            y: parseInt(selectionRectangle.style.top),
-            width: width,
-            height: height
-        };
-        
-        // Calculate actual image coordinates
-        const scaleX = weddingImageActualWidth / weddingImage.offsetWidth;
-        const scaleY = weddingImageActualHeight / weddingImage.offsetHeight;
-        
-        currentSelection.actualX = Math.round(currentSelection.x * scaleX);
-        currentSelection.actualY = Math.round(currentSelection.y * scaleY);
-        currentSelection.actualWidth = Math.round(currentSelection.width * scaleX);
-        currentSelection.actualHeight = Math.round(currentSelection.height * scaleY);
-        
-        // Mobile-specific UI updates
-        if (window.innerWidth <= 768) {
-            // Scroll to selection panel on mobile
-            document.getElementById('currentSelectionCard').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
-            
-            // Show mobile toast
-            showMobileToast('Item selected! Analyzing with AI...');
-        }
-        
-        // Enable action buttons
-        document.getElementById('analyzeSelection').disabled = false;
-        document.getElementById('clearSelection').disabled = false;
-        
-        showCurrentSelection();
-        
-        // Haptic feedback for successful selection
-        if (navigator.vibrate && e.touches) {
-            navigator.vibrate([50, 100, 50]);
-        }
-    }
-    
-    // Mouse events
-    selectionOverlay.addEventListener('mousedown', startSelection);
-    selectionOverlay.addEventListener('mousemove', updateSelection);
-    selectionOverlay.addEventListener('mouseup', endSelection);
-    selectionOverlay.addEventListener('mouseleave', endSelection);
-    
-    // Touch events  
-    selectionOverlay.addEventListener('touchstart', startSelection, { passive: false });
-    selectionOverlay.addEventListener('touchmove', updateSelection, { passive: false });
-    selectionOverlay.addEventListener('touchend', endSelection, { passive: false });
-    
-    // Prevent default touch behaviors that interfere with selection
-    selectionOverlay.addEventListener('touchstart', function(e) {
-        e.preventDefault();
-    });
-}
-
-    function showMobileToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'mobile-toast';
-    toast.textContent = message;
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
-        font-size: 14px;
-        z-index: 9999;
-        animation: slideUp 0.3s ease;
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.animation = 'slideDown 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
-}
-
+    console.log('Shopping mode JavaScript initialized successfully');
 });
 </script>
 

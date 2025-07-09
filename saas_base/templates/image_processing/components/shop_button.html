@@ -1,23 +1,35 @@
 {% load static %}
 
-<!-- Smart shop button that adapts to image state -->
+<!-- Smart shop button that adapts to image state and checks usage limits -->
 {% if image_type == 'processed' %}
-  <!-- Direct shop button for processed images -->
-  <a href="{% url 'wedding_shopping:shopping_mode' processed_image.id %}" 
-     class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
-    <i class="bi bi-cart3"></i> 
-    {% if button_text %}{{ button_text }}{% else %}Shop This Wedding{% endif %}
-  </a>
+  <!-- Direct shop button for processed images - will consume 1 token on click -->
+  <div class="shop-button-container">
+    <a href="{% url 'wedding_shopping:shopping_mode' processed_image.id %}" 
+       class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}"
+       onclick="return confirmShopAccess(event, this)">
+      <i class="bi bi-cart3"></i> 
+      {% if button_text %}{{ button_text }}{% else %}Shop This Wedding{% endif %}
+    </a>
+    <small class="text-muted d-block mt-1">
+      <i class="bi bi-lightning"></i> Uses 1 transformation credit
+    </small>
+  </div>
 
 {% elif image_type == 'original' %}
   <!-- Check if original image has transformations -->
   {% with completed_jobs=user_image.processing_jobs.filter_completed %}
     {% if completed_jobs %}
       {% with latest_processed=completed_jobs.first.processed_images.first %}
-        <a href="{% url 'wedding_shopping:shopping_mode' latest_processed.id %}" 
-           class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
-          <i class="bi bi-cart3"></i> Shop Wedding
-        </a>
+        <div class="shop-button-container">
+          <a href="{% url 'wedding_shopping:shopping_mode' latest_processed.id %}" 
+             class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}"
+             onclick="return confirmShopAccess(event, this)">
+            <i class="bi bi-cart3"></i> Shop Wedding
+          </a>
+          <small class="text-muted d-block mt-1">
+            <i class="bi bi-lightning"></i> Uses 1 transformation credit
+          </small>
+        </div>
       {% endwith %}
     {% else %}
       <!-- No transformations yet - show transform first button -->
@@ -33,10 +45,16 @@
   {% with processed_images=job.processed_images.all %}
     {% if processed_images %}
       {% with first_processed=processed_images.first %}
-        <a href="{% url 'wedding_shopping:shopping_mode' first_processed.id %}" 
-           class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}">
-          <i class="bi bi-cart3"></i> Shop This Wedding
-        </a>
+        <div class="shop-button-container">
+          <a href="{% url 'wedding_shopping:shopping_mode' first_processed.id %}" 
+             class="btn btn-success {{ button_size|default:'btn-sm' }} {{ extra_classes }}"
+             onclick="return confirmShopAccess(event, this)">
+            <i class="bi bi-cart3"></i> Shop This Wedding
+          </a>
+          <small class="text-muted d-block mt-1">
+            <i class="bi bi-lightning"></i> Uses 1 transformation credit
+          </small>
+        </div>
       {% endwith %}
     {% endif %}
   {% endwith %}
@@ -82,7 +100,90 @@
   </div>
 </div>
 
+<!-- Usage Limit Warning Modal -->
+<div class="modal fade" id="usageLimitModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Usage Limit Check</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+        <h6 class="mt-3">This will use 1 transformation credit</h6>
+        <p class="text-muted" id="usageDetails">
+          <!-- Usage details will be inserted here -->
+        </p>
+        <p class="small text-muted">
+          Once you enter shopping mode, you can select and analyze items without using additional credits.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="continueShoppingLink" class="btn btn-success">
+          <i class="bi bi-cart3"></i> Continue Shopping
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
+// Global variables to store user usage data
+let userUsageData = null;
+
+// Fetch user usage data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    {% if request.user.is_authenticated %}
+        fetchUserUsageData();
+    {% endif %}
+});
+
+function fetchUserUsageData() {
+    // This would be an AJAX call to get user's current usage
+    // For now, we'll use template data if available
+    {% if request.user.is_authenticated %}
+        userUsageData = {
+            current: {{ request.user.subscription.get_usage_data.current|default:0 }},
+            limit: {{ request.user.subscription.get_usage_data.limit|default:3 }},
+            remaining: {{ request.user.subscription.get_usage_data.remaining|default:3 }}
+        };
+    {% endif %}
+}
+
+function confirmShopAccess(event, linkElement) {
+    event.preventDefault();
+    
+    // Check if user has usage data
+    if (!userUsageData) {
+        // If we don't have usage data, just proceed
+        window.location.href = linkElement.href;
+        return false;
+    }
+    
+    // Check if user has remaining credits
+    if (userUsageData.remaining <= 0) {
+        // User has no remaining credits - redirect to pricing
+        window.location.href = '{% url "subscriptions:pricing" %}';
+        return false;
+    }
+    
+    // Show confirmation modal with usage info
+    const modal = new bootstrap.Modal(document.getElementById('usageLimitModal'));
+    const usageDetails = document.getElementById('usageDetails');
+    const continueLink = document.getElementById('continueShoppingLink');
+    
+    usageDetails.innerHTML = `
+        You have <strong>${userUsageData.remaining}</strong> transformation credits remaining this month.<br>
+        After using this credit, you'll have <strong>${userUsageData.remaining - 1}</strong> remaining.
+    `;
+    
+    continueLink.href = linkElement.href;
+    
+    modal.show();
+    return false;
+}
+
 function showTransformFirstModal(userImageId) {
     // Update the transform link
     document.getElementById('transformImageLink').href = `/studio/image/${userImageId}/`;
@@ -96,20 +197,38 @@ function retryProcessing(userImageId) {
 }
 </script>
 
-<!-- Usage Examples: -->
+<style>
+.shop-button-container {
+    text-align: center;
+}
 
+.shop-button-container .btn {
+    transition: all 0.2s ease;
+}
+
+.shop-button-container .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.shop-button-container small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+}
+</style>
+
+<!-- Usage Examples: -->
 <!-- In image_detail.html -->
+{% comment %}
 {% include 'image_processing/components/shop_button.html' with image_type='original' user_image=user_image button_size='btn-lg' button_text='Shop Wedding Items' %}
+{% endcomment %}
 
 <!-- In processed_image_detail.html -->
+{% comment %}
 {% include 'image_processing/components/shop_button.html' with image_type='processed' processed_image=processed_image button_size='btn-lg' %}
+{% endcomment %}
 
 <!-- In processing_history.html -->
+{% comment %}
 {% include 'image_processing/components/shop_button.html' with image_type='job' job=job %}
-
-<!-- In image_gallery.html -->
-{% if image.type == 'transformation' %}
-  {% include 'image_processing/components/shop_button.html' with image_type='processed' processed_image=image.object %}
-{% else %}
-  {% include 'image_processing/components/shop_button.html' with image_type='original' user_image=image.object %}
-{% endif %}
+{% endcomment %}
