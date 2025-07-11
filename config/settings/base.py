@@ -101,6 +101,14 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
 MIGRATION_MODULES = {"sites": "saas_base.contrib.sites.migrations"}
 
+AI_MODELS = {
+    'YOLO_MODEL': 'yolov8n.pt',  # or yolov8s.pt, yolov8m.pt, yolov8l.pt, yolov8x.pt
+    'CLIP_MODEL': 'ViT-B/32',    # or ViT-L/14, RN50, RN101, RN50x4, etc.
+    'CONFIDENCE_THRESHOLD': 0.5,
+    'MIN_SELECTION_SIZE': 30,
+    'MAX_SUGGESTIONS': 5
+}
+
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
