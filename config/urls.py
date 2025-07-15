@@ -22,6 +22,9 @@ urlpatterns = [
     path("subscriptions/", include("subscriptions.urls", namespace="subscriptions")),
     path("studio/", include("image_processing.urls", namespace="image_processing")),
     # Media files
+    #Shopping
+    path("wedding/", include("wedding_shopping.urls", namespace="wedding_shopping")),
+    
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
 

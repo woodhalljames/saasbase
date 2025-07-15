@@ -1,0 +1,336 @@
+<!-- saas_base/templates/wedding_shopping/public_couple_detail.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Hero Section -->
+  <div class="row g-0">
+    <div class="col-12">
+      <div class="position-relative" style="height: 70vh; min-height: 500px;">
+        {% if couple.couple_photo %}
+          <img src="{{ couple.couple_photo.url }}" 
+               class="w-100 h-100" 
+               style="object-fit: cover;"
+               alt="{{ couple.couple_names }}">
+        {% else %}
+          <div class="w-100 h-100 bg-gradient d-flex align-items-center justify-content-center"
+               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="bi bi-heart text-white" style="font-size: 5rem;"></i>
+          </div>
+        {% endif %}
+        
+        <!-- Overlay with couple names and countdown -->
+        <div class="position-absolute bottom-0 start-0 end-0 p-4" 
+             style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+          <div class="container">
+            <div class="row">
+              <div class="col-lg-8">
+                <h1 class="display-4 text-white mb-2">{{ couple.couple_names }}</h1>
+                {% if couple.wedding_date %}
+                  <p class="lead text-white mb-3">
+                    {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
+                    {% if couple.venue_location %}
+                      {% if couple.venue_name %} • {% endif %}
+                      {{ couple.venue_location }}
+                    {% endif %}
+                  </p>
+                  <p class="text-white h4">{{ couple.wedding_date|date:"F j, Y" }}</p>
+                {% endif %}
+              </div>
+              
+              <!-- Countdown -->
+              <div class="col-lg-4 text-lg-end">
+                {% if days_until_wedding %}
+                  <div class="text-center text-lg-end">
+                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
+                      <div class="display-6 text-white fw-bold">{{ days_until_wedding }}</div>
+                      <div class="text-white">day{{ days_until_wedding|pluralize }} to go!</div>
+                    </div>
+                  </div>
+                {% elif is_wedding_day %}
+                  <div class="text-center text-lg-end">
+                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
+                      <div class="display-6 text-white fw-bold">Today!</div>
+                      <div class="text-white">It's the big day! 🎉</div>
+                    </div>
+                  </div>
+                {% elif wedding_passed %}
+                  <div class="text-center text-lg-end">
+                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
+                      <div class="display-6 text-white fw-bold">💍</div>
+                      <div class="text-white">Happily Married!</div>
+                      <small class="text-white">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</small>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container py-5">
+    
+    <!-- Venue Section -->
+    {% if couple.venue_photo %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="row g-0">
+            <div class="col-md-6">
+              <img src="{{ couple.venue_photo.url }}" 
+                   class="img-fluid h-100 w-100" 
+                   style="object-fit: cover; min-height: 300px;"
+                   alt="{{ couple.venue_name }}">
+            </div>
+            <div class="col-md-6">
+              <div class="card-body h-100 d-flex flex-column justify-content-center">
+                <h3 class="card-title">Our Wedding Venue</h3>
+                {% if couple.venue_name %}
+                  <h5 class="text-primary mb-3">{{ couple.venue_name }}</h5>
+                {% endif %}
+                {% if couple.venue_location %}
+                  <p class="text-muted mb-3">
+                    <i class="bi bi-geo-alt"></i> {{ couple.venue_location }}
+                  </p>
+                {% endif %}
+                <p class="card-text">
+                  Join us at this beautiful venue as we celebrate our love and begin our journey as husband and wife.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Couple Story -->
+    {% if couple.couple_story %}
+    <div class="row mb-5">
+      <div class="col-lg-8 mx-auto">
+        <div class="text-center mb-4">
+          <h2>Our Love Story</h2>
+          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        </div>
+        <div class="lead text-center">
+          {{ couple.couple_story|linebreaks }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Wedding Venue Transformations -->
+    {% if collections_with_images %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="text-center mb-4">
+          <h2>Our Wedding Vision</h2>
+          <p class="text-muted">See how we're transforming our venue with AI</p>
+          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        </div>
+        
+        {% for collection_data in collections_with_images %}
+          <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <h5 class="mb-0">
+                <i class="bi bi-magic"></i> {{ collection_data.collection.collection_name }}
+              </h5>
+              {% if collection_data.collection.description %}
+                <small class="opacity-75">{{ collection_data.collection.description }}</small>
+              {% endif %}
+            </div>
+            
+            {% if collection_data.sample_items %}
+              <div class="card-body">
+                <div class="row g-3">
+                  {% for item in collection_data.sample_items %}
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                      <div class="card border-0 shadow-sm h-100">
+                        <img src="{{ item.image_url }}" 
+                             class="card-img-top" 
+                             style="height: 150px; object-fit: cover;"
+                             alt="Wedding transformation">
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+                
+                {% if collection_data.studio_collection %}
+                  <div class="text-center mt-3">
+                    <small class="text-muted">
+                      Showing {{ collection_data.sample_items|length }} of {{ collection_data.studio_collection.item_count }} transformations
+                    </small>
+                  </div>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="card-body text-center text-muted">
+                <i class="bi bi-images" style="font-size: 2rem;"></i>
+                <p class="mt-2">Wedding venue transformations coming soon!</p>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        
+        <div class="text-center">
+          <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg">
+            <i class="bi bi-magic"></i> Create Your Own Wedding Vision
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Wedding Registries -->
+    {% if registry_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="text-center mb-4">
+          <h2>Wedding Registry</h2>
+          <p class="text-muted">Help us start our new life together</p>
+          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        </div>
+        
+        <div class="row">
+          {% for registry in registry_links %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+              <div class="card h-100 border-0 shadow-sm registry-card">
+                <div class="card-body text-center">
+                  <i class="{{ registry.registry_icon }} text-primary mb-3" style="font-size: 3rem;"></i>
+                  <h5 class="card-title">
+                    {% if registry.display_name %}
+                      {{ registry.display_name }}
+                    {% else %}
+                      {{ registry.get_registry_type_display }}
+                    {% endif %}
+                  </h5>
+                  {% if registry.description %}
+                    <p class="card-text text-muted small">{{ registry.description|truncatewords:15 }}</p>
+                  {% endif %}
+                  <!-- Simple redirect with click tracking -->
+                  <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
+                     class="btn btn-primary btn-lg w-100"
+                     target="_blank">
+                    <i class="bi bi-gift"></i> Shop Registry
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Social Media Links -->
+    {% if social_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="text-center mb-4">
+          <h2>Follow Our Journey</h2>
+          <p class="text-muted">Stay connected with us on social media</p>
+          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        </div>
+        
+        <div class="row justify-content-center">
+          {% for social in social_links %}
+            <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+              <a href="{{ social.url }}" 
+                 target="_blank" 
+                 class="btn btn-outline-primary btn-lg w-100 social-btn">
+                <i class="{{ social.platform_icon }} mb-2" style="font-size: 2rem;"></i>
+                <div class="small">
+                  {% if social.display_name %}
+                    {{ social.display_name }}
+                  {% elif social.platform_name %}
+                    {{ social.platform_name }}
+                  {% else %}
+                    {{ social.get_platform_display }}
+                  {% endif %}
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer Message -->
+    <div class="row">
+      <div class="col-lg-8 mx-auto">
+        <div class="card bg-light border-0">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-heart-fill text-danger mb-3" style="font-size: 3rem;"></i>
+            <h3>Thank You!</h3>
+            <p class="lead text-muted">
+              We're so grateful to have you in our lives and can't wait to celebrate with you!
+            </p>
+            {% if couple.wedding_date and days_until_wedding %}
+              <p class="text-muted">
+                See you in {{ days_until_wedding }} day{{ days_until_wedding|pluralize }}!
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.registry-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.registry-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.social-btn {
+  transition: all 0.2s ease;
+  border: 2px solid;
+}
+
+.social-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.bg-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Countdown animation */
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.display-6 {
+  animation: heartbeat 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .display-6 {
+    font-size: 2rem;
+  }
+}
+</style>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}
