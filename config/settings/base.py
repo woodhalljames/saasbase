@@ -82,6 +82,10 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     #"allauth.mfa",
     "allauth.socialaccount",
+    # Add social providers
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.facebook",
+    "allauth.socialaccount.providers.twitter",
     "django_celery_beat",
 ]
 
@@ -100,7 +104,6 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#migration-modules
 MIGRATION_MODULES = {"sites": "saas_base.contrib.sites.migrations"}
-
 # AUTHENTICATION
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
@@ -342,10 +345,73 @@ ACCOUNT_ADAPTER = "saas_base.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
 ACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSignupForm"}
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
+
+SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = True
+# Google OAuth
+GOOGLE_OAUTH2_CLIENT_ID = env("GOOGLE_OAUTH2_CLIENT_ID", default="")
+GOOGLE_OAUTH2_CLIENT_SECRET = env("GOOGLE_OAUTH2_CLIENT_SECRET", default="")
+
+# Facebook OAuth
+FACEBOOK_APP_ID = env("FACEBOOK_APP_ID", default="")
+FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", default="")
+
+# Twitter OAuth
+TWITTER_CONSUMER_KEY = env("TWITTER_CONSUMER_KEY", default="")
+TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
+
+
 SOCIALACCOUNT_ADAPTER = "saas_base.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSocialSignupForm"}
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': env("GOOGLE_OAUTH2_CLIENT_ID", default=""),
+            'secret': env("GOOGLE_OAUTH2_CLIENT_SECRET", default=""),
+        },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'OAUTH_PKCE_ENABLED': True,
+    },
+    'facebook': {
+        'APP': {
+            'client_id': env("FACEBOOK_APP_ID", default=""),
+            'secret': env("FACEBOOK_APP_SECRET", default=""),
+        },
+        'METHOD': 'oauth2',
+        'SCOPE': ['email', 'public_profile'],
+        'FIELDS': ['id', 'first_name', 'last_name', 'name', 'email'],
+        'VERSION': 'v18.0',
+    },
+    'twitter': {
+        'APP': {
+            'client_id': env("TWITTER_CONSUMER_KEY", default=""),
+            'secret': env("TWITTER_CONSUMER_SECRET", default=""),
+        },
+        'SCOPE': ['email'],
+    }
+}
 
+SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = True
+# Google OAuth
+GOOGLE_OAUTH2_CLIENT_ID = env("GOOGLE_OAUTH2_CLIENT_ID", default="")
+GOOGLE_OAUTH2_CLIENT_SECRET = env("GOOGLE_OAUTH2_CLIENT_SECRET", default="")
+
+# Facebook OAuth
+FACEBOOK_APP_ID = env("FACEBOOK_APP_ID", default="")
+FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", default="")
+
+# Twitter OAuth
+TWITTER_CONSUMER_KEY = env("TWITTER_CONSUMER_KEY", default="")
+TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
 
 # Your stuff...
 # ------------------------------------------------------------------------------
