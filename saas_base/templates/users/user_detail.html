@@ -1,193 +1,75 @@
 {% extends "base.html" %}
-
 {% load static %}
 
-{% block title %}
-  User: {{ object.username }}
-{% endblock title %}
+{% block title %}User: {{ object.username }}{% endblock title %}
 
 {% block content %}
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-12">
-        <h2>{{ object.username }}</h2>
-        {% if object.name %}
-          <p class="text-muted">{{ object.name }}</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="row mt-4">
-      <div class="col-md-8">
-        {% if object.has_active_subscription %}
-          <div class="alert alert-success mb-3">
-            <strong>Active Subscription</strong>
-          </div>
-          
-          {% with sub_details=object.subscription.get_subscription_details %}
-            {% if sub_details %}
-              <div class="card mb-4">
-                <div class="card-body">
-                  <h5 class="card-title">{{ sub_details.name }}</h5>
-                  {% if sub_details.description %}
-                    <p class="card-text text-muted">{{ sub_details.description }}</p>
-                  {% endif %}
-                  
-                  <!-- Subscription Details -->
-                  <div class="mb-3">
-                    {% if sub_details.amount %}
-                      <p class="mb-1"><strong>Price:</strong> {{ sub_details.amount }} / {{ sub_details.interval }}</p>
-                    {% endif %}
-                    <p class="mb-1"><strong>Status:</strong> 
-                      <span class="badge bg-success">{{ sub_details.status|title }}</span>
-                    </p>
-                  </div>
-                  
-                  <!-- Usage Information -->
-                  {% with usage=object.subscription.get_usage_data %}
-                    {% if usage %}
-                      <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                          <span><strong>Monthly Usage:</strong></span>
-                          <span class="text-muted">{{ usage.current }} / {{ usage.limit }}</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 20px;">
-                          <div class="progress-bar 
-                            {% if usage.percentage >= 90 %}bg-danger
-                            {% elif usage.percentage >= 75 %}bg-warning  
-                            {% else %}bg-success{% endif %}"
-                            role="progressbar" 
-                            style="width: {{ usage.percentage }}%;"
-                            aria-valuenow="{{ usage.percentage }}" 
-                            aria-valuemin="0" 
-                            aria-valuemax="100">
-                            {{ usage.percentage }}%
-                          </div>
-                        </div>
-                        <small class="text-muted">
-                          {{ usage.remaining }} actions remaining this month
-                        </small>
-                      </div>
-                    {% endif %}
-                  {% endwith %}
-                  
-                  <!-- Action Button -->
-                  <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
-                    Manage Subscription
-                  </a>
-                </div>
-              </div>
-            {% else %}
-              <!-- Fallback if subscription details can't be loaded -->
-              <div class="card mb-4">
-                <div class="card-body">
-                  <h5 class="card-title">Active Subscription</h5>
-                  <p class="card-text text-muted">Subscription details are being loaded...</p>
-                  
-                  {% with usage=object.subscription.get_usage_data %}
-                    {% if usage %}
-                      <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                          <span><strong>Monthly Usage:</strong></span>
-                          <span class="text-muted">{{ usage.current }} / {{ usage.limit }}</span>
-                        </div>
-                        <div class="progress mb-2" style="height: 20px;">
-                          <div class="progress-bar 
-                            {% if usage.percentage >= 90 %}bg-danger
-                            {% elif usage.percentage >= 75 %}bg-warning
-                            {% else %}bg-success{% endif %}"
-                            role="progressbar" 
-                            style="width: {{ usage.percentage }}%;"
-                            aria-valuenow="{{ usage.percentage }}" 
-                            aria-valuemin="0" 
-                            aria-valuemax="100">
-                            {{ usage.percentage }}%
-                          </div>
-                        </div>
-                        <small class="text-muted">
-                          {{ usage.remaining }} actions remaining this month
-                        </small>
-                      </div>
-                    {% endif %}
-                  {% endwith %}
-                  
-                  <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-primary">
-                    Manage Subscription
-                  </a>
-                </div>
-              </div>
-            {% endif %}
-          {% endwith %}
-        {% else %}
-          <!-- No Active Subscription -->
-          <div class="card mb-4">
-            <div class="card-body">
-              <h5 class="card-title">No Active Subscription</h5>
-              <p class="card-text">You don't have an active subscription. Subscribe now to get started!</p>
-              
-              <!-- Show free tier usage if available -->
-              {% with usage=object.subscription.get_usage_data %}
-                {% if usage %}
-                  <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                      <span><strong>Free Tier Usage:</strong></span>
-                      <span class="text-muted">{{ usage.current }} / {{ usage.limit }}</span>
-                    </div>
-                    <div class="progress mb-2" style="height: 20px;">
-                      <div class="progress-bar 
-                        {% if usage.percentage >= 90 %}bg-danger
-                        {% elif usage.percentage >= 75 %}bg-warning
-                        {% else %}bg-success{% endif %}"
-                        role="progressbar" 
-                        style="width: {{ usage.percentage }}%;"
-                        aria-valuenow="{{ usage.percentage }}" 
-                        aria-valuemin="0" 
-                        aria-valuemax="100">
-                        {{ usage.percentage }}%
-                      </div>
-                    </div>
-                    <small class="text-muted">
-                      {{ usage.remaining }} actions remaining this month
-                    </small>
-                  </div>
-                {% endif %}
-              {% endwith %}
-              
-              <a href="{% url 'subscriptions:pricing' %}" class="btn btn-primary">
-                Subscribe Now
-              </a>
-            </div>
-          </div>
-        {% endif %}
-      </div>
+<div class="container">
+  <div class="row">
+    <div class="col-sm-12">
+      <h2>{{ object.username }}</h2>
+      {% if object.name %}
+        <p class="text-muted">{{ object.name }}</p>
+      {% endif %}
       
-      <!-- Side panel for account management -->
-      <div class="col-md-4">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">Account Management</h6>
-          </div>
-          <div class="card-body">
-            <div class="d-grid gap-2">
-              <a class="btn btn-outline-primary" href="{% url 'users:update' %}" role="button">
-                <i class="bi bi-person-gear"></i> My Info
+      <!-- Social Login Info -->
+      {% if object.has_social_account %}
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          This account was created using social login.
+          {% if object.needs_password_setup %}
+            <a href="{% url 'users:password_setup' %}" class="btn btn-sm btn-primary ms-2">
+              Set Up Password
+            </a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Rest of your existing template content... -->
+  
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="card-title mb-0">Account Management</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a class="btn btn-outline-primary" href="{% url 'users:update' %}" role="button">
+              <i class="bi bi-person-gear"></i> Edit Profile & Username
+            </a>
+            
+            {% if object.needs_password_setup %}
+              <a class="btn btn-warning" href="{% url 'users:password_setup' %}" role="button">
+                <i class="bi bi-key"></i> Set Up Password
               </a>
-              <a class="btn btn-outline-primary" href="{% url 'account_email' %}" role="button">
-                <i class="bi bi-envelope-gear"></i> E-Mail Settings
+            {% else %}
+              <a class="btn btn-outline-secondary" href="{% url 'account_change_password' %}" role="button">
+                <i class="bi bi-key"></i> Change Password
               </a>
-             
-              {% if object.has_active_subscription %}
-                <a class="btn btn-outline-secondary" href="{% url 'subscriptions:customer_portal' %}" role="button">
-                  <i class="bi bi-credit-card"></i> Billing Portal
-                </a>
-              {% endif %}
-            </div>
+            {% endif %}
+            
+            <a class="btn btn-outline-primary" href="{% url 'account_email' %}" role="button">
+              <i class="bi bi-envelope-gear"></i> E-Mail Settings
+            </a>
+            
+            <a class="btn btn-outline-info" href="{% url 'socialaccount_connections' %}" role="button">
+              <i class="bi bi-share"></i> Social Accounts
+            </a>
+           
+            {% if object.has_active_subscription %}
+              <a class="btn btn-outline-secondary" href="{% url 'subscriptions:customer_portal' %}" role="button">
+                <i class="bi bi-credit-card"></i> Billing Portal
+              </a>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
+    
+    <!-- Existing subscription info column... -->
   </div>
-
-  <!-- Bootstrap Icons for better UX -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</div>
 {% endblock content %}

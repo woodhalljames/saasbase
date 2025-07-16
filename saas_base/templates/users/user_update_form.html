@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Profile{% endblock title %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="mb-0">Update Profile</h4>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            
+            <div class="alert alert-info mt-3">
+              <strong>Username Tips:</strong>
+              <ul class="mb-0">
+                <li>Used for sharing your wedding page: <code>/wedding/your-username/</code></li>
+                <li>Can be used to login (along with email)</li>
+                <li>3-150 characters, letters, numbers, and @/./+/-/_ only</li>
+              </ul>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Update Profile</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

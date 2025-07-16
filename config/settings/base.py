@@ -335,7 +335,7 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_LOGIN_METHODS = {"username"}
+ACCOUNT_LOGIN_METHODS = {"username", "email"} 
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
@@ -346,15 +346,20 @@ ACCOUNT_ADAPTER = "saas_base.users.adapters.AccountAdapter"
 ACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSignupForm"}
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 
-SOCIALACCOUNT_LOGIN_ON_GET = False
+SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
 SOCIALACCOUNT_QUERY_EMAIL = True
 SOCIALACCOUNT_STORE_TOKENS = True
+# Add process parameter to make it work smoothly
+SOCIALACCOUNT_LOGIN_OPTIONS = {
+    'redirect_field_name': 'next',
+    'process': 'login'
+}
 # Google OAuth
 GOOGLE_OAUTH2_CLIENT_ID = env("GOOGLE_OAUTH2_CLIENT_ID", default="")
 GOOGLE_OAUTH2_CLIENT_SECRET = env("GOOGLE_OAUTH2_CLIENT_SECRET", default="")
-
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 # Facebook OAuth
 FACEBOOK_APP_ID = env("FACEBOOK_APP_ID", default="")
 FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", default="")
@@ -367,6 +372,26 @@ TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
 SOCIALACCOUNT_ADAPTER = "saas_base.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSocialSignupForm"}
+
+
+# Your stuff...
+# ------------------------------------------------------------------------------
+# Stripe
+STRIPE_LIVE_SECRET_KEY = env("STRIPE_LIVE_SECRET_KEY", default="")
+STRIPE_TEST_SECRET_KEY = env("STRIPE_TEST_SECRET_KEY", default="")
+STRIPE_LIVE_PUBLIC_KEY = env("STRIPE_LIVE_PUBLIC_KEY", default="")
+STRIPE_TEST_PUBLIC_KEY = env("STRIPE_TEST_PUBLIC_KEY", default="")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
+STRIPE_LIVE_MODE = env.bool("STRIPE_LIVE_MODE", default=False)
+
+# Helper method to determine which Stripe keys to use
+STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_SECRET_KEY
+STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_PUBLIC_KEY
+
+
+STABILITY_API_KEY = env("STABILITY_API_KEY", default="")
+STABILITY_AI_ENGINE = env("STABILITY_AI_ENGINE", default="stable-diffusion-v1-6")
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
@@ -392,41 +417,6 @@ SOCIALACCOUNT_PROVIDERS = {
             'client_id': env("TWITTER_CONSUMER_KEY", default=""),
             'secret': env("TWITTER_CONSUMER_SECRET", default=""),
         },
-        'SCOPE': ['email'],
+        'SCOPE': ['tweet.read', 'users.read'],
     }
 }
-
-SOCIALACCOUNT_LOGIN_ON_GET = False
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts
-SOCIALACCOUNT_QUERY_EMAIL = True
-SOCIALACCOUNT_STORE_TOKENS = True
-# Google OAuth
-GOOGLE_OAUTH2_CLIENT_ID = env("GOOGLE_OAUTH2_CLIENT_ID", default="")
-GOOGLE_OAUTH2_CLIENT_SECRET = env("GOOGLE_OAUTH2_CLIENT_SECRET", default="")
-
-# Facebook OAuth
-FACEBOOK_APP_ID = env("FACEBOOK_APP_ID", default="")
-FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", default="")
-
-# Twitter OAuth
-TWITTER_CONSUMER_KEY = env("TWITTER_CONSUMER_KEY", default="")
-TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
-
-# Your stuff...
-# ------------------------------------------------------------------------------
-# Stripe
-STRIPE_LIVE_SECRET_KEY = env("STRIPE_LIVE_SECRET_KEY", default="")
-STRIPE_TEST_SECRET_KEY = env("STRIPE_TEST_SECRET_KEY", default="")
-STRIPE_LIVE_PUBLIC_KEY = env("STRIPE_LIVE_PUBLIC_KEY", default="")
-STRIPE_TEST_PUBLIC_KEY = env("STRIPE_TEST_PUBLIC_KEY", default="")
-STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
-STRIPE_LIVE_MODE = env.bool("STRIPE_LIVE_MODE", default=False)
-
-# Helper method to determine which Stripe keys to use
-STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_SECRET_KEY
-STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_PUBLIC_KEY
-
-
-STABILITY_API_KEY = env("STABILITY_API_KEY", default="")
-STABILITY_AI_ENGINE = env("STABILITY_AI_ENGINE", default="stable-diffusion-v1-6")

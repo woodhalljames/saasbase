@@ -24,3 +24,7 @@ stripe==8.3.0
 requests==2.32.3  # For Stability AI API calls
 Pillow==11.1.0  # Already included above, but adding comment for image processing
 uuid==1.30  # For generating unique filenames
+
+#social auth
+PyJWT==2.8.0
+requests-oauthlib==1.3.1

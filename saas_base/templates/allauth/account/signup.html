@@ -1,0 +1,51 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+{% load allauth %}
+
+{% block head_title %}{% trans "Sign Up" %}{% endblock head_title %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h2 class="text-center mb-4">{% trans "Create Account" %}</h2>
+    
+    <!-- Immediate Social Signup Buttons -->
+    <div class="d-grid gap-2 mb-4">
+      <a href="{% provider_login_url 'google' process='login' %}" class="btn btn-outline-danger">
+        <i class="bi bi-google"></i> Sign up with Google
+      </a>
+      <a href="{% provider_login_url 'facebook' process='login' %}" class="btn btn-outline-primary">
+        <i class="bi bi-facebook"></i> Sign up with Facebook
+      </a>
+      <a href="{% provider_login_url 'twitter' process='login' %}" class="btn btn-outline-info">
+        <i class="bi bi-twitter"></i> Sign up with Twitter
+      </a>
+    </div>
+    
+    <div class="text-center mb-3">
+      <hr>
+      <small class="text-muted bg-white px-3">or create account with email</small>
+    </div>
+    
+    <!-- Regular Signup Form -->
+    {% element form form=form method="post" action=signup_url %}
+      {% slot body %}
+        {% csrf_token %}
+        {% element fields form=form unlabeled=True %}
+        {% if redirect_field_value %}
+          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+        {% endif %}
+      {% endslot %}
+      {% slot actions %}
+        {% element button type="submit" %}
+          {% trans "Create Account" %}
+        {% endelement %}
+      {% endslot %}
+    {% endelement %}
+    
+    <div class="text-center mt-3">
+      <p>{% trans "Already have an account?" %} <a href="{% url 'account_login' %}">{% trans "Sign in here" %}</a></p>
+    </div>
+  </div>
+</div>
+{% endblock content %}

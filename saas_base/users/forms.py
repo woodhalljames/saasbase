@@ -2,6 +2,8 @@ from allauth.account.forms import SignupForm
 from allauth.socialaccount.forms import SignupForm as SocialSignupForm
 from django.contrib.auth import forms as admin_forms
 from django.utils.translation import gettext_lazy as _
+from django import forms
+from django.contrib.auth.forms import SetPasswordForm
 
 from .models import User
 
@@ -53,9 +55,54 @@ class UserSignupForm(SignupForm):
         
         return user
 
+# In saas_base/users/forms.py
 class UserSocialSignupForm(SocialSignupForm):
     """
     Renders the form when user has signed up using social accounts.
-    Default fields will be added automatically.
-    See UserSignupForm otherwise.
+    Ensures username is set even for social signups.
     """
+    username = forms.CharField(
+        max_length=150,
+        help_text="Choose a unique username for your account"
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make username required for social signups
+        self.fields['username'].required = True
+        
+    def save(self, request):
+        user = super().save(request)
+        # Username will be saved automatically by the parent class
+        return user
+    
+class UserUpdateForm(forms.ModelForm):
+    """Enhanced form for updating user profile"""
+    
+    class Meta:
+        model = User
+        fields = ['username', 'name', 'email']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+                'help_text': 'Letters, digits and @/./+/-/_ only.'
+            }),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+    
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        # Check if username is taken by another user
+        if User.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This username is already taken.")
+        return username
+
+
+class PasswordSetupForm(SetPasswordForm):
+    """Form for social users to set up a password"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['new_password2'].widget.attrs.update({'class': 'form-control'})

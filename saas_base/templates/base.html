@@ -176,7 +176,25 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
-
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state to social login buttons
+    document.querySelectorAll('[href*="provider_login_url"]').forEach(button => {
+        button.addEventListener('click', function() {
+            // Add loading state
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Connecting...';
+            this.disabled = true;
+            
+            // Re-enable after a timeout in case of errors
+            setTimeout(() => {
+                this.innerHTML = originalHtml;
+                this.disabled = false;
+            }, 10000);
+        });
+    });
+});
+</script>
 
  <div class="container">
     {% if messages %}

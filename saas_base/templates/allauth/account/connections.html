@@ -1,0 +1,53 @@
+<!-- saas_base/templates/allauth/socialaccount/connections.html -->
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="container py-4">
+  <h1>{% trans "Social Account Connections" %}</h1>
+  
+  {% if form.accounts %}
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>{% trans "Connected Accounts" %}</h5>
+      </div>
+      <div class="card-body">
+        {% for base_account in form.accounts %}
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <i class="bi bi-{{ base_account.account.provider }}"></i>
+              <strong>{{ base_account.account.get_provider.name }}</strong>: 
+              {{ base_account.account.extra_data.name|default:base_account.account.uid }}
+            </div>
+            {% if base_account.account.provider != "openid_connect" %}
+              <button class="btn btn-outline-danger btn-sm" 
+                      onclick="disconnectAccount('{{ base_account.account.id }}')">
+                {% trans "Disconnect" %}
+              </button>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+  
+  <div class="card">
+    <div class="card-header">
+      <h5>{% trans "Connect New Account" %}</h5>
+    </div>
+    <div class="card-body">
+      <div class="d-grid gap-2">
+        <a href="{% provider_login_url 'google' process='connect' %}" class="btn btn-outline-danger">
+          <i class="bi bi-google"></i> Connect Google
+        </a>
+        <a href="{% provider_login_url 'facebook' process='connect' %}" class="btn btn-outline-primary">
+          <i class="bi bi-facebook"></i> Connect Facebook  
+        </a>
+        <a href="{% provider_login_url 'twitter' process='connect' %}" class="btn btn-outline-info">
+          <i class="bi bi-twitter"></i> Connect Twitter
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
