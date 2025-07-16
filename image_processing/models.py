@@ -149,15 +149,15 @@ class UserImage(models.Model):
         return f"{self.user.username} - {self.original_filename}"
     
     def save(self, *args, **kwargs):
-        # Set image dimensions and file size
-        if self.image:
+        # Set image dimensions and file size before saving
+        if self.image and not self.width:
             img = Image.open(self.image)
             self.width, self.height = img.size
             self.file_size = self.image.size
             
         super().save(*args, **kwargs)
         
-        # Create thumbnail after saving
+        # Create thumbnail after saving (only if we don't have one)
         if self.image and not self.thumbnail:
             self.create_thumbnail()
     
@@ -167,20 +167,49 @@ class UserImage(models.Model):
             return
             
         try:
-            img = Image.open(self.image.path)
-            img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            from PIL import Image as PILImage
+            import os
+            from django.core.files.base import ContentFile
+            import io
             
-            # Save thumbnail
-            thumb_path = self.image.path.replace('.', '_thumb.')
-            img.save(thumb_path)
+            # Open the original image
+            img = PILImage.open(self.image.path)
             
-            # Update thumbnail field
-            rel_path = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-            self.thumbnail.name = rel_path
-            self.save(update_fields=['thumbnail'])
+            # Convert to RGB if necessary (for PNG with transparency)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = PILImage.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            
+            # Create thumbnail (300x300 max, keeping aspect ratio)
+            img.thumbnail((300, 300), PILImage.Resampling.LANCZOS)
+            
+            # Save to bytes
+            thumb_io = io.BytesIO()
+            img.save(thumb_io, format='JPEG', quality=85)
+            thumb_io.seek(0)
+            
+            # Generate thumbnail filename
+            name, ext = os.path.splitext(self.image.name)
+            thumb_filename = f"{name}_thumb.jpg"
+            
+            # Save the thumbnail
+            self.thumbnail.save(
+                os.path.basename(thumb_filename),
+                ContentFile(thumb_io.read()),
+                save=False
+            )
+            
+            # Save the model instance (without triggering infinite recursion)
+            super().save(update_fields=['thumbnail'])
+            
+            logger.info(f"Created thumbnail for image: {self.original_filename}")
+            
         except Exception as e:
             # Log error but don't fail the save
-            logger.error(f"Error creating thumbnail: {str(e)}")
+            logger.error(f"Error creating thumbnail for {self.original_filename}: {str(e)}")
     
     def get_absolute_url(self):
         return reverse('image_processing:image_detail', kwargs={'pk': self.pk})

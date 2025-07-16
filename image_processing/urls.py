@@ -1,5 +1,3 @@
-# image_processing/urls.py - Simplified wedding venue processing URLs
-
 from django.urls import path
 from . import views
 
@@ -8,6 +6,9 @@ app_name = 'image_processing'
 urlpatterns = [
     # Main Wedding Studio
     path('', views.wedding_studio, name='wedding_studio'),
+    
+    # AJAX Upload endpoint
+    path('upload/', views.ajax_upload_image, name='ajax_upload'),
     
     # Single Image Processing
     path('image/<int:pk>/', views.image_detail, name='image_detail'),
@@ -19,7 +20,7 @@ urlpatterns = [
     
     # Job Status
     path('job/<int:job_id>/status/', views.job_status, name='job_status'),
-    path('ajax-upload/', views.ajax_upload_image, name='ajax_upload'),
+    
     # Processed Images - Save/Keep functionality
     path('processed/<int:pk>/', views.processed_image_detail, name='processed_image_detail'),
     path('processed/<int:pk>/save/', views.save_processed_image, name='save_processed_image'),

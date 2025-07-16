@@ -55,6 +55,7 @@ def wedding_studio(request):
                 return redirect('image_processing:wedding_studio')
                 
             except Exception as e:
+                logger.error(f"Error uploading image: {str(e)}")
                 error_msg = f'Failed to upload image: {str(e)}'
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({'success': False, 'error': error_msg}, status=400)
@@ -99,7 +100,6 @@ def wedding_studio(request):
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
-
 
 @login_required
 @require_POST
@@ -693,38 +693,48 @@ def collection_detail(request, collection_id):
 @require_POST
 def ajax_upload_image(request):
     """Handle AJAX image uploads without page reload"""
-    upload_form = ImageUploadForm(request.POST, request.FILES)
-    
-    if upload_form.is_valid():
-        try:
+    try:
+        upload_form = ImageUploadForm(request.POST, request.FILES)
+        
+        if upload_form.is_valid():
             user_image = upload_form.save(commit=False)
             user_image.user = request.user
             user_image.original_filename = request.FILES['image'].name
             user_image.save()
             
+            # Force thumbnail creation
+            if not user_image.thumbnail:
+                user_image.create_thumbnail()
+                user_image.refresh_from_db()
+            
             return JsonResponse({
                 'success': True,
                 'image_id': user_image.id,
-                'image_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                'image_url': user_image.image.url,
+                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
                 'image_name': user_image.original_filename,
+                'width': user_image.width,
+                'height': user_image.height,
+                'file_size': user_image.file_size,
                 'message': f'"{user_image.original_filename}" uploaded successfully!'
             })
             
-        except Exception as e:
-            logger.error(f"Error uploading image: {str(e)}")
+        else:
+            errors = []
+            for field, field_errors in upload_form.errors.items():
+                errors.extend(field_errors)
+            
             return JsonResponse({
                 'success': False,
-                'error': f'Failed to upload image: {str(e)}'
-            }, status=500)
-    else:
-        errors = []
-        for field, field_errors in upload_form.errors.items():
-            errors.extend(field_errors)
-        
+                'error': ' '.join(errors)
+            }, status=400)
+    
+    except Exception as e:
+        logger.error(f"Error in upload: {str(e)}")
         return JsonResponse({
             'success': False,
-            'error': ' '.join(errors)
-        }, status=400)
+            'error': f'Upload failed: {str(e)}'
+        }, status=500)
     
 @login_required 
 def image_gallery(request):

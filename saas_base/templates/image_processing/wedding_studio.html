@@ -81,8 +81,8 @@
             
             <div class="mb-4">
               <label for="space-type" class="form-label fs-6"><strong>Celebration Purpose</strong></label>
-<select class="form-select" id="space-type" name="space_type" required>
-    <option value="">What will this space be used for?</option>
+              <select class="form-select" id="space-type" name="space_type" required>
+                <option value="">What will this space be used for?</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
@@ -180,45 +180,52 @@
     <!-- Left: Main Image Upload/Preview Area -->
     <div class="col-md-8 col-lg-9 order-md-1 mb-4">
       <div class="card h-100">
-        <div class="card-body d-flex align-items-center justify-content-center position-relative" style="min-height: 500px;">
+        <div class="card-body position-relative" style="min-height: 400px; height: 500px;">
           
-          <!-- Upload Area -->
-          <div id="uploadArea" class="text-center w-100">
-            <form id="uploadForm" class="h-100 d-flex flex-column justify-content-center">
-              {% csrf_token %}
-              <div class="upload-zone border-2 border-dashed rounded p-5" 
-                   style="cursor: pointer; border-color: #dee2e6; min-height: 400px;"
-                   onclick="document.getElementById('id_image').click()">
-                <i class="bi bi-cloud-upload text-primary" style="font-size: 4rem;"></i>
+          <!-- Upload Button - Top Left Corner -->
+          <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+            <button type="button" class="btn btn-primary" id="uploadBtn">
+              <i class="bi bi-camera"></i> Upload Photo
+            </button>
+            <!-- Hidden file input -->
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+          </div>
+          
+          <!-- Upload Area (shown when no image selected) -->
+          <div id="uploadArea" class="d-flex align-items-center justify-content-center h-100">
+            <div class="text-center" id="dropZone" style="cursor: pointer; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: 2px dashed #dee2e6; border-radius: 10px;">
+              <div>
+                <i class="bi bi-cloud-upload text-primary mb-3" style="font-size: 4rem;"></i>
                 <h4 class="mt-3">Upload Your Venue Photo</h4>
-                <p class="text-muted mb-4">Drop your image here or click to browse</p>
+                <p class="text-muted mb-4">Drop your image here or click "Upload Photo" above</p>
                 <p class="text-muted"><small>JPG, PNG, GIF, WebP • Max 5MB</small></p>
-                {{ upload_form.image }}
               </div>
-            </form>
+            </div>
           </div>
 
           <!-- Upload Progress -->
-          <div id="uploadProgress" class="text-center w-100" style="display: none;">
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Uploading...</span>
+          <div id="uploadProgress" class="d-flex align-items-center justify-content-center h-100" style="display: none !important;">
+            <div class="text-center">
+              <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Uploading...</span>
+              </div>
+              <h5>Uploading your photo...</h5>
+              <p class="text-muted">Please wait while we process your image</p>
+              <div class="progress mt-3" style="height: 6px; width: 300px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: 100%"></div>
+              </div>
             </div>
-            <h5>Uploading your photo...</h5>
-            <p class="text-muted">Please wait while we process your image</p>
           </div>
 
           <!-- Selected Image Preview -->
-          <div id="imagePreview" class="text-center w-100 position-relative" style="display: none;">
-            <button id="uploadNewBtn" class="btn btn-sm btn-outline-primary position-absolute" 
-                    style="top: 10px; right: 10px; z-index: 10;"
-                    title="Upload a different image">
-              <i class="bi bi-camera"></i>
-            </button>
-            
-            <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 450px; max-width: 100%;" alt="Selected Venue">
-            <div class="mt-3">
-              <p class="mb-1"><strong id="selectedImageName">Selected Image</strong></p>
-              <p class="text-muted mb-0" id="selectedImageDetails">Image details</p>
+          <div id="imagePreview" class="d-flex align-items-center justify-content-center h-100" style="display: none !important;">
+            <div class="text-center w-100">
+              <img id="selectedImage" class="img-fluid rounded shadow" style="max-height: 85%; max-width: 95%; object-fit: contain;" alt="Selected Venue">
+              <div class="mt-3">
+                <h5 id="selectedImageName">Selected Image</h5>
+                <p class="text-muted" id="selectedImageDetails">Image details</p>
+              </div>
             </div>
           </div>
         </div>
@@ -291,7 +298,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
     
     // Get all necessary elements
-    const fileInput = document.getElementById('id_image');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const dropZone = document.getElementById('dropZone');
     const uploadArea = document.getElementById('uploadArea');
     const uploadProgress = document.getElementById('uploadProgress');
     const imagePreview = document.getElementById('imagePreview');
@@ -301,7 +310,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const transformBtn = document.getElementById('transformBtn');
     const weddingTheme = document.getElementById('wedding-theme');
     const spaceType = document.getElementById('space-type');
-    const uploadNewBtn = document.getElementById('uploadNewBtn');
     const recentImagesContainer = document.getElementById('recentImagesContainer');
     const colorScheme = document.getElementById('color-scheme');
     const customColorsContainer = document.getElementById('custom-colors-container');
@@ -317,37 +325,61 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Handle file input change with AJAX upload
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                const file = this.files[0];
-                
-                // Validate file
-                if (!file.type.startsWith('image/')) {
-                    alert('Please select an image file');
-                    this.value = '';
-                    return;
-                }
-                
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('File too large (max 5MB)');
-                    this.value = '';
-                    return;
-                }
-                
-                uploadFileWithAjax(file);
-            }
-        });
-    }
+    // Upload button click handler
+    uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+    });
     
-    // Handle upload new button
-    if (uploadNewBtn) {
-        uploadNewBtn.addEventListener('click', function() {
-            if (fileInput) {
-                fileInput.click();
-            }
-        });
+    // Drop zone click handler  
+    dropZone.addEventListener('click', function(e) {
+        fileInput.click();
+    });
+    
+    // Drag and drop handlers
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#007bff';
+        dropZone.style.backgroundColor = '#f8f9fa';
+    });
+    
+    dropZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#dee2e6';
+        dropZone.style.backgroundColor = 'transparent';
+    });
+    
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#dee2e6';
+        dropZone.style.backgroundColor = 'transparent';
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+    
+    // File input change handler
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFileSelection(this.files[0]);
+        }
+    });
+    
+    // Handle file selection and upload
+    function handleFileSelection(file) {
+        // Validate file
+        if (!file.type.startsWith('image/')) {
+            showToast('Please select an image file', 'error');
+            return;
+        }
+        
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('File too large (max 5MB)', 'error');
+            return;
+        }
+        
+        uploadFileWithAjax(file);
     }
     
     // AJAX file upload function
@@ -362,25 +394,33 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('csrfmiddlewaretoken', csrfToken.value);
         }
         
-        fetch('/studio/', {
+        fetch('{% url "image_processing:ajax_upload" %}', {
             method: 'POST',
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Upload response:', data);
             if (data.success) {
-                addNewImageToRecent(data.image);
+                // Add to recent images
+                addNewImageToRecent(data);
+                
+                // Select the new image
                 setTimeout(() => {
-                    const newThumbnail = document.querySelector(`[data-image-id="${data.image.id}"]`);
-                    if (newThumbnail) {
-                        selectImage(newThumbnail);
-                    }
+                    selectImageById(data.image_id, data);
+                    showToast(data.message || 'Image uploaded successfully!', 'success');
                 }, 100);
-                showToast('Image uploaded successfully!', 'success');
-                if (fileInput) fileInput.value = '';
+                
+                // Clear file input
+                fileInput.value = '';
             } else {
                 throw new Error(data.error || 'Upload failed');
             }
@@ -400,16 +440,16 @@ document.addEventListener('DOMContentLoaded', function() {
         newThumbnail.className = 'col-4';
         newThumbnail.innerHTML = `
             <div class="card venue-thumbnail" 
-                 data-image-id="${imageData.id}"
-                 data-image-url="${imageData.thumbnail_url || imageData.image_url}"
-                 data-image-name="${imageData.original_filename}"
+                 data-image-id="${imageData.image_id}"
+                 data-image-url="${imageData.thumbnail_url}"
+                 data-image-name="${imageData.image_name}"
                  data-image-size="${imageData.file_size}"
                  data-image-dimensions="${imageData.width}x${imageData.height}"
                  style="cursor: pointer; transition: all 0.2s; border: 2px solid transparent;">
-                <img src="${imageData.thumbnail_url || imageData.image_url}" 
+                <img src="${imageData.thumbnail_url}" 
                      class="card-img-top" 
                      style="height: 80px; object-fit: cover; border-radius: 0.25rem;" 
-                     alt="${imageData.original_filename}">
+                     alt="${imageData.image_name}">
             </div>
         `;
         
@@ -432,21 +472,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle form field changes
-    [weddingTheme, spaceType].forEach(field => {
-        if (field) {
-            field.addEventListener('change', updateTransformBtnState);
+    // Select image by ID (for newly uploaded images)
+    function selectImageById(imageId, imageData) {
+        selectedImageId = imageId;
+        
+        if (selectedImage && selectedImageName && selectedImageDetails) {
+            selectedImage.src = imageData.image_url;
+            selectedImageName.textContent = imageData.image_name;
+            selectedImageDetails.textContent = `${imageData.width}x${imageData.height} • ${formatFileSize(imageData.file_size)}`;
+            showImagePreview();
         }
-    });
-    
-    // Handle visualize button
-    if (transformBtn) {
-        transformBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            visualizeVenue();
-        });
+        
+        updateTransformBtnState();
     }
     
+    // Select image from thumbnail
     function selectImage(thumbnail) {
         // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
@@ -474,14 +514,29 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTransformBtnState();
     }
     
+    // Handle form field changes
+    [weddingTheme, spaceType].forEach(field => {
+        if (field) {
+            field.addEventListener('change', updateTransformBtnState);
+        }
+    });
+    
+    // Handle visualize button
+    if (transformBtn) {
+        transformBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            visualizeVenue();
+        });
+    }
+    
     function showUploadProgress() {
-        if (uploadArea) uploadArea.style.display = 'none';
-        if (imagePreview) imagePreview.style.display = 'none';
-        if (uploadProgress) uploadProgress.style.display = 'block';
+        uploadArea.style.display = 'none';
+        imagePreview.style.display = 'none';
+        uploadProgress.style.display = 'flex';
     }
     
     function hideUploadProgress() {
-        if (uploadProgress) uploadProgress.style.display = 'none';
+        uploadProgress.style.display = 'none';
         if (selectedImageId) {
             showImagePreview();
         } else {
@@ -490,15 +545,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showImagePreview() {
-        if (uploadArea) uploadArea.style.display = 'none';
-        if (uploadProgress) uploadProgress.style.display = 'none';
-        if (imagePreview) imagePreview.style.display = 'block';
+        uploadArea.style.display = 'none';
+        uploadProgress.style.display = 'none';
+        imagePreview.style.display = 'flex';
     }
     
     function showUploadArea() {
-        if (imagePreview) imagePreview.style.display = 'none';
-        if (uploadProgress) uploadProgress.style.display = 'none';
-        if (uploadArea) uploadArea.style.display = 'block';
+        imagePreview.style.display = 'none';
+        uploadProgress.style.display = 'none';
+        uploadArea.style.display = 'flex';
     }
     
     function updateTransformBtnState() {
@@ -515,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function visualizeVenue() {
         if (!selectedImageId) {
-            alert('Please select a venue photo first');
+            showToast('Please select a venue photo first', 'error');
             return;
         }
         
@@ -523,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const space = spaceType.value;
         
         if (!theme || !space) {
-            alert('Please select both wedding style and space type');
+            showToast('Please select both wedding style and space type', 'error');
             return;
         }
         
@@ -557,17 +612,18 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                showToast('Processing started! Redirecting to history...', 'success');
                 setTimeout(() => {
                     window.location.href = data.redirect_url;
                 }, 2000);
             } else {
-                alert('Error: ' + data.error);
+                showToast('Error: ' + data.error, 'error');
                 resetTransformBtn();
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while processing your venue');
+            showToast('An error occurred while processing your venue', 'error');
             resetTransformBtn();
         });
     }
