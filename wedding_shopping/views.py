@@ -135,54 +135,48 @@ class PublicCoupleDetailView(DetailView):
         return context
 
 
-class CoupleProfileCreateView(LoginRequiredMixin, CreateView):
-    """Create a new couple profile"""
-    model = CoupleProfile
-    form_class = CoupleProfileForm
-    template_name = 'wedding_shopping/couple_form.html'
-    
-    def get_success_url(self):
-        return reverse('wedding_shopping:couple_manage', kwargs={'pk': self.object.pk})
-    
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        return super().form_valid(form)
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['title'] = "Create Your Wedding Page"
-        return context
-
-
-class CoupleProfileUpdateView(LoginRequiredMixin, UpdateView):
-    """Update couple profile with all related data"""
+class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
+    """Single view to create or update couple profile"""
     model = CoupleProfile
     form_class = CoupleProfileForm
     template_name = 'wedding_shopping/couple_manage.html'
     
-    def get_queryset(self):
-        return CoupleProfile.objects.filter(user=self.request.user)
+    def get_object(self, queryset=None):
+        """Get existing profile or create a new one"""
+        try:
+            return CoupleProfile.objects.get(user=self.request.user)
+        except CoupleProfile.DoesNotExist:
+            # Return a new unsaved instance
+            return CoupleProfile(user=self.request.user)
     
     def get_success_url(self):
-        return reverse('wedding_shopping:couple_manage', kwargs={'pk': self.object.pk})
+        return reverse('wedding_shopping:manage_wedding_page')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
+        # Determine if this is create or update mode
+        is_new = not self.object.pk
+        context['is_new'] = is_new
+        context['title'] = "Create Your Wedding Page" if is_new else "Manage Your Wedding Page"
+        
         if self.request.POST:
-            context['social_formset'] = SocialMediaFormSet(
-                self.request.POST, instance=self.object
-            )
-            context['registry_formset'] = RegistryFormSet(
-                self.request.POST, instance=self.object
-            )
-            context['photo_formset'] = PhotoCollectionFormSet(
-                self.request.POST, instance=self.object
-            )
+            # Only show formsets if we have an existing object
+            if not is_new:
+                context['social_formset'] = SocialMediaFormSet(
+                    self.request.POST, instance=self.object
+                )
+                context['registry_formset'] = RegistryFormSet(
+                    self.request.POST, instance=self.object
+                )
+                context['photo_formset'] = PhotoCollectionFormSet(
+                    self.request.POST, instance=self.object
+                )
         else:
-            context['social_formset'] = SocialMediaFormSet(instance=self.object)
-            context['registry_formset'] = RegistryFormSet(instance=self.object)
-            context['photo_formset'] = PhotoCollectionFormSet(instance=self.object)
+            if not is_new:
+                context['social_formset'] = SocialMediaFormSet(instance=self.object)
+                context['registry_formset'] = RegistryFormSet(instance=self.object)
+                context['photo_formset'] = PhotoCollectionFormSet(instance=self.object)
         
         # Get user's collections from image_processing app for easier selection
         try:
@@ -193,23 +187,32 @@ class CoupleProfileUpdateView(LoginRequiredMixin, UpdateView):
         except:
             context['user_collections'] = []
         
-        context['title'] = "Manage Your Wedding Page"
         return context
     
     def form_valid(self, form):
         context = self.get_context_data()
-        social_formset = context['social_formset']
-        registry_formset = context['registry_formset']
-        photo_formset = context['photo_formset']
+        is_new = context['is_new']
+        
+        # For new profiles, just save the basic form first
+        if is_new:
+            form.instance.user = self.request.user
+            self.object = form.save()
+            messages.success(self.request, "Your wedding page has been created! You can now add social links, registries, and photo collections.")
+            return redirect(self.get_success_url())
+        
+        # For existing profiles, handle all formsets
+        social_formset = context.get('social_formset')
+        registry_formset = context.get('registry_formset')
+        photo_formset = context.get('photo_formset')
         
         with transaction.atomic():
             self.object = form.save()
             
-            if social_formset.is_valid():
+            if social_formset and social_formset.is_valid():
                 social_formset.instance = self.object
                 social_formset.save()
             
-            if registry_formset.is_valid():
+            if registry_formset and registry_formset.is_valid():
                 registry_formset.instance = self.object
                 # Process affiliate URLs here if needed
                 for registry_form in registry_formset:
@@ -220,7 +223,7 @@ class CoupleProfileUpdateView(LoginRequiredMixin, UpdateView):
                         registry.save()
                 registry_formset.save()
             
-            if photo_formset.is_valid():
+            if photo_formset and photo_formset.is_valid():
                 photo_formset.instance = self.object
                 photo_formset.save()
         
@@ -230,12 +233,8 @@ class CoupleProfileUpdateView(LoginRequiredMixin, UpdateView):
 
 @login_required
 def couple_dashboard(request):
-    """Dashboard for managing couple profile"""
-    try:
-        couple_profile = CoupleProfile.objects.get(user=request.user)
-        return redirect('wedding_shopping:couple_manage', pk=couple_profile.pk)
-    except CoupleProfile.DoesNotExist:
-        return redirect('wedding_shopping:couple_create')
+    """Dashboard redirects to the single manage page"""
+    return redirect('wedding_shopping:manage_wedding_page')
 
 
 def registry_redirect(request, pk):

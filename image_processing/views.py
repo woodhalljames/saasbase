@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.db import transaction
 from django.urls import reverse
 
@@ -102,87 +102,86 @@ def wedding_studio(request):
     return render(request, 'image_processing/wedding_studio.html', context)
 
 @login_required
-@require_POST
-@usage_limit_required(tokens=1)
-def process_wedding_image(request, pk):
-    """Process a single image with enhanced wedding parameters - FIXED TRANSACTION HANDLING"""
-    user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
-    
+@require_http_methods(["POST"])
+def process_wedding_image(request, image_id):
+    """Process wedding venue image with AI transformation"""
     try:
-        data = json.loads(request.body)
+        # Get the user's image
+        user_image = get_object_or_404(UserImage, id=image_id, user=request.user)
         
-        # Required fields
+        # Check usage limits before processing
+        from usage_limits.usage_tracker import UsageTracker
+        usage_data = UsageTracker.get_usage_data(request.user)
+        
+        if usage_data['remaining'] <= 0:
+            return JsonResponse({
+                'success': False,
+                'error': 'You have reached your monthly transformation limit. Please upgrade your subscription to continue.',
+                'usage_data': usage_data,
+                'needs_upgrade': True
+            }, status=429)
+        
+        # Try to increment usage (this will fail if no tokens available)
+        if not UsageTracker.increment_usage(request.user, 1):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Unable to process - monthly limit reached. Please upgrade your subscription.',
+                'usage_data': UsageTracker.get_usage_data(request.user),
+                'needs_upgrade': True
+            }, status=429)
+        
+        # Parse request data
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid request data'
+            }, status=400)
+        
+        # Validate required fields
         wedding_theme = data.get('wedding_theme')
         space_type = data.get('space_type')
         
         if not wedding_theme or not space_type:
             return JsonResponse({
-                'error': 'Both wedding theme and space type are required'
+                'success': False,
+                'error': 'Wedding theme and space type are required'
             }, status=400)
         
-        # Validate choices
-        valid_themes = [choice[0] for choice in WEDDING_THEMES]
-        valid_spaces = [choice[0] for choice in SPACE_TYPES]
+        # Create processing job
+        job_data = {
+            'user_image': user_image,
+            'wedding_theme': wedding_theme,
+            'space_type': space_type,
+            'guest_count': data.get('guest_count', ''),
+            'budget_level': data.get('budget_level', ''),
+            'season': data.get('season', ''),
+            'time_of_day': data.get('time_of_day', ''),
+            'color_scheme': data.get('color_scheme', ''),
+            'custom_colors': data.get('custom_colors', ''),
+            'additional_details': data.get('additional_details', ''),
+        }
         
-        if wedding_theme not in valid_themes or space_type not in valid_spaces:
-            return JsonResponse({'error': 'Invalid wedding theme or space type'}, status=400)
+        job = ProcessingJob.objects.create(**job_data)
         
-        # Optional dynamic parameters
-        guest_count = data.get('guest_count', '')
-        budget_level = data.get('budget_level', '')
-        season = data.get('season', '')
-        time_of_day = data.get('time_of_day', '')
-        color_scheme = data.get('color_scheme', '')
-        custom_colors = data.get('custom_colors', '')
-        additional_details = data.get('additional_details', '')
-        
-        # Create processing job with proper transaction handling
-        job = None
-        
-        # Create the job first
-        with transaction.atomic():
-            job = ImageProcessingJob.objects.create(
-                user_image=user_image,
-                wedding_theme=wedding_theme,
-                space_type=space_type,
-                guest_count=guest_count,
-                budget_level=budget_level,
-                season=season,
-                time_of_day=time_of_day,
-                color_scheme=color_scheme,
-                custom_colors=custom_colors,
-                additional_details=additional_details,
-                # SD3 Turbo defaults
-                strength=0.35,
-                aspect_ratio='1:1',
-                seed=None
-            )
-            
-            # Log job creation
-            logger.info(f"Created processing job {job.id} for user {request.user.username}")
-        
-        # Queue the task AFTER the transaction is committed
-        # This ensures the job exists in the database when the worker tries to find it
-        transaction.on_commit(lambda: process_image_async.delay(job.id))
-        
-        # Get display names
-        theme_display = dict(WEDDING_THEMES)[wedding_theme]
-        space_display = dict(SPACE_TYPES)[space_type]
-        
-        logger.info(f"Queued processing task for job {job.id}")
+        # Queue the processing task
+        from image_processing.tasks import process_wedding_venue
+        process_wedding_venue.delay(job.id)
         
         return JsonResponse({
             'success': True,
             'job_id': job.id,
-            'message': f'Transforming your {space_display} into {theme_display} style...',
-            'redirect_url': reverse('image_processing:processing_history')
+            'redirect_url': reverse('image_processing:processing_history'),
+            'message': 'Your wedding transformation has been queued for processing!'
         })
         
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Exception as e:
-        logger.error(f"Error processing wedding image: {str(e)}")
-        return JsonResponse({'error': 'Processing failed'}, status=500)
+        logger.error(f"Error in process_wedding_image: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred. Please try again.'
+        }, status=500)
 
 
 @login_required
@@ -710,8 +709,8 @@ def ajax_upload_image(request):
             return JsonResponse({
                 'success': True,
                 'image_id': user_image.id,
-                'image_url': user_image.image.url,
-                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                'image_url': user_image.image.url,  # Full resolution image
+                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,  # Thumbnail for sidebar
                 'image_name': user_image.original_filename,
                 'width': user_image.width,
                 'height': user_image.height,

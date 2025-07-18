@@ -11,3 +11,274 @@
   background-color: #f2dede;
   border-color: #eed3d7;
 }
+
+
+
+/* Mobile Responsive CSS for Wedding Studio */
+
+/* Main container adjustments for mobile */
+@media (max-width: 768px) {
+  .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  /* Header adjustments */
+  .display-5 {
+    font-size: 2rem;
+  }
+  
+  /* Reorder layout for mobile - controls on top */
+  .col-md-4.order-md-2 {
+    order: 1;
+  }
+  
+  .col-md-8.order-md-1 {
+    order: 2;
+  }
+  
+  /* Image preview container mobile optimization */
+  #imagePreview {
+    min-height: 250px !important;
+    max-height: 400px !important;
+  }
+  
+  #selectedImage {
+    max-height: 300px !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    height: auto !important;
+    width: auto !important;
+  }
+  
+  /* Upload area mobile optimization */
+  #uploadArea {
+    min-height: 200px !important;
+  }
+  
+  #dropZone {
+    min-height: 200px !important;
+    padding: 20px !important;
+  }
+  
+  #dropZone h4 {
+    font-size: 1.25rem;
+  }
+  
+  #dropZone .bi-cloud-upload {
+    font-size: 2.5rem !important;
+  }
+  
+  /* Card body adjustments */
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  /* Upload button positioning for mobile */
+  .position-absolute.top-0.start-0.m-3 {
+    position: relative !important;
+    margin: 0 0 1rem 0 !important;
+    text-align: center;
+  }
+  
+  /* Controls card mobile optimization */
+  .col-md-4 .card-body {
+    padding: 1rem !important;
+  }
+  
+  /* Form elements mobile optimization */
+  .form-select,
+  .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Button adjustments */
+  .btn-lg {
+    padding: 0.75rem 1.25rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Recent images container mobile */
+  .venue-thumbnail img {
+    height: 60px !important;
+  }
+  
+  /* Image info overlay mobile */
+  .position-absolute.bottom-0.start-50 {
+    position: absolute !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    text-align: center !important;
+  }
+  
+  /* Processing status mobile */
+  #processingStatus .card-body {
+    padding: 1rem !important;
+  }
+  
+  #processingStatus .display-6 {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 576px) {
+  /* Further reduce image container height */
+  #imagePreview {
+    min-height: 200px !important;
+    max-height: 300px !important;
+  }
+  
+  #selectedImage {
+    max-height: 250px !important;
+  }
+  
+  #uploadArea {
+    min-height: 180px !important;
+  }
+  
+  #dropZone {
+    min-height: 180px !important;
+    padding: 15px !important;
+  }
+  
+  /* Smaller upload icon and text */
+  #dropZone .bi-cloud-upload {
+    font-size: 2rem !important;
+  }
+  
+  #dropZone h4 {
+    font-size: 1.1rem;
+  }
+  
+  #dropZone p {
+    font-size: 0.9rem;
+  }
+  
+  /* Recent uploads - make smaller on very small screens */
+  .venue-thumbnail img {
+    height: 50px !important;
+  }
+  
+  /* Compact card headers */
+  .card-header h5,
+  .card-header h6 {
+    font-size: 1rem;
+  }
+  
+  /* Smaller margins and padding */
+  .mb-4 {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .py-4 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+}
+
+/* Landscape mobile phones */
+@media (max-width: 768px) and (orientation: landscape) {
+  #imagePreview {
+    min-height: 180px !important;
+    max-height: 250px !important;
+  }
+  
+  #selectedImage {
+    max-height: 200px !important;
+  }
+  
+  #uploadArea {
+    min-height: 150px !important;
+  }
+  
+  #dropZone {
+    min-height: 150px !important;
+  }
+}
+
+/* Image aspect ratio preservation */
+.img-responsive {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Ensure proper flexbox behavior */
+.d-flex.flex-column {
+  height: 100%;
+}
+
+.flex-grow-1 {
+  flex-grow: 1;
+  min-height: 0; /* Important for proper flex behavior */
+}
+
+/* Touch-friendly button sizing */
+@media (max-width: 768px) {
+  .btn {
+    min-height: 44px; /* Apple's recommended touch target size */
+    min-width: 44px;
+  }
+  
+  .btn-sm {
+    min-height: 36px;
+    min-width: 36px;
+  }
+}
+
+/* Loading and error states mobile optimization */
+@media (max-width: 768px) {
+  .spinner-border {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+  
+  .alert {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Improve text readability on mobile */
+@media (max-width: 768px) {
+  .text-muted {
+    color: #666 !important;
+  }
+  
+  .small, small {
+    font-size: 0.85rem;
+  }
+}
+
+/* Fix z-index issues on mobile */
+.position-fixed {
+  z-index: 1050;
+}
+
+/* Ensure proper image centering */
+#imagePreview img {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Mobile-specific image container */
+@media (max-width: 768px) {
+  .image-container-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .image-container-mobile img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+}

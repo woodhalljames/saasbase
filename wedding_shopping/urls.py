@@ -1,14 +1,12 @@
-# wedding_shopping/urls.py
 from django.urls import path
 from . import views
 
 app_name = 'wedding_shopping'
 
 urlpatterns = [
-    # Dashboard and management
+    # Single dashboard/management page (create or edit)
     path('', views.couple_dashboard, name='dashboard'),
-    path('create/', views.CoupleProfileCreateView.as_view(), name='couple_create'),
-    path('manage/<int:pk>/', views.CoupleProfileUpdateView.as_view(), name='couple_manage'),
+    path('manage/', views.CoupleProfileManageView.as_view(), name='manage_wedding_page'),
     
     # Public couple pages
     path('couple/<uuid:share_token>/', views.PublicCoupleDetailView.as_view(), name='public_couple'),

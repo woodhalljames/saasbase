@@ -35,7 +35,6 @@
 {# Placed at the top of the document so pages load faster with defer #}
 {% block javascript %}
 
-
 <!-- Bootstrap JS -->
 <script defer
         src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
@@ -44,12 +43,8 @@
         referrerpolicy="no-referrer"></script>
 <!-- Your stuff: Third-party javascript libraries go here -->
 
-
 <!-- place project specific Javascript in this file -->
-
-  
   <script defer src="{% static 'js/project.js' %}"></script>
-
 
 {% endblock javascript %}
 </head>
@@ -100,7 +95,34 @@
                 </a></li>
               </ul>
             </li>
-          {% endif %}
+
+            <!-- Wedding Page Menu -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="weddingDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-heart-fill"></i> Wedding Page
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="weddingDropdown">
+                <li><a class="dropdown-item" href="{% url 'wedding_shopping:dashboard' %}">
+                  <i class="bi bi-house-heart"></i> My Wedding Page
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'wedding_shopping:couple_create' %}">
+                  <i class="bi bi-plus-circle"></i> Create Wedding Page
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'wedding_shopping:public_couples_list' %}">
+                  <i class="bi bi-search-heart"></i> Discover Weddings
+                </a></li>
+              </ul>
+            </li>
+            {% else %}
+            <!-- For non-authenticated users, show a simpler link -->
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'wedding_shopping:public_couples_list' %}">
+                <i class="bi bi-heart"></i> Wedding Pages
+              </a>
+            </li>
+            {% endif %}
             
             <li class="nav-item">
               <a class="nav-link" href="{% url 'subscriptions:pricing' %}">Pricing</a>
@@ -133,24 +155,22 @@
           </ul>
           
           <!-- Usage indicator for authenticated users -->
-          {% if request.user.is_authenticated %}
-            <div class="navbar-text me-3">
-              {% load static %}
-              {% comment %}You can add a usage indicator here{% endcomment %}
-              <small class="text-muted">
-                <i class="bi bi-lightning"></i>
-                <span id="usage-indicator">Loading...</span>
-              </small>
-            </div>
-          {% endif %}
+{% if request.user.is_authenticated %}
+  <div class="navbar-text me-3">
+    <a href="{% url 'users:detail' request.user.username %}" class="text-decoration-none">
+      <small class="text-muted">
+        <i class="bi bi-lightning-fill text-warning"></i>
+        <span id="usage-indicator">Loading...</span>
+      </small>
+    </a>
+  </div>
+{% endif %}
         </div>
       </div>
     </nav>
   </div>
   
-  
-
-<!-- Add this script at the bottom of base.html to load usage data -->
+<!-- Update the existing JavaScript section in base.html -->
 {% if request.user.is_authenticated %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -161,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // If the user can access the studio dashboard, show usage
                 const indicator = document.getElementById('usage-indicator');
                 if (indicator) {
-                    // You can make an AJAX call to get usage data or embed it in the template
-                    indicator.innerHTML = '{{ request.user.subscription.get_usage_data.remaining|default:"0" }} left';
+                    // Show just the number without "left"
+                    indicator.innerHTML = '{{ request.user.subscription.get_usage_data.remaining|default:"0" }}';
                 }
             }
         })
@@ -176,6 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endif %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Add loading state to social login buttons

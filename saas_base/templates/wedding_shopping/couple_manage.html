@@ -10,10 +10,14 @@
   <div class="row mb-4">
     <div class="col-md-8">
       <h1>{{ title }}</h1>
-      <p class="text-muted">Create and manage your public wedding page</p>
+      {% if is_new %}
+        <p class="text-muted">Create your beautiful wedding page to share with family and friends</p>
+      {% else %}
+        <p class="text-muted">Manage your wedding page and share your celebration</p>
+      {% endif %}
     </div>
     <div class="col-md-4 text-end">
-      {% if object %}
+      {% if not is_new and object %}
         <a href="{{ object.get_public_url }}" 
            class="btn btn-success me-2" 
            target="_blank">
@@ -93,7 +97,7 @@
               <div class="col-md-6 mb-3">
                 <label for="{{ form.couple_photo.id_for_label }}" class="form-label">Couple Photo</label>
                 {{ form.couple_photo }}
-                {% if object.couple_photo %}
+                {% if object and object.couple_photo %}
                   <div class="mt-2">
                     <img src="{{ object.couple_photo.url }}" 
                          class="img-thumbnail" 
@@ -108,7 +112,7 @@
               <div class="col-md-6 mb-3">
                 <label for="{{ form.venue_photo.id_for_label }}" class="form-label">Venue Photo</label>
                 {{ form.venue_photo }}
-                {% if object.venue_photo %}
+                {% if object and object.venue_photo %}
                   <div class="mt-2">
                     <img src="{{ object.venue_photo.url }}" 
                          class="img-thumbnail" 
@@ -138,165 +142,43 @@
           </div>
         </div>
 
-        <!-- Social Media Links -->
-        <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-share"></i> Social Media</h5>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSocialForm()">
-              <i class="bi bi-plus"></i> Add Social Link
-            </button>
-          </div>
-          <div class="card-body">
-            <div id="social-formset">
-              {{ social_formset.management_form }}
-              {% for form in social_formset %}
-                <div class="social-form border rounded p-3 mb-3">
-                  {% if form.non_field_errors %}
-                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                  {% endif %}
-                  
-                  <div class="row">
-                    <div class="col-md-3 mb-2">
-                      <label class="form-label">Platform</label>
-                      {{ form.platform }}
-                    </div>
-                    <div class="col-md-3 mb-2">
-                      <label class="form-label">Platform Name</label>
-                      {{ form.platform_name }}
-                    </div>
-                    <div class="col-md-4 mb-2">
-                      <label class="form-label">URL</label>
-                      {{ form.url }}
-                    </div>
-                    <div class="col-md-2 mb-2">
-                      <label class="form-label">Display Name</label>
-                      {{ form.display_name }}
-                    </div>
-                  </div>
-                  
-                  <div class="text-end">
-                    {% if form.instance.pk %}
-                      {{ form.DELETE }}
-                      <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
-                        <i class="bi bi-trash"></i> Delete
-                      </label>
-                    {% endif %}
-                  </div>
-                  
-                  {% for hidden in form.hidden_fields %}
-                    {{ hidden }}
-                  {% endfor %}
-                </div>
-              {% endfor %}
+        <!-- Only show advanced sections if this is an existing profile -->
+        {% if not is_new %}
+          <!-- Social Media Links -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-share"></i> Social Media</h5>
+              <small class="text-muted">Optional - Add after creating your page</small>
             </div>
-          </div>
-        </div>
-
-        <!-- Wedding Registries -->
-        <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-gift"></i> Wedding Registries</h5>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRegistryForm()">
-              <i class="bi bi-plus"></i> Add Registry
-            </button>
-          </div>
-          <div class="card-body">
-            <div id="registry-formset">
-              {{ registry_formset.management_form }}
-              {% for form in registry_formset %}
-                <div class="registry-form border rounded p-3 mb-3">
-                  {% if form.non_field_errors %}
-                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                  {% endif %}
-                  
-                  <div class="row">
-                    <div class="col-md-3 mb-2">
-                      <label class="form-label">Registry Type</label>
-                      {{ form.registry_type }}
-                    </div>
-                    <div class="col-md-3 mb-2">
-                      <label class="form-label">Registry Name</label>
-                      {{ form.registry_name }}
-                    </div>
-                    <div class="col-md-6 mb-2">
-                      <label class="form-label">Registry URL</label>
-                      {{ form.original_url }}
-                    </div>
-                  </div>
-                  
-                  <div class="row">
-                    <div class="col-md-6 mb-2">
-                      <label class="form-label">Display Name</label>
-                      {{ form.display_name }}
-                    </div>
-                    <div class="col-md-6 mb-2">
-                      <label class="form-label">Description</label>
-                      {{ form.description }}
-                    </div>
-                  </div>
-                  
-                  <div class="text-end">
-                    {% if form.instance.pk %}
-                      {{ form.DELETE }}
-                      <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
-                        <i class="bi bi-trash"></i> Delete
-                      </label>
+            <div class="card-body">
+              <div id="social-formset">
+                {{ social_formset.management_form }}
+                {% for form in social_formset %}
+                  <div class="social-form border rounded p-3 mb-3">
+                    {% if form.non_field_errors %}
+                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
                     {% endif %}
-                  </div>
-                  
-                  {% for hidden in form.hidden_fields %}
-                    {{ hidden }}
-                  {% endfor %}
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-
-        <!-- Photo Collections -->
-        <div class="card mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-collection"></i> Wedding Venue Collections</h5>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPhotoForm()">
-              <i class="bi bi-plus"></i> Add Collection
-            </button>
-          </div>
-          <div class="card-body">
-            {% if user_collections %}
-              <div class="alert alert-info">
-                <strong>Your Collections:</strong>
-                {% for collection in user_collections %}
-                  <span class="badge bg-primary me-1">{{ collection.name }} (ID: {{ collection.id }})</span>
-                {% endfor %}
-              </div>
-            {% endif %}
-            
-            <div id="photo-formset">
-              {{ photo_formset.management_form }}
-              {% for form in photo_formset %}
-                <div class="photo-form border rounded p-3 mb-3">
-                  {% if form.non_field_errors %}
-                    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                  {% endif %}
-                  
-                  <div class="row">
-                    <div class="col-md-4 mb-2">
-                      <label class="form-label">Collection Name</label>
-                      {{ form.collection_name }}
-                    </div>
-                    <div class="col-md-3 mb-2">
-                      <label class="form-label">Studio Collection ID</label>
-                      {{ form.studio_collection_id }}
-                    </div>
-                    <div class="col-md-3 mb-2">
-                      <div class="form-check mt-4">
-                        {{ form.is_featured }}
-                        <label for="{{ form.is_featured.id_for_label }}" class="form-check-label">
-                          Featured
-                        </label>
+                    
+                    <div class="row">
+                      <div class="col-md-3 mb-2">
+                        <label class="form-label">Platform</label>
+                        {{ form.platform }}
+                      </div>
+                      <div class="col-md-3 mb-2">
+                        <label class="form-label">Platform Name</label>
+                        {{ form.platform_name }}
+                      </div>
+                      <div class="col-md-4 mb-2">
+                        <label class="form-label">URL</label>
+                        {{ form.url }}
+                      </div>
+                      <div class="col-md-2 mb-2">
+                        <label class="form-label">Display Name</label>
+                        {{ form.display_name }}
                       </div>
                     </div>
-                    <div class="col-md-2 text-end">
+                    
+                    <div class="text-end">
                       {% if form.instance.pk %}
                         {{ form.DELETE }}
                         <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
@@ -304,23 +186,165 @@
                         </label>
                       {% endif %}
                     </div>
+                    
+                    {% for hidden in form.hidden_fields %}
+                      {{ hidden }}
+                    {% endfor %}
                   </div>
-                  
-                  <div class="row">
-                    <div class="col-12 mb-2">
-                      <label class="form-label">Description</label>
-                      {{ form.description }}
-                    </div>
-                  </div>
-                  
-                  {% for hidden in form.hidden_fields %}
-                    {{ hidden }}
-                  {% endfor %}
-                </div>
-              {% endfor %}
+                {% endfor %}
+              </div>
             </div>
           </div>
-        </div>
+
+          <!-- Wedding Registries -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-gift"></i> Wedding Registries</h5>
+              <small class="text-muted">Optional - Add after creating your page</small>
+            </div>
+            <div class="card-body">
+              <div id="registry-formset">
+                {{ registry_formset.management_form }}
+                {% for form in registry_formset %}
+                  <div class="registry-form border rounded p-3 mb-3">
+                    {% if form.non_field_errors %}
+                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    
+                    <div class="row">
+                      <div class="col-md-3 mb-2">
+                        <label class="form-label">Registry Type</label>
+                        {{ form.registry_type }}
+                      </div>
+                      <div class="col-md-3 mb-2">
+                        <label class="form-label">Registry Name</label>
+                        {{ form.registry_name }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label class="form-label">Registry URL</label>
+                        {{ form.original_url }}
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6 mb-2">
+                        <label class="form-label">Display Name</label>
+                        {{ form.display_name }}
+                      </div>
+                      <div class="col-md-6 mb-2">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                      </div>
+                    </div>
+                    
+                    <div class="text-end">
+                      {% if form.instance.pk %}
+                        {{ form.DELETE }}
+                        <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
+                          <i class="bi bi-trash"></i> Delete
+                        </label>
+                      {% endif %}
+                    </div>
+                    
+                    {% for hidden in form.hidden_fields %}
+                      {{ hidden }}
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Photo Collections -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="bi bi-collection"></i> Wedding Venue Collections</h5>
+              <small class="text-muted">Optional - Add after creating your page</small>
+            </div>
+            <div class="card-body">
+              {% if user_collections %}
+                <div class="alert alert-info">
+                  <strong>Your Collections:</strong>
+                  {% for collection in user_collections %}
+                    <span class="badge bg-primary me-1">{{ collection.name }} (ID: {{ collection.id }})</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              
+              <div id="photo-formset">
+                {{ photo_formset.management_form }}
+                {% for form in photo_formset %}
+                  <div class="photo-form border rounded p-3 mb-3">
+                    {% if form.non_field_errors %}
+                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    
+                    <div class="row">
+                      <div class="col-md-4 mb-2">
+                        <label class="form-label">Collection Name</label>
+                        {{ form.collection_name }}
+                      </div>
+                      <div class="col-md-3 mb-2">
+                        <label class="form-label">Studio Collection ID</label>
+                        {{ form.studio_collection_id }}
+                      </div>
+                      <div class="col-md-3 mb-2">
+                        <div class="form-check mt-4">
+                          {{ form.is_featured }}
+                          <label for="{{ form.is_featured.id_for_label }}" class="form-check-label">
+                            Featured
+                          </label>
+                        </div>
+                      </div>
+                      <div class="col-md-2 text-end">
+                        {% if form.instance.pk %}
+                          {{ form.DELETE }}
+                          <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
+                            <i class="bi bi-trash"></i> Delete
+                          </label>
+                        {% endif %}
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-12 mb-2">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                      </div>
+                    </div>
+                    
+                    {% for hidden in form.hidden_fields %}
+                      {{ hidden }}
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <!-- Message for new users -->
+          <div class="card mb-4 bg-light">
+            <div class="card-body text-center">
+              <i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem;"></i>
+              <h5>What's Next?</h5>
+              <p class="text-muted">After creating your wedding page, you'll be able to add:</p>
+              <div class="row">
+                <div class="col-md-4">
+                  <i class="bi bi-share text-primary mb-2"></i>
+                  <h6>Social Links</h6>
+                </div>
+                <div class="col-md-4">
+                  <i class="bi bi-gift text-primary mb-2"></i>
+                  <h6>Wedding Registries</h6>
+                </div>
+                <div class="col-md-4">
+                  <i class="bi bi-collection text-primary mb-2"></i>
+                  <h6>Photo Collections</h6>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endif %}
       </div>
 
       <!-- Sidebar -->
@@ -341,7 +365,7 @@
               </div>
             </div>
             
-            {% if object %}
+            {% if not is_new and object %}
               <hr>
               <div class="mb-3">
                 <label class="form-label">Share URL</label>
@@ -366,33 +390,36 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
-          </div>
-          <div class="card-body">
-            <div class="d-grid gap-2">
-              <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-outline-primary">
-                <i class="bi bi-magic"></i> Create Wedding Transformations
-              </a>
-              <a href="{% url 'image_processing:collections_list' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-collection"></i> Manage Collections
-              </a>
-              {% if object %}
-                <a href="{{ object.get_public_url }}" class="btn btn-outline-success" target="_blank">
-                  <i class="bi bi-eye"></i> Preview Public Page
+        {% if not is_new %}
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-outline-primary">
+                  <i class="bi bi-magic"></i> Create Wedding Transformations
                 </a>
-              {% endif %}
+                <a href="{% url 'image_processing:collections_list' %}" class="btn btn-outline-secondary">
+                  <i class="bi bi-collection"></i> Manage Collections
+                </a>
+                {% if object %}
+                  <a href="{{ object.get_public_url }}" class="btn btn-outline-success" target="_blank">
+                    <i class="bi bi-eye"></i> Preview Public Page
+                  </a>
+                {% endif %}
+              </div>
             </div>
           </div>
-        </div>
+        {% endif %}
 
         <!-- Save Button -->
         <div class="card">
           <div class="card-body">
             <div class="d-grid">
               <button type="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-save"></i> Save Wedding Page
+                <i class="bi bi-save"></i> 
+                {% if is_new %}Create Wedding Page{% else %}Save Changes{% endif %}
               </button>
             </div>
           </div>
@@ -424,60 +451,48 @@ function copyToClipboard(text) {
     });
 }
 
-// Dynamic formset management
-function addSocialForm() {
-    // This would need to be implemented with proper Django formset management
-    console.log('Add social form - implement formset management');
-}
-
-function addRegistryForm() {
-    // This would need to be implemented with proper Django formset management
-    console.log('Add registry form - implement formset management');
-}
-
-function addPhotoForm() {
-    // This would need to be implemented with proper Django formset management
-    console.log('Add photo form - implement formset management');
-}
-
 // Form validation and enhancement
 document.addEventListener('DOMContentLoaded', function() {
     // Platform name field visibility based on selection
     document.querySelectorAll('select[name*="platform"]').forEach(select => {
         const container = select.closest('.social-form');
-        const platformNameField = container.querySelector('input[name*="platform_name"]');
-        
-        function togglePlatformName() {
-            if (select.value === 'other') {
-                platformNameField.style.display = 'block';
-                platformNameField.required = true;
-            } else {
-                platformNameField.style.display = 'none';
-                platformNameField.required = false;
+        if (container) {
+            const platformNameField = container.querySelector('input[name*="platform_name"]');
+            
+            function togglePlatformName() {
+                if (select.value === 'other') {
+                    platformNameField.style.display = 'block';
+                    platformNameField.required = true;
+                } else {
+                    platformNameField.style.display = 'none';
+                    platformNameField.required = false;
+                }
             }
+            
+            select.addEventListener('change', togglePlatformName);
+            togglePlatformName(); // Initial call
         }
-        
-        select.addEventListener('change', togglePlatformName);
-        togglePlatformName(); // Initial call
     });
     
     // Registry name field visibility
     document.querySelectorAll('select[name*="registry_type"]').forEach(select => {
         const container = select.closest('.registry-form');
-        const registryNameField = container.querySelector('input[name*="registry_name"]');
-        
-        function toggleRegistryName() {
-            if (select.value === 'other') {
-                registryNameField.style.display = 'block';
-                registryNameField.required = true;
-            } else {
-                registryNameField.style.display = 'none';
-                registryNameField.required = false;
+        if (container) {
+            const registryNameField = container.querySelector('input[name*="registry_name"]');
+            
+            function toggleRegistryName() {
+                if (select.value === 'other') {
+                    registryNameField.style.display = 'block';
+                    registryNameField.required = true;
+                } else {
+                    registryNameField.style.display = 'none';
+                    registryNameField.required = false;
+                }
             }
+            
+            select.addEventListener('change', toggleRegistryName);
+            toggleRegistryName(); // Initial call
         }
-        
-        select.addEventListener('change', toggleRegistryName);
-        toggleRegistryName(); // Initial call
     });
 });
 </script>
