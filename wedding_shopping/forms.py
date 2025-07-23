@@ -2,6 +2,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import CoupleProfile, SocialMediaLink, RegistryLink, WeddingPhotoCollection
+import re
 
 
 class CoupleProfileForm(forms.ModelForm):
@@ -17,15 +18,18 @@ class CoupleProfileForm(forms.ModelForm):
         widgets = {
             'partner_1_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'First partner\'s name'
+                'placeholder': 'First partner\'s name',
+                'oninput': 'updateUrlPreview()'
             }),
             'partner_2_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Second partner\'s name'
+                'placeholder': 'Second partner\'s name',
+                'oninput': 'updateUrlPreview()'
             }),
             'wedding_date': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'onchange': 'updateUrlPreview()'
             }),
             'venue_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -53,10 +57,63 @@ class CoupleProfileForm(forms.ModelForm):
             })
         }
         help_texts = {
+            'partner_1_name': 'This will be used in your custom wedding URL',
+            'partner_2_name': 'This will be used in your custom wedding URL',
+            'wedding_date': 'This will be used in your custom wedding URL',
             'couple_photo': 'Upload a photo of you as a couple',
             'venue_photo': 'Upload a photo of your wedding venue',
             'is_public': 'Allow others to find your page publicly',
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add URL preview field (read-only)
+        self.fields['url_preview'] = forms.CharField(
+            label='Your Wedding URL Preview',
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'form-control',
+                'readonly': 'readonly',
+                'id': 'url-preview',
+                'placeholder': 'Your custom URL will appear here...'
+            }),
+            help_text='This is how your wedding page URL will look'
+        )
+        
+        # If this is an existing object, show current URL
+        if self.instance and self.instance.pk:
+            self.fields['url_preview'].initial = f"yoursite.com{self.instance.wedding_url_preview}"
+    
+    def clean_partner_1_name(self):
+        name = self.cleaned_data.get('partner_1_name', '')
+        if not name or len(name.strip()) < 1:
+            raise ValidationError("Partner 1 name is required.")
+        return name.strip()
+    
+    def clean_partner_2_name(self):
+        name = self.cleaned_data.get('partner_2_name', '')
+        if not name or len(name.strip()) < 1:
+            raise ValidationError("Partner 2 name is required.")
+        return name.strip()
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        name1 = cleaned_data.get('partner_1_name', '')
+        name2 = cleaned_data.get('partner_2_name', '')
+        
+        # Check if names will create a valid URL
+        if name1 and name2:
+            # Clean names like the model does
+            clean1 = re.sub(r'[^a-zA-Z0-9]', '', name1.lower())[:15]
+            clean2 = re.sub(r'[^a-zA-Z0-9]', '', name2.lower())[:15]
+            
+            if len(clean1) < 1 or len(clean2) < 1:
+                raise ValidationError(
+                    "Names must contain at least some letters or numbers to create a valid URL. "
+                    "Special characters and spaces will be removed automatically."
+                )
+        
+        return cleaned_data
 
 
 class SocialMediaLinkForm(forms.ModelForm):

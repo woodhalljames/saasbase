@@ -103,11 +103,11 @@ def wedding_studio(request):
 
 @login_required
 @require_http_methods(["POST"])
-def process_wedding_image(request, image_id):
+def process_wedding_image(request, pk):  # Changed from image_id to pk to match URL
     """Process wedding venue image with AI transformation"""
     try:
         # Get the user's image
-        user_image = get_object_or_404(UserImage, id=image_id, user=request.user)
+        user_image = get_object_or_404(UserImage, id=pk, user=request.user)
         
         # Check usage limits before processing
         from usage_limits.usage_tracker import UsageTracker
@@ -163,11 +163,10 @@ def process_wedding_image(request, image_id):
             'additional_details': data.get('additional_details', ''),
         }
         
-        job = ProcessingJob.objects.create(**job_data)
+        job = ImageProcessingJob.objects.create(**job_data)
         
         # Queue the processing task
-        from image_processing.tasks import process_wedding_venue
-        process_wedding_venue.delay(job.id)
+        process_image_async.delay(job.id)
         
         return JsonResponse({
             'success': True,
@@ -800,91 +799,3 @@ def image_gallery(request):
     }
     
     return render(request, 'image_processing/image_gallery.html', context)
-
-
-@login_required
-def processing_history(request):
-    """View all wedding processing jobs for the user"""
-    jobs = ImageProcessingJob.objects.filter(
-        user_image__user=request.user
-    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
-    
-    # Add display names to jobs and favorite status to processed images
-    for job in jobs:
-        if job.wedding_theme:
-            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-        if job.space_type:
-            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-        
-        # Add favorite status to processed images for this job
-        processed_images = list(job.processed_images.all())
-        add_favorite_status_to_processed_images(request.user, processed_images)
-    
-    # Pagination
-    from django.core.paginator import Paginator
-    paginator = Paginator(jobs, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-    }
-    
-    return render(request, 'image_processing/processing_history.html', context)
-
-
-@login_required
-def collection_detail(request, collection_id):
-    """Display a specific collection"""
-    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-    
-    # Get all items in the collection
-    items = collection.items.select_related(
-        'user_image', 
-        'processed_image__processing_job'
-    ).order_by('order', '-added_at')
-    
-    # Add display information and favorite status to each item
-    processed_images_for_favorites = []
-    for item in items:
-        if item.processed_image:
-            job = item.processed_image.processing_job
-            item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
-            item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
-            processed_images_for_favorites.append(item.processed_image)
-    
-    # Add favorite status to all processed images in this collection
-    add_favorite_status_to_processed_images(request.user, processed_images_for_favorites)
-    
-    context = {
-        'collection': collection,
-        'items': items,
-    }
-    
-    return render(request, 'image_processing/collection_detail.html', context)
-
-
-@login_required
-def processed_image_detail(request, pk):
-    """View details of a processed wedding image with save/discard options"""
-    processed_image = get_object_or_404(
-        ProcessedImage, 
-        pk=pk, 
-        processing_job__user_image__user=request.user
-    )
-    
-    # Add favorite status
-    add_favorite_status_to_processed_images(request.user, [processed_image])
-    
-    # Add display names
-    job = processed_image.processing_job
-    theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
-    space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
-    
-    context = {
-        'processed_image': processed_image,
-        'theme_display': theme_display,
-        'space_display': space_display,
-    }
-    
-    return render(request, 'image_processing/processed_image_detail.html', context)

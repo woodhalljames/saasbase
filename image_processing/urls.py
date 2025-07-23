@@ -13,7 +13,6 @@ urlpatterns = [
     # Single Image Processing
     path('image/<int:pk>/', views.image_detail, name='image_detail'),
     path('image/<int:pk>/process/', views.process_wedding_image, name='process_wedding_image'),
-    
     # Gallery and History
     path('gallery/', views.image_gallery, name='image_gallery'),
     path('history/', views.processing_history, name='processing_history'),

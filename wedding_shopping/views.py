@@ -64,16 +64,26 @@ class PublicCoupleDetailView(DetailView):
     context_object_name = 'couple'
     
     def get_object(self):
-        """Get couple by share_token or slug"""
+        """Get couple by custom slug or share_token"""
         share_token = self.kwargs.get('share_token')
         slug = self.kwargs.get('slug')
         
         if share_token:
+            # Token-based lookup (fallback method)
             return get_object_or_404(CoupleProfile, share_token=share_token)
         elif slug:
-            return get_object_or_404(CoupleProfile, slug=slug, is_public=True)
+            # Custom slug lookup (primary method)
+            couple = get_object_or_404(CoupleProfile, slug=slug)
+            
+            # If this is a private page accessed without token, check if it should be public
+            if not couple.is_public and not self.request.user == couple.user:
+                # Redirect to token-based URL for private sharing
+                return redirect('wedding_shopping:wedding_page_token', 
+                              share_token=couple.share_token)
+            
+            return couple
         else:
-            raise Http404("Couple profile not found")
+            raise Http404("Wedding page not found")
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -197,7 +207,12 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         if is_new:
             form.instance.user = self.request.user
             self.object = form.save()
-            messages.success(self.request, "Your wedding page has been created! You can now add social links, registries, and photo collections.")
+            
+            # Show success message with custom URL preview
+            messages.success(
+                self.request, 
+                f"Your wedding page has been created! Your custom URL is: {self.object.wedding_url_preview}"
+            )
             return redirect(self.get_success_url())
         
         # For existing profiles, handle all formsets
@@ -206,7 +221,10 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         photo_formset = context.get('photo_formset')
         
         with transaction.atomic():
+            # Check if URL-affecting fields changed
+            old_slug = self.object.slug if self.object.pk else None
             self.object = form.save()
+            new_slug = self.object.slug
             
             if social_formset and social_formset.is_valid():
                 social_formset.instance = self.object
@@ -227,7 +245,15 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 photo_formset.instance = self.object
                 photo_formset.save()
         
-        messages.success(self.request, "Your wedding page has been updated!")
+        # Show different message if URL changed
+        if old_slug != new_slug:
+            messages.success(
+                self.request, 
+                f"Your wedding page has been updated! Your custom URL is now: {self.object.wedding_url_preview}"
+            )
+        else:
+            messages.success(self.request, "Your wedding page has been updated!")
+        
         return super().form_valid(form)
 
 
@@ -248,10 +274,17 @@ def registry_redirect(request, pk):
     return redirect(registry.original_url)
 
 
-def couple_detail_redirect(request, pk):
-    """Redirect to public couple page"""
-    couple = get_object_or_404(CoupleProfile, pk=pk, user=request.user)
-    return redirect(couple.get_public_url())
+def legacy_couple_redirect(request, slug=None, share_token=None):
+    """Redirect old /couple/ URLs to new /wedding/ format"""
+    if share_token:
+        # Redirect token-based legacy URL
+        return redirect('wedding_shopping:wedding_page_token', share_token=share_token)
+    elif slug:
+        # Redirect slug-based legacy URL
+        return redirect('wedding_shopping:wedding_page', slug=slug)
+    else:
+        # Fallback to discovery page
+        return redirect('wedding_shopping:public_couples_list')
 
 
 # API views for AJAX functionality

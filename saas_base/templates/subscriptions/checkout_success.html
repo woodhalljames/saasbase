@@ -5,12 +5,12 @@
 
 {% block content %}
 <div class="container py-5 text-center">
-  <h1 class="mb-4">Thank You for Your Subscription!</h1>
+  <h1 class="mb-4">Could not have happened to a better couple!</h1>
   <p class="lead">Your subscription has been successfully processed.</p>
   <p>You will receive a confirmation email shortly.</p>
   <div class="mt-4">
     <a href="{% url 'users:detail' request.user.username %}" class="btn btn-primary">Go to Your Account</a>
-    <a href="{% url 'subscriptions:customer_portal' %}" class="btn btn-outline-primary">Manage Subscription</a>
+    
   </div>
 </div>
 {% endblock %}

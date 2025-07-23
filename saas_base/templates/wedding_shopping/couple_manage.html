@@ -1,4 +1,3 @@
-<!-- saas_base/templates/wedding_shopping/couple_manage.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -18,13 +17,13 @@
     </div>
     <div class="col-md-4 text-end">
       {% if not is_new and object %}
-        <a href="{{ object.get_public_url }}" 
+        <a href="{{ object.get_absolute_url }}" 
            class="btn btn-success me-2" 
            target="_blank">
           <i class="bi bi-eye"></i> View Public Page
         </a>
         <button class="btn btn-outline-secondary" 
-                onclick="copyToClipboard('{{ object.get_public_url }}')">
+                onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ object.get_absolute_url }}')">
           <i class="bi bi-share"></i> Copy Link
         </button>
       {% endif %}
@@ -51,6 +50,7 @@
                 {% if form.partner_1_name.errors %}
                   <div class="text-danger">{{ form.partner_1_name.errors }}</div>
                 {% endif %}
+                <div class="form-text">{{ form.partner_1_name.help_text }}</div>
               </div>
               <div class="col-md-6 mb-3">
                 <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">Second Partner's Name</label>
@@ -58,6 +58,7 @@
                 {% if form.partner_2_name.errors %}
                   <div class="text-danger">{{ form.partner_2_name.errors }}</div>
                 {% endif %}
+                <div class="form-text">{{ form.partner_2_name.help_text }}</div>
               </div>
             </div>
             
@@ -68,6 +69,7 @@
                 {% if form.wedding_date.errors %}
                   <div class="text-danger">{{ form.wedding_date.errors }}</div>
                 {% endif %}
+                <div class="form-text">{{ form.wedding_date.help_text }}</div>
               </div>
               <div class="col-md-4 mb-3">
                 <label for="{{ form.venue_name.id_for_label }}" class="form-label">Venue Name</label>
@@ -82,6 +84,31 @@
                 {% if form.venue_location.errors %}
                   <div class="text-danger">{{ form.venue_location.errors }}</div>
                 {% endif %}
+              </div>
+            </div>
+
+            <!-- URL Preview Section -->
+            <div class="row">
+              <div class="col-12 mb-3">
+                <label for="{{ form.url_preview.id_for_label }}" class="form-label">Your Custom Wedding URL</label>
+                <div class="input-group">
+                  <span class="input-group-text">{{ request.get_host }}/wedding/</span>
+                  {{ form.url_preview }}
+                  <button class="btn btn-outline-secondary" type="button" id="copy-url-btn" onclick="copyFullUrl()" style="display: none;">
+                    <i class="bi bi-clipboard"></i>
+                  </button>
+                </div>
+                {% if form.url_preview.errors %}
+                  <div class="text-danger">{{ form.url_preview.errors }}</div>
+                {% endif %}
+                <div class="form-text">{{ form.url_preview.help_text }}</div>
+                <div class="mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> 
+                    Your URL is automatically created from your names and wedding date. 
+                    Special characters and spaces are removed.
+                  </small>
+                </div>
               </div>
             </div>
           </div>
@@ -372,17 +399,17 @@
                 <div class="input-group">
                   <input type="text" 
                          class="form-control" 
-                         value="{{ object.get_public_url }}" 
+                         value="{{ request.build_absolute_uri }}{{ object.get_absolute_url }}" 
                          readonly 
                          id="shareUrl">
                   <button class="btn btn-outline-secondary" 
                           type="button" 
-                          onclick="copyToClipboard('{{ object.get_public_url }}')">
+                          onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ object.get_absolute_url }}')">
                     <i class="bi bi-clipboard"></i>
                   </button>
                 </div>
                 <div class="form-text">
-                  This private link can be shared with anyone, regardless of privacy settings.
+                  This is your custom wedding page URL that you can share with anyone.
                 </div>
               </div>
             {% endif %}
@@ -404,7 +431,7 @@
                   <i class="bi bi-collection"></i> Manage Collections
                 </a>
                 {% if object %}
-                  <a href="{{ object.get_public_url }}" class="btn btn-outline-success" target="_blank">
+                  <a href="{{ object.get_absolute_url }}" class="btn btn-outline-success" target="_blank">
                     <i class="bi bi-eye"></i> Preview Public Page
                   </a>
                 {% endif %}
@@ -433,26 +460,73 @@
 // Copy to clipboard functionality
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
-        // Show success message
-        const toast = document.createElement('div');
-        toast.className = 'alert alert-success position-fixed top-0 end-0 m-3';
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            <i class="bi bi-check-circle"></i> Link copied to clipboard!
-            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-        `;
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 3000);
+        showToast('Link copied to clipboard!', 'success');
     });
+}
+
+function copyFullUrl() {
+    const host = '{{ request.get_host }}';
+    const urlPreview = document.getElementById('url-preview').value;
+    const fullUrl = `https://${host}/wedding/${urlPreview}/`;
+    copyToClipboard(fullUrl);
+}
+
+// URL Preview functionality
+function updateUrlPreview() {
+    const name1 = document.getElementById('{{ form.partner_1_name.id_for_label }}').value;
+    const name2 = document.getElementById('{{ form.partner_2_name.id_for_label }}').value;
+    const weddingDate = document.getElementById('{{ form.wedding_date.id_for_label }}').value;
+    
+    if (name1 && name2) {
+        // Clean names (remove non-alphanumeric characters)
+        const cleanName1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+        const cleanName2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+        
+        let dateStr = 'tbd';
+        if (weddingDate) {
+            const date = new Date(weddingDate);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = String(date.getFullYear()).slice(-2);
+            dateStr = `${month}${day}${year}`;
+        }
+        
+        const previewUrl = `${cleanName1}${cleanName2}${dateStr}`;
+        document.getElementById('url-preview').value = previewUrl;
+        
+        // Show copy button if we have a valid URL
+        if (previewUrl.length > 3) {
+            document.getElementById('copy-url-btn').style.display = 'block';
+        }
+    } else {
+        document.getElementById('url-preview').value = '';
+        document.getElementById('copy-url-btn').style.display = 'none';
+    }
+}
+
+// Show toast notifications
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        <i class="bi bi-check-circle"></i> ${message}
+        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
 }
 
 // Form validation and enhancement
 document.addEventListener('DOMContentLoaded', function() {
+    // Initial URL preview update
+    updateUrlPreview();
+    
     // Platform name field visibility based on selection
     document.querySelectorAll('select[name*="platform"]').forEach(select => {
         const container = select.closest('.social-form');

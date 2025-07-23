@@ -4,8 +4,9 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 import uuid
 from django.utils.text import slugify
-
+import re
 User = get_user_model()
+
 
 class CoupleProfile(models.Model):
     """Main model for a couple's wedding profile"""
@@ -43,26 +44,92 @@ class CoupleProfile(models.Model):
     def __str__(self):
         return f"{self.partner_1_name} & {self.partner_2_name}"
     
+    def _clean_name(self, name):
+        """Clean name for URL: remove spaces, special chars, keep only alphanumeric"""
+        if not name:
+            return ""
+        # Remove spaces and special characters, keep only letters and numbers
+        cleaned = re.sub(r'[^a-zA-Z0-9]', '', name.lower())
+        # Limit length to prevent super long URLs
+        return cleaned[:15]
+    
+    def _generate_wedding_slug(self):
+        """Generate slug in format: name1name2MMDDYY"""
+        # Clean the names
+        name1 = self._clean_name(self.partner_1_name)
+        name2 = self._clean_name(self.partner_2_name)
+        
+        # If no wedding date, use a placeholder
+        if self.wedding_date:
+            date_str = self.wedding_date.strftime('%m%d%y')
+        else:
+            date_str = 'tbd'  # "to be determined"
+        
+        # Combine into base slug
+        base_slug = f"{name1}{name2}{date_str}"
+        
+        # Ensure we have something
+        if not base_slug or len(base_slug) < 3:
+            base_slug = f"wedding{self.pk or 'new'}"
+        
+        return base_slug
+    
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(f"{self.partner_1_name}-{self.partner_2_name}")
-            # Ensure uniqueness
+        # Generate custom slug if not exists or if names/date changed
+        if not self.slug or self._should_regenerate_slug():
+            base_slug = self._generate_wedding_slug()
+            
+            # Ensure uniqueness by adding number suffix if needed
             counter = 1
-            original_slug = self.slug
+            self.slug = base_slug
+            
+            # Check for existing slugs and increment if needed
             while CoupleProfile.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
-                self.slug = f"{original_slug}-{counter}"
+                self.slug = f"{base_slug}{counter}"
                 counter += 1
+                # Prevent infinite loop
+                if counter > 999:
+                    self.slug = f"{base_slug}{uuid.uuid4().hex[:4]}"
+                    break
+        
         super().save(*args, **kwargs)
     
+    def _should_regenerate_slug(self):
+        """Check if slug should be regenerated based on changed fields"""
+        if not self.pk:
+            return True
+        
+        try:
+            original = CoupleProfile.objects.get(pk=self.pk)
+            return (
+                original.partner_1_name != self.partner_1_name or
+                original.partner_2_name != self.partner_2_name or
+                original.wedding_date != self.wedding_date
+            )
+        except CoupleProfile.DoesNotExist:
+            return True
+    
     def get_absolute_url(self):
-        return reverse('wedding_shopping:couple_detail', kwargs={'slug': self.slug})
+        """Return the custom wedding URL"""
+        return reverse('wedding_shopping:wedding_page', kwargs={'slug': self.slug})
     
     def get_public_url(self):
-        return reverse('wedding_shopping:public_couple', kwargs={'share_token': str(self.share_token)})
+        """Return the public URL (same as absolute for now)"""
+        return self.get_absolute_url()
+    
+    def get_share_url(self):
+        """Return shareable URL using token (fallback)"""
+        return reverse('wedding_shopping:wedding_page_token', kwargs={'share_token': str(self.share_token)})
     
     @property
     def couple_names(self):
         return f"{self.partner_1_name} & {self.partner_2_name}"
+    
+    @property
+    def wedding_url_preview(self):
+        """Show what the URL will look like"""
+        return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
+
 
 
 class SocialMediaLink(models.Model):
