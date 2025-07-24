@@ -62,7 +62,7 @@
                 aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="{% url 'home' %}">DreamWedAI</a>
+        <a class="navbar-brand" href="{% url 'home' %}">DreamWedAi</a>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto">
             <li class="nav-item">
@@ -73,19 +73,20 @@
             <!-- Studio Menu -->
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-magic"></i> Studio
+                <i class="bi bi-magic"></i>Studio
               </a>
               <ul class="dropdown-menu" aria-labelledby="studioDropdown">
                 <li><a class="dropdown-item" href="{% url 'image_processing:wedding_studio' %}">
-                  <i class="bi bi-magic"></i> Upload & Process
+                  <i class="bi bi-magic"></i> Upload & Visualize
+                </a></li>
+                <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
+                  <i class="bi bi-clock-history"></i> Visualized Images
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
-                  <i class="bi bi-images"></i> My Images
+                  <i class="bi bi-images"></i> Upload History
                 </a></li>
-                <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-                  <i class="bi bi-clock-history"></i> Processing History
-                </a></li>
+                
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
                   <i class="bi bi-collection"></i> Collections
