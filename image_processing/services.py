@@ -1,4 +1,4 @@
-# image_processing/services.py - Fixed for SD3 Turbo API headers
+# image_processing/services.py - Updated for SD3.5 Large API
 import io
 import base64
 import requests
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class StabilityAIService:
-    """Service for interacting with Stability AI SD3 Turbo API"""
+    """Service for interacting with Stability AI SD3.5 Large API"""
     
     def __init__(self):
         self.api_key = getattr(settings, 'STABILITY_API_KEY', None)
@@ -25,21 +25,23 @@ class StabilityAIService:
         """Get headers for API requests"""
         return {
             "Authorization": f"Bearer {self.api_key}",
-            "Accept": "application/json"  # SD3 Turbo expects this
+            "Accept": "application/json"
         }
     
-    def image_to_image_sd3_turbo(self, 
-                                image_path: str, 
-                                prompt: str, 
-                                negative_prompt: str = None,
-                                strength: float = 0.35,
-                                seed: int = None,
-                                output_format: str = "png") -> Dict[str, Any]:
+    def image_to_image_sd35_large(self, 
+                                 image_path: str, 
+                                 prompt: str, 
+                                 negative_prompt: str = None,
+                                 strength: float = 0.35,
+                                 cfg_scale: float = 7.0,
+                                 steps: int = 50,
+                                 seed: int = None,
+                                 output_format: str = "png") -> Dict[str, Any]:
         """
-        Perform image-to-image generation using Stability AI SD3 Turbo
+        Perform image-to-image generation using Stability AI SD3.5 Large
         """
         try:
-            logger.info(f"Starting SD3 Turbo generation with prompt: {prompt[:100]}...")
+            logger.info(f"Starting SD3.5 Large generation with prompt: {prompt[:100]}...")
             
             # Read and prepare image
             with open(image_path, 'rb') as image_file:
@@ -47,7 +49,7 @@ class StabilityAIService:
                     if img.mode != 'RGB':
                         img = img.convert('RGB')
                     
-                    # For SD3 Turbo, use 1024x1024 as default optimal size
+                    # For SD3.5 Large, use 1024x1024 as default optimal size
                     img = img.resize((1024, 1024), Image.Resampling.LANCZOS)
                     
                     # Convert to bytes
@@ -56,21 +58,22 @@ class StabilityAIService:
                     img_buffer.seek(0)
                     image_bytes = img_buffer.getvalue()
             
-            # Prepare multipart form data for SD3 Turbo
+            # Prepare multipart form data for SD3.5 Large
             files = {
                 'image': ('image.png', image_bytes, 'image/png'),
             }
             
-            # SD3 Turbo parameters (NO cfg_scale, steps, or aspect_ratio for image-to-image)
+            # SD3.5 Large parameters - supports cfg_scale and steps
+            # Note: aspect_ratio removed to maintain original image dimensions
             data = {
                 'prompt': prompt,
-                'model': 'sd3-turbo',
+                'model': 'sd3.5-large',
                 'mode': 'image-to-image',
                 'strength': str(strength),
+                'cfg_scale': str(cfg_scale),
+                'steps': str(steps),
                 'output_format': output_format,
             }
-            # Note: aspect_ratio is NOT allowed in image-to-image mode
-            # The output will match the input image's aspect ratio
             
             # Add optional parameters
             if negative_prompt:
@@ -82,24 +85,25 @@ class StabilityAIService:
             # Make the API request with proper headers
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
-            logger.info(f"Making SD3 Turbo API request to {url}")
+            logger.info(f"Making SD3.5 Large API request to {url}")
+            logger.info(f"Parameters: cfg_scale={cfg_scale}, steps={steps}, strength={strength}, aspect_ratio={aspect_ratio}")
             
             # Use the headers method and ensure proper Accept header
             headers = self._get_headers()
             
             response = requests.post(
                 url,
-                headers=headers,  # Use the proper headers with Accept: application/json
+                headers=headers,
                 files=files,
                 data=data,
-                timeout=60
+                timeout=120  # SD3.5 Large may take longer than Turbo
             )
             
-            logger.info(f"SD3 Turbo API response status: {response.status_code}")
-            logger.info(f"SD3 Turbo API response headers: {dict(response.headers)}")
+            logger.info(f"SD3.5 Large API response status: {response.status_code}")
+            logger.info(f"SD3.5 Large API response headers: {dict(response.headers)}")
             
             if response.status_code != 200:
-                error_msg = f"Stability AI SD3 Turbo API error: {response.status_code} - {response.text}"
+                error_msg = f"Stability AI SD3.5 Large API error: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 raise Exception(error_msg)
             
@@ -110,7 +114,7 @@ class StabilityAIService:
                 # JSON response - might be an error or JSON-wrapped image
                 json_response = response.json()
                 if 'errors' in json_response:
-                    error_msg = f"SD3 Turbo API error: {json_response['errors']}"
+                    error_msg = f"SD3.5 Large API error: {json_response['errors']}"
                     logger.error(error_msg)
                     raise Exception(error_msg)
                 
@@ -136,17 +140,17 @@ class StabilityAIService:
                     "finish_reason": finish_reason
                 }],
                 "prompt": prompt,
-                "model": "SD3-Turbo"
+                "model": "SD3.5-Large"
             }
             
         except requests.exceptions.Timeout:
-            logger.error("Stability AI SD3 Turbo API timeout")
+            logger.error("Stability AI SD3.5 Large API timeout")
             return {
                 "success": False,
-                "error": "API request timed out"
+                "error": "API request timed out - SD3.5 Large may require more processing time"
             }
         except Exception as e:
-            logger.error(f"Stability AI SD3 Turbo service error: {str(e)}")
+            logger.error(f"Stability AI SD3.5 Large service error: {str(e)}")
             return {
                 "success": False,
                 "error": str(e)
@@ -154,43 +158,46 @@ class StabilityAIService:
     
     def process_wedding_venue(self, image_path: str, processing_job):
         """
-        Process wedding venue using SD3 Turbo
+        Process wedding venue using SD3.5 Large
         """
-        # Get parameters from the job (only SD3 Turbo compatible ones)
+        # Get parameters from the job (SD3.5 Large supports all parameters except aspect_ratio in image-to-image)
         params = {
             'prompt': processing_job.generated_prompt,
             'negative_prompt': processing_job.negative_prompt,
             'strength': processing_job.strength,
+            'cfg_scale': processing_job.cfg_scale,
+            'steps': processing_job.steps,
             'seed': processing_job.seed,
             'output_format': processing_job.output_format
         }
-        # Note: aspect_ratio removed - not supported in image-to-image mode
+        # Note: aspect_ratio removed to maintain original image dimensions
         
-        logger.info(f"Processing wedding venue for job {processing_job.id} with SD3 Turbo")
+        logger.info(f"Processing wedding venue for job {processing_job.id} with SD3.5 Large")
         logger.info(f"Generated prompt: {params['prompt'][:200]}...")
+        logger.info(f"Parameters: cfg_scale={params['cfg_scale']}, steps={params['steps']}, strength={params['strength']}")
         
-        # Use SD3 Turbo
-        result = self.image_to_image_sd3_turbo(
+        # Use SD3.5 Large
+        result = self.image_to_image_sd35_large(
             image_path=image_path,
             **params
         )
         
         if result["success"]:
-            logger.info(f"Successfully processed with SD3 Turbo for job {processing_job.id}")
+            logger.info(f"Successfully processed with SD3.5 Large for job {processing_job.id}")
         else:
-            logger.error(f"SD3 Turbo failed for job {processing_job.id}: {result.get('error')}")
+            logger.error(f"SD3.5 Large failed for job {processing_job.id}: {result.get('error')}")
         
         return result
 
 
 class ImageProcessingService:
-    """Service for handling wedding venue processing with SD3 Turbo"""
+    """Service for handling wedding venue processing with SD3.5 Large"""
     
     def __init__(self):
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a wedding venue image with SD3 Turbo"""
+        """Process a wedding venue image with SD3.5 Large"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -202,9 +209,9 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            logger.info(f"Starting SD3 Turbo processing for job {processing_job.id}")
+            logger.info(f"Starting SD3.5 Large processing for job {processing_job.id}")
             
-            # Process using SD3 Turbo
+            # Process using SD3.5 Large
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
@@ -221,7 +228,7 @@ class ImageProcessingService:
                 
                 # Save with descriptive filename
                 theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                model_used = result.get("model", "SD3-Turbo")
+                model_used = result.get("model", "SD3.5-Large")
                 timestamp = int(timezone.now().timestamp())
                 filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
                 

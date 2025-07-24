@@ -1,12 +1,173 @@
-# image_processing/prompt_generator.py - Comprehensive 50+ Wedding Theme Prompts
+# image_processing/prompt_generator.py - Comprehensive 50+ Wedding Theme Prompts for SD3.5 Large
 """
 Advanced prompt generation system for realistic wedding venue transformations
-Optimized for Stability AI SD3 Turbo with 50+ beautiful wedding themes
+Optimized for Stability AI SD3.5 Large with 50+ beautiful wedding themes
+Supports cfg_scale, steps, and aspect_ratio parameters
 """
 
 class WeddingPromptGenerator:
-    """Generate comprehensive, specific prompts for dramatic wedding venue transformations"""
+    """Generate well-structured prompts optimized for SD3.5 Large"""
     
+    @classmethod
+    def generate_dynamic_prompt(cls, wedding_theme, space_type, guest_count=None, 
+                               budget_level=None, season=None, time_of_day=None,
+                               color_scheme=None, custom_colors=None, additional_details=None):
+        """Generate a well-structured, hierarchical prompt for SD3.5 Large"""
+        
+        theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
+        space_data = cls.SPACE_TRANSFORMATIONS.get(space_type, cls.SPACE_TRANSFORMATIONS['wedding_ceremony'])
+        
+        # 1. QUALITY FOUNDATION - Most important for SD3.5 Large
+        quality_foundation = "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality."
+        
+        # 2. PRIMARY TRANSFORMATION - Core objective
+        primary_transformation = f"Transform this space into a complete {space_data['setup']}."
+        
+        # 3. THEME SPECIFICATION - Main aesthetic direction
+        theme_specification = f"Style: {wedding_theme} wedding theme."
+        
+        # 4. SPECIFIC THEME ELEMENTS - What makes this theme unique
+        theme_elements = f"Key elements: {theme_data['specific_elements']}."
+        
+        # 5. SPATIAL ARRANGEMENT - How the space should be organized
+        spatial_parts = []
+        
+        # Add guest count with specific seating
+        if guest_count and guest_count in cls.GUEST_COUNT_MODIFIERS:
+            guest_data = cls.GUEST_COUNT_MODIFIERS[guest_count]
+            spatial_parts.append(f"Seating: {guest_data['description']} with {guest_data['seating']}")
+        else:
+            spatial_parts.append("Seating: arrangement for approximately 100 guests with proper spacing")
+        
+        # Add space focus
+        spatial_parts.append(f"Focus: {space_data['focus']}")
+        
+        spatial_arrangement = " | ".join(spatial_parts) + "."
+        
+        # 6. BUDGET/QUALITY LEVEL - Production values
+        budget_quality = ""
+        if budget_level and budget_level in cls.BUDGET_MODIFIERS:
+            budget_quality = f"Production level: {cls.BUDGET_MODIFIERS[budget_level]}."
+        else:
+            budget_quality = "Production level: quality professional wedding decorations."
+        
+        # 7. SEASONAL/TEMPORAL CONTEXT - When/where context
+        context_parts = []
+        
+        if season and season in cls.SEASON_MODIFIERS:
+            context_parts.append(f"Season: {cls.SEASON_MODIFIERS[season]}")
+        
+        if time_of_day and time_of_day in cls.TIME_MODIFIERS:
+            context_parts.append(f"Time: {cls.TIME_MODIFIERS[time_of_day]}")
+        
+        seasonal_context = " | ".join(context_parts) + "." if context_parts else ""
+        
+        # 8. COLOR PALETTE - Visual color scheme
+        color_palette = ""
+        if color_scheme and color_scheme in cls.COLOR_MODIFIERS:
+            if color_scheme == 'custom' and custom_colors:
+                color_palette = f"Colors: custom palette featuring {custom_colors}."
+            else:
+                color_palette = f"Colors: {cls.COLOR_MODIFIERS[color_scheme]}."
+        else:
+            color_palette = f"Colors: {theme_data['colors']}."
+        
+        # 9. LIGHTING & ATMOSPHERE - Mood and ambiance
+        lighting_atmosphere = f"Lighting: {theme_data['lighting']}. Atmosphere: {theme_data['atmosphere']}."
+        
+        # 10. ADDITIONAL DETAILS - User specifications
+        user_details = f"Additional: {additional_details}." if additional_details else ""
+        
+        # 11. TECHNICAL REQUIREMENTS - Final specifications
+        technical_requirements = "Requirements: elegant wedding setup, celebration ready, complete venue transformation, no people visible, empty chairs and tables ready for guests."
+        
+        # ASSEMBLE STRUCTURED PROMPT
+        prompt_sections = [
+            quality_foundation,
+            primary_transformation,
+            theme_specification,
+            theme_elements,
+            spatial_arrangement,
+            budget_quality,
+            seasonal_context,
+            color_palette,
+            lighting_atmosphere,
+            user_details,
+            technical_requirements
+        ]
+        
+        # Remove empty sections and join with proper spacing
+        final_prompt = " ".join([section for section in prompt_sections if section.strip()])
+        
+        # Enhanced negative prompt for SD3.5 Large
+        negative_prompt = cls.generate_enhanced_negative_prompt()
+        
+        return {
+            'prompt': final_prompt,
+            'negative_prompt': negative_prompt,
+            'recommended_params': cls.get_dynamic_parameters_sd35_large(wedding_theme, space_type, guest_count)
+        }
+    
+    @classmethod
+    def generate_example_improved_prompt(cls):
+        """Generate the improved version of the Japanese Zen example"""
+        
+        # Using the new structure for Japanese Zen intimate ceremony
+        sections = [
+            "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality.",
+            
+            "Transform this space into a complete full wedding ceremony setup with processional aisle, rows of chairs for guests, ceremonial altar or arch, unity candle area, guest seating arrangement.",
+            
+            "Style: japanese_zen wedding theme.",
+            
+            "Key elements: cherry blossom ceremony arch, bamboo details, paper lanterns, zen garden stones, minimalist wooden furniture.",
+            
+            "Seating: intimate gathering for 15-30 guests with cozy arrangement using 3-4 rows of chairs, small intimate scale decorations | Focus: ceremony altar and guest seating arrangement for wedding vows.",
+            
+            "Production level: tasteful budget-friendly decorations with DIY elements, simple elegant centerpieces, cost-effective beautiful setup.",
+            
+            "Colors: soft pink cherry blossom, white, natural bamboo, sage green, cream.",
+            
+            "Lighting: soft natural lighting, paper lanterns, candles in bamboo holders, gentle ambient glow. Atmosphere: peaceful zen celebration with natural harmony.",
+            
+            "Requirements: elegant wedding setup, celebration ready, complete venue transformation, no people visible, empty chairs and tables ready for guests."
+        ]
+        
+        return " ".join(sections)
+    
+    @classmethod
+    def compare_prompts(cls):
+        """Compare old vs new prompt structure"""
+        
+        old_prompt = "professional wedding staging, photorealistic, detailed, high resolution, Change space into a complete full wedding ceremony setup with processional aisle, rows of chairs for guests, ceremonial altar or arch, unity candle area, guest seating arrangement beautiful japanese_zen wedding theme with cherry blossom ceremony arch, bamboo details, paper lanterns, zen garden stones, minimalist wooden furniture serene Japanese zen wedding with cherry blossom branches, bamboo ceremony arch, minimalist wooden seating, paper lanterns, zen garden elements, sake ceremony table intimate gathering for 15-30 guests with cozy seating arrangement, 3-4 rows of chairs or 2-3 small tables, small intimate scale decorations focus on ceremony altar and guest seating arrangement for wedding vows tasteful budget-friendly decorations with DIY elements, simple elegant centerpieces, cost-effective beautiful setup color palette: soft pink cherry blossom, white, natural bamboo, sage green, cream soft natural lighting, paper lanterns, candles in bamboo holders, gentle ambient glow peaceful zen celebration with natural harmony elegant wedding setup, celebration ready complete transformation of space no people visible, empty chairs and tables ready for guests"
+        
+        new_prompt = cls.generate_example_improved_prompt()
+        
+        return {
+            'old': {
+                'prompt': old_prompt,
+                'length': len(old_prompt),
+                'issues': [
+                    "Run-on sentence with no punctuation",
+                    "Repetitive elements (cherry blossom ceremony arch mentioned twice)",
+                    "Poor hierarchy - all elements have equal weight",
+                    "Difficult for AI to parse and prioritize",
+                    "Missing quality indicators for SD3.5 Large"
+                ]
+            },
+            'new': {
+                'prompt': new_prompt,
+                'length': len(new_prompt),
+                'improvements': [
+                    "Clear hierarchical structure with periods",
+                    "Eliminates repetition and redundancy", 
+                    "Logical flow from quality → transformation → details",
+                    "SD3.5 Large optimized quality terms",
+                    "Easier for AI to parse and follow priorities",
+                    "Better organization for complex scenes"
+                ]
+            }
+        }
     # Enhanced theme descriptions with specific elements and setups for ALL 50+ themes
     THEME_STYLES = {
         # Cultural & Traditional Themes
@@ -231,101 +392,7 @@ class WeddingPromptGenerator:
             'atmosphere': 'glamorous deco celebration with vintage sophistication',
             'specific_elements': 'geometric ceremony backdrop, art deco furniture, gold accents, vintage glam details, 1920s decorations'
         },
-        'scandinavian_simple': {
-            'description': 'clean Scandinavian wedding with minimal furniture, white wood elements, simple flowers, hygge details, Nordic style',
-            'lighting': 'Scandinavian lighting, natural glow, hygge ambiance, Nordic illumination',
-            'colors': 'Nordic white, Scandinavian grey, hygge cream, simple green, minimal blue',
-            'atmosphere': 'clean Scandinavian celebration with hygge comfort',
-            'specific_elements': 'minimal ceremony arch, white wood furniture, simple arrangements, hygge details, Nordic decorations'
-        },
-        'modern_monochrome': {
-            'description': 'striking modern monochrome wedding with black and white elements, geometric shapes, minimal furniture, contrast details',
-            'lighting': 'monochrome lighting, contrast shadows, modern glow, geometric ambiance',
-            'colors': 'pure white, deep black, grey gradients, minimal silver, contrast elements',
-            'atmosphere': 'striking monochrome celebration with modern contrast',
-            'specific_elements': 'geometric ceremony backdrop, monochrome furniture, contrast details, minimal decorations, modern elements'
-        },
-        'concrete_jungle': {
-            'description': 'urban concrete jungle wedding with raw concrete, industrial plants, urban furniture, jungle plants, city wild theme',
-            'lighting': 'concrete lighting, urban jungle glow, industrial ambiance, wild city illumination',
-            'colors': 'concrete grey, jungle green, urban brown, industrial black, wild earth',
-            'atmosphere': 'urban jungle celebration with concrete character',
-            'specific_elements': 'concrete ceremony backdrop, industrial plants, urban furniture, jungle elements, city wild decorations'
-        },
-        'glass_house': {
-            'description': 'transparent glass house wedding with glass elements, modern transparency, clean lines, light refraction, architectural details',
-            'lighting': 'glass house lighting, transparent glow, light refraction, architectural illumination',
-            'colors': 'glass clear, transparent white, light silver, clean blue, architectural grey',
-            'atmosphere': 'transparent glass celebration with architectural beauty',
-            'specific_elements': 'glass ceremony structure, transparent details, light elements, architectural features, modern glass decorations'
-        },
 
-        # Fantasy & Themed Celebrations
-        'enchanted_forest_fairy': {
-            'description': 'magical enchanted fairy wedding with fairy lights, mushroom seating, woodland creatures, fairy wings, enchanted details',
-            'lighting': 'fairy lighting, enchanted glow, magical sparkles, woodland ambiance',
-            'colors': 'fairy pink, enchanted green, magical gold, woodland brown, sparkle silver',
-            'atmosphere': 'magical fairy celebration with enchanted wonder',
-            'specific_elements': 'fairy light ceremony arch, mushroom seating, woodland decorations, fairy details, enchanted elements'
-        },
-        'princess_castle': {
-            'description': 'royal princess castle wedding with castle towers, princess decorations, royal throne seating, crown details, fairytale elements',
-            'lighting': 'castle lighting, royal glow, princess ambiance, fairytale illumination',
-            'colors': 'princess pink, royal purple, castle gold, fairytale white, crown jewels',
-            'atmosphere': 'royal princess celebration with castle magic',
-            'specific_elements': 'castle ceremony backdrop, royal throne seating, princess decorations, crown details, fairytale elements'
-        },
-        'mermaid_lagoon': {
-            'description': 'underwater mermaid wedding with seashell decorations, ocean plants, mermaid tail elements, underwater theme, lagoon details',
-            'lighting': 'underwater lighting, lagoon glow, ocean ambiance, mermaid illumination',
-            'colors': 'mermaid teal, ocean blue, seashell pearl, lagoon green, underwater silver',
-            'atmosphere': 'underwater mermaid celebration with lagoon magic',
-            'specific_elements': 'seashell ceremony arch, ocean plant decorations, mermaid details, underwater elements, lagoon features'
-        },
-        'dragon_castle': {
-            'description': 'medieval dragon castle wedding with dragon decorations, castle stones, medieval banners, knight elements, fantasy details',
-            'lighting': 'castle lighting, dragon fire glow, medieval torches, fantasy ambiance',
-            'colors': 'dragon red, castle stone grey, medieval gold, knight silver, fantasy purple',
-            'atmosphere': 'medieval dragon celebration with castle power',
-            'specific_elements': 'dragon ceremony backdrop, castle stone details, medieval banners, knight decorations, fantasy elements'
-        },
-        'unicorn_dreams': {
-            'description': 'dreamy unicorn wedding with rainbow colors, unicorn horn details, magical flowers, dream elements, fantasy sparkles',
-            'lighting': 'unicorn lighting, rainbow glow, magical sparkles, dream ambiance',
-            'colors': 'unicorn white, rainbow pastels, magical pink, dream purple, sparkle gold',
-            'atmosphere': 'dreamy unicorn celebration with magical wonder',
-            'specific_elements': 'unicorn ceremony arch, rainbow decorations, magical flowers, dream details, fantasy sparkles'
-        },
-        'hollywood_glam': {
-            'description': 'glamorous Hollywood wedding with red carpet, movie star elements, golden statues, spotlight details, celebrity theme',
-            'lighting': 'Hollywood lighting, spotlight glow, red carpet ambiance, celebrity illumination',
-            'colors': 'Hollywood gold, red carpet red, movie star black, spotlight white, celebrity silver',
-            'atmosphere': 'glamorous Hollywood celebration with movie star luxury',
-            'specific_elements': 'red carpet ceremony aisle, golden statue decorations, spotlight details, movie star elements, celebrity features'
-        },
-        'broadway_musical': {
-            'description': 'theatrical Broadway wedding with stage elements, musical decorations, theater seating, spotlight areas, show tune theme',
-            'lighting': 'Broadway lighting, stage spots, theater glow, musical ambiance',
-            'colors': 'Broadway gold, theater red, stage black, spotlight white, musical purple',
-            'atmosphere': 'theatrical Broadway celebration with musical energy',
-            'specific_elements': 'stage ceremony backdrop, theater seating, musical decorations, spotlight details, Broadway elements'
-        },
-        'vintage_circus': {
-            'description': 'whimsical vintage circus wedding with carnival decorations, circus tents, popcorn details, carnival games, vintage circus elements',
-            'lighting': 'circus lighting, carnival glow, vintage ambiance, whimsical illumination',
-            'colors': 'circus red, carnival yellow, vintage blue, popcorn white, carnival stripes',
-            'atmosphere': 'whimsical circus celebration with carnival joy',
-            'specific_elements': 'circus tent ceremony structure, carnival decorations, vintage circus details, popcorn elements, whimsical features'
-        },
-        'comic_book': {
-            'description': 'superhero comic book wedding with comic elements, superhero decorations, pop art details, comic speech bubbles, hero theme',
-            'lighting': 'comic book lighting, pop art glow, superhero ambiance, hero illumination',
-            'colors': 'comic primary colors, superhero red, pop art blue, hero yellow, comic black',
-            'atmosphere': 'superhero comic celebration with pop art energy',
-            'specific_elements': 'comic book ceremony backdrop, superhero decorations, pop art details, speech bubble elements, hero features'
-        },
-
-        # Classic Popular Themes (enhanced versions)
         'rustic': {
             'description': 'rustic farmhouse wedding with wooden ceremony arch, burlap aisle runner, mason jar centerpieces, vintage wooden chairs, string lights overhead, wildflower arrangements, hay bale seating, wooden farm tables',
             'lighting': 'warm golden string lights, lanterns hanging from wooden beams, candlelit mason jars, sunset glow through barn windows',
@@ -383,203 +450,9 @@ class WeddingPromptGenerator:
             'specific_elements': 'metal pipe ceremony arch, industrial furniture, Edison bulb lighting, exposed elements, urban materials'
         },
 
-        # Holiday & Celebration Themes (adding the remaining ones)
-        'christmas_magic': {
-            'description': 'magical Christmas wedding with evergreen decorations, red ribbon details, Christmas lights, ornament centerpieces, holiday elements',
-            'lighting': 'Christmas lights, warm holiday glow, ornament reflections, festive ambiance',
-            'colors': 'Christmas red, evergreen, holiday gold, snow white, ornament silver',
-            'atmosphere': 'magical Christmas celebration with holiday joy',
-            'specific_elements': 'evergreen ceremony arch, Christmas ornaments, holiday ribbons, festive lights, Christmas decorations'
-        },
-        'halloween_gothic': {
-            'description': 'gothic Halloween wedding with dark decorations, pumpkin elements, autumn leaves, spooky details, gothic elegance',
-            'lighting': 'gothic lighting, candle glow, mysterious shadows, Halloween ambiance',
-            'colors': 'Halloween orange, gothic black, autumn gold, spooky purple, dark red',
-            'atmosphere': 'gothic Halloween celebration with mysterious elegance',
-            'specific_elements': 'gothic ceremony backdrop, pumpkin decorations, autumn elements, spooky details, dark elegance'
-        },
-        'valentine_romance': {
-            'description': 'romantic Valentine wedding with heart decorations, rose petals, romantic red elements, love details, cupid theme',
-            'lighting': 'romantic lighting, soft rose glow, love ambiance, Valentine illumination',
-            'colors': 'Valentine red, romantic pink, love white, heart gold, cupid silver',
-            'atmosphere': 'romantic Valentine celebration with love magic',
-            'specific_elements': 'heart ceremony arch, rose petal decorations, romantic details, love elements, Valentine features'
-        },
-        'new_year_eve': {
-            'description': 'glamorous New Year\'s Eve wedding with countdown elements, champagne details, midnight theme, celebration decorations, party elements',
-            'lighting': 'New Year lighting, midnight glow, celebration sparkles, party ambiance',
-            'colors': 'midnight black, champagne gold, celebration silver, party white, countdown colors',
-            'atmosphere': 'glamorous New Year celebration with midnight magic',
-            'specific_elements': 'countdown ceremony backdrop, champagne details, midnight decorations, celebration elements, party features'
-        },
-        'fourth_july': {
-            'description': 'patriotic Fourth of July wedding with American flag elements, red white blue decorations, firework details, patriotic theme',
-            'lighting': 'patriotic lighting, firework sparkles, American glow, Fourth of July ambiance',
-            'colors': 'patriotic red, freedom white, liberty blue, American flag colors, firework gold',
-            'atmosphere': 'patriotic Fourth of July celebration with American pride',
-            'specific_elements': 'American flag ceremony backdrop, patriotic decorations, firework details, red white blue elements, liberty features'
-        },
-        'dia_muertos': {
-            'description': 'colorful Día de los Muertos wedding with sugar skull decorations, marigold flowers, papel picado, Mexican celebration theme',
-            'lighting': 'Día de los Muertos lighting, marigold glow, celebration ambiance, Mexican illumination',
-            'colors': 'marigold orange, celebration purple, skull white, Mexican pink, fiesta colors',
-            'atmosphere': 'colorful Día de los Muertos celebration with Mexican joy',
-            'specific_elements': 'sugar skull ceremony decorations, marigold arrangements, papel picado, Mexican details, celebration elements'
-        },
-        'chinese_new_year': {
-            'description': 'festive Chinese New Year wedding with dragon decorations, red lanterns, lucky elements, prosperity theme, zodiac details',
-            'lighting': 'Chinese New Year lighting, red lantern glow, lucky ambiance, prosperity illumination',
-            'colors': 'lucky red, prosperity gold, dragon colors, lantern orange, zodiac elements',
-            'atmosphere': 'festive Chinese New Year celebration with lucky prosperity',
-            'specific_elements': 'dragon ceremony backdrop, red lantern decorations, lucky elements, prosperity details, zodiac features'
-        },
-        'oktoberfest': {
-            'description': 'traditional Oktoberfest wedding with beer hall decorations, pretzel details, German elements, lederhosen theme, festival atmosphere',
-            'lighting': 'Oktoberfest lighting, beer hall glow, festival ambiance, German illumination',
-            'colors': 'Oktoberfest brown, beer gold, pretzel tan, German green, festival colors',
-            'atmosphere': 'traditional Oktoberfest celebration with German festival joy',
-            'specific_elements': 'beer hall ceremony setup, pretzel decorations, German details, lederhosen elements, festival features'
-        },
-        'mardi_gras': {
-            'description': 'festive Mardi Gras wedding with mask decorations, purple gold green colors, bead details, New Orleans theme, carnival atmosphere',
-            'lighting': 'Mardi Gras lighting, carnival glow, New Orleans ambiance, festive illumination',
-            'colors': 'Mardi Gras purple, carnival gold, celebration green, mask colors, bead elements',
-            'atmosphere': 'festive Mardi Gras celebration with New Orleans carnival energy',
-            'specific_elements': 'mask ceremony decorations, bead details, Mardi Gras colors, carnival elements, New Orleans features'
-        },
-
-        # Unique & Creative Themes (adding remaining ones)
-        'book_lovers': {
-            'description': 'literary book lovers wedding with book decorations, library elements, vintage books, reading nooks, literary theme',
-            'lighting': 'library lighting, reading lamp glow, book ambiance, literary illumination',
-            'colors': 'book brown, library green, vintage cream, literary gold, reading lamp warm',
-            'atmosphere': 'intellectual book lovers celebration with literary charm',
-            'specific_elements': 'book ceremony backdrop, library decorations, vintage book details, reading elements, literary features'
-        },
-        'music_festival': {
-            'description': 'energetic music festival wedding with stage elements, band setup, festival decorations, music notes, concert theme',
-            'lighting': 'festival lighting, stage spots, concert glow, music ambiance',
-            'colors': 'festival bright colors, stage black, music gold, concert silver, band elements',
-            'atmosphere': 'energetic music festival celebration with concert energy',
-            'specific_elements': 'stage ceremony setup, band decorations, festival details, music elements, concert features'
-        },
-        'travel_adventure': {
-            'description': 'adventurous travel wedding with map decorations, luggage elements, passport details, world theme, journey atmosphere',
-            'lighting': 'travel lighting, adventure glow, journey ambiance, world illumination',
-            'colors': 'map brown, luggage tan, passport blue, world green, journey gold',
-            'atmosphere': 'adventurous travel celebration with world exploration spirit',
-            'specific_elements': 'map ceremony backdrop, luggage decorations, passport details, world elements, journey features'
-        },
-        'wine_country': {
-            'description': 'elegant wine country wedding with vineyard decorations, wine barrel elements, grape details, winery theme, sommelier atmosphere',
-            'lighting': 'wine country lighting, vineyard glow, winery ambiance, sommelier illumination',
-            'colors': 'wine burgundy, vineyard green, grape purple, barrel brown, sommelier gold',
-            'atmosphere': 'elegant wine country celebration with vineyard sophistication',
-            'specific_elements': 'vineyard ceremony arch, wine barrel decorations, grape details, winery elements, sommelier features'
-        },
-        'coffee_house': {
-            'description': 'cozy coffee house wedding with coffee bean decorations, café elements, espresso details, barista theme, coffeehouse atmosphere',
-            'lighting': 'coffee house lighting, café glow, espresso ambiance, barista illumination',
-            'colors': 'coffee brown, café cream, espresso black, barista white, bean tan',
-            'atmosphere': 'cozy coffee house celebration with café warmth',
-            'specific_elements': 'coffee bean ceremony decorations, café details, espresso elements, barista features, coffeehouse setup'
-        },
-        'neon_cyberpunk': {
-            'description': 'futuristic neon cyberpunk wedding with LED decorations, cyber elements, tech details, futuristic theme, digital atmosphere',
-            'lighting': 'neon lighting, cyber glow, LED ambiance, futuristic illumination',
-            'colors': 'neon pink, cyber blue, tech green, futuristic silver, digital purple',
-            'atmosphere': 'futuristic cyberpunk celebration with neon energy',
-            'specific_elements': 'LED ceremony backdrop, cyber decorations, tech details, futuristic elements, digital features'
-        },
-        'steampunk_victorian': {
-            'description': 'vintage steampunk wedding with gear decorations, Victorian elements, brass details, mechanical theme, industrial Victorian atmosphere',
-            'lighting': 'steampunk lighting, gear glow, Victorian ambiance, mechanical illumination',
-            'colors': 'steampunk brass, Victorian brown, gear copper, mechanical silver, industrial gold',
-            'atmosphere': 'vintage steampunk celebration with Victorian industrial charm',
-            'specific_elements': 'gear ceremony decorations, Victorian details, brass elements, mechanical features, steampunk setup'
-        },
-        'space_galaxy': {
-            'description': 'cosmic space galaxy wedding with star decorations, planet elements, cosmic details, astronaut theme, galaxy atmosphere',
-            'lighting': 'space lighting, galaxy glow, cosmic ambiance, star illumination',
-            'colors': 'space black, galaxy purple, star silver, planet blue, cosmic gold',
-            'atmosphere': 'cosmic space celebration with galaxy wonder',
-            'specific_elements': 'star ceremony backdrop, planet decorations, cosmic details, astronaut elements, galaxy features'
-        },
-        'under_the_sea': {
-            'description': 'underwater sea wedding with ocean decorations, fish elements, coral details, submarine theme, deep sea atmosphere',
-            'lighting': 'underwater lighting, ocean glow, sea ambiance, deep sea illumination',
-            'colors': 'ocean blue, sea green, coral pink, fish silver, submarine yellow',
-            'atmosphere': 'underwater sea celebration with ocean mystery',
-            'specific_elements': 'ocean ceremony backdrop, fish decorations, coral details, submarine elements, sea features'
-        },
-        'secret_garden': {
-            'description': 'mysterious secret garden wedding with hidden pathways, secret doors, garden mysteries, enchanted plants, magical garden atmosphere',
-            'lighting': 'secret garden lighting, mysterious glow, hidden ambiance, magical illumination',
-            'colors': 'secret green, garden brown, mystery purple, enchanted gold, magical silver',
-            'atmosphere': 'mysterious secret garden celebration with enchanted wonder',
-            'specific_elements': 'secret door ceremony entrance, hidden pathway decorations, mystery elements, enchanted details, magical features'
-        },
-
-        # Adding vintage decades
-        '1950s_diner': {
-            'description': '1950s diner wedding with retro booths, jukebox elements, checkered floors, vintage diner decorations, classic Americana theme',
-            'lighting': '1950s diner lighting, jukebox glow, retro ambiance, vintage illumination',
-            'colors': 'diner red, retro white, jukebox chrome, vintage blue, checkered black',
-            'atmosphere': 'nostalgic 1950s celebration with diner charm',
-            'specific_elements': 'retro booth ceremony seating, jukebox decorations, checkered details, vintage diner elements, Americana features'
-        },
-        '1960s_mod': {
-            'description': '1960s mod wedding with geometric patterns, mod furniture, go-go decorations, psychedelic elements, swinging sixties theme',
-            'lighting': '1960s mod lighting, psychedelic glow, geometric ambiance, mod illumination',
-            'colors': 'mod orange, psychedelic pink, geometric yellow, swinging green, sixties purple',
-            'atmosphere': 'groovy 1960s celebration with mod style',
-            'specific_elements': 'geometric ceremony backdrop, mod furniture, psychedelic decorations, go-go elements, sixties features'
-        },
-        '1970s_disco': {
-            'description': '1970s disco wedding with mirror balls, dance floor lights, disco decorations, groovy elements, Saturday Night Fever theme',
-            'lighting': 'disco lighting, mirror ball reflections, dance floor glow, groovy ambiance',
-            'colors': 'disco gold, groovy orange, dance floor silver, mirror chrome, seventies brown',
-            'atmosphere': 'groovy 1970s celebration with disco fever',
-            'specific_elements': 'mirror ball ceremony centerpiece, disco dance floor, groovy decorations, Saturday Night Fever elements, seventies features'
-        },
-        '1980s_neon': {
-            'description': '1980s neon wedding with bright neon colors, synthesizer elements, new wave decorations, geometric shapes, eighties theme',
-            'lighting': '1980s neon lighting, synthesizer glow, new wave ambiance, geometric illumination',
-            'colors': 'neon pink, electric blue, synthesizer purple, new wave green, eighties orange',
-            'atmosphere': 'electric 1980s celebration with neon energy',
-            'specific_elements': 'neon ceremony backdrop, synthesizer decorations, new wave details, geometric elements, eighties features'
-        },
-        '1990s_grunge': {
-            'description': '1990s grunge wedding with flannel decorations, alternative elements, Seattle theme, indie details, grunge atmosphere',
-            'lighting': '1990s grunge lighting, alternative glow, Seattle ambiance, indie illumination',
-            'colors': 'grunge brown, flannel red, alternative black, Seattle green, indie blue',
-            'atmosphere': 'alternative 1990s celebration with grunge authenticity',
-            'specific_elements': 'flannel ceremony decorations, alternative details, Seattle elements, indie features, grunge setup'
-        },
-        'victorian_romance': {
-            'description': 'elegant Victorian romance wedding with ornate furniture, lace details, romantic Victorian elements, period decorations, vintage elegance',
-            'lighting': 'Victorian lighting, romantic glow, period ambiance, elegant illumination',
-            'colors': 'Victorian burgundy, romantic cream, lace white, period gold, elegant rose',
-            'atmosphere': 'romantic Victorian celebration with period elegance',
-            'specific_elements': 'ornate Victorian ceremony furniture, lace decorations, period details, romantic elements, elegant features'
-        },
-        'art_nouveau': {
-            'description': 'artistic Art Nouveau wedding with flowing lines, natural motifs, artistic elements, nouveau decorations, organic designs',
-            'lighting': 'Art Nouveau lighting, artistic glow, flowing ambiance, organic illumination',
-            'colors': 'nouveau gold, artistic green, flowing brown, natural cream, organic earth',
-            'atmosphere': 'artistic Art Nouveau celebration with flowing beauty',
-            'specific_elements': 'flowing Art Nouveau ceremony arch, artistic decorations, natural motifs, nouveau details, organic features'
-        },
-        'great_gatsby': {
-            'description': 'glamorous Great Gatsby wedding with art deco elements, jazz age decorations, 1920s luxury, Gatsby glamour, roaring twenties theme',
-            'lighting': 'Great Gatsby lighting, art deco glow, jazz age ambiance, luxury illumination',
-            'colors': 'Gatsby gold, art deco black, jazz age cream, luxury pearl, twenties silver',
-            'atmosphere': 'glamorous Great Gatsby celebration with roaring twenties luxury',
-            'specific_elements': 'art deco ceremony backdrop, Gatsby decorations, jazz age details, luxury elements, twenties features'
-        }
     }
     
-    # Keep the same SPACE_TRANSFORMATIONS, GUEST_COUNT_MODIFIERS, etc. from previous version
+    # Same SPACE_TRANSFORMATIONS, GUEST_COUNT_MODIFIERS, etc. from previous version
     SPACE_TRANSFORMATIONS = {
         'wedding_ceremony': {
             'setup': 'full wedding ceremony setup with processional aisle, rows of chairs for guests, ceremonial altar or arch, unity candle area, guest seating arrangement',
@@ -626,22 +499,22 @@ class WeddingPromptGenerator:
     # Enhanced guest count modifiers with specific numbers
     GUEST_COUNT_MODIFIERS = {
         'intimate': {
-            'description': 'intimate gathering for 15-30 guests with cozy seating arrangement',
+            'description': 'intimate gathering for 15-50 guests with seating and space to accomodate.',
             'seating': '3-4 rows of chairs or 2-3 small tables',
             'scale': 'small intimate scale decorations'
         },
         'medium': {
-            'description': 'medium celebration for 75-100 guests with balanced seating',
+            'description': 'medium celebration for 75-100 guests with space balanced seating',
             'seating': '8-10 rows of chairs or 8-10 round tables',
             'scale': 'medium scale decorations and arrangements'
         },
         'large': {
-            'description': 'large celebration for 150-200 guests with grand seating arrangement',
+            'description': 'large celebration for 150-200 guests with grand seating arrangement and open space',
             'seating': '12-15 rows of chairs or 15-20 round tables',
             'scale': 'large scale decorations and impressive arrangements'
         },
         'grand': {
-            'description': 'grand spectacular celebration for 250+ guests with magnificent seating',
+            'description': 'grand spectacular celebration for 250+ guests with magnificent seating and unused space',
             'seating': '20+ rows of chairs or 25+ round tables',
             'scale': 'grand spectacular decorations and elaborate arrangements'
         }
@@ -685,18 +558,18 @@ class WeddingPromptGenerator:
     def generate_dynamic_prompt(cls, wedding_theme, space_type, guest_count=None, 
                                budget_level=None, season=None, time_of_day=None,
                                color_scheme=None, custom_colors=None, additional_details=None):
-        """Generate a comprehensive, specific prompt for dramatic wedding transformations"""
+        """Generate a comprehensive, specific prompt for dramatic wedding transformations using SD3.5 Large"""
         
         theme_data = cls.THEME_STYLES.get(wedding_theme, cls.THEME_STYLES['classic'])
         space_data = cls.SPACE_TRANSFORMATIONS.get(space_type, cls.SPACE_TRANSFORMATIONS['wedding_ceremony'])
         
-        # Build dramatic, specific prompt
+        # Build dramatic, specific prompt optimized for SD3.5 Large
         prompt_parts = [
-            # High quality foundation
-            "professional wedding staging, photorealistic, detailed, high resolution,",
+            # High quality foundation optimized for SD3.5 Large
+            "professional wedding staging, photorealistic, detailed, ultra high resolution, masterpiece quality,",
             
             # Specific transformation instruction
-            f"Change space into a complete {space_data['setup']}",
+            f"Transform this space into a complete {space_data['setup']}",
             
             # Theme-specific elements
             f"beautiful {wedding_theme} wedding theme with {theme_data['specific_elements']}",
@@ -750,141 +623,177 @@ class WeddingPromptGenerator:
         if additional_details:
             prompt_parts.append(additional_details)
         
-        # Final setup requirements
+        # Final setup requirements for SD3.5 Large
         prompt_parts.extend([
             "elegant wedding setup, celebration ready",
             "complete transformation of space",
+            "professional wedding photography quality",
             "no people visible, empty chairs and tables ready for guests"
         ])
         
         # Join with proper spacing
         main_prompt = " ".join([part.strip() for part in prompt_parts if part.strip()])
         
-        # Enhanced negative prompt for better results
+        # Enhanced negative prompt optimized for SD3.5 Large
         negative_prompt = cls.generate_enhanced_negative_prompt()
         
         return {
             'prompt': main_prompt,
             'negative_prompt': negative_prompt,
-            'recommended_params': cls.get_dynamic_parameters(wedding_theme, space_type, guest_count)
+            'recommended_params': cls.get_dynamic_parameters_sd35_large(wedding_theme, space_type, guest_count)
         }
     
     @classmethod
     def generate_enhanced_negative_prompt(cls):
-        """Generate comprehensive negative prompt for wedding venue transformations"""
+        """Generate comprehensive negative prompt for wedding venue transformations with SD3.5 Large"""
         negative_elements = [
             # People and faces (critical for venue photos)
             "people, faces, crowd, guests, bride, groom, wedding party, humans, person, bodies",
             
-            # Quality issues
-            "blurry, low quality, distorted, pixelated, artifacts, noise, low resolution",
+            # Quality issues (SD3.5 Large specific)
+            "blurry, low quality, distorted, pixelated, artifacts, noise, low resolution, jpeg artifacts",
             
             # Unwanted content
-            "text, watermark, signature, logo, copyright, writing, signs",
+            "text, watermark, signature, logo, copyright, writing, signs, labels",
             
             # Bad atmosphere/mood
-            "dark, dim, gloomy, messy, cluttered, chaotic, unorganized, dirty",
+            "dark, dim, gloomy, messy, cluttered, chaotic, unorganized, dirty, shabby",
             
             # Style issues
-            "cartoon, anime, unrealistic, fake, artificial, painting, drawing",
+            "cartoon, anime, unrealistic, fake, artificial, painting, drawing, sketch",
             
             # Composition issues
-            "cropped, cut off, partial, incomplete, tilted, askew",
+            "cropped, cut off, partial, incomplete, tilted, askew, bad proportions",
             
             # Unwanted objects
-            "cars, vehicles, modern electronics, phones, computers, inappropriate items"
+            "cars, vehicles, modern electronics, phones, computers, inappropriate items, random objects",
+            
+            # SD3.5 Large specific negatives
+            "overexposed, underexposed, bad lighting, harsh shadows, color bleeding, oversaturated"
         ]
         
         return ", ".join(negative_elements)
     
     @classmethod
-    def get_dynamic_parameters(cls, wedding_theme, space_type, guest_count):
-        """Get optimized parameters based on choices"""
+    def get_dynamic_parameters_sd35_large(cls, wedding_theme, space_type, guest_count):
+        """Get optimized parameters for SD3.5 Large based on choices"""
         
         base_params = {
-            'strength': 0.5,  # Increased for more dramatic transformation
+            'strength': 0.4,      # SD3.5 Large optimal strength
+            'cfg_scale': 7.0,     # SD3.5 Large supports cfg_scale
+            'steps': 50,          # SD3.5 Large supports steps
             'output_format': 'png',
         }
+        # Note: aspect_ratio removed to maintain original image dimensions
         
-        # Adjust strength based on guest count (more guests = more transformation needed)
+        # Theme-specific optimizations for SD3.5 Large
+        theme_optimizations = {
+            'rustic': {'cfg_scale': 6.5, 'steps': 45, 'strength': 0.35},
+            'modern': {'cfg_scale': 8.0, 'steps': 55, 'strength': 0.45},
+            'vintage': {'cfg_scale': 7.5, 'steps': 50, 'strength': 0.4},
+            'bohemian': {'cfg_scale': 6.0, 'steps': 45, 'strength': 0.35},
+            'classic': {'cfg_scale': 8.0, 'steps': 55, 'strength': 0.4},
+            'garden': {'cfg_scale': 6.0, 'steps': 45, 'strength': 0.35},
+            'beach': {'cfg_scale': 6.5, 'steps': 50, 'strength': 0.4},
+            'industrial': {'cfg_scale': 8.5, 'steps': 60, 'strength': 0.45},
+            'moroccan_nights': {'cfg_scale': 7.5, 'steps': 55, 'strength': 0.4},
+            'japanese_zen': {'cfg_scale': 6.0, 'steps': 45, 'strength': 0.35},
+            'indian_palace': {'cfg_scale': 8.0, 'steps': 60, 'strength': 0.45},
+        }
+        
+        # Apply theme optimizations
+        if wedding_theme in theme_optimizations:
+            opt = theme_optimizations[wedding_theme]
+            base_params.update(opt)
+        
+        # Adjust parameters based on guest count (more guests = more transformation needed)
         if guest_count == 'intimate':
-            base_params['strength'] = 0.05  # Less transformation for intimate spaces
+            base_params['strength'] -= 0.05  # Less transformation for intimate spaces
+            base_params['steps'] -= 5
         elif guest_count in ['large', 'grand']:
-            base_params['strength'] = 0.1   # More transformation for large celebrations
+            base_params['strength'] += 0.05   # More transformation for large celebrations
+            base_params['steps'] += 5
         
-        # Adjust aspect ratio for different spaces
-        if space_type in ['reception_area', 'dance_floor']:
-            base_params['aspect_ratio'] = '16:9'  # Better for large celebration spaces
-        elif space_type in ['photo_backdrop', 'bridal_suite']:
-            base_params['aspect_ratio'] = '4:3'   # Good for focused areas
+        # Note: aspect_ratio removed to maintain original image dimensions
+        
+        # Space-specific adjustments for SD3.5 Large
+        space_adjustments = {
+            'wedding_ceremony': {'cfg_scale': -0.5},  # Slightly lower CFG for ceremonies
+            'reception_area': {'cfg_scale': 0.5},     # Higher CFG for receptions
+            'dance_floor': {'cfg_scale': 1.0},        # Highest CFG for dance floors
+        }
+        
+        if space_type in space_adjustments:
+            adj = space_adjustments[space_type]
+            base_params['cfg_scale'] += adj.get('cfg_scale', 0)
+        
+        # Clamp values to SD3.5 Large valid ranges
+        base_params['cfg_scale'] = max(1.0, min(20.0, base_params['cfg_scale']))
+        base_params['steps'] = max(10, min(150, base_params['steps']))
+        base_params['strength'] = max(0.0, min(1.0, base_params['strength']))
         
         return base_params
     
     @classmethod
     def get_quick_suggestions(cls, wedding_theme, space_type):
-        """Get quick suggestions for common combinations"""
+        """Get quick suggestions for common combinations optimized for SD3.5 Large"""
         suggestions = {
             'guest_count': 'medium',
             'budget_level': 'moderate',
             'time_of_day': 'evening',
-            'color_scheme': 'neutral'
+            'color_scheme': 'neutral',
+            'sd35_params': {
+                'cfg_scale': 7.0,
+                'steps': 50,
+                'strength': 0.4
+            }
         }
         
-        # Theme-specific suggestions
+        # Theme-specific suggestions with SD3.5 Large optimizations
         if wedding_theme == 'rustic':
             suggestions.update({
                 'season': 'fall',
-                'color_scheme': 'earth_tones'
+                'color_scheme': 'earth_tones',
+                'sd35_params': {'cfg_scale': 6.5, 'steps': 45, 'strength': 0.35}
             })
         elif wedding_theme == 'beach':
             suggestions.update({
                 'season': 'summer',
                 'time_of_day': 'afternoon',
-                'color_scheme': 'neutral'
+                'color_scheme': 'neutral',
+                'sd35_params': {'cfg_scale': 6.5, 'steps': 50, 'strength': 0.4}
             })
         elif wedding_theme == 'vintage':
             suggestions.update({
                 'color_scheme': 'pastels',
-                'budget_level': 'luxury'
+                'budget_level': 'luxury',
+                'sd35_params': {'cfg_scale': 7.5, 'steps': 50, 'strength': 0.4}
             })
-        elif wedding_theme == 'bohemian':
-            suggestions.update({
-                'season': 'summer',
-                'color_scheme': 'earth_tones'
-            })
-        elif wedding_theme == 'classic':
+        elif wedding_theme == 'modern':
             suggestions.update({
                 'budget_level': 'luxury',
-                'color_scheme': 'neutral'
+                'color_scheme': 'monochrome',
+                'sd35_params': {'cfg_scale': 8.0, 'steps': 55, 'strength': 0.45}
             })
-        elif wedding_theme == 'moroccan_nights':
+        elif wedding_theme == 'industrial':
             suggestions.update({
-                'budget_level': 'luxury',
-                'color_scheme': 'jewel_tones',
-                'time_of_day': 'night'
-            })
-        elif wedding_theme == 'japanese_zen':
-            suggestions.update({
-                'season': 'spring',
-                'color_scheme': 'neutral',
-                'time_of_day': 'afternoon'
-            })
-        elif wedding_theme == 'indian_palace':
-            suggestions.update({
-                'budget_level': 'ultra_luxury',
-                'color_scheme': 'jewel_tones',
-                'guest_count': 'large'
+                'time_of_day': 'night',
+                'color_scheme': 'monochrome',
+                'sd35_params': {'cfg_scale': 8.5, 'steps': 60, 'strength': 0.45}
             })
         
         return suggestions
     
     @classmethod
     def get_theme_suggestions(cls, wedding_theme):
-        """Get specific suggestions for a wedding theme"""
+        """Get specific suggestions for a wedding theme optimized for SD3.5 Large"""
         if wedding_theme not in cls.THEME_STYLES:
             return None
             
         theme_data = cls.THEME_STYLES[wedding_theme]
+        
+        # Get SD3.5 Large optimized parameters
+        optimized_params = cls.get_dynamic_parameters_sd35_large(wedding_theme, 'wedding_ceremony', 'medium')
         
         return {
             'guest_count': 'medium',
@@ -892,5 +801,6 @@ class WeddingPromptGenerator:
             'time_of_day': 'evening',
             'color_scheme': 'neutral',
             'specific_elements': theme_data['specific_elements'],
-            'atmosphere': theme_data['atmosphere']
+            'atmosphere': theme_data['atmosphere'],
+            'sd35_optimized_params': optimized_params
         }

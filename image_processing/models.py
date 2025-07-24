@@ -1,5 +1,3 @@
-# image_processing/models.py - Updated with comprehensive 50+ themes and enhanced prompt generation
-
 import os
 import uuid
 from datetime import timedelta
@@ -158,7 +156,7 @@ def generate_wedding_prompt(theme, space_type, additional_details=None):
 def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
                                         budget_level=None, season=None, time_of_day=None,
                                         color_scheme=None, custom_colors=None, additional_details=None):
-    """Generate comprehensive AI prompt with dynamic parameters for SD3 Turbo"""
+    """Generate comprehensive AI prompt with dynamic parameters for SD3.5 Large"""
     try:
         from .prompt_generator import WeddingPromptGenerator
         
@@ -299,30 +297,43 @@ def generate_comprehensive_fallback_prompt(theme, space_type, additional_details
         'grand': 'seating for 250+ guests with spectacular arrangement'
     }
     
-    # Build comprehensive prompt
-    prompt_parts = [
-        "professional wedding staging, photorealistic, detailed, high resolution",
-        f"Transform this space into a {space_setups.get(space_type, 'beautiful wedding venue')}",
-        f"beautiful {theme_descriptions.get(theme, 'elegant wedding')} style",
-    ]
+    # Build comprehensive prompt with improved structure for SD3.5 Large
+    quality_foundation = "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality."
     
-    # Add guest count if specified
+    primary_transformation = f"Transform this space into a {space_setups.get(space_type, 'beautiful wedding venue')}."
+    
+    theme_specification = f"Style: {theme} wedding theme."
+    
+    theme_elements = f"Key elements: {theme_descriptions.get(theme, 'elegant wedding')} style."
+    
+    # Guest count and seating
+    seating_arrangement = ""
     if guest_count and guest_count in guest_specs:
-        prompt_parts.append(guest_specs[guest_count])
+        seating_arrangement = f"Seating: {guest_specs[guest_count]}."
     else:
-        prompt_parts.append("appropriate seating arrangement for wedding guests")
+        seating_arrangement = "Seating: appropriate arrangement for wedding guests."
     
-    # Add specific elements
-    prompt_parts.extend([
-        "elegant wedding setup, celebration ready",
-        "complete transformation of space",
-        "no people visible, empty chairs and tables ready for guests"
-    ])
+    # Production requirements
+    production_level = "Production level: elegant wedding setup, celebration ready, complete transformation of space."
+    
+    # Technical requirements
+    technical_requirements = "Requirements: no people visible, empty chairs and tables ready for guests."
     
     if additional_details:
-        prompt_parts.append(additional_details)
+        technical_requirements = f"Additional: {additional_details}. {technical_requirements}"
     
-    main_prompt = " ".join(prompt_parts)
+    # Assemble structured prompt
+    prompt_sections = [
+        quality_foundation,
+        primary_transformation,
+        theme_specification,
+        theme_elements,
+        seating_arrangement,
+        production_level,
+        technical_requirements
+    ]
+    
+    main_prompt = " ".join(prompt_sections)
     
     # Enhanced negative prompt
     negative_prompt = "people, faces, crowd, guests, bride, groom, wedding party, humans, blurry, low quality, pixelated, distorted, dark, dim, messy, cluttered, text, watermark, signature, cartoon, unrealistic, artificial"
@@ -331,8 +342,9 @@ def generate_comprehensive_fallback_prompt(theme, space_type, additional_details
         'prompt': main_prompt,
         'negative_prompt': negative_prompt,
         'recommended_params': {
-            'aspect_ratio': '16:9' if space_type in ['reception_area', 'dance_floor'] else '1:1',
-            'strength': 0.4,  # Increased for more dramatic transformation
+            'strength': 0.4,  # SD3.5 Large optimal strength
+            'cfg_scale': 7.0,  # SD3.5 Large supports cfg_scale
+            'steps': 50,      # SD3.5 Large supports steps
             'output_format': 'png',
         }
     }
@@ -431,7 +443,7 @@ class UserImage(models.Model):
 
 
 class ImageProcessingJob(models.Model):
-    """Track wedding venue transformation jobs with SD3 Turbo parameters"""
+    """Track wedding venue transformation jobs with SD3.5 Large parameters"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -460,10 +472,12 @@ class ImageProcessingJob(models.Model):
     generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
     negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
     
-    # SD3 Turbo parameters (NO cfg_scale or steps)
+    # SD3.5 Large parameters - includes cfg_scale and steps
+    cfg_scale = models.FloatField(default=7.0, help_text="How strictly the diffusion process adheres to the prompt text (1.0-20.0)")
+    steps = models.IntegerField(default=50, help_text="Number of diffusion steps to run (10-150)")
     seed = models.BigIntegerField(blank=True, null=True, help_text="Random noise seed for generation")
-    aspect_ratio = models.CharField(max_length=10, default='1:1', help_text="Aspect ratio for output image")
-    strength = models.FloatField(default=0.35, help_text="How much the input image influences the output (0.0-1.0)")
+    aspect_ratio = models.CharField(max_length=10, default='1:1', help_text="Aspect ratio (not used in image-to-image mode - maintains original dimensions)")
+    strength = models.FloatField(default=0.4, help_text="How much the input image influences the output (0.0-1.0)")
     output_format = models.CharField(max_length=10, default='png', help_text="Output image format")
     
     # Timestamps
@@ -498,11 +512,13 @@ class ImageProcessingJob(models.Model):
                 self.generated_prompt = prompt_data['prompt']
                 self.negative_prompt = prompt_data['negative_prompt']
                 
-                # Update parameters with recommendations
+                # Update parameters with recommendations for SD3.5 Large
                 recommended_params = prompt_data['recommended_params']
-                self.aspect_ratio = recommended_params.get('aspect_ratio', self.aspect_ratio)
                 self.strength = recommended_params.get('strength', self.strength)
+                self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
+                self.steps = recommended_params.get('steps', self.steps)
                 self.output_format = recommended_params.get('output_format', self.output_format)
+                # Note: aspect_ratio removed to maintain original image dimensions
                 
                 logger.info(f"Generated comprehensive prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
@@ -516,14 +532,17 @@ class ImageProcessingJob(models.Model):
         super().save(*args, **kwargs)
     
     def get_stability_ai_params(self):
-        """Get all parameters formatted for Stability AI SD3 Turbo API call"""
+        """Get all parameters formatted for Stability AI SD3.5 Large API call"""
         return {
             'prompt': self.generated_prompt,
             'negative_prompt': self.negative_prompt,
             'strength': self.strength,
+            'cfg_scale': self.cfg_scale,
+            'steps': self.steps,
             'seed': self.seed,
             'output_format': self.output_format,
         }
+        # Note: aspect_ratio removed to maintain original image dimensions
 
 
 class ProcessedImage(models.Model):
@@ -750,9 +769,10 @@ class PromptTemplate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    # Parameters for SD3 Turbo optimization
-    recommended_strength = models.FloatField(default=0.35, help_text="Recommended transformation strength for this template")
-    recommended_aspect_ratio = models.CharField(max_length=10, default='1:1', help_text="Recommended aspect ratio")
+    # Parameters for SD3.5 Large optimization
+    recommended_strength = models.FloatField(default=0.4, help_text="Recommended transformation strength for this template")
+    recommended_cfg_scale = models.FloatField(default=7.0, help_text="Recommended CFG scale for this template")
+    recommended_steps = models.IntegerField(default=50, help_text="Recommended steps for this template")
     
     class Meta:
         ordering = ['-priority', 'name']
@@ -789,9 +809,10 @@ class GenerationPreset(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     
-    # Default parameters
-    default_strength = models.FloatField(default=0.35)
-    default_aspect_ratio = models.CharField(max_length=10, default='1:1')
+    # Default parameters for SD3.5 Large
+    default_strength = models.FloatField(default=0.4)
+    default_cfg_scale = models.FloatField(default=7.0)
+    default_steps = models.IntegerField(default=50)
     
     # Theme and space combinations this preset works well with
     compatible_themes = models.JSONField(default=list, help_text="List of wedding themes this preset works well with")
