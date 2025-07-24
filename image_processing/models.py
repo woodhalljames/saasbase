@@ -1,4 +1,4 @@
-# Replace the entire image_processing/models.py file with this updated version
+# image_processing/models.py - Updated with comprehensive 50+ themes and enhanced prompt generation
 
 import os
 import uuid
@@ -30,8 +30,94 @@ def processed_image_upload_path(instance, filename):
     return f"processed_images/{instance.processing_job.user_image.user.id}/{filename}"
 
 
-# Wedding Theme and Space Type Choices
+# Comprehensive Wedding Theme Choices - 50+ Beautiful Wedding Styles
 WEDDING_THEMES = [
+    # Cultural & Traditional Themes
+    ('japanese_zen', 'Japanese Zen'),
+    ('chinese_dynasty', 'Chinese Dynasty'),
+    ('indian_palace', 'Indian Palace'),
+    ('korean_hanbok', 'Korean Hanbok'),
+    ('thai_temple', 'Thai Temple'),
+    ('scottish_highland', 'Scottish Highland'),
+    ('french_chateau', 'French Château'),
+    ('greek_island', 'Greek Island'),
+    ('italian_villa', 'Italian Villa'),
+    ('english_garden', 'English Garden'),
+    ('mexican_fiesta', 'Mexican Fiesta'),
+    ('spanish_hacienda', 'Spanish Hacienda'),
+    ('brazilian_carnival', 'Brazilian Carnival'),
+    ('argentine_tango', 'Argentine Tango'),
+    ('moroccan_nights', 'Moroccan Nights'),
+    ('arabian_desert', 'Arabian Desert'),
+    ('african_safari', 'African Safari'),
+    ('egyptian_royal', 'Egyptian Royal'),
+    
+    # Seasonal & Nature Themes
+    ('winter_wonderland', 'Winter Wonderland'),
+    ('spring_awakening', 'Spring Awakening'),
+    ('summer_solstice', 'Summer Solstice'),
+    ('autumn_harvest', 'Autumn Harvest'),
+    ('forest_enchanted', 'Enchanted Forest'),
+    ('desert_bloom', 'Desert Bloom'),
+    ('ocean_waves', 'Ocean Waves'),
+    ('mountain_vista', 'Mountain Vista'),
+    ('tropical_paradise', 'Tropical Paradise'),
+    
+    # Modern & Contemporary Themes
+    ('metropolitan_chic', 'Metropolitan Chic'),
+    ('brooklyn_loft', 'Brooklyn Loft'),
+    ('rooftop_garden', 'Rooftop Garden'),
+    ('art_deco_glam', 'Art Deco Glam'),
+    ('scandinavian_simple', 'Scandinavian Simple'),
+    ('modern_monochrome', 'Modern Monochrome'),
+    ('concrete_jungle', 'Concrete Jungle'),
+    ('glass_house', 'Glass House'),
+    
+    # Vintage & Retro Themes
+    ('1950s_diner', '1950s Diner'),
+    ('1960s_mod', '1960s Mod'),
+    ('1970s_disco', '1970s Disco'),
+    ('1980s_neon', '1980s Neon'),
+    ('1990s_grunge', '1990s Grunge'),
+    ('victorian_romance', 'Victorian Romance'),
+    ('art_nouveau', 'Art Nouveau'),
+    ('great_gatsby', 'Great Gatsby'),
+    
+    # Fantasy & Themed Celebrations
+    ('enchanted_forest_fairy', 'Enchanted Forest Fairy'),
+    ('princess_castle', 'Princess Castle'),
+    ('mermaid_lagoon', 'Mermaid Lagoon'),
+    ('dragon_castle', 'Dragon & Castle'),
+    ('unicorn_dreams', 'Unicorn Dreams'),
+    ('hollywood_glam', 'Hollywood Glam'),
+    ('broadway_musical', 'Broadway Musical'),
+    ('vintage_circus', 'Vintage Circus'),
+    ('comic_book', 'Comic Book'),
+    
+    # Holiday & Celebration Themes
+    ('christmas_magic', 'Christmas Magic'),
+    ('halloween_gothic', 'Halloween Gothic'),
+    ('valentine_romance', 'Valentine Romance'),
+    ('new_year_eve', 'New Year\'s Eve'),
+    ('fourth_july', 'Fourth of July'),
+    ('dia_muertos', 'Día de los Muertos'),
+    ('chinese_new_year', 'Chinese New Year'),
+    ('oktoberfest', 'Oktoberfest'),
+    ('mardi_gras', 'Mardi Gras'),
+    
+    # Unique & Creative Themes
+    ('book_lovers', 'Book Lovers'),
+    ('music_festival', 'Music Festival'),
+    ('travel_adventure', 'Travel Adventure'),
+    ('wine_country', 'Wine Country'),
+    ('coffee_house', 'Coffee House'),
+    ('neon_cyberpunk', 'Neon Cyberpunk'),
+    ('steampunk_victorian', 'Steampunk Victorian'),
+    ('space_galaxy', 'Space Galaxy'),
+    ('under_the_sea', 'Under the Sea'),
+    ('secret_garden', 'Secret Garden'),
+    
+    # Classic Popular Themes (keeping originals for backward compatibility)
     ('rustic', 'Rustic Barn'),
     ('modern', 'Modern Elegant'),
     ('vintage', 'Vintage Romance'),
@@ -58,70 +144,199 @@ def generate_wedding_prompt(theme, space_type, additional_details=None):
     try:
         from .prompt_generator import WeddingPromptGenerator
         
-        return WeddingPromptGenerator.generate_comprehensive_prompt(
-            theme, space_type, additional_details
+        return WeddingPromptGenerator.generate_dynamic_prompt(
+            wedding_theme=theme, 
+            space_type=space_type, 
+            additional_details=additional_details
         )
     except ImportError as e:
-        # Fallback prompt generation if import fails
-        logger.warning(f"Could not import WeddingPromptGenerator: {e}")
-        return generate_fallback_prompt(theme, space_type, additional_details)
+        # Enhanced fallback prompt generation if import fails
+        logger.warning(f"Could not import comprehensive WeddingPromptGenerator: {e}")
+        return generate_comprehensive_fallback_prompt(theme, space_type, additional_details)
 
 
-def generate_fallback_prompt(theme, space_type, additional_details=None):
-    """Fallback prompt generation if the advanced system is not available"""
+def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
+                                        budget_level=None, season=None, time_of_day=None,
+                                        color_scheme=None, custom_colors=None, additional_details=None):
+    """Generate comprehensive AI prompt with dynamic parameters for SD3 Turbo"""
+    try:
+        from .prompt_generator import WeddingPromptGenerator
+        
+        return WeddingPromptGenerator.generate_dynamic_prompt(
+            wedding_theme=wedding_theme,
+            space_type=space_type,
+            guest_count=guest_count,
+            budget_level=budget_level,
+            season=season,
+            time_of_day=time_of_day,
+            color_scheme=color_scheme,
+            custom_colors=custom_colors,
+            additional_details=additional_details
+        )
+    except ImportError as e:
+        logger.warning(f"Could not import comprehensive WeddingPromptGenerator: {e}")
+        return generate_comprehensive_fallback_prompt(wedding_theme, space_type, additional_details, guest_count)
+
+
+def generate_comprehensive_fallback_prompt(theme, space_type, additional_details=None, guest_count=None):
+    """Comprehensive fallback prompt generation with support for all 50+ themes"""
     
-    # Basic theme descriptions (keep existing)
+    # Comprehensive theme descriptions for all 50+ themes
     theme_descriptions = {
-        'rustic': 'rustic farmhouse wedding with wooden elements, burlap, mason jars, wildflowers, and warm lighting',
-        'modern': 'modern minimalist wedding with clean lines, contemporary furniture, and sleek design',
-        'vintage': 'vintage romantic wedding with antique lace, classic roses, and old-world charm',
-        'bohemian': 'bohemian chic wedding with macrame, colorful textiles, pampas grass, and natural elements',
-        'classic': 'classic traditional wedding with elegant white flowers, formal settings, and timeless luxury',
-        'garden': 'garden party wedding with abundant fresh flowers, greenery, and natural outdoor elements',
-        'beach': 'beach wedding with coastal elements, driftwood, seashells, and ocean-inspired colors',
-        'industrial': 'industrial chic wedding with exposed brick, metal fixtures, and urban aesthetic'
+        # Cultural & Traditional Themes
+        'japanese_zen': 'serene Japanese zen wedding with cherry blossom ceremony arch, bamboo elements, paper lanterns, minimalist wooden seating, zen garden details',
+        'chinese_dynasty': 'elegant Chinese dynasty wedding with red silk draping, golden dragon decorations, traditional round tables, Chinese lanterns, jade accents',
+        'indian_palace': 'magnificent Indian palace wedding with marigold garlands, intricate mandap, silk cushions, golden elephant statues, jewel-toned fabrics',
+        'korean_hanbok': 'traditional Korean hanbok wedding with colorful silk ceremony arch, low wooden tables, hanbok-inspired decorations, lotus flowers',
+        'thai_temple': 'exotic Thai temple wedding with golden Buddha statues, tropical flowers, ornate Thai decorations, silk draping, incense holders',
+        'scottish_highland': 'rustic Scottish highland wedding with tartan details, bagpipe area, wooden ceremony arch, heather arrangements, clan banners',
+        'french_chateau': 'elegant French château wedding with ornate gold details, crystal chandeliers, French provincial furniture, rose arrangements',
+        'greek_island': 'stunning Greek island wedding with white and blue decorations, olive branch details, Mediterranean seating, Greek columns',
+        'italian_villa': 'romantic Italian villa wedding with vineyard elements, rustic wooden details, Italian cypress arrangements, wine barrel accents',
+        'english_garden': 'classic English garden wedding with rose arbors, cottage garden flowers, vintage tea service, English garden seating',
+        'mexican_fiesta': 'vibrant Mexican fiesta wedding with colorful papel picado, piñata decorations, mariachi area, bright flower arrangements',
+        'spanish_hacienda': 'elegant Spanish hacienda wedding with wrought iron details, terracotta elements, Spanish tile accents, fountain centerpieces',
+        'brazilian_carnival': 'festive Brazilian carnival wedding with bright feathers, samba decorations, tropical flowers, carnival masks',
+        'argentine_tango': 'passionate Argentine tango wedding with rose decorations, dance floor centerpiece, tango band area, elegant Argentine elements',
+        'moroccan_nights': 'exotic Moroccan nights wedding with ornate lanterns, rich tapestries, low lounge seating, intricate patterns, Middle Eastern decorations',
+        'arabian_desert': 'luxurious Arabian desert wedding with tent decorations, camel details, desert flowers, sand-colored elements',
+        'african_safari': 'adventurous African safari wedding with animal print details, acacia tree decorations, safari elements, earth-toned flowers',
+        'egyptian_royal': 'regal Egyptian royal wedding with golden pyramids, hieroglyphic details, Egyptian columns, royal blue accents',
+        
+        # Seasonal & Nature Themes
+        'winter_wonderland': 'magical winter wonderland wedding with snow-white decorations, ice crystal elements, evergreen arrangements, winter berries',
+        'spring_awakening': 'fresh spring awakening wedding with blooming flowers, pastel decorations, butterfly elements, garden growth theme',
+        'summer_solstice': 'vibrant summer solstice wedding with sun decorations, bright summer flowers, solar elements, longest day theme',
+        'autumn_harvest': 'cozy autumn harvest wedding with pumpkin decorations, fall leaves, harvest elements, apple details',
+        'forest_enchanted': 'mystical enchanted forest wedding with tree branches, fairy lights, moss details, woodland creatures',
+        'desert_bloom': 'stunning desert bloom wedding with cactus flowers, succulent arrangements, desert sunset theme, southwestern elements',
+        'ocean_waves': 'flowing ocean waves wedding with wave decorations, seashell details, ocean blue theme, coastal elements',
+        'mountain_vista': 'majestic mountain vista wedding with peak decorations, alpine flowers, mountain stone elements, vista views',
+        'tropical_paradise': 'lush tropical paradise wedding with palm leaves, tropical flowers, paradise birds, island elements',
+        
+        # Modern & Contemporary Themes
+        'metropolitan_chic': 'sophisticated metropolitan wedding with city skyline backdrop, urban furniture, glass elements, steel accents',
+        'brooklyn_loft': 'trendy Brooklyn loft wedding with exposed brick, industrial windows, loft furniture, urban art',
+        'rooftop_garden': 'elevated rooftop garden wedding with city views, container gardens, rooftop furniture, urban greenery',
+        'art_deco_glam': 'glamorous art deco wedding with geometric patterns, gold accents, deco furniture, vintage glam elements',
+        'scandinavian_simple': 'clean Scandinavian wedding with minimal furniture, white wood elements, simple flowers, hygge details',
+        'modern_monochrome': 'striking modern monochrome wedding with black and white elements, geometric shapes, minimal furniture',
+        'concrete_jungle': 'urban concrete jungle wedding with raw concrete, industrial plants, urban furniture, jungle plants',
+        'glass_house': 'transparent glass house wedding with glass elements, modern transparency, clean lines, light refraction',
+        
+        # Fantasy & Themed Celebrations
+        'enchanted_forest_fairy': 'magical enchanted fairy wedding with fairy lights, mushroom seating, woodland creatures, fairy wings',
+        'princess_castle': 'royal princess castle wedding with castle towers, princess decorations, royal throne seating, crown details',
+        'mermaid_lagoon': 'underwater mermaid wedding with seashell decorations, ocean plants, mermaid tail elements, underwater theme',
+        'dragon_castle': 'medieval dragon castle wedding with dragon decorations, castle stones, medieval banners, knight elements',
+        'unicorn_dreams': 'dreamy unicorn wedding with rainbow colors, unicorn horn details, magical flowers, dream elements',
+        'hollywood_glam': 'glamorous Hollywood wedding with red carpet, movie star elements, golden statues, spotlight details',
+        'broadway_musical': 'theatrical Broadway wedding with stage elements, musical decorations, theater seating, spotlight areas',
+        'vintage_circus': 'whimsical vintage circus wedding with carnival decorations, circus tents, popcorn details, carnival games',
+        'comic_book': 'superhero comic book wedding with comic elements, superhero decorations, pop art details, comic speech bubbles',
+        
+        # Holiday & Celebration Themes
+        'christmas_magic': 'magical Christmas wedding with evergreen decorations, red ribbon details, Christmas lights, ornament centerpieces',
+        'halloween_gothic': 'gothic Halloween wedding with dark decorations, pumpkin elements, autumn leaves, spooky details',
+        'valentine_romance': 'romantic Valentine wedding with heart decorations, rose petals, romantic red elements, love details',
+        'new_year_eve': 'glamorous New Year\'s Eve wedding with countdown elements, champagne details, midnight theme, celebration decorations',
+        'fourth_july': 'patriotic Fourth of July wedding with American flag elements, red white blue decorations, firework details',
+        'dia_muertos': 'colorful Día de los Muertos wedding with sugar skull decorations, marigold flowers, papel picado',
+        'chinese_new_year': 'festive Chinese New Year wedding with dragon decorations, red lanterns, lucky elements, prosperity theme',
+        'oktoberfest': 'traditional Oktoberfest wedding with beer hall decorations, pretzel details, German elements, lederhosen theme',
+        'mardi_gras': 'festive Mardi Gras wedding with mask decorations, purple gold green colors, bead details, New Orleans theme',
+        
+        # Unique & Creative Themes
+        'book_lovers': 'literary book lovers wedding with book decorations, library elements, vintage books, reading nooks',
+        'music_festival': 'energetic music festival wedding with stage elements, band setup, festival decorations, music notes',
+        'travel_adventure': 'adventurous travel wedding with map decorations, luggage elements, passport details, world theme',
+        'wine_country': 'elegant wine country wedding with vineyard decorations, wine barrel elements, grape details, winery theme',
+        'coffee_house': 'cozy coffee house wedding with coffee bean decorations, café elements, espresso details, barista theme',
+        'neon_cyberpunk': 'futuristic neon cyberpunk wedding with LED decorations, cyber elements, tech details, futuristic theme',
+        'steampunk_victorian': 'vintage steampunk wedding with gear decorations, Victorian elements, brass details, mechanical theme',
+        'space_galaxy': 'cosmic space galaxy wedding with star decorations, planet elements, cosmic details, astronaut theme',
+        'under_the_sea': 'underwater sea wedding with ocean decorations, fish elements, coral details, submarine theme',
+        'secret_garden': 'mysterious secret garden wedding with hidden pathways, secret doors, garden mysteries, enchanted plants',
+        
+        # Vintage decades
+        '1950s_diner': '1950s diner wedding with retro booths, jukebox elements, checkered floors, vintage diner decorations',
+        '1960s_mod': '1960s mod wedding with geometric patterns, mod furniture, go-go decorations, psychedelic elements',
+        '1970s_disco': '1970s disco wedding with mirror balls, dance floor lights, disco decorations, groovy elements',
+        '1980s_neon': '1980s neon wedding with bright neon colors, synthesizer elements, new wave decorations, geometric shapes',
+        '1990s_grunge': '1990s grunge wedding with flannel decorations, alternative elements, Seattle theme, indie details',
+        'victorian_romance': 'elegant Victorian romance wedding with ornate furniture, lace details, romantic Victorian elements',
+        'art_nouveau': 'artistic Art Nouveau wedding with flowing lines, natural motifs, artistic elements, nouveau decorations',
+        'great_gatsby': 'glamorous Great Gatsby wedding with art deco elements, jazz age decorations, 1920s luxury',
+        
+        # Classic Popular Themes (enhanced)
+        'rustic': 'rustic farmhouse wedding with wooden ceremony arch, mason jar centerpieces, burlap details, string lights, wildflowers',
+        'modern': 'contemporary minimalist wedding with sleek geometric ceremony backdrop, modern acrylic chairs, clean white linens',
+        'vintage': 'romantic vintage wedding with ornate ceremony backdrop, vintage lace details, antique chairs, classic rose arrangements',
+        'bohemian': 'bohemian wedding with macrame ceremony backdrop, pampas grass arrangements, colorful textiles, floor cushions',
+        'classic': 'timeless traditional wedding with elegant ceremony arch, formal chiavari chairs, crystal chandeliers, classic white flowers',
+        'garden': 'natural garden wedding with floral ceremony arch, garden party seating, botanical centerpieces, abundant greenery',
+        'beach': 'coastal beach wedding with driftwood ceremony arch, beach chairs, flowing white fabrics, seashell accents',
+        'industrial': 'urban industrial wedding with metal pipe ceremony backdrop, Edison bulb lighting, exposed brick walls',
     }
     
-    # Updated space descriptions - what the space should BECOME
-    space_descriptions = {
-        'ceremony': 'beautiful wedding ceremony setup with aisle, altar, seating for guests, and romantic atmosphere',
-        'reception': 'elegant wedding reception with dining tables, centerpieces, and celebration space',
-        'dance_area': 'spacious dance floor area with proper lighting and entertainment setup',
-        'dinner_party': 'intimate dinner party setup with elegant table settings and warm ambiance',
-        'cocktail_hour': 'sophisticated cocktail hour space with mingling areas and refreshment stations',
-        'brunch': 'charming wedding brunch setup with bright, airy atmosphere and brunch-appropriate decor'
+    # Specific space setups - what the space should BECOME
+    space_setups = {
+        'wedding_ceremony': 'complete wedding ceremony setup with processional aisle, rows of chairs for guests, ceremonial altar or arch, unity candle area',
+        'reception_area': 'elegant wedding reception with dining tables, dance floor area, head table, centerpieces, celebration lighting',
+        'dance_floor': 'dedicated dance floor area with proper flooring, ambient lighting, DJ or band area, surrounding lounge seating',
+        'dinner_party': 'intimate dinner party setup with elegant dining table, formal place settings, ambient lighting',
+        'cocktail_hour': 'cocktail hour setup with standing tables, bar area, lounge seating, mingling space',
+        'bridal_suite': 'luxurious bridal preparation suite with vanity area, mirrors, seating for bridal party',
+        'photo_backdrop': 'stunning photo backdrop area with dramatic visual elements, perfect lighting',
+        'lounge_area': 'comfortable lounge area with seating groups, ambient lighting, relaxation space'
     }
     
-    # Construct basic prompt
+    # Guest count specifications
+    guest_specs = {
+        'intimate': 'seating for 15-30 guests with cozy intimate arrangement',
+        'medium': 'seating for 75-100 guests with balanced arrangement',
+        'large': 'seating for 150-200 guests with grand arrangement',
+        'grand': 'seating for 250+ guests with spectacular arrangement'
+    }
+    
+    # Build comprehensive prompt
     prompt_parts = [
-        "professional wedding photography, high resolution, photorealistic, detailed,",
-        "Transform this space into a beautiful wedding venue,",
-        f"set up as a {space_descriptions.get(space_type, 'wedding celebration area')},",
-        f"decorated in {theme_descriptions.get(theme, 'elegant')} style,",
-        "elegant wedding setup, romantic atmosphere, celebration ready,",
-        "maintain original architecture, enhance with wedding decorations,",
-        "wedding ready, romantic ambiance"
+        "professional wedding staging, photorealistic, detailed, high resolution",
+        f"Transform this space into a {space_setups.get(space_type, 'beautiful wedding venue')}",
+        f"beautiful {theme_descriptions.get(theme, 'elegant wedding')} style",
     ]
+    
+    # Add guest count if specified
+    if guest_count and guest_count in guest_specs:
+        prompt_parts.append(guest_specs[guest_count])
+    else:
+        prompt_parts.append("appropriate seating arrangement for wedding guests")
+    
+    # Add specific elements
+    prompt_parts.extend([
+        "elegant wedding setup, celebration ready",
+        "complete transformation of space",
+        "no people visible, empty chairs and tables ready for guests"
+    ])
     
     if additional_details:
         prompt_parts.append(additional_details)
     
     main_prompt = " ".join(prompt_parts)
     
-    # Basic negative prompt
-    negative_prompt = "people, faces, crowd, guests, bride, groom, blurry, low quality, pixelated, distorted, dark, dim, poor lighting, messy, cluttered, text, watermark, signature"
+    # Enhanced negative prompt
+    negative_prompt = "people, faces, crowd, guests, bride, groom, wedding party, humans, blurry, low quality, pixelated, distorted, dark, dim, messy, cluttered, text, watermark, signature, cartoon, unrealistic, artificial"
     
     return {
         'prompt': main_prompt,
         'negative_prompt': negative_prompt,
         'recommended_params': {
-            'aspect_ratio': '16:9',
-            'cfg_scale': 7.0,
-            'steps': 50,
+            'aspect_ratio': '16:9' if space_type in ['reception_area', 'dance_floor'] else '1:1',
+            'strength': 0.4,  # Increased for more dramatic transformation
             'output_format': 'png',
-            'strength': 0.35,
         }
     }
+
 
 def get_wedding_choices():
     """Get wedding theme and space type choices for forms"""
@@ -228,8 +443,8 @@ class ImageProcessingJob(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
     
-    # Wedding-specific fields
-    wedding_theme = models.CharField(max_length=20, choices=WEDDING_THEMES, null=True, blank=True)
+    # Wedding-specific fields - updated to support 50+ themes
+    wedding_theme = models.CharField(max_length=50, choices=WEDDING_THEMES, null=True, blank=True)
     space_type = models.CharField(max_length=20, choices=SPACE_TYPES, null=True, blank=True)
     
     # Dynamic wedding parameters
@@ -289,21 +504,19 @@ class ImageProcessingJob(models.Model):
                 self.strength = recommended_params.get('strength', self.strength)
                 self.output_format = recommended_params.get('output_format', self.output_format)
                 
-                logger.info(f"Generated dynamic prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                logger.info(f"Generated comprehensive prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating prompt for job {self.id}: {str(e)}")
+                logger.error(f"Error generating comprehensive prompt for job {self.id}: {str(e)}")
                 # Set a basic prompt as fallback
-                self.generated_prompt = f"Transform this {self.space_type} into a beautiful {self.wedding_theme} wedding venue, professional wedding photography, high quality, elegant decoration"
+                theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
+                self.generated_prompt = f"Transform this {self.space_type} into a beautiful {theme_name} wedding venue, professional wedding photography, high quality, elegant decoration"
                 self.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
         
         super().save(*args, **kwargs)
     
-    
     def get_stability_ai_params(self):
         """Get all parameters formatted for Stability AI SD3 Turbo API call"""
-        # Note: aspect_ratio is not included for image-to-image mode
-        # The output aspect ratio will match the input image
         return {
             'prompt': self.generated_prompt,
             'negative_prompt': self.negative_prompt,
@@ -311,28 +524,6 @@ class ImageProcessingJob(models.Model):
             'seed': self.seed,
             'output_format': self.output_format,
         }
-
-def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
-                                        budget_level=None, season=None, time_of_day=None,
-                                        color_scheme=None, custom_colors=None, additional_details=None):
-    """Generate comprehensive AI prompt with dynamic parameters for SD3 Turbo"""
-    try:
-        from .prompt_generator import WeddingPromptGenerator
-        
-        return WeddingPromptGenerator.generate_dynamic_prompt(
-            wedding_theme=wedding_theme,
-            space_type=space_type,
-            guest_count=guest_count,
-            budget_level=budget_level,
-            season=season,
-            time_of_day=time_of_day,
-            color_scheme=color_scheme,
-            custom_colors=custom_colors,
-            additional_details=additional_details
-        )
-    except ImportError as e:
-        logger.warning(f"Could not import WeddingPromptGenerator: {e}")
-        return generate_fallback_prompt(wedding_theme, space_type, additional_details)
 
 
 class ProcessedImage(models.Model):
@@ -409,7 +600,6 @@ class ProcessedImage(models.Model):
         return f"Wedding Transformation - Job {self.processing_job.id} ({status})"
 
 
-# Keep these models for favorites and collections (unchanged)
 class Collection(models.Model):
     """User collections/albums for organizing wedding inspiration"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
@@ -527,6 +717,7 @@ class Favorite(models.Model):
         space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
         return f"{theme_display} {space_display}"
 
+
 class PromptTemplate(models.Model):
     """Admin-manageable prompt templates for wedding transformations"""
     
@@ -618,7 +809,7 @@ class GenerationPreset(models.Model):
 
 
 class ProcessingJobEnhanced(models.Model):
-    """Enhanced processing job with dynamic parameters - extend your existing ImageProcessingJob"""
+    """Enhanced processing job with dynamic parameters"""
     
     # Link to existing job
     base_job = models.OneToOneField('ImageProcessingJob', on_delete=models.CASCADE, related_name='enhanced_data')

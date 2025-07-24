@@ -8,8 +8,8 @@
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12 text-center">
-      <h1 class="display-5">💍</h1>
-      <p class="lead">Transform any space into your perfect wedding celebration area</p>
+      <h1 class="display-5">Wedding Venue Visualizer</h1>
+      <p class="lead">Transform any space into your perfect wedding celebration</p>
     </div>
   </div>
 
@@ -18,10 +18,11 @@
     <!-- Right Sidebar: Controls -->
     <div class="col-md-4 col-lg-3 order-md-2 mb-4">
       
+
       <!-- Recent Uploads -->
       <div class="card mb-3">
         <div class="card-header">
-          <h6 class="mb-0">Recent Uploads</h6>
+          <h6 class="mb-0">📸 Recent Uploads</h6>
         </div>
         <div class="card-body">
           {% if recent_images %}
@@ -60,109 +61,145 @@
         </div>
       </div>
 
-      <!-- Transform Controls -->
+      <!-- Main Transform Controls -->
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Visualization Options</h5>
+          <h5 class="mb-0">🎨 Customize Your Vision</h5>
         </div>
         <div class="card-body p-4">
           <form id="transformForm">
             {% csrf_token %}
             
-            <!-- Core Options -->
+            <!-- Essential Options -->
             <div class="mb-4">
-              <label for="wedding-theme" class="form-label fs-6"><strong>Wedding Style</strong></label>
-              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
-                <option value="">Choose style...</option>
+              <label for="wedding-theme" class="form-label fw-bold">Wedding Style</label>
+              <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
+                <option value="">Choose your style...</option>
                 {% for value, label in wedding_themes %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
+              <small class="text-muted">The overall aesthetic and mood</small>
             </div>
             
             <div class="mb-4">
-              <label for="space-type" class="form-label fs-6"><strong>Celebration Purpose</strong></label>
-              <select class="form-select" id="space-type" name="space_type" required>
-                <option value="">What will this space be used for?</option>
+              <label for="space-type" class="form-label fw-bold">Space Purpose</label>
+              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
+                <option value="">What will this space be?</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
+              <small class="text-muted">How guests will use this space</small>
             </div>
             
-            <!-- Dynamic Options Toggle -->
+            <!-- Smart Suggestions (shown when core options selected) -->
+            <div id="smartSuggestions" class="mb-4" style="display: none;">
+              <div class="alert alert-info border-0" style="background-color: #e3f2fd;">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-lightbulb text-info me-2"></i>
+                  <div>
+                    <small class="fw-bold">Suggested for this combination:</small>
+                    <div id="suggestionText" class="small mt-1"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- More Options Toggle -->
             <div class="mb-3">
-              <button type="button" class="btn btn-outline-secondary btn-sm w-100" data-bs-toggle="collapse" data-bs-target="#advancedOptions">
-                <i class="bi bi-sliders"></i> More Options
+              <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
+                      data-bs-toggle="collapse" data-bs-target="#advancedOptions">
+                <i class="bi bi-sliders"></i> More Options <small class="text-muted">(optional)</small>
               </button>
             </div>
             
-            <!-- Advanced/Dynamic Options -->
+            <!-- Advanced Options -->
             <div class="collapse" id="advancedOptions">
               <div class="border rounded p-3 mb-4" style="background-color: #f8f9fa;">
                 
-                <!-- Guest Count -->
-                <div class="mb-3">
-                  <label for="guest-count" class="form-label small">Guest Count</label>
-                  <select class="form-select form-select-sm" id="guest-count" name="guest_count">
-                    {% for value, label in guest_count_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
+                <!-- Most Important Secondary Options -->
+                <div class="row mb-3">
+                  <div class="col-6">
+                    <label for="guest-count" class="form-label small">Guest Count</label>
+                    <select class="form-select form-select-sm" id="guest-count" name="guest_count">
+                      <option value="">Any size</option>
+                      {% for value, label in guest_count_choices %}
+                        {% if value %}
+                          <option value="{{ value }}">{{ label|truncatechars:20 }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label for="budget-level" class="form-label small">Budget Level</label>
+                    <select class="form-select form-select-sm" id="budget-level" name="budget_level">
+                      <option value="">Any budget</option>
+                      {% for value, label in budget_choices %}
+                        {% if value %}
+                          <option value="{{ value }}">{{ label|truncatechars:20 }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
                 </div>
                 
-                <!-- Budget Level -->
+                <!-- Color and Atmosphere -->
                 <div class="mb-3">
-                  <label for="budget-level" class="form-label small">Budget Level</label>
-                  <select class="form-select form-select-sm" id="budget-level" name="budget_level">
-                    {% for value, label in budget_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Season -->
-                <div class="mb-3">
-                  <label for="season" class="form-label small">Season</label>
-                  <select class="form-select form-select-sm" id="season" name="season">
-                    {% for value, label in season_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Time of Day -->
-                <div class="mb-3">
-                  <label for="time-of-day" class="form-label small">Time of Day</label>
-                  <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
-                    {% for value, label in time_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Color Scheme -->
-                <div class="mb-3">
-                  <label for="color-scheme" class="form-label small">Color Scheme</label>
+                  <label for="color-scheme" class="form-label small">Color Palette</label>
                   <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
+                    <option value="">Theme default</option>
                     {% for value, label in color_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
+                      {% if value %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endif %}
                     {% endfor %}
                   </select>
                 </div>
                 
-                <!-- Custom Colors (hidden by default) -->
+                <!-- Custom Colors (conditional) -->
                 <div class="mb-3" id="custom-colors-container" style="display: none;">
-                  <label for="custom-colors" class="form-label small">Custom Colors</label>
+                  <label for="custom-colors" class="form-label small">Your Colors</label>
                   <input type="text" class="form-control form-control-sm" id="custom-colors" name="custom_colors" 
-                         placeholder="e.g., blush pink, sage green, gold">
+                         placeholder="e.g., blush pink, sage green, gold accents">
+                  <div class="form-text">Describe your specific color palette</div>
                 </div>
                 
-                <!-- Additional Details -->
+                <!-- Contextual Options (shown based on theme/space selection) -->
+                <div id="contextualOptions">
+                  <!-- Season (shown for garden/outdoor themes) -->
+                  <div class="mb-3" id="season-option" style="display: none;">
+                    <label for="season" class="form-label small">Season</label>
+                    <select class="form-select form-select-sm" id="season" name="season">
+                      <option value="">Any season</option>
+                      {% for value, label in season_choices %}
+                        {% if value %}
+                          <option value="{{ value }}">{{ label }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                  
+                  <!-- Time of Day (shown for ceremony/outdoor) -->
+                  <div class="mb-3" id="time-option" style="display: none;">
+                    <label for="time-of-day" class="form-label small">Time of Day</label>
+                    <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
+                      <option value="">Any time</option>
+                      {% for value, label in time_choices %}
+                        {% if value %}
+                          <option value="{{ value }}">{{ label }}</option>
+                        {% endif %}
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Special Details -->
                 <div class="mb-3">
-                  <label for="additional-details" class="form-label small">Additional Details</label>
+                  <label for="additional-details" class="form-label small">Special Touches</label>
                   <textarea class="form-control form-control-sm" id="additional-details" name="additional_details" 
-                            rows="2" placeholder="Any specific requirements..."></textarea>
+                            rows="2" placeholder="Any specific elements you want to include?"></textarea>
+                  <div class="form-text">e.g., "string lights", "vintage chandelier", "long farm tables"</div>
                 </div>
               </div>
             </div>
@@ -170,9 +207,18 @@
             <!-- Generate Button -->
             <div class="d-grid">
               <button type="submit" class="btn btn-primary btn-lg py-3" id="transformBtn" disabled>
-                <i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>
+                <i class="bi bi-magic"></i> <span class="fs-5">Transform Space</span>
               </button>
             </div>
+            
+            <!-- Usage Info -->
+            {% if usage_data %}
+            <div class="text-center mt-2">
+              <small class="text-muted">
+                {{ usage_data.remaining }} of {{ usage_data.limit }} transforms remaining
+              </small>
+            </div>
+            {% endif %}
           </form>
         </div>
       </div>
@@ -181,7 +227,7 @@
     <!-- Left: Main Image Upload/Preview Area -->
     <div class="col-md-8 col-lg-9 order-md-1 mb-4">
       <div class="card h-100">
-        <div class="card-body position-relative d-flex flex-column" style="min-height: 400px;">
+        <div class="card-body position-relative d-flex flex-column" style="min-height: 500px;">
           
           <!-- Upload Button - Top Left Corner -->
           <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
@@ -194,24 +240,35 @@
           
           <!-- Upload Area (default state) -->
           <div id="uploadArea" class="flex-grow-1 d-flex align-items-center justify-content-center">
-            <div class="text-center" id="dropZone" style="cursor: pointer; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: 2px dashed #dee2e6; border-radius: 10px; min-height: 300px;">
+            <div class="text-center" id="dropZone" style="cursor: pointer; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: 2px dashed #dee2e6; border-radius: 10px; min-height: 400px;">
               <div>
                 <i class="bi bi-cloud-upload text-primary mb-3" style="font-size: 4rem;"></i>
                 <h4 class="mt-3">Upload Your Venue Photo</h4>
                 <p class="text-muted mb-4">Drop your image here or click "Upload Photo" above</p>
-                <p class="text-muted"><small>JPG, PNG, GIF, WebP • Max 5MB</small></p>
+                <p class="text-muted"><small>JPG, PNG, WebP • Max 10MB</small></p>
+                
+                <!-- Example Images -->
+                <div class="mt-4">
+                  <small class="text-muted d-block mb-2">Works great with:</small>
+                  <div class="d-flex justify-content-center gap-2 flex-wrap">
+                    <span class="badge bg-light text-dark">Empty rooms</span>
+                    <span class="badge bg-light text-dark">Outdoor spaces</span>
+                    <span class="badge bg-light text-dark">Event halls</span>
+                    <span class="badge bg-light text-dark">Backyards</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Upload Progress (hidden by default) -->
+          <!-- Upload Progress -->
           <div id="uploadProgress" class="flex-grow-1 d-none align-items-center justify-content-center">
             <div class="text-center">
               <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">Uploading...</span>
               </div>
               <h5>Uploading your photo...</h5>
-              <p class="text-muted">Please wait while we process your image</p>
+              <p class="text-muted">Processing your venue image</p>
               <div class="progress mt-3" style="height: 6px; width: 300px; margin: 0 auto;">
                 <div class="progress-bar progress-bar-striped progress-bar-animated" 
                      role="progressbar" style="width: 100%"></div>
@@ -219,12 +276,12 @@
             </div>
           </div>
 
-          <!-- Selected Image Preview (hidden by default) -->
+          <!-- Selected Image Preview -->
           <div id="imagePreview" class="flex-grow-1 d-none align-items-center justify-content-center">
             <div class="text-center w-100 h-100 position-relative">
               <img id="selectedImage" 
                    class="img-fluid rounded shadow" 
-                   style="max-height: 100%; max-width: 100%; object-fit: contain; height: auto; width: auto;" 
+                   style="max-height: 100%; max-width: 100%; object-fit: contain;" 
                    alt="Selected Venue">
               <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 bg-white bg-opacity-90 rounded px-3 py-2">
                 <h6 id="selectedImageName" class="mb-1">Selected Image</h6>
@@ -248,7 +305,7 @@
             </div>
             <div>
               <h5 class="mb-1">Creating Your Wedding Vision...</h5>
-              <p class="mb-0 text-muted">This may take some time...</p>
+              <p class="mb-0 text-muted">Using AI to transform your space - this may take 1-2 minutes</p>
             </div>
           </div>
         </div>
@@ -276,7 +333,7 @@
                     <strong>{{ job.user_image.original_filename }}</strong>
                     {% if job.wedding_theme and job.space_type %}
                       <small class="text-muted d-block">
-                        {{ job.theme_display }} • {{ job.space_display }}
+                        {{ job.get_wedding_theme_display }} • {{ job.get_space_type_display }}
                       </small>
                     {% endif %}
                   </div>
@@ -301,7 +358,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     let selectedImageId = null;
     
-    // Get all necessary elements
+    // Smart suggestions for theme/space combinations
+    const suggestions = {
+        'rustic_reception_area': 'Medium guest count, moderate budget, fall season, earth tones',
+        'rustic_barn': 'Intimate to medium guests, string lights, warm colors',
+        'modern_ballroom': 'Large guest count, luxury budget, evening time, monochrome colors',
+        'garden_wedding_ceremony': 'Any size, spring/summer, afternoon, natural colors',
+        'beach_wedding_ceremony': 'Medium guests, summer, sunset time, coastal colors',
+        'vintage_reception_area': 'Medium guests, moderate to luxury budget, pastels',
+        'classic_ballroom': 'Large to grand, luxury budget, evening, neutral palette'
+    };
+    
+    // Get elements
     const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
     const dropZone = document.getElementById('dropZone');
@@ -314,48 +382,111 @@ document.addEventListener('DOMContentLoaded', function() {
     const transformBtn = document.getElementById('transformBtn');
     const weddingTheme = document.getElementById('wedding-theme');
     const spaceType = document.getElementById('space-type');
-    const recentImagesContainer = document.getElementById('recentImagesContainer');
     const colorScheme = document.getElementById('color-scheme');
     const customColorsContainer = document.getElementById('custom-colors-container');
+    const smartSuggestions = document.getElementById('smartSuggestions');
+    const suggestionText = document.getElementById('suggestionText');
+    const seasonOption = document.getElementById('season-option');
+    const timeOption = document.getElementById('time-option');
     
-    // Handle custom colors visibility
+    // Preset buttons
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const theme = this.dataset.theme;
+            const space = this.dataset.space;
+            const guest = this.dataset.guest;
+            const budget = this.dataset.budget;
+            
+            // Set form values
+            if (weddingTheme) weddingTheme.value = theme;
+            if (spaceType) spaceType.value = space;
+            if (document.getElementById('guest-count')) document.getElementById('guest-count').value = guest;
+            if (document.getElementById('budget-level')) document.getElementById('budget-level').value = budget;
+            
+            // Show suggestions and contextual options
+            showSmartSuggestions();
+            showContextualOptions();
+            updateTransformBtnState();
+            
+            showToast(`Applied ${this.textContent.trim()} preset!`, 'success');
+        });
+    });
+    
+    // Handle theme/space changes for smart suggestions
+    [weddingTheme, spaceType].forEach(field => {
+        if (field) {
+            field.addEventListener('change', function() {
+                showSmartSuggestions();
+                showContextualOptions();
+                updateTransformBtnState();
+            });
+        }
+    });
+    
+    function showSmartSuggestions() {
+        if (!weddingTheme?.value || !spaceType?.value) {
+            smartSuggestions.style.display = 'none';
+            return;
+        }
+        
+        const combo = `${weddingTheme.value}_${spaceType.value}`;
+        const suggestion = suggestions[combo];
+        
+        if (suggestion) {
+            suggestionText.textContent = suggestion;
+            smartSuggestions.style.display = 'block';
+        } else {
+            smartSuggestions.style.display = 'none';
+        }
+    }
+    
+    function showContextualOptions() {
+        const theme = weddingTheme?.value;
+        const space = spaceType?.value;
+        
+        // Show season for outdoor themes
+        const outdoorThemes = ['garden', 'beach', 'rustic'];
+        const showSeason = outdoorThemes.includes(theme) || space?.includes('garden') || space?.includes('outdoor');
+        if (seasonOption) {
+            seasonOption.style.display = showSeason ? 'block' : 'none';
+        }
+        
+        // Show time for ceremonies and outdoor spaces
+        const ceremonySpaces = ['wedding_ceremony', 'garden', 'beach'];
+        const showTime = ceremonySpaces.includes(space) || outdoorThemes.includes(theme);
+        if (timeOption) {
+            timeOption.style.display = showTime ? 'block' : 'none';
+        }
+    }
+    
+    // Handle custom colors
     if (colorScheme) {
         colorScheme.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                customColorsContainer.style.display = 'block';
-            } else {
-                customColorsContainer.style.display = 'none';
-            }
+            customColorsContainer.style.display = this.value === 'custom' ? 'block' : 'none';
         });
     }
     
-    // Upload button click handler
-    uploadBtn.addEventListener('click', function() {
-        fileInput.click();
-    });
+    // Upload functionality (same as before)
+    uploadBtn.addEventListener('click', () => fileInput.click());
     
-    // Drop zone click handler  
-    dropZone.addEventListener('click', function(e) {
-        fileInput.click();
-    });
+    dropZone.addEventListener('click', () => fileInput.click());
     
-    // Drag and drop handlers
     dropZone.addEventListener('dragover', function(e) {
         e.preventDefault();
-        dropZone.style.borderColor = '#007bff';
-        dropZone.style.backgroundColor = '#f8f9fa';
+        this.style.borderColor = '#007bff';
+        this.style.backgroundColor = '#f8f9fa';
     });
     
     dropZone.addEventListener('dragleave', function(e) {
         e.preventDefault();
-        dropZone.style.borderColor = '#dee2e6';
-        dropZone.style.backgroundColor = 'transparent';
+        this.style.borderColor = '#dee2e6';
+        this.style.backgroundColor = 'transparent';
     });
     
     dropZone.addEventListener('drop', function(e) {
         e.preventDefault();
-        dropZone.style.borderColor = '#dee2e6';
-        dropZone.style.backgroundColor = 'transparent';
+        this.style.borderColor = '#dee2e6';
+        this.style.backgroundColor = 'transparent';
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
@@ -363,30 +494,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // File input change handler
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) {
             handleFileSelection(this.files[0]);
         }
     });
     
-    // Handle file selection and upload
     function handleFileSelection(file) {
-        // Validate file
         if (!file.type.startsWith('image/')) {
             showToast('Please select an image file', 'error');
             return;
         }
         
-        if (file.size > 5 * 1024 * 1024) {
-            showToast('File too large (max 5MB)', 'error');
+        if (file.size > 10 * 1024 * 1024) {
+            showToast('File too large (max 10MB)', 'error');
             return;
         }
         
         uploadFileWithAjax(file);
     }
     
-    // AJAX file upload function
     function uploadFileWithAjax(file) {
         showUploadProgress();
         
@@ -405,25 +532,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log('Upload response:', data);
             if (data.success) {
-                // Add to recent images
                 addNewImageToRecent(data);
-                
-                // Select the new image
                 setTimeout(() => {
                     selectImageById(data.image_id, data);
                     showToast(data.message || 'Image uploaded successfully!', 'success');
                 }, 100);
-                
-                // Clear file input
                 fileInput.value = '';
             } else {
                 throw new Error(data.error || 'Upload failed');
@@ -436,8 +552,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add new image to recent uploads
     function addNewImageToRecent(imageData) {
+        const recentImagesContainer = document.getElementById('recentImagesContainer');
         if (!recentImagesContainer) return;
         
         const newThumbnail = document.createElement('div');
@@ -470,39 +586,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Handle recent image selection
+    // Recent image selection
     document.querySelectorAll('.venue-thumbnail').forEach(thumbnail => {
         thumbnail.addEventListener('click', function() {
             selectImage(this);
         });
     });
     
-    // Select image by ID (for newly uploaded images)
     function selectImageById(imageId, imageData) {
         selectedImageId = imageId;
         
-        if (selectedImage && selectedImageName && selectedImageDetails) {
-            // Use the full image URL, not thumbnail
-            selectedImage.src = imageData.image_url;
-            selectedImageName.textContent = imageData.image_name;
-            selectedImageDetails.textContent = `${imageData.width}x${imageData.height} • ${formatFileSize(imageData.file_size)}`;
-            showImagePreview();
-        }
+        selectedImage.src = imageData.image_url;
+        selectedImageName.textContent = imageData.image_name;
+        selectedImageDetails.textContent = `${imageData.width}x${imageData.height} • ${formatFileSize(imageData.file_size)}`;
+        showImagePreview();
         
         updateTransformBtnState();
     }
     
-    // Select image from thumbnail
     function selectImage(thumbnail) {
-        // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
             t.style.borderColor = 'transparent';
-            t.style.borderWidth = '2px';
             t.style.transform = 'none';
             t.style.boxShadow = 'none';
         });
         
-        // Mark as selected
         thumbnail.style.borderColor = '#0d6efd';
         thumbnail.style.borderWidth = '3px';
         thumbnail.style.transform = 'translateY(-2px)';
@@ -510,25 +618,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         selectedImageId = thumbnail.dataset.imageId;
         
-        if (selectedImage && selectedImageName && selectedImageDetails) {
-            // Use the full image URL from data-image-url, not the thumbnail
-            selectedImage.src = thumbnail.dataset.imageUrl;
-            selectedImageName.textContent = thumbnail.dataset.imageName;
-            selectedImageDetails.textContent = `${thumbnail.dataset.imageDimensions} • ${formatFileSize(thumbnail.dataset.imageSize)}`;
-            showImagePreview();
-        }
+        selectedImage.src = thumbnail.dataset.imageUrl;
+        selectedImageName.textContent = thumbnail.dataset.imageName;
+        selectedImageDetails.textContent = `${thumbnail.dataset.imageDimensions} • ${formatFileSize(thumbnail.dataset.imageSize)}`;
+        showImagePreview();
         
         updateTransformBtnState();
     }
     
-    // Handle form field changes
-    [weddingTheme, spaceType].forEach(field => {
-        if (field) {
-            field.addEventListener('change', updateTransformBtnState);
-        }
-    });
-    
-    // Handle visualize button
+    // Transform button
     if (transformBtn) {
         transformBtn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -536,7 +634,74 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // State management functions
+    function visualizeVenue() {
+        if (!selectedImageId) {
+            showToast('Please select a venue photo first', 'error');
+            return;
+        }
+        
+        const theme = weddingTheme.value;
+        const space = spaceType.value;
+        
+        if (!theme || !space) {
+            showToast('Please select both wedding style and space purpose', 'error');
+            return;
+        }
+        
+        // Show processing
+        document.getElementById('processingStatus').style.display = 'block';
+        transformBtn.disabled = true;
+        transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Magic...';
+        
+        // Collect form data
+        const data = {
+            wedding_theme: theme,
+            space_type: space,
+            guest_count: document.getElementById('guest-count')?.value || '',
+            budget_level: document.getElementById('budget-level')?.value || '',
+            season: document.getElementById('season')?.value || '',
+            time_of_day: document.getElementById('time-of-day')?.value || '',
+            color_scheme: document.getElementById('color-scheme')?.value || '',
+            custom_colors: document.getElementById('custom-colors')?.value || '',
+            additional_details: document.getElementById('additional-details')?.value || ''
+        };
+        
+        // Submit
+        fetch(`/studio/image/${selectedImageId}/process/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✨ Transformation started! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 2000);
+            } else {
+                showToast('Error: ' + data.error, 'error');
+                resetTransformBtn();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while processing', 'error');
+            resetTransformBtn();
+        });
+    }
+    
+    function resetTransformBtn() {
+        document.getElementById('processingStatus').style.display = 'none';
+        transformBtn.disabled = false;
+        transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Transform Space</span>';
+        updateTransformBtnState();
+    }
+    
+    // State management
     function showUploadProgress() {
         uploadArea.classList.add('d-none');
         imagePreview.classList.add('d-none');
@@ -554,9 +719,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showUploadArea() {
         imagePreview.classList.add('d-none');
-        imagePreview.classList.remove('d-flex');
         uploadProgress.classList.add('d-none');
-        uploadProgress.classList.remove('d-flex');
         uploadArea.classList.remove('d-none');
     }
     
@@ -565,78 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasTheme = weddingTheme && weddingTheme.value;
         const hasSpace = spaceType && spaceType.value;
         
-        const canVisualize = hasImage && hasTheme && hasSpace;
-        
-        if (transformBtn) {
-            transformBtn.disabled = !canVisualize;
-        }
-    }
-    
-    function visualizeVenue() {
-        if (!selectedImageId) {
-            showToast('Please select a venue photo first', 'error');
-            return;
-        }
-        
-        const theme = weddingTheme.value;
-        const space = spaceType.value;
-        
-        if (!theme || !space) {
-            showToast('Please select both wedding style and space type', 'error');
-            return;
-        }
-        
-        // Show processing status
-        document.getElementById('processingStatus').style.display = 'block';
-        transformBtn.disabled = true;
-        transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
-        
-        // Collect all form data including dynamic options
-        const data = {
-            wedding_theme: theme,
-            space_type: space,
-            guest_count: document.getElementById('guest-count')?.value || '',
-            budget_level: document.getElementById('budget-level')?.value || '',
-            season: document.getElementById('season')?.value || '',
-            time_of_day: document.getElementById('time-of-day')?.value || '',
-            color_scheme: document.getElementById('color-scheme')?.value || '',
-            custom_colors: document.getElementById('custom-colors')?.value || '',
-            additional_details: document.getElementById('additional-details')?.value || ''
-        };
-        
-        // Submit transformation request
-        fetch(`/studio/image/${selectedImageId}/process/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('Processing started! Redirecting to history...', 'success');
-                setTimeout(() => {
-                    window.location.href = data.redirect_url;
-                }, 2000);
-            } else {
-                showToast('Error: ' + data.error, 'error');
-                resetTransformBtn();
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while processing your venue', 'error');
-            resetTransformBtn();
-        });
-    }
-    
-    function resetTransformBtn() {
-        document.getElementById('processingStatus').style.display = 'none';
-        transformBtn.disabled = false;
-        transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Visualize</span>';
-        updateTransformBtnState();
+        transformBtn.disabled = !(hasImage && hasTheme && hasSpace);
     }
     
     function formatFileSize(bytes) {
@@ -662,14 +754,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (toast.parentElement) {
                 toast.remove();
             }
-        }, 3000);
+        }, 5000);
     }
     
-    // Initialize button state
+    // Initialize
     updateTransformBtnState();
 });
 </script>
 
-<!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}
