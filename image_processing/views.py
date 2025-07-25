@@ -76,6 +76,15 @@ def wedding_studio(request):
     # GET request - display the studio
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
+    # Get specific image if image_id is provided (for preselection from gallery)
+    preselected_image = None
+    image_id = request.GET.get('image_id')
+    if image_id:
+        try:
+            preselected_image = UserImage.objects.get(id=image_id, user=request.user)
+        except UserImage.DoesNotExist:
+            pass
+    
     # Get user's usage data
     from usage_limits.usage_tracker import UsageTracker
     usage_data = UsageTracker.get_usage_data(request.user)
@@ -87,6 +96,7 @@ def wedding_studio(request):
     
     context = {
         'recent_images': recent_images,
+        'preselected_image': preselected_image,
         'usage_data': usage_data,
         'recent_jobs': recent_jobs,
         'wedding_themes': WEDDING_THEMES,
@@ -197,25 +207,10 @@ def image_detail(request, pk):
         user_image=user_image
     ).order_by('-created_at')
     
-    # Get suggestions based on theme/space if available
-    suggestions = None
-    if processing_jobs.exists():
-        latest_job = processing_jobs.first()
-        if latest_job.wedding_theme and latest_job.space_type:
-            try:
-                from .prompt_generator import WeddingPromptGenerator
-                suggestions = WeddingPromptGenerator.get_quick_suggestions(
-                    latest_job.wedding_theme, 
-                    latest_job.space_type
-                )
-            except ImportError:
-                pass
-    
     context = {
         'user_image': user_image,
         'usage_data': usage_data,
         'processing_jobs': processing_jobs,
-        'suggestions': suggestions,
         'transform_form': WeddingTransformForm(),
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,

@@ -1,4 +1,3 @@
-# image_processing/services.py - Updated for SD3.5 Large API
 import io
 import base64
 import requests
@@ -86,7 +85,7 @@ class StabilityAIService:
             url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
             
             logger.info(f"Making SD3.5 Large API request to {url}")
-            logger.info(f"Parameters: cfg_scale={cfg_scale}, steps={steps}, strength={strength}, aspect_ratio={aspect_ratio}")
+            logger.info(f"Parameters: cfg_scale={cfg_scale}, steps={steps}, strength={strength}")
             
             # Use the headers method and ensure proper Accept header
             headers = self._get_headers()

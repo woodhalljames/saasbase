@@ -1,4 +1,4 @@
-<!-- saas_base/templates/image_processing/image_gallery.html - COMPLETE WITH FAVORITES -->
+<!-- saas_base/templates/image_processing/image_gallery.html - FIXED VISUALIZE LINK -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -84,7 +84,7 @@
                 {% endif %}
                 
                 <div class="mt-auto">
-                  <a href="{% 'image_processing:wedding_studio' image.object.pk %}" class="btn btn-primary btn-sm w-100">
+                  <a href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.object.pk }}" class="btn btn-primary btn-sm w-100">
                     <i class="bi bi-magic"></i> Visualize
                   </a>
                 </div>

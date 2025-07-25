@@ -96,7 +96,7 @@ WEDDING_THEMES = [
     ('christmas_magic', 'Christmas Magic'),
     ('halloween_gothic', 'Halloween Gothic'),
     ('valentine_romance', 'Valentine Romance'),
-    ('new_year_eve', 'New Year\'s Eve'),
+    ('new_year_eve', "New Year's Eve"),
     ('fourth_july', 'Fourth of July'),
     ('dia_muertos', 'Día de los Muertos'),
     ('chinese_new_year', 'Chinese New Year'),
@@ -126,41 +126,39 @@ WEDDING_THEMES = [
     ('industrial', 'Industrial Chic'),
 ]
 
+# STREAMLINED SPACE TYPES - Focus on 5 key wedding spaces
 SPACE_TYPES = [
     ('wedding_ceremony', 'Wedding Ceremony'),
-    ('reception_area', 'Reception Area'),
     ('dance_floor', 'Dance Floor'),
-    ('dinner_party', 'Dinner Party'),
+    ('dining_area', 'Dining Area'),
     ('cocktail_hour', 'Cocktail Hour'),
-    ('bridal_suite', 'Bridal Suite'),
-    ('photo_backdrop', 'Photo Backdrop'),
     ('lounge_area', 'Lounge Area'),
 ]
 
 def generate_wedding_prompt(theme, space_type, additional_details=None):
-    """Generate comprehensive AI prompt for wedding venue transformation using advanced system"""
+    """Generate comprehensive AI prompt for wedding venue transformation using improved space-first system"""
     try:
         from .prompt_generator import WeddingPromptGenerator
         
-        return WeddingPromptGenerator.generate_dynamic_prompt(
+        return WeddingPromptGenerator.generate_space_first_prompt(
             wedding_theme=theme, 
             space_type=space_type, 
             additional_details=additional_details
         )
     except ImportError as e:
         # Enhanced fallback prompt generation if import fails
-        logger.warning(f"Could not import comprehensive WeddingPromptGenerator: {e}")
-        return generate_comprehensive_fallback_prompt(theme, space_type, additional_details)
+        logger.warning(f"Could not import improved WeddingPromptGenerator: {e}")
+        return generate_space_first_fallback_prompt(theme, space_type, additional_details)
 
 
 def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
                                         budget_level=None, season=None, time_of_day=None,
                                         color_scheme=None, custom_colors=None, additional_details=None):
-    """Generate comprehensive AI prompt with dynamic parameters for SD3.5 Large"""
+    """Generate comprehensive AI prompt with space-first approach for SD3.5 Large"""
     try:
         from .prompt_generator import WeddingPromptGenerator
         
-        return WeddingPromptGenerator.generate_dynamic_prompt(
+        return WeddingPromptGenerator.generate_space_first_prompt(
             wedding_theme=wedding_theme,
             space_type=space_type,
             guest_count=guest_count,
@@ -172,168 +170,110 @@ def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count
             additional_details=additional_details
         )
     except ImportError as e:
-        logger.warning(f"Could not import comprehensive WeddingPromptGenerator: {e}")
-        return generate_comprehensive_fallback_prompt(wedding_theme, space_type, additional_details, guest_count)
+        logger.warning(f"Could not import improved WeddingPromptGenerator: {e}")
+        return generate_space_first_fallback_prompt(wedding_theme, space_type, additional_details, guest_count)
 
 
-def generate_comprehensive_fallback_prompt(theme, space_type, additional_details=None, guest_count=None):
-    """Comprehensive fallback prompt generation with support for all 50+ themes"""
+def generate_space_first_fallback_prompt(theme, space_type, additional_details=None, guest_count=None):
+    """Space-first fallback prompt generation focusing on the 5 core wedding spaces"""
     
-    # Comprehensive theme descriptions for all 50+ themes
-    theme_descriptions = {
-        # Cultural & Traditional Themes
-        'japanese_zen': 'serene Japanese zen wedding with cherry blossom ceremony arch, bamboo elements, paper lanterns, minimalist wooden seating, zen garden details',
-        'chinese_dynasty': 'elegant Chinese dynasty wedding with red silk draping, golden dragon decorations, traditional round tables, Chinese lanterns, jade accents',
-        'indian_palace': 'magnificent Indian palace wedding with marigold garlands, intricate mandap, silk cushions, golden elephant statues, jewel-toned fabrics',
-        'korean_hanbok': 'traditional Korean hanbok wedding with colorful silk ceremony arch, low wooden tables, hanbok-inspired decorations, lotus flowers',
-        'thai_temple': 'exotic Thai temple wedding with golden Buddha statues, tropical flowers, ornate Thai decorations, silk draping, incense holders',
-        'scottish_highland': 'rustic Scottish highland wedding with tartan details, bagpipe area, wooden ceremony arch, heather arrangements, clan banners',
-        'french_chateau': 'elegant French château wedding with ornate gold details, crystal chandeliers, French provincial furniture, rose arrangements',
-        'greek_island': 'stunning Greek island wedding with white and blue decorations, olive branch details, Mediterranean seating, Greek columns',
-        'italian_villa': 'romantic Italian villa wedding with vineyard elements, rustic wooden details, Italian cypress arrangements, wine barrel accents',
-        'english_garden': 'classic English garden wedding with rose arbors, cottage garden flowers, vintage tea service, English garden seating',
-        'mexican_fiesta': 'vibrant Mexican fiesta wedding with colorful papel picado, piñata decorations, mariachi area, bright flower arrangements',
-        'spanish_hacienda': 'elegant Spanish hacienda wedding with wrought iron details, terracotta elements, Spanish tile accents, fountain centerpieces',
-        'brazilian_carnival': 'festive Brazilian carnival wedding with bright feathers, samba decorations, tropical flowers, carnival masks',
-        'argentine_tango': 'passionate Argentine tango wedding with rose decorations, dance floor centerpiece, tango band area, elegant Argentine elements',
-        'moroccan_nights': 'exotic Moroccan nights wedding with ornate lanterns, rich tapestries, low lounge seating, intricate patterns, Middle Eastern decorations',
-        'arabian_desert': 'luxurious Arabian desert wedding with tent decorations, camel details, desert flowers, sand-colored elements',
-        'african_safari': 'adventurous African safari wedding with animal print details, acacia tree decorations, safari elements, earth-toned flowers',
-        'egyptian_royal': 'regal Egyptian royal wedding with golden pyramids, hieroglyphic details, Egyptian columns, royal blue accents',
-        
-        # Seasonal & Nature Themes
-        'winter_wonderland': 'magical winter wonderland wedding with snow-white decorations, ice crystal elements, evergreen arrangements, winter berries',
-        'spring_awakening': 'fresh spring awakening wedding with blooming flowers, pastel decorations, butterfly elements, garden growth theme',
-        'summer_solstice': 'vibrant summer solstice wedding with sun decorations, bright summer flowers, solar elements, longest day theme',
-        'autumn_harvest': 'cozy autumn harvest wedding with pumpkin decorations, fall leaves, harvest elements, apple details',
-        'forest_enchanted': 'mystical enchanted forest wedding with tree branches, fairy lights, moss details, woodland creatures',
-        'desert_bloom': 'stunning desert bloom wedding with cactus flowers, succulent arrangements, desert sunset theme, southwestern elements',
-        'ocean_waves': 'flowing ocean waves wedding with wave decorations, seashell details, ocean blue theme, coastal elements',
-        'mountain_vista': 'majestic mountain vista wedding with peak decorations, alpine flowers, mountain stone elements, vista views',
-        'tropical_paradise': 'lush tropical paradise wedding with palm leaves, tropical flowers, paradise birds, island elements',
-        
-        # Modern & Contemporary Themes
-        'metropolitan_chic': 'sophisticated metropolitan wedding with city skyline backdrop, urban furniture, glass elements, steel accents',
-        'brooklyn_loft': 'trendy Brooklyn loft wedding with exposed brick, industrial windows, loft furniture, urban art',
-        'rooftop_garden': 'elevated rooftop garden wedding with city views, container gardens, rooftop furniture, urban greenery',
-        'art_deco_glam': 'glamorous art deco wedding with geometric patterns, gold accents, deco furniture, vintage glam elements',
-        'scandinavian_simple': 'clean Scandinavian wedding with minimal furniture, white wood elements, simple flowers, hygge details',
-        'modern_monochrome': 'striking modern monochrome wedding with black and white elements, geometric shapes, minimal furniture',
-        'concrete_jungle': 'urban concrete jungle wedding with raw concrete, industrial plants, urban furniture, jungle plants',
-        'glass_house': 'transparent glass house wedding with glass elements, modern transparency, clean lines, light refraction',
-        
-        # Fantasy & Themed Celebrations
-        'enchanted_forest_fairy': 'magical enchanted fairy wedding with fairy lights, mushroom seating, woodland creatures, fairy wings',
-        'princess_castle': 'royal princess castle wedding with castle towers, princess decorations, royal throne seating, crown details',
-        'mermaid_lagoon': 'underwater mermaid wedding with seashell decorations, ocean plants, mermaid tail elements, underwater theme',
-        'dragon_castle': 'medieval dragon castle wedding with dragon decorations, castle stones, medieval banners, knight elements',
-        'unicorn_dreams': 'dreamy unicorn wedding with rainbow colors, unicorn horn details, magical flowers, dream elements',
-        'hollywood_glam': 'glamorous Hollywood wedding with red carpet, movie star elements, golden statues, spotlight details',
-        'broadway_musical': 'theatrical Broadway wedding with stage elements, musical decorations, theater seating, spotlight areas',
-        'vintage_circus': 'whimsical vintage circus wedding with carnival decorations, circus tents, popcorn details, carnival games',
-        'comic_book': 'superhero comic book wedding with comic elements, superhero decorations, pop art details, comic speech bubbles',
-        
-        # Holiday & Celebration Themes
-        'christmas_magic': 'magical Christmas wedding with evergreen decorations, red ribbon details, Christmas lights, ornament centerpieces',
-        'halloween_gothic': 'gothic Halloween wedding with dark decorations, pumpkin elements, autumn leaves, spooky details',
-        'valentine_romance': 'romantic Valentine wedding with heart decorations, rose petals, romantic red elements, love details',
-        'new_year_eve': 'glamorous New Year\'s Eve wedding with countdown elements, champagne details, midnight theme, celebration decorations',
-        'fourth_july': 'patriotic Fourth of July wedding with American flag elements, red white blue decorations, firework details',
-        'dia_muertos': 'colorful Día de los Muertos wedding with sugar skull decorations, marigold flowers, papel picado',
-        'chinese_new_year': 'festive Chinese New Year wedding with dragon decorations, red lanterns, lucky elements, prosperity theme',
-        'oktoberfest': 'traditional Oktoberfest wedding with beer hall decorations, pretzel details, German elements, lederhosen theme',
-        'mardi_gras': 'festive Mardi Gras wedding with mask decorations, purple gold green colors, bead details, New Orleans theme',
-        
-        # Unique & Creative Themes
-        'book_lovers': 'literary book lovers wedding with book decorations, library elements, vintage books, reading nooks',
-        'music_festival': 'energetic music festival wedding with stage elements, band setup, festival decorations, music notes',
-        'travel_adventure': 'adventurous travel wedding with map decorations, luggage elements, passport details, world theme',
-        'wine_country': 'elegant wine country wedding with vineyard decorations, wine barrel elements, grape details, winery theme',
-        'coffee_house': 'cozy coffee house wedding with coffee bean decorations, café elements, espresso details, barista theme',
-        'neon_cyberpunk': 'futuristic neon cyberpunk wedding with LED decorations, cyber elements, tech details, futuristic theme',
-        'steampunk_victorian': 'vintage steampunk wedding with gear decorations, Victorian elements, brass details, mechanical theme',
-        'space_galaxy': 'cosmic space galaxy wedding with star decorations, planet elements, cosmic details, astronaut theme',
-        'under_the_sea': 'underwater sea wedding with ocean decorations, fish elements, coral details, submarine theme',
-        'secret_garden': 'mysterious secret garden wedding with hidden pathways, secret doors, garden mysteries, enchanted plants',
-        
-        # Vintage decades
-        '1950s_diner': '1950s diner wedding with retro booths, jukebox elements, checkered floors, vintage diner decorations',
-        '1960s_mod': '1960s mod wedding with geometric patterns, mod furniture, go-go decorations, psychedelic elements',
-        '1970s_disco': '1970s disco wedding with mirror balls, dance floor lights, disco decorations, groovy elements',
-        '1980s_neon': '1980s neon wedding with bright neon colors, synthesizer elements, new wave decorations, geometric shapes',
-        '1990s_grunge': '1990s grunge wedding with flannel decorations, alternative elements, Seattle theme, indie details',
-        'victorian_romance': 'elegant Victorian romance wedding with ornate furniture, lace details, romantic Victorian elements',
-        'art_nouveau': 'artistic Art Nouveau wedding with flowing lines, natural motifs, artistic elements, nouveau decorations',
-        'great_gatsby': 'glamorous Great Gatsby wedding with art deco elements, jazz age decorations, 1920s luxury',
-        
-        # Classic Popular Themes (enhanced)
-        'rustic': 'rustic farmhouse wedding with wooden ceremony arch, mason jar centerpieces, burlap details, string lights, wildflowers',
-        'modern': 'contemporary minimalist wedding with sleek geometric ceremony backdrop, modern acrylic chairs, clean white linens',
-        'vintage': 'romantic vintage wedding with ornate ceremony backdrop, vintage lace details, antique chairs, classic rose arrangements',
-        'bohemian': 'bohemian wedding with macrame ceremony backdrop, pampas grass arrangements, colorful textiles, floor cushions',
-        'classic': 'timeless traditional wedding with elegant ceremony arch, formal chiavari chairs, crystal chandeliers, classic white flowers',
-        'garden': 'natural garden wedding with floral ceremony arch, garden party seating, botanical centerpieces, abundant greenery',
-        'beach': 'coastal beach wedding with driftwood ceremony arch, beach chairs, flowing white fabrics, seashell accents',
-        'industrial': 'urban industrial wedding with metal pipe ceremony backdrop, Edison bulb lighting, exposed brick walls',
+    # SPACE-FIRST APPROACH: Define what the space IS before styling it
+    space_definitions = {
+        'wedding_ceremony': {
+            'primary_function': 'wedding ceremony venue with processional aisle and guest seating',
+            'key_elements': 'ceremony altar or arch, guest seating arrangement in rows, processional aisle down the center, unity candle area',
+            'layout': 'guests seated in rows facing ceremony altar, clear center aisle for processional',
+            'functional_requirements': 'space for officiant, couple, and wedding party at altar area',
+            'capacity_guide': 'appropriate seating arrangement for wedding guests'
+        },
+        'dance_floor': {
+            'primary_function': 'dedicated dance floor area for wedding reception dancing',
+            'key_elements': 'polished dance floor surface, surrounding lounge seating, DJ or band area, ambient lighting',
+            'layout': 'central dance floor with perimeter seating, music setup area',
+            'functional_requirements': 'proper flooring for dancing, sound system area, comfortable viewing areas',
+            'capacity_guide': 'dance floor sized appropriately for expected number of dancers'
+        },
+        'dining_area': {
+            'primary_function': 'wedding reception dining space with tables and formal meal service',
+            'key_elements': 'dining tables with chairs, table settings, centerpieces, serving areas',
+            'layout': 'round or rectangular dining tables with proper spacing, clear pathways for service',
+            'functional_requirements': 'adequate space between tables, service access, comfortable seating',
+            'capacity_guide': 'dining tables arranged to accommodate all wedding guests'
+        },
+        'cocktail_hour': {
+            'primary_function': 'cocktail reception area for mingling and appetizers',
+            'key_elements': 'high cocktail tables, bar area, standing space, appetizer stations, lounge seating',
+            'layout': 'mix of standing areas and bar seating, multiple conversation zones',
+            'functional_requirements': 'bar setup, food service areas, comfortable mingling space',
+            'capacity_guide': 'space designed for social interaction and movement'
+        },
+        'lounge_area': {
+            'primary_function': 'comfortable seating area for relaxation and conversation',
+            'key_elements': 'comfortable sofas and chairs, coffee tables, ambient lighting, intimate seating groups',
+            'layout': 'grouped seating arrangements, conversation areas, relaxed atmosphere',
+            'functional_requirements': 'comfortable furniture, good conversation lighting, cozy atmosphere',
+            'capacity_guide': 'intimate seating groups for small conversations'
+        }
     }
     
-    # Specific space setups - what the space should BECOME
-    space_setups = {
-        'wedding_ceremony': 'complete wedding ceremony setup with processional aisle, rows of chairs for guests, ceremonial altar or arch, unity candle area',
-        'reception_area': 'elegant wedding reception with dining tables, dance floor area, head table, centerpieces, celebration lighting',
-        'dance_floor': 'dedicated dance floor area with proper flooring, ambient lighting, DJ or band area, surrounding lounge seating',
-        'dinner_party': 'intimate dinner party setup with elegant dining table, formal place settings, ambient lighting',
-        'cocktail_hour': 'cocktail hour setup with standing tables, bar area, lounge seating, mingling space',
-        'bridal_suite': 'luxurious bridal preparation suite with vanity area, mirrors, seating for bridal party',
-        'photo_backdrop': 'stunning photo backdrop area with dramatic visual elements, perfect lighting',
-        'lounge_area': 'comfortable lounge area with seating groups, ambient lighting, relaxation space'
+    # Theme styling elements (secondary to space function)
+    theme_styling = {
+        'rustic': 'rustic wooden elements, burlap details, mason jar lighting, wildflowers, string lights, barn-style decorations',
+        'modern': 'clean geometric lines, contemporary furniture, minimalist decorations, sleek lighting, modern materials',
+        'vintage': 'antique furniture pieces, vintage lace details, classic roses, ornate chandeliers, romantic vintage elements',
+        'bohemian': 'macrame details, pampas grass, colorful textiles, floor cushions, natural materials, boho decorations',
+        'classic': 'elegant traditional furniture, formal place settings, crystal chandeliers, classic white flowers, timeless details',
+        'garden': 'natural flowers, greenery, botanical elements, garden-style furniture, organic decorations',
+        'beach': 'coastal elements, flowing fabrics, natural wood, seashell details, ocean-inspired colors',
+        'industrial': 'metal fixtures, Edison bulb lighting, concrete elements, urban materials, modern industrial design',
+        # Add more themes as needed
     }
+    
+    # Get space and theme data
+    space_data = space_definitions.get(space_type, space_definitions['wedding_ceremony'])
+    theme_elements = theme_styling.get(theme, 'elegant wedding decorations')
     
     # Guest count specifications
     guest_specs = {
-        'intimate': 'seating for 15-30 guests with cozy intimate arrangement',
-        'medium': 'seating for 75-100 guests with balanced arrangement',
-        'large': 'seating for 150-200 guests with grand arrangement',
-        'grand': 'seating for 250+ guests with spectacular arrangement'
+        'intimate': 'intimate scale for 15-50 guests',
+        'medium': 'medium scale for 75-100 guests', 
+        'large': 'large scale for 150-200 guests',
+        'grand': 'grand scale for 250+ guests'
     }
     
-    # Build comprehensive prompt with improved structure for SD3.5 Large
-    quality_foundation = "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality."
-    
-    primary_transformation = f"Transform this space into a {space_setups.get(space_type, 'beautiful wedding venue')}."
-    
-    theme_specification = f"Style: {theme} wedding theme."
-    
-    theme_elements = f"Key elements: {theme_descriptions.get(theme, 'elegant wedding')} style."
-    
-    # Guest count and seating
-    seating_arrangement = ""
-    if guest_count and guest_count in guest_specs:
-        seating_arrangement = f"Seating: {guest_specs[guest_count]}."
-    else:
-        seating_arrangement = "Seating: appropriate arrangement for wedding guests."
-    
-    # Production requirements
-    production_level = "Production level: elegant wedding setup, celebration ready, complete transformation of space."
-    
-    # Technical requirements
-    technical_requirements = "Requirements: no people visible, empty chairs and tables ready for guests."
-    
-    if additional_details:
-        technical_requirements = f"Additional: {additional_details}. {technical_requirements}"
-    
-    # Assemble structured prompt
+    # BUILD SPACE-FIRST PROMPT
     prompt_sections = [
-        quality_foundation,
-        primary_transformation,
-        theme_specification,
-        theme_elements,
-        seating_arrangement,
-        production_level,
-        technical_requirements
+        # 1. QUALITY FOUNDATION
+        "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality.",
+        
+        # 2. PRIMARY SPACE DEFINITION (MOST IMPORTANT)
+        f"Transform this space into a complete {space_data['primary_function']}.",
+        
+        # 3. SPACE FUNCTION AND LAYOUT
+        f"Space requirements: {space_data['key_elements']}.",
+        f"Layout arrangement: {space_data['layout']}.",
+        
+        # 4. CAPACITY AND SCALE
+        guest_specs.get(guest_count, 'appropriate scale for wedding guests') + ".",
+        
+        # 5. FUNCTIONAL REQUIREMENTS
+        f"Functional setup: {space_data['functional_requirements']}.",
+        
+        # 6. THEME STYLING (Secondary enhancement)
+        f"Decorative style: {theme} wedding theme with {theme_elements}.",
+        
+        # 7. PRODUCTION QUALITY
+        "Production level: professional wedding setup, celebration ready, elegant decorations.",
+        
+        # 8. ADDITIONAL DETAILS
+        additional_details + "." if additional_details else "",
+        
+        # 9. TECHNICAL REQUIREMENTS
+        "Requirements: no people visible, empty and ready for wedding guests, professional photography lighting."
     ]
     
-    main_prompt = " ".join(prompt_sections)
+    # Assemble prompt
+    main_prompt = " ".join([section for section in prompt_sections if section.strip()])
     
     # Enhanced negative prompt
     negative_prompt = "people, faces, crowd, guests, bride, groom, wedding party, humans, blurry, low quality, pixelated, distorted, dark, dim, messy, cluttered, text, watermark, signature, cartoon, unrealistic, artificial"
@@ -342,9 +282,9 @@ def generate_comprehensive_fallback_prompt(theme, space_type, additional_details
         'prompt': main_prompt,
         'negative_prompt': negative_prompt,
         'recommended_params': {
-            'strength': 0.4,  # SD3.5 Large optimal strength
-            'cfg_scale': 7.0,  # SD3.5 Large supports cfg_scale
-            'steps': 50,      # SD3.5 Large supports steps
+            'strength': 0.4,
+            'cfg_scale': 7.0,
+            'steps': 50,
             'output_format': 'png',
         }
     }
@@ -358,6 +298,7 @@ def get_wedding_choices():
     }
 
 
+# Rest of the models remain the same...
 class UserImage(models.Model):
     """User uploaded images"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='images')
@@ -455,7 +396,7 @@ class ImageProcessingJob(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
     
-    # Wedding-specific fields - updated to support 50+ themes
+    # Wedding-specific fields - updated to support 50+ themes and 5 core spaces
     wedding_theme = models.CharField(max_length=50, choices=WEDDING_THEMES, null=True, blank=True)
     space_type = models.CharField(max_length=20, choices=SPACE_TYPES, null=True, blank=True)
     
@@ -472,7 +413,7 @@ class ImageProcessingJob(models.Model):
     generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
     negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
     
-    # SD3.5 Large parameters - includes cfg_scale and steps
+    # SD3.5 Large parameters
     cfg_scale = models.FloatField(default=7.0, help_text="How strictly the diffusion process adheres to the prompt text (1.0-20.0)")
     steps = models.IntegerField(default=50, help_text="Number of diffusion steps to run (10-150)")
     seed = models.BigIntegerField(blank=True, null=True, help_text="Random noise seed for generation")
@@ -494,7 +435,7 @@ class ImageProcessingJob(models.Model):
         return f"Wedding Job {self.id} - {theme_display} {space_display} ({self.status})"
     
     def save(self, *args, **kwargs):
-        # Generate comprehensive prompt if wedding theme and space type are provided
+        # Generate space-first prompt if wedding theme and space type are provided
         if self.wedding_theme and self.space_type and not self.generated_prompt:
             try:
                 prompt_data = generate_wedding_prompt_with_dynamics(
@@ -518,15 +459,15 @@ class ImageProcessingJob(models.Model):
                 self.cfg_scale = recommended_params.get('cfg_scale', self.cfg_scale)
                 self.steps = recommended_params.get('steps', self.steps)
                 self.output_format = recommended_params.get('output_format', self.output_format)
-                # Note: aspect_ratio removed to maintain original image dimensions
                 
-                logger.info(f"Generated comprehensive prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                logger.info(f"Generated space-first prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating comprehensive prompt for job {self.id}: {str(e)}")
+                logger.error(f"Error generating space-first prompt for job {self.id}: {str(e)}")
                 # Set a basic prompt as fallback
                 theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
-                self.generated_prompt = f"Transform this {self.space_type} into a beautiful {theme_name} wedding venue, professional wedding photography, high quality, elegant decoration"
+                space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type)
+                self.generated_prompt = f"Transform this space into a beautiful {space_name} for a {theme_name} wedding, professional wedding photography, high quality, elegant decoration"
                 self.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
         
         super().save(*args, **kwargs)
@@ -542,7 +483,7 @@ class ImageProcessingJob(models.Model):
             'seed': self.seed,
             'output_format': self.output_format,
         }
-        # Note: aspect_ratio removed to maintain original image dimensions
+
 
 
 class ProcessedImage(models.Model):

@@ -9,12 +9,137 @@ from django.http import JsonResponse, Http404
 from django.db import transaction
 from django.utils import timezone
 from datetime import datetime
+import re
+from urllib.parse import urlparse
 
 from .models import CoupleProfile, RegistryLink, SocialMediaLink, WeddingPhotoCollection
 from .forms import (
-    CoupleProfileForm, SocialMediaFormSet, RegistryFormSet, 
-    PhotoCollectionFormSet
+    CoupleProfileForm, SocialMediaFormSet, RegistryFormSet
 )
+
+
+def detect_registry_branding(url):
+    """Detect registry type and branding from URL"""
+    if not url:
+        return {'type': 'other', 'name': '', 'icon': 'bi-gift'}
+    
+    url_lower = url.lower()
+    domain = urlparse(url).netloc.lower()
+    
+    registry_patterns = {
+        'amazon': {
+            'patterns': ['amazon.com', 'amzn.com'],
+            'name': 'Amazon',
+            'icon': 'bi-amazon',
+            'color': '#FF9900'
+        },
+        'target': {
+            'patterns': ['target.com'],
+            'name': 'Target',
+            'icon': 'bi-bullseye',
+            'color': '#CC0000'
+        },
+        'bed_bath_beyond': {
+            'patterns': ['bedbathandbeyond.com', 'buybuybaby.com'],
+            'name': 'Bed Bath & Beyond',
+            'icon': 'bi-house-fill',
+            'color': '#003087'
+        },
+        'williams_sonoma': {
+            'patterns': ['williams-sonoma.com', 'williamssonoma.com'],
+            'name': 'Williams Sonoma',
+            'icon': 'bi-cup-hot-fill',
+            'color': '#8B4513'
+        },
+        'crate_barrel': {
+            'patterns': ['crateandbarrel.com', 'cb2.com'],
+            'name': 'Crate & Barrel',
+            'icon': 'bi-house-door-fill',
+            'color': '#000000'
+        },
+        'pottery_barn': {
+            'patterns': ['potterybarn.com', 'pbteen.com', 'pbkids.com'],
+            'name': 'Pottery Barn',
+            'icon': 'bi-home-fill',
+            'color': '#8B4513'
+        },
+        'macy': {
+            'patterns': ['macys.com'],
+            'name': "Macy's",
+            'icon': 'bi-bag-fill',
+            'color': '#E21937'
+        },
+        'zola': {
+            'patterns': ['zola.com'],
+            'name': 'Zola',
+            'icon': 'bi-heart-fill',
+            'color': '#FF6B6B'
+        },
+        'the_knot': {
+            'patterns': ['theknot.com'],
+            'name': 'The Knot',
+            'icon': 'bi-heart',
+            'color': '#FF69B4'
+        },
+        'wayfair': {
+            'patterns': ['wayfair.com'],
+            'name': 'Wayfair',
+            'icon': 'bi-house-fill',
+            'color': '#663399'
+        }
+    }
+    
+    for registry_type, config in registry_patterns.items():
+        if any(pattern in domain for pattern in config['patterns']):
+            return {
+                'type': registry_type,
+                'name': config['name'],
+                'icon': config['icon'],
+                'color': config.get('color', '#007bff')
+            }
+    
+    return {'type': 'other', 'name': '', 'icon': 'bi-gift', 'color': '#6c757d'}
+
+
+def detect_social_platform(url):
+    """Detect social media platform from URL"""
+    if not url:
+        return {'platform': 'other', 'icon': 'bi-link-45deg'}
+    
+    url_lower = url.lower()
+    domain = urlparse(url).netloc.lower()
+    
+    platform_patterns = {
+        'instagram': {
+            'patterns': ['instagram.com', 'instagr.am'],
+            'icon': 'bi-instagram'
+        },
+        'facebook': {
+            'patterns': ['facebook.com', 'fb.com'],
+            'icon': 'bi-facebook'
+        },
+        'twitter': {
+            'patterns': ['twitter.com', 'x.com'],
+            'icon': 'bi-twitter'
+        },
+        'tiktok': {
+            'patterns': ['tiktok.com'],
+            'icon': 'bi-tiktok'
+        },
+        'website': {
+            'patterns': ['www.', '.com', '.org', '.net'],
+            'icon': 'bi-globe'
+        }
+    }
+    
+    for platform, config in platform_patterns.items():
+        if any(pattern in domain for pattern in config['patterns']):
+            return {
+                'platform': platform,
+                'icon': config['icon']
+            }
+    
+    return {'platform': 'other', 'icon': 'bi-link-45deg'}
 
 
 def get_user_wedding_context(user):
@@ -34,7 +159,6 @@ def get_user_wedding_context(user):
         stats = {
             'registries_count': couple_profile.registry_links.count(),
             'social_links_count': couple_profile.social_links.count(),
-            'collections_count': couple_profile.photo_collections.count(),
             'total_clicks': sum(r.click_count for r in couple_profile.registry_links.all()),
         }
         
@@ -69,15 +193,11 @@ class PublicCoupleDetailView(DetailView):
         slug = self.kwargs.get('slug')
         
         if share_token:
-            # Token-based lookup (fallback method)
             return get_object_or_404(CoupleProfile, share_token=share_token)
         elif slug:
-            # Custom slug lookup (primary method)
             couple = get_object_or_404(CoupleProfile, slug=slug)
             
-            # If this is a private page accessed without token, check if it should be public
             if not couple.is_public and not self.request.user == couple.user:
-                # Redirect to token-based URL for private sharing
                 return redirect('wedding_shopping:wedding_page_token', 
                               share_token=couple.share_token)
             
@@ -103,50 +223,12 @@ class PublicCoupleDetailView(DetailView):
         # Get related data
         context['social_links'] = couple.social_links.all()
         context['registry_links'] = couple.registry_links.all()
-        context['photo_collections'] = couple.photo_collections.filter(is_featured=True)
-        
-        # Try to get actual collection data from image_processing app
-        collections_with_images = []
-        for collection in context['photo_collections']:
-            if collection.studio_collection_id:
-                try:
-                    # Try to import and get collection data
-                    from image_processing.models import Collection, CollectionItem
-                    studio_collection = Collection.objects.get(
-                        id=collection.studio_collection_id,
-                        user=couple.user
-                    )
-                    # Get sample images from the collection
-                    sample_items = CollectionItem.objects.filter(
-                        collection=studio_collection
-                    )[:6]  # Show up to 6 images
-                    
-                    collections_with_images.append({
-                        'collection': collection,
-                        'studio_collection': studio_collection,
-                        'sample_items': sample_items
-                    })
-                except:
-                    # If collection doesn't exist or import fails, just add the collection info
-                    collections_with_images.append({
-                        'collection': collection,
-                        'studio_collection': None,
-                        'sample_items': []
-                    })
-            else:
-                collections_with_images.append({
-                    'collection': collection,
-                    'studio_collection': None,
-                    'sample_items': []
-                })
-        
-        context['collections_with_images'] = collections_with_images
         
         return context
 
 
 class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
-    """Single view to create or update couple profile"""
+    """Single view to create or update couple profile with social and registry formsets"""
     model = CoupleProfile
     form_class = CoupleProfileForm
     template_name = 'wedding_shopping/couple_manage.html'
@@ -156,7 +238,6 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         try:
             return CoupleProfile.objects.get(user=self.request.user)
         except CoupleProfile.DoesNotExist:
-            # Return a new unsaved instance
             return CoupleProfile(user=self.request.user)
     
     def get_success_url(self):
@@ -165,37 +246,37 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Determine if this is create or update mode
         is_new = not self.object.pk
         context['is_new'] = is_new
         context['title'] = "Create Your Wedding Page" if is_new else "Manage Your Wedding Page"
         
+        # Configure formsets with proper minimum forms
         if self.request.POST:
-            # Only show formsets if we have an existing object
-            if not is_new:
-                context['social_formset'] = SocialMediaFormSet(
-                    self.request.POST, instance=self.object
-                )
-                context['registry_formset'] = RegistryFormSet(
-                    self.request.POST, instance=self.object
-                )
-                context['photo_formset'] = PhotoCollectionFormSet(
-                    self.request.POST, instance=self.object
-                )
+            context['social_formset'] = SocialMediaFormSet(
+                self.request.POST, 
+                instance=self.object if not is_new else None,
+                prefix='social'
+            )
+            context['registry_formset'] = RegistryFormSet(
+                self.request.POST, 
+                instance=self.object if not is_new else None,
+                prefix='registry'
+            )
         else:
-            if not is_new:
-                context['social_formset'] = SocialMediaFormSet(instance=self.object)
-                context['registry_formset'] = RegistryFormSet(instance=self.object)
-                context['photo_formset'] = PhotoCollectionFormSet(instance=self.object)
-        
-        # Get user's collections from image_processing app for easier selection
-        try:
-            from image_processing.models import Collection
-            context['user_collections'] = Collection.objects.filter(
-                user=self.request.user
-            ).exclude(is_default=True)
-        except:
-            context['user_collections'] = []
+            # For new profiles, ensure we have at least 2 empty forms for each
+            extra_social = 2 if is_new else 1
+            extra_registry = 2 if is_new else 1
+            
+            context['social_formset'] = SocialMediaFormSet(
+                instance=self.object if not is_new else None,
+                prefix='social',
+                extra=extra_social
+            )
+            context['registry_formset'] = RegistryFormSet(
+                instance=self.object if not is_new else None,
+                prefix='registry',
+                extra=extra_registry
+            )
         
         return context
     
@@ -203,58 +284,83 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         context = self.get_context_data()
         is_new = context['is_new']
         
-        # For new profiles, just save the basic form first
-        if is_new:
-            form.instance.user = self.request.user
-            self.object = form.save()
-            
-            # Show success message with custom URL preview
-            messages.success(
-                self.request, 
-                f"Your wedding page has been created! Your custom URL is: {self.object.wedding_url_preview}"
-            )
-            return redirect(self.get_success_url())
-        
-        # For existing profiles, handle all formsets
         social_formset = context.get('social_formset')
         registry_formset = context.get('registry_formset')
-        photo_formset = context.get('photo_formset')
+        
+        # Validate all formsets
+        formsets_valid = all([
+            social_formset.is_valid() if social_formset else True,
+            registry_formset.is_valid() if registry_formset else True
+        ])
+        
+        if not formsets_valid:
+            return self.form_invalid(form)
         
         with transaction.atomic():
-            # Check if URL-affecting fields changed
+            # Save the main profile
+            form.instance.user = self.request.user
             old_slug = self.object.slug if self.object.pk else None
             self.object = form.save()
             new_slug = self.object.slug
             
-            if social_formset and social_formset.is_valid():
+            # Save formsets
+            if social_formset:
                 social_formset.instance = self.object
                 social_formset.save()
             
-            if registry_formset and registry_formset.is_valid():
+            if registry_formset:
                 registry_formset.instance = self.object
-                # Process affiliate URLs here if needed
+                # Auto-detect registry types and enhance data
                 for registry_form in registry_formset:
                     if registry_form.cleaned_data and not registry_form.cleaned_data.get('DELETE'):
                         registry = registry_form.save(commit=False)
                         registry.couple_profile = self.object
-                        # TODO: Add affiliate URL processing here
+                        
+                        # Auto-detect registry type if not set
+                        if not registry.registry_type or registry.registry_type == 'other':
+                            branding = detect_registry_branding(registry.original_url)
+                            if branding['type'] != 'other':
+                                registry.registry_type = branding['type']
+                                if not registry.display_name:
+                                    registry.display_name = branding['name']
+                        
                         registry.save()
                 registry_formset.save()
-            
-            if photo_formset and photo_formset.is_valid():
-                photo_formset.instance = self.object
-                photo_formset.save()
         
-        # Show different message if URL changed
-        if old_slug != new_slug:
+        # Success messages
+        if is_new:
+            messages.success(
+                self.request, 
+                f"Your wedding page has been created successfully! Your custom URL is: {self.object.wedding_url_preview}. "
+                f"Share this page with friends and family to let them find your registries and social media."
+            )
+        elif old_slug != new_slug:
             messages.success(
                 self.request, 
                 f"Your wedding page has been updated! Your custom URL is now: {self.object.wedding_url_preview}"
             )
         else:
-            messages.success(self.request, "Your wedding page has been updated!")
+            messages.success(self.request, "Your wedding page has been updated successfully!")
         
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        """Handle form validation errors"""
+        context = self.get_context_data()
+        
+        if form.errors:
+            messages.error(self.request, "Please correct the errors in your wedding details.")
+        
+        social_formset = context.get('social_formset')
+        registry_formset = context.get('registry_formset')
+        
+        if social_formset and not social_formset.is_valid():
+            messages.error(self.request, "Please correct the errors in your social media links.")
+        
+        if registry_formset and not registry_formset.is_valid():
+            messages.error(self.request, "Please correct the errors in your wedding registries.")
+        
+        return super().form_invalid(form)
 
 
 @login_required
@@ -264,51 +370,41 @@ def couple_dashboard(request):
 
 
 def registry_redirect(request, pk):
-    """Simple click tracking and redirect to registry"""
+    """Click tracking and redirect to registry"""
     registry = get_object_or_404(RegistryLink, pk=pk)
-    
-    # Track the click
     registry.increment_clicks()
-    
-    # Redirect directly to original URL (no affiliate logic for now)
     return redirect(registry.original_url)
 
 
 def legacy_couple_redirect(request, slug=None, share_token=None):
     """Redirect old /couple/ URLs to new /wedding/ format"""
     if share_token:
-        # Redirect token-based legacy URL
         return redirect('wedding_shopping:wedding_page_token', share_token=share_token)
     elif slug:
-        # Redirect slug-based legacy URL
         return redirect('wedding_shopping:wedding_page', slug=slug)
     else:
-        # Fallback to discovery page
         return redirect('wedding_shopping:public_couples_list')
 
 
-# API views for AJAX functionality
-def get_collections_api(request):
-    """API endpoint to get user's collections for selection"""
-    if not request.user.is_authenticated:
-        return JsonResponse({'error': 'Authentication required'}, status=401)
-    
-    try:
-        from image_processing.models import Collection
-        collections = Collection.objects.filter(
-            user=request.user
-        ).exclude(is_default=True).values('id', 'name', 'item_count')
+# API endpoints
+def detect_url_branding_api(request):
+    """API endpoint to detect branding from URL"""
+    if request.method == 'GET':
+        url = request.GET.get('url', '')
+        url_type = request.GET.get('type', 'registry')  # 'registry' or 'social'
         
-        return JsonResponse({
-            'collections': list(collections)
-        })
-    except ImportError:
-        return JsonResponse({'collections': []})
+        if url_type == 'registry':
+            branding = detect_registry_branding(url)
+        else:
+            branding = detect_social_platform(url)
+        
+        return JsonResponse(branding)
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 
-# Simple view to list all public couples (optional discovery page)
 def public_couples_list(request):
-    """Optional: List all public couple profiles"""
+    """List all public couple profiles"""
     couples = CoupleProfile.objects.filter(is_public=True).order_by('-created_at')
     
     context = {

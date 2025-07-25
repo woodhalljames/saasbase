@@ -389,6 +389,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const seasonOption = document.getElementById('season-option');
     const timeOption = document.getElementById('time-option');
     
+    // Check for auto-select image parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoSelectImageId = urlParams.get('image_id');
+    
+    if (autoSelectImageId) {
+        // Auto-select the image with this ID
+        const thumbnails = document.querySelectorAll('.venue-thumbnail');
+        thumbnails.forEach(thumbnail => {
+            if (thumbnail.dataset.imageId === autoSelectImageId) {
+                // Small delay to ensure images are loaded
+                setTimeout(() => {
+                    selectImage(thumbnail);
+                    
+                    // Show a helpful message
+                    showToast('Image selected! Choose your wedding style and space purpose to transform it.', 'success');
+                }, 500);
+            }
+        });
+    }
+    
     // Preset buttons
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', function() {

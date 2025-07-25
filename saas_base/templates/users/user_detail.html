@@ -1,75 +1,350 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}User: {{ object.username }}{% endblock title %}
+{% block title %}My Dashboard{% endblock title %}
 
 {% block content %}
-<div class="container">
-  <div class="row">
-    <div class="col-sm-12">
-      <h2>{{ object.username }}</h2>
-      {% if object.name %}
-        <p class="text-muted">{{ object.name }}</p>
-      {% endif %}
-      
-      <!-- Social Login Info -->
-      {% if object.has_social_account %}
-        <div class="alert alert-info">
-          <i class="bi bi-info-circle"></i>
-          This account was created using social login.
-          {% if object.needs_password_setup %}
-            <a href="{% url 'users:password_setup' %}" class="btn btn-sm btn-primary ms-2">
-              Set Up Password
-            </a>
-          {% endif %}
-        </div>
-      {% endif %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h1 class="display-6">
+        <i class="bi bi-person-circle text-primary"></i> 
+        Welcome back, {{ object.name|default:object.username }}!
+      </h1>
+      <p class="text-muted">Manage your wedding transformations and account settings</p>
     </div>
   </div>
 
-  <!-- Rest of your existing template content... -->
-  
   <div class="row">
-    <div class="col-md-4">
-      <div class="card">
-        <div class="card-header">
-          <h6 class="card-title mb-0">Account Management</h6>
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      
+      <!-- Wedding Page Management -->
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-heart-fill"></i> Wedding Page
+          </h5>
         </div>
         <div class="card-body">
-          <div class="d-grid gap-2">
-            <a class="btn btn-outline-primary" href="{% url 'users:update' %}" role="button">
-              <i class="bi bi-person-gear"></i> Edit Profile & Username
-            </a>
-            
-            {% if object.needs_password_setup %}
-              <a class="btn btn-warning" href="{% url 'users:password_setup' %}" role="button">
-                <i class="bi bi-key"></i> Set Up Password
+          {% if user_couple_profile %}
+            <!-- Existing Wedding Page -->
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                {% if user_couple_profile.couple_photo %}
+                  <img src="{{ user_couple_profile.couple_photo.url }}" 
+                       class="img-fluid rounded" 
+                       alt="Couple photo"
+                       style="max-height: 120px;">
+                {% else %}
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                       style="height: 120px;">
+                    <i class="bi bi-heart text-muted" style="font-size: 2rem;"></i>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <h6 class="fw-bold">{{ user_couple_profile.couple_names }}</h6>
+                {% if user_couple_profile.wedding_date %}
+                  <p class="text-muted mb-1">
+                    <i class="bi bi-calendar-heart"></i> 
+                    {{ user_couple_profile.wedding_date|date:"F j, Y" }}
+                  </p>
+                {% endif %}
+                {% if user_couple_profile.venue_name %}
+                  <p class="text-muted mb-1">
+                    <i class="bi bi-geo-alt"></i> 
+                    {{ user_couple_profile.venue_name }}
+                  </p>
+                {% endif %}
+                <div class="mt-2">
+                  {% if user_couple_profile.is_public %}
+                    <span class="badge bg-success">
+                      <i class="bi bi-globe"></i> Public
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      <i class="bi bi-lock"></i> Private
+                    </span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-md-3 text-end">
+                <a href="{{ user_couple_profile.get_absolute_url }}" 
+                   class="btn btn-success btn-sm mb-2 w-100" 
+                   target="_blank">
+                  <i class="bi bi-eye"></i> View Page
+                </a>
+                <a href="{% url 'wedding_shopping:dashboard' %}" 
+                   class="btn btn-outline-primary btn-sm w-100">
+                  <i class="bi bi-pencil"></i> Manage Page
+                </a>
+              </div>
+            </div>
+          {% else %}
+            <!-- No Wedding Page Yet -->
+            <div class="text-center py-4">
+              <i class="bi bi-heart text-muted mb-3" style="font-size: 3rem;"></i>
+              <h6>Create Your Wedding Page</h6>
+              <p class="text-muted mb-3">
+                Share your love story, venue transformations, and registries with family and friends.
+              </p>
+              <a href="{% url 'wedding_shopping:dashboard' %}" 
+                 class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create Wedding Page
               </a>
-            {% else %}
-              <a class="btn btn-outline-secondary" href="{% url 'account_change_password' %}" role="button">
-                <i class="bi bi-key"></i> Change Password
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Recent Transformations -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-magic"></i> Recent Transformations
+          </h5>
+          <a href="{% url 'image_processing:wedding_studio' %}" 
+             class="btn btn-primary btn-sm">
+            <i class="bi bi-plus"></i> Create New
+          </a>
+        </div>
+        <div class="card-body">
+          {% if recent_transformations %}
+            <div class="row">
+              {% for transformation in recent_transformations|slice:":4" %}
+                <div class="col-md-3 col-sm-6 mb-3">
+                  <div class="card">
+                    <img src="{{ transformation.processed_image.url }}" 
+                         class="card-img-top" 
+                         style="height: 120px; object-fit: cover;"
+                         alt="Wedding transformation">
+                    <div class="card-body p-2">
+                      <small class="text-muted d-block text-truncate">
+                        {{ transformation.get_wedding_theme_display }}
+                      </small>
+                      <small class="text-muted">
+                        {{ transformation.created_at|timesince }} ago
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="text-center">
+              <a href="{% url 'image_processing:processing_history' %}" 
+                 class="btn btn-outline-primary btn-sm">
+                View All Transformations
               </a>
-            {% endif %}
-            
-            <a class="btn btn-outline-primary" href="{% url 'account_email' %}" role="button">
-              <i class="bi bi-envelope-gear"></i> E-Mail Settings
-            </a>
-            
-            <a class="btn btn-outline-info" href="{% url 'socialaccount_connections' %}" role="button">
-              <i class="bi bi-share"></i> Social Accounts
-            </a>
-           
-            {% if object.has_active_subscription %}
-              <a class="btn btn-outline-secondary" href="{% url 'subscriptions:customer_portal' %}" role="button">
-                <i class="bi bi-credit-card"></i> Billing Portal
+            </div>
+          {% else %}
+            <div class="text-center py-3">
+              <i class="bi bi-camera text-muted mb-2" style="font-size: 2rem;"></i>
+              <p class="text-muted mb-3">No transformations yet</p>
+              <a href="{% url 'image_processing:wedding_studio' %}" 
+                 class="btn btn-outline-primary">
+                <i class="bi bi-magic"></i> Create Your First Transformation
               </a>
-            {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-lightning-fill"></i> Quick Actions
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <a href="{% url 'image_processing:wedding_studio' %}" 
+                 class="btn btn-outline-primary w-100">
+                <i class="bi bi-camera d-block mb-1" style="font-size: 1.5rem;"></i>
+                Upload & Transform
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="{% url 'image_processing:collections_list' %}" 
+                 class="btn btn-outline-secondary w-100">
+                <i class="bi bi-collection d-block mb-1" style="font-size: 1.5rem;"></i>
+                View Collections
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="{% url 'image_processing:favorites_list' %}" 
+                 class="btn btn-outline-danger w-100">
+                <i class="bi bi-heart d-block mb-1" style="font-size: 1.5rem;"></i>
+                View Favorites
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    
-    <!-- Existing subscription info column... -->
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      
+      <!-- Subscription Status -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-credit-card"></i> Subscription Status
+          </h6>
+        </div>
+        <div class="card-body">
+          {% if object.has_active_subscription %}
+            {% with subscription_details=object.subscription.get_subscription_details %}
+              <div class="text-center mb-3">
+                <span class="badge bg-success fs-6 px-3 py-2">
+                  <i class="bi bi-check-circle"></i> Active
+                </span>
+              </div>
+              
+              {% if subscription_details %}
+                <h6 class="fw-bold text-center">{{ subscription_details.name }}</h6>
+                <p class="text-center text-muted">
+                  {{ subscription_details.amount }} / {{ subscription_details.interval }}
+                </p>
+                
+                <!-- Usage Progress -->
+                {% with usage_data=object.subscription.get_usage_data %}
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between small mb-1">
+                      <span>Usage this month</span>
+                      <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar {% if usage_data.percentage > 80 %}bg-warning{% elif usage_data.percentage > 95 %}bg-danger{% else %}bg-primary{% endif %}" 
+                           style="width: {{ usage_data.percentage }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ usage_data.remaining }} transformations remaining</small>
+                  </div>
+                {% endwith %}
+              {% endif %}
+              
+              <div class="d-grid gap-2">
+                <a href="{% url 'subscriptions:customer_portal' %}" 
+                   class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-gear"></i> Manage Subscription
+                </a>
+              </div>
+            {% endwith %}
+          {% else %}
+            <!-- No Active Subscription -->
+            <div class="text-center">
+              <span class="badge bg-warning fs-6 px-3 py-2 mb-3">
+                <i class="bi bi-exclamation-triangle"></i> Free Plan
+              </span>
+              <p class="text-muted small mb-3">
+                You're using the free plan with limited transformations.
+              </p>
+              
+              <!-- Free Usage Progress -->
+              {% with usage_data=object.subscription.get_usage_data %}
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between small mb-1">
+                    <span>Free usage</span>
+                    <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
+                  </div>
+                  <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-secondary" 
+                         style="width: {{ usage_data.percentage }}%"></div>
+                  </div>
+                  <small class="text-muted">{{ usage_data.remaining }} transformations remaining</small>
+                </div>
+              {% endwith %}
+              
+              <div class="d-grid">
+                <a href="{% url 'subscriptions:pricing' %}" 
+                   class="btn btn-primary btn-sm">
+                  <i class="bi bi-arrow-up-circle"></i> Upgrade Now
+                </a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Account Settings -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-gear"></i> Account Settings
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{% url 'users:update' %}" 
+               class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-person-gear"></i> Edit Profile
+            </a>
+            
+            {% if object.needs_password_setup %}
+              <a href="{% url 'users:password_setup' %}" 
+                 class="btn btn-warning btn-sm">
+                <i class="bi bi-key"></i> Set Up Password
+              </a>
+            {% else %}
+              <a href="{% url 'account_change_password' %}" 
+                 class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-key"></i> Change Password
+              </a>
+            {% endif %}
+            
+            <a href="{% url 'account_email' %}" 
+               class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-envelope-gear"></i> Email Settings
+            </a>
+            
+            <a href="{% url 'socialaccount_connections' %}" 
+               class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-share"></i> Social Accounts
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<style>
+.card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.progress {
+  border-radius: 10px;
+  background-color: #e9ecef;
+}
+
+.progress-bar {
+  border-radius: 10px;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-danger:hover {
+  transform: translateY(-1px);
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(0,0,0,0.125);
+  background-color: rgba(0,0,0,0.03);
+}
+
+.card-header.bg-primary {
+  background-color: #0d6efd !important;
+}
+</style>
 {% endblock content %}

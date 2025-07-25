@@ -1,576 +1,423 @@
+<!-- wedding_shopping/templates/wedding_shopping/couple_manage.html -->
 {% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<style>
+.form-section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    overflow: hidden;
+}
+
+.form-section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+.form-section-body {
+    padding: 1.5rem;
+}
+
+.formset-form {
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+}
+
+.formset-form:last-child {
+    margin-bottom: 0;
+}
+
+.brand-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.url-preview-section {
+    background: #e3f2fd;
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.required-field label::after {
+    content: ' *';
+    color: #dc3545;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-md-8">
-      <h1>{{ title }}</h1>
-      {% if is_new %}
-        <p class="text-muted">Create your beautiful wedding page to share with family and friends</p>
-      {% else %}
-        <p class="text-muted">Manage your wedding page and share your celebration</p>
-      {% endif %}
-    </div>
-    <div class="col-md-4 text-end">
-      {% if not is_new and object %}
-        <a href="{{ object.get_absolute_url }}" 
-           class="btn btn-success me-2" 
-           target="_blank">
-          <i class="bi bi-eye"></i> View Public Page
-        </a>
-        <button class="btn btn-outline-secondary" 
-                onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ object.get_absolute_url }}')">
-          <i class="bi bi-share"></i> Copy Link
-        </button>
-      {% endif %}
-    </div>
-  </div>
-
-  <form method="post" enctype="multipart/form-data" id="coupleForm">
-    {% csrf_token %}
-    
-    <div class="row">
-      <!-- Main Form -->
-      <div class="col-lg-8">
-        
-        <!-- Basic Information -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-heart"></i> Couple Information</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.partner_1_name.id_for_label }}" class="form-label">First Partner's Name</label>
-                {{ form.partner_1_name }}
-                {% if form.partner_1_name.errors %}
-                  <div class="text-danger">{{ form.partner_1_name.errors }}</div>
-                {% endif %}
-                <div class="form-text">{{ form.partner_1_name.help_text }}</div>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">Second Partner's Name</label>
-                {{ form.partner_2_name }}
-                {% if form.partner_2_name.errors %}
-                  <div class="text-danger">{{ form.partner_2_name.errors }}</div>
-                {% endif %}
-                <div class="form-text">{{ form.partner_2_name.help_text }}</div>
-              </div>
-            </div>
-            
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label for="{{ form.wedding_date.id_for_label }}" class="form-label">Wedding Date</label>
-                {{ form.wedding_date }}
-                {% if form.wedding_date.errors %}
-                  <div class="text-danger">{{ form.wedding_date.errors }}</div>
-                {% endif %}
-                <div class="form-text">{{ form.wedding_date.help_text }}</div>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label for="{{ form.venue_name.id_for_label }}" class="form-label">Venue Name</label>
-                {{ form.venue_name }}
-                {% if form.venue_name.errors %}
-                  <div class="text-danger">{{ form.venue_name.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-4 mb-3">
-                <label for="{{ form.venue_location.id_for_label }}" class="form-label">Venue Location</label>
-                {{ form.venue_location }}
-                {% if form.venue_location.errors %}
-                  <div class="text-danger">{{ form.venue_location.errors }}</div>
-                {% endif %}
-              </div>
-            </div>
-
-            <!-- URL Preview Section -->
-            <div class="row">
-              <div class="col-12 mb-3">
-                <label for="{{ form.url_preview.id_for_label }}" class="form-label">Your Custom Wedding URL</label>
-                <div class="input-group">
-                  <span class="input-group-text">{{ request.get_host }}/wedding/</span>
-                  {{ form.url_preview }}
-                  <button class="btn btn-outline-secondary" type="button" id="copy-url-btn" onclick="copyFullUrl()" style="display: none;">
-                    <i class="bi bi-clipboard"></i>
-                  </button>
-                </div>
-                {% if form.url_preview.errors %}
-                  <div class="text-danger">{{ form.url_preview.errors }}</div>
-                {% endif %}
-                <div class="form-text">{{ form.url_preview.help_text }}</div>
-                <div class="mt-2">
-                  <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> 
-                    Your URL is automatically created from your names and wedding date. 
-                    Special characters and spaces are removed.
-                  </small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Photos -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-images"></i> Photos</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.couple_photo.id_for_label }}" class="form-label">Couple Photo</label>
-                {{ form.couple_photo }}
-                {% if object and object.couple_photo %}
-                  <div class="mt-2">
-                    <img src="{{ object.couple_photo.url }}" 
-                         class="img-thumbnail" 
-                         style="max-width: 200px;"
-                         alt="Current couple photo">
-                  </div>
-                {% endif %}
-                {% if form.couple_photo.errors %}
-                  <div class="text-danger">{{ form.couple_photo.errors }}</div>
-                {% endif %}
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.venue_photo.id_for_label }}" class="form-label">Venue Photo</label>
-                {{ form.venue_photo }}
-                {% if object and object.venue_photo %}
-                  <div class="mt-2">
-                    <img src="{{ object.venue_photo.url }}" 
-                         class="img-thumbnail" 
-                         style="max-width: 200px;"
-                         alt="Current venue photo">
-                  </div>
-                {% endif %}
-                {% if form.venue_photo.errors %}
-                  <div class="text-danger">{{ form.venue_photo.errors }}</div>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Love Story -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-chat-heart"></i> Your Love Story</h5>
-          </div>
-          <div class="card-body">
-            <label for="{{ form.couple_story.id_for_label }}" class="form-label">Tell Your Story</label>
-            {{ form.couple_story }}
-            {% if form.couple_story.errors %}
-              <div class="text-danger">{{ form.couple_story.errors }}</div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Only show advanced sections if this is an existing profile -->
-        {% if not is_new %}
-          <!-- Social Media Links -->
-          <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0"><i class="bi bi-share"></i> Social Media</h5>
-              <small class="text-muted">Optional - Add after creating your page</small>
-            </div>
-            <div class="card-body">
-              <div id="social-formset">
-                {{ social_formset.management_form }}
-                {% for form in social_formset %}
-                  <div class="social-form border rounded p-3 mb-3">
-                    {% if form.non_field_errors %}
-                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="display-5">{{ title }}</h1>
+                <p class="lead text-muted">
+                    {% if is_new %}
+                        Create your beautiful wedding page to share with family and friends
+                    {% else %}
+                        Update your wedding page details
                     {% endif %}
-                    
-                    <div class="row">
-                      <div class="col-md-3 mb-2">
-                        <label class="form-label">Platform</label>
-                        {{ form.platform }}
-                      </div>
-                      <div class="col-md-3 mb-2">
-                        <label class="form-label">Platform Name</label>
-                        {{ form.platform_name }}
-                      </div>
-                      <div class="col-md-4 mb-2">
-                        <label class="form-label">URL</label>
-                        {{ form.url }}
-                      </div>
-                      <div class="col-md-2 mb-2">
-                        <label class="form-label">Display Name</label>
-                        {{ form.display_name }}
-                      </div>
-                    </div>
-                    
-                    <div class="text-end">
-                      {% if form.instance.pk %}
-                        {{ form.DELETE }}
-                        <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
-                          <i class="bi bi-trash"></i> Delete
-                        </label>
-                      {% endif %}
-                    </div>
-                    
-                    {% for hidden in form.hidden_fields %}
-                      {{ hidden }}
-                    {% endfor %}
-                  </div>
-                {% endfor %}
-              </div>
+                </p>
             </div>
-          </div>
 
-          <!-- Wedding Registries -->
-          <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0"><i class="bi bi-gift"></i> Wedding Registries</h5>
-              <small class="text-muted">Optional - Add after creating your page</small>
-            </div>
-            <div class="card-body">
-              <div id="registry-formset">
-                {{ registry_formset.management_form }}
-                {% for form in registry_formset %}
-                  <div class="registry-form border rounded p-3 mb-3">
-                    {% if form.non_field_errors %}
-                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                    {% endif %}
-                    
-                    <div class="row">
-                      <div class="col-md-3 mb-2">
-                        <label class="form-label">Registry Type</label>
-                        {{ form.registry_type }}
-                      </div>
-                      <div class="col-md-3 mb-2">
-                        <label class="form-label">Registry Name</label>
-                        {{ form.registry_name }}
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label">Registry URL</label>
-                        {{ form.original_url }}
-                      </div>
-                    </div>
-                    
-                    <div class="row">
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label">Display Name</label>
-                        {{ form.display_name }}
-                      </div>
-                      <div class="col-md-6 mb-2">
-                        <label class="form-label">Description</label>
-                        {{ form.description }}
-                      </div>
-                    </div>
-                    
-                    <div class="text-end">
-                      {% if form.instance.pk %}
-                        {{ form.DELETE }}
-                        <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
-                          <i class="bi bi-trash"></i> Delete
-                        </label>
-                      {% endif %}
-                    </div>
-                    
-                    {% for hidden in form.hidden_fields %}
-                      {{ hidden }}
-                    {% endfor %}
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
+            <!-- Main Form -->
+            <form method="post" enctype="multipart/form-data" id="wedding-form">
+                {% csrf_token %}
 
-          <!-- Photo Collections -->
-          <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0"><i class="bi bi-collection"></i> Wedding Venue Collections</h5>
-              <small class="text-muted">Optional - Add after creating your page</small>
-            </div>
-            <div class="card-body">
-              {% if user_collections %}
-                <div class="alert alert-info">
-                  <strong>Your Collections:</strong>
-                  {% for collection in user_collections %}
-                    <span class="badge bg-primary me-1">{{ collection.name }} (ID: {{ collection.id }})</span>
-                  {% endfor %}
-                </div>
-              {% endif %}
-              
-              <div id="photo-formset">
-                {{ photo_formset.management_form }}
-                {% for form in photo_formset %}
-                  <div class="photo-form border rounded p-3 mb-3">
-                    {% if form.non_field_errors %}
-                      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-                    {% endif %}
-                    
-                    <div class="row">
-                      <div class="col-md-4 mb-2">
-                        <label class="form-label">Collection Name</label>
-                        {{ form.collection_name }}
-                      </div>
-                      <div class="col-md-3 mb-2">
-                        <label class="form-label">Studio Collection ID</label>
-                        {{ form.studio_collection_id }}
-                      </div>
-                      <div class="col-md-3 mb-2">
-                        <div class="form-check mt-4">
-                          {{ form.is_featured }}
-                          <label for="{{ form.is_featured.id_for_label }}" class="form-check-label">
-                            Featured
-                          </label>
+                <!-- Basic Wedding Details -->
+                <div class="form-section">
+                    <h3 class="form-section-header">
+                        <i class="bi bi-heart-fill me-2"></i>Wedding Details
+                    </h3>
+                    <div class="form-section-body">
+                        <!-- URL Preview -->
+                        <div class="url-preview-section">
+                            <label for="url-preview" class="form-label fw-bold">
+                                <i class="bi bi-link-45deg me-1"></i>Your Wedding Page URL
+                            </label>
+                            {{ form.url_preview }}
+                            <small class="form-text text-muted">{{ form.url_preview.help_text }}</small>
                         </div>
-                      </div>
-                      <div class="col-md-2 text-end">
-                        {% if form.instance.pk %}
-                          {{ form.DELETE }}
-                          <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
-                            <i class="bi bi-trash"></i> Delete
-                          </label>
-                        {% endif %}
-                      </div>
+
+                        <div class="row">
+                            <div class="col-md-6 required-field">
+                                <label for="{{ form.partner_1_name.id_for_label }}" class="form-label">{{ form.partner_1_name.label }}</label>
+                                {{ form.partner_1_name }}
+                                {% if form.partner_1_name.help_text %}
+                                    <small class="form-text text-muted">{{ form.partner_1_name.help_text }}</small>
+                                {% endif %}
+                                {% if form.partner_1_name.errors %}
+                                    <div class="text-danger small">{{ form.partner_1_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 required-field">
+                                <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">{{ form.partner_2_name.label }}</label>
+                                {{ form.partner_2_name }}
+                                {% if form.partner_2_name.help_text %}
+                                    <small class="form-text text-muted">{{ form.partner_2_name.help_text }}</small>
+                                {% endif %}
+                                {% if form.partner_2_name.errors %}
+                                    <div class="text-danger small">{{ form.partner_2_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.wedding_date.id_for_label }}" class="form-label">{{ form.wedding_date.label }}</label>
+                                {{ form.wedding_date }}
+                                {% if form.wedding_date.help_text %}
+                                    <small class="form-text text-muted">{{ form.wedding_date.help_text }}</small>
+                                {% endif %}
+                                {% if form.wedding_date.errors %}
+                                    <div class="text-danger small">{{ form.wedding_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.venue_name.id_for_label }}" class="form-label">{{ form.venue_name.label }}</label>
+                                {{ form.venue_name }}
+                                {% if form.venue_name.errors %}
+                                    <div class="text-danger small">{{ form.venue_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.venue_location.id_for_label }}" class="form-label">{{ form.venue_location.label }}</label>
+                                {{ form.venue_location }}
+                                {% if form.venue_location.help_text %}
+                                    <small class="form-text text-muted">{{ form.venue_location.help_text }}</small>
+                                {% endif %}
+                                {% if form.venue_location.errors %}
+                                    <div class="text-danger small">{{ form.venue_location.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.couple_photo.id_for_label }}" class="form-label">{{ form.couple_photo.label }}</label>
+                                {{ form.couple_photo }}
+                                {% if form.couple_photo.help_text %}
+                                    <small class="form-text text-muted">{{ form.couple_photo.help_text }}</small>
+                                {% endif %}
+                                {% if form.couple_photo.errors %}
+                                    <div class="text-danger small">{{ form.couple_photo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.venue_photo.id_for_label }}" class="form-label">{{ form.venue_photo.label }}</label>
+                                {{ form.venue_photo }}
+                                {% if form.venue_photo.help_text %}
+                                    <small class="form-text text-muted">{{ form.venue_photo.help_text }}</small>
+                                {% endif %}
+                                {% if form.venue_photo.errors %}
+                                    <div class="text-danger small">{{ form.venue_photo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <label for="{{ form.couple_story.id_for_label }}" class="form-label">{{ form.couple_story.label }}</label>
+                            {{ form.couple_story }}
+                            {% if form.couple_story.help_text %}
+                                <small class="form-text text-muted">{{ form.couple_story.help_text }}</small>
+                            {% endif %}
+                            {% if form.couple_story.errors %}
+                                <div class="text-danger small">{{ form.couple_story.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mt-3">
+                            {{ form.is_public }}
+                            <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                                {{ form.is_public.label }}
+                            </label>
+                            {% if form.is_public.help_text %}
+                                <small class="form-text text-muted d-block">{{ form.is_public.help_text }}</small>
+                            {% endif %}
+                        </div>
                     </div>
-                    
-                    <div class="row">
-                      <div class="col-12 mb-2">
-                        <label class="form-label">Description</label>
-                        {{ form.description }}
-                      </div>
+                </div>
+
+                <!-- Social Media Section -->
+                <div class="form-section">
+                    <h3 class="form-section-header">
+                        <i class="bi bi-share me-2"></i>Social Media Links
+                        <small class="text-white-50 fw-normal ms-2">Optional - Add after creating your page</small>
+                    </h3>
+                    <div class="form-section-body">
+                        <div id="social-formset">
+                            {{ social_formset.management_form }}
+                            {% if social_formset.non_form_errors %}
+                                <div class="alert alert-danger">{{ social_formset.non_form_errors }}</div>
+                            {% endif %}
+                            
+                            {% for form in social_formset %}
+                                <div class="formset-form" id="social-form-{{ forloop.counter0 }}">
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="{{ form.platform.id_for_label }}" class="form-label">{{ form.platform.label }}</label>
+                                            {{ form.platform }}
+                                            {% if form.platform.errors %}
+                                                <div class="text-danger small">{{ form.platform.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.platform_name.id_for_label }}" class="form-label">{{ form.platform_name.label }}</label>
+                                            {{ form.platform_name }}
+                                            {% if form.platform_name.errors %}
+                                                <div class="text-danger small">{{ form.platform_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.url.id_for_label }}" class="form-label">{{ form.url.label }}</label>
+                                            {{ form.url }}
+                                            {% if form.url.help_text %}
+                                                <small class="form-text text-muted">{{ form.url.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.url.errors %}
+                                                <div class="text-danger small">{{ form.url.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.display_name.id_for_label }}" class="form-label">{{ form.display_name.label }}</label>
+                                            {{ form.display_name }}
+                                            {% if form.display_name.help_text %}
+                                                <small class="form-text text-muted">{{ form.display_name.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.display_name.errors %}
+                                                <div class="text-danger small">{{ form.display_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if form.DELETE %}
+                                        <div class="form-check mt-2">
+                                            {{ form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                Delete this social media link
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Empty form template for social media -->
+                        <div id="social-empty-form" class="formset-form" style="display: none;">
+                            {% for form in social_formset.empty_form %}
+                                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Platform</label>
+                                        {{ form.platform }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Platform Name</label>
+                                        {{ form.platform_name }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">URL</label>
+                                        {{ form.url }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Display Name</label>
+                                        {{ form.display_name }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    
-                    {% for hidden in form.hidden_fields %}
-                      {{ hidden }}
-                    {% endfor %}
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-        {% else %}
-          <!-- Message for new users -->
-          <div class="card mb-4 bg-light">
-            <div class="card-body text-center">
-              <i class="bi bi-info-circle text-primary mb-2" style="font-size: 2rem;"></i>
-              <h5>What's Next?</h5>
-              <p class="text-muted">After creating your wedding page, you'll be able to add:</p>
-              <div class="row">
-                <div class="col-md-4">
-                  <i class="bi bi-share text-primary mb-2"></i>
-                  <h6>Social Links</h6>
                 </div>
-                <div class="col-md-4">
-                  <i class="bi bi-gift text-primary mb-2"></i>
-                  <h6>Wedding Registries</h6>
-                </div>
-                <div class="col-md-4">
-                  <i class="bi bi-collection text-primary mb-2"></i>
-                  <h6>Photo Collections</h6>
-                </div>
-              </div>
-            </div>
-          </div>
-        {% endif %}
-      </div>
 
-      <!-- Sidebar -->
-      <div class="col-lg-4">
-        <!-- Privacy Settings -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-shield-check"></i> Privacy & Sharing</h5>
-          </div>
-          <div class="card-body">
-            <div class="form-check mb-3">
-              {{ form.is_public }}
-              <label for="{{ form.is_public.id_for_label }}" class="form-check-label">
-                Make page publicly discoverable
-              </label>
-              <div class="form-text">
-                When enabled, your page can be found in public listings and search engines.
-              </div>
-            </div>
-            
-            {% if not is_new and object %}
-              <hr>
-              <div class="mb-3">
-                <label class="form-label">Share URL</label>
-                <div class="input-group">
-                  <input type="text" 
-                         class="form-control" 
-                         value="{{ request.build_absolute_uri }}{{ object.get_absolute_url }}" 
-                         readonly 
-                         id="shareUrl">
-                  <button class="btn btn-outline-secondary" 
-                          type="button" 
-                          onclick="copyToClipboard('{{ request.build_absolute_uri }}{{ object.get_absolute_url }}')">
-                    <i class="bi bi-clipboard"></i>
-                  </button>
+                <!-- Wedding Registries Section -->
+                <div class="form-section">
+                    <h3 class="form-section-header">
+                        <i class="bi bi-gift me-2"></i>Wedding Registries
+                        <small class="text-white-50 fw-normal ms-2">Optional - Add after creating your page</small>
+                    </h3>
+                    <div class="form-section-body">
+                        <div id="registry-formset">
+                            {{ registry_formset.management_form }}
+                            {% if registry_formset.non_form_errors %}
+                                <div class="alert alert-danger">{{ registry_formset.non_form_errors }}</div>
+                            {% endif %}
+                            
+                            {% for form in registry_formset %}
+                                <div class="formset-form" id="registry-form-{{ forloop.counter0 }}">
+                                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                    
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="{{ form.registry_type.id_for_label }}" class="form-label">{{ form.registry_type.label }}</label>
+                                            {{ form.registry_type }}
+                                            {% if form.registry_type.errors %}
+                                                <div class="text-danger small">{{ form.registry_type.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="{{ form.registry_name.id_for_label }}" class="form-label">{{ form.registry_name.label }}</label>
+                                            {{ form.registry_name }}
+                                            {% if form.registry_name.errors %}
+                                                <div class="text-danger small">{{ form.registry_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.original_url.id_for_label }}" class="form-label">{{ form.original_url.label }}</label>
+                                            {{ form.original_url }}
+                                            {% if form.original_url.help_text %}
+                                                <small class="form-text text-muted">{{ form.original_url.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.original_url.errors %}
+                                                <div class="text-danger small">{{ form.original_url.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <label for="{{ form.display_name.id_for_label }}" class="form-label">{{ form.display_name.label }}</label>
+                                            {{ form.display_name }}
+                                            {% if form.display_name.help_text %}
+                                                <small class="form-text text-muted">{{ form.display_name.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.display_name.errors %}
+                                                <div class="text-danger small">{{ form.display_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                                            {{ form.description }}
+                                            {% if form.description.help_text %}
+                                                <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.description.errors %}
+                                                <div class="text-danger small">{{ form.description.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {% if form.DELETE %}
+                                        <div class="form-check mt-2">
+                                            {{ form.DELETE }}
+                                            <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                                Delete this registry
+                                            </label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Empty form template for registries -->
+                        <div id="registry-empty-form" class="formset-form" style="display: none;">
+                            {% for form in registry_formset.empty_form %}
+                                {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                                
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Registry Type</label>
+                                        {{ form.registry_type }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Registry Name</label>
+                                        {{ form.registry_name }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Registry URL</label>
+                                        {{ form.original_url }}
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Display Name</label>
+                                        {{ form.display_name }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Description</label>
+                                        {{ form.description }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
-                <div class="form-text">
-                  This is your custom wedding page URL that you can share with anyone.
+
+                <!-- Form Actions -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-lg me-3">
+                        <i class="bi bi-heart-fill me-2"></i>
+                        {% if is_new %}Create Wedding Page{% else %}Update Wedding Page{% endif %}
+                    </button>
+                    <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                        Cancel
+                    </a>
                 </div>
-              </div>
-            {% endif %}
-          </div>
+            </form>
         </div>
-
-        <!-- Quick Actions -->
-        {% if not is_new %}
-          <div class="card mb-4">
-            <div class="card-header">
-              <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-              <div class="d-grid gap-2">
-                <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-outline-primary">
-                  <i class="bi bi-magic"></i> Create Wedding Transformations
-                </a>
-                <a href="{% url 'image_processing:collections_list' %}" class="btn btn-outline-secondary">
-                  <i class="bi bi-collection"></i> Manage Collections
-                </a>
-                {% if object %}
-                  <a href="{{ object.get_absolute_url }}" class="btn btn-outline-success" target="_blank">
-                    <i class="bi bi-eye"></i> Preview Public Page
-                  </a>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endif %}
-
-        <!-- Save Button -->
-        <div class="card">
-          <div class="card-body">
-            <div class="d-grid">
-              <button type="submit" class="btn btn-primary btn-lg">
-                <i class="bi bi-save"></i> 
-                {% if is_new %}Create Wedding Page{% else %}Save Changes{% endif %}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-  </form>
 </div>
+{% endblock %}
 
-<script>
-// Copy to clipboard functionality
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(function() {
-        showToast('Link copied to clipboard!', 'success');
-    });
-}
-
-function copyFullUrl() {
-    const host = '{{ request.get_host }}';
-    const urlPreview = document.getElementById('url-preview').value;
-    const fullUrl = `https://${host}/wedding/${urlPreview}/`;
-    copyToClipboard(fullUrl);
-}
-
-// URL Preview functionality
-function updateUrlPreview() {
-    const name1 = document.getElementById('{{ form.partner_1_name.id_for_label }}').value;
-    const name2 = document.getElementById('{{ form.partner_2_name.id_for_label }}').value;
-    const weddingDate = document.getElementById('{{ form.wedding_date.id_for_label }}').value;
-    
-    if (name1 && name2) {
-        // Clean names (remove non-alphanumeric characters)
-        const cleanName1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-        const cleanName2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-        
-        let dateStr = 'tbd';
-        if (weddingDate) {
-            const date = new Date(weddingDate);
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = String(date.getFullYear()).slice(-2);
-            dateStr = `${month}${day}${year}`;
-        }
-        
-        const previewUrl = `${cleanName1}${cleanName2}${dateStr}`;
-        document.getElementById('url-preview').value = previewUrl;
-        
-        // Show copy button if we have a valid URL
-        if (previewUrl.length > 3) {
-            document.getElementById('copy-url-btn').style.display = 'block';
-        }
-    } else {
-        document.getElementById('url-preview').value = '';
-        document.getElementById('copy-url-btn').style.display = 'none';
-    }
-}
-
-// Show toast notifications
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        <i class="bi bi-check-circle"></i> ${message}
-        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-    `;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 3000);
-}
-
-// Form validation and enhancement
-document.addEventListener('DOMContentLoaded', function() {
-    // Initial URL preview update
-    updateUrlPreview();
-    
-    // Platform name field visibility based on selection
-    document.querySelectorAll('select[name*="platform"]').forEach(select => {
-        const container = select.closest('.social-form');
-        if (container) {
-            const platformNameField = container.querySelector('input[name*="platform_name"]');
-            
-            function togglePlatformName() {
-                if (select.value === 'other') {
-                    platformNameField.style.display = 'block';
-                    platformNameField.required = true;
-                } else {
-                    platformNameField.style.display = 'none';
-                    platformNameField.required = false;
-                }
-            }
-            
-            select.addEventListener('change', togglePlatformName);
-            togglePlatformName(); // Initial call
-        }
-    });
-    
-    // Registry name field visibility
-    document.querySelectorAll('select[name*="registry_type"]').forEach(select => {
-        const container = select.closest('.registry-form');
-        if (container) {
-            const registryNameField = container.querySelector('input[name*="registry_name"]');
-            
-            function toggleRegistryName() {
-                if (select.value === 'other') {
-                    registryNameField.style.display = 'block';
-                    registryNameField.required = true;
-                } else {
-                    registryNameField.style.display = 'none';
-                    registryNameField.required = false;
-                }
-            }
-            
-            select.addEventListener('change', toggleRegistryName);
-            toggleRegistryName(); // Initial call
-        }
-    });
-});
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% block extra_js %}
+<script src="{% static 'js/project.js' %}"></script>
 {% endblock %}

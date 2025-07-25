@@ -19,6 +19,28 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     slug_field = "username"
     slug_url_kwarg = "username"
     template_name = "users/user_detail.html"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Add wedding page information
+        try:
+            from wedding_shopping.models import CoupleProfile
+            context['user_couple_profile'] = CoupleProfile.objects.get(user=self.object)
+        except (ImportError, CoupleProfile.DoesNotExist):
+            context['user_couple_profile'] = None
+        
+        # Add recent transformations
+        try:
+            from image_processing.models import ProcessedImage
+            context['recent_transformations'] = ProcessedImage.objects.filter(
+                processing_job__user_image__user=self.object,
+                is_saved=True
+            ).order_by('-created_at')[:4]
+        except (ImportError, AttributeError):
+            context['recent_transformations'] = []
+        
+        return context
 
 
 user_detail_view = UserDetailView.as_view()

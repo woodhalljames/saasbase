@@ -10,7 +10,7 @@
   <div class="row mb-5">
     <div class="col-12 text-center">
       <h1 class="display-4">💍 Wedding Celebrations</h1>
-      <p class="lead text-muted">Discover beautiful wedding stories and transformations from our community</p>
+      <p class="lead text-muted">Discover beautiful wedding stories and registries from our community</p>
     </div>
   </div>
 
@@ -65,23 +65,19 @@
               
               <!-- Stats -->
               <div class="row text-center small text-muted mb-3">
-                <div class="col-4">
+                <div class="col-6">
                   <div>{{ couple.registry_links.count }}</div>
                   <div>Registries</div>
                 </div>
-                <div class="col-4">
+                <div class="col-6">
                   <div>{{ couple.social_links.count }}</div>
-                  <div>Social</div>
-                </div>
-                <div class="col-4">
-                  <div>{{ couple.photo_collections.count }}</div>
-                  <div>Collections</div>
+                  <div>Social Links</div>
                 </div>
               </div>
             </div>
             
             <div class="card-footer bg-transparent border-0 text-center">
-              <a href="{% url 'wedding_shopping:public_couple_slug' couple.slug %}" 
+              <a href="{% url 'wedding_shopping:wedding_page' slug=couple.slug %}" 
                  class="btn btn-primary">
                 <i class="bi bi-heart"></i> Visit Wedding Page
               </a>
@@ -99,7 +95,7 @@
             <i class="bi bi-plus-circle text-primary mb-3" style="font-size: 3rem;"></i>
             <h3>Create Your Own Wedding Page</h3>
             <p class="lead text-muted mb-4">
-              Share your love story, wedding details, and AI-transformed venue photos with family and friends.
+              Share your love story, wedding details, and registries with family and friends.
             </p>
             {% if user.is_authenticated %}
               <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-primary btn-lg">
@@ -121,18 +117,28 @@
       <div class="col-lg-6 mx-auto">
         <div class="text-center py-5">
           <i class="bi bi-heart text-muted" style="font-size: 5rem;"></i>
-          <h3 class="mt-4 text-muted">No Public Wedding Pages Yet</h3>
+          <h3 class="mt-4 text-muted">No couples yet!</h3>
           <p class="text-muted mb-4">
-            Be the first to create and share your beautiful wedding celebration page!
+            Want to be the first couple to create a beautiful wedding page?
           </p>
           {% if user.is_authenticated %}
-            <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-primary btn-lg">
-              <i class="bi bi-plus-circle"></i> Create My Wedding Page
-            </a>
+            <div class="d-grid gap-3 col-8 mx-auto">
+              <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i> Create My Wedding Page
+              </a>
+              <a href="#" class="btn btn-outline-secondary">
+                Learn More & Pricing
+              </a>
+            </div>
           {% else %}
-            <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg">
-              <i class="bi bi-plus-circle"></i> Get Started
-            </a>
+            <div class="d-grid gap-3 col-8 mx-auto">
+              <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle"></i> Get Started
+              </a>
+              <a href="#" class="btn btn-outline-secondary">
+                Learn More & Pricing
+              </a>
+            </div>
           {% endif %}
         </div>
       </div>
@@ -168,51 +174,3 @@
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}
-             
-              
-              <!-- Wedding date overlay -->
-              {% if couple.wedding_date %}
-                <div class="position-absolute top-0 end-0 m-3">
-                  <span class="badge bg-white text-dark fs-6">
-                    {{ couple.wedding_date|date:"M Y" }}
-                  </span>
-                </div>
-              {% endif %}
-            </div>
-            
-            <div class="card-body">
-              <h5 class="card-title text-center">{{ couple.couple_names }}</h5>
-              
-              {% if couple.venue_name or couple.venue_location %}
-                <p class="text-center text-muted mb-3">
-                  {% if couple.venue_name %}
-                    <i class="bi bi-geo-alt"></i> {{ couple.venue_name }}
-                    {% if couple.venue_location %}<br>{{ couple.venue_location }}{% endif %}
-                  {% elif couple.venue_location %}
-                    <i class="bi bi-geo-alt"></i> {{ couple.venue_location }}
-                  {% endif %}
-                </p>
-              {% endif %}
-              
-              {% if couple.couple_story %}
-                <p class="card-text text-muted">
-                  {{ couple.couple_story|truncatewords:15 }}
-                </p>
-              {% endif %}
-              
-              <!-- Stats -->
-              <div class="row text-center small text-muted mb-3">
-                <div class="col-4">
-                  <div>{{ couple.registry_links.count }}</div>
-                  <div>Registries</div>
-                </div>
-                <div class="col-4">
-                  <div>{{ couple.social_links.count }}</div>
-                  <div>Social</div>
-                </div>
-                <div class="col-4">
-                  <div>{{ couple.photo_collections.count }}</div>
-                  <div>Collections</div>
-                </div>
-              </div>
-            </div>

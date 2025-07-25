@@ -1,7 +1,6 @@
-# wedding_shopping/forms.py
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import CoupleProfile, SocialMediaLink, RegistryLink, WeddingPhotoCollection
+from .models import CoupleProfile, SocialMediaLink, RegistryLink
 import re
 
 
@@ -117,133 +116,145 @@ class CoupleProfileForm(forms.ModelForm):
 
 
 class SocialMediaLinkForm(forms.ModelForm):
-    """Form for adding social media links"""
+    """Enhanced form for adding social media links with auto-detection"""
     
     class Meta:
         model = SocialMediaLink
         fields = ['platform', 'platform_name', 'url', 'display_name']
         widgets = {
-            'platform': forms.Select(attrs={'class': 'form-select'}),
+            'platform': forms.Select(attrs={
+                'class': 'form-select platform-select',
+                'onchange': 'updatePlatformFields(this)'
+            }),
             'platform_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Platform name (if Other selected)'
+                'class': 'form-control platform-name-field',
+                'placeholder': 'Platform name (if Other selected)',
+                'style': 'display: none;'
             }),
             'url': forms.URLInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'https://...'
+                'class': 'form-control url-field',
+                'placeholder': 'https://instagram.com/yourusername',
+                'onblur': 'detectPlatformFromUrl(this)'
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '@username or display name'
+                'placeholder': '@yourusername or Your Page Name'
             })
         }
+        labels = {
+            'platform': 'Platform',
+            'platform_name': 'Platform Name',
+            'url': 'URL',
+            'display_name': 'Display Name'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['platform'].empty_label = "Select Platform"
+        self.fields['url'].help_text = "We'll automatically detect the platform from your URL"
+        self.fields['display_name'].help_text = "How this link should appear on your wedding page"
     
     def clean(self):
         cleaned_data = super().clean()
         platform = cleaned_data.get('platform')
         platform_name = cleaned_data.get('platform_name')
+        url = cleaned_data.get('url')
         
         if platform == 'other' and not platform_name:
             raise ValidationError("Platform name is required when 'Other' is selected.")
+        
+        # Validate URL format
+        if url and not url.startswith(('http://', 'https://')):
+            cleaned_data['url'] = 'https://' + url
         
         return cleaned_data
 
 
 class RegistryLinkForm(forms.ModelForm):
-    """Form for adding registry links"""
+    """Enhanced form for adding registry links with auto-detection and branding"""
     
     class Meta:
         model = RegistryLink
         fields = ['registry_type', 'registry_name', 'original_url', 'display_name', 'description']
         widgets = {
-            'registry_type': forms.Select(attrs={'class': 'form-select'}),
+            'registry_type': forms.Select(attrs={
+                'class': 'form-select registry-select',
+                'onchange': 'updateRegistryFields(this)'
+            }),
             'registry_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Registry name (if Other selected)'
+                'class': 'form-control registry-name-field',
+                'placeholder': 'Registry name (if Other selected)',
+                'style': 'display: none;'
             }),
             'original_url': forms.URLInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'https://registry-url...'
+                'class': 'form-control url-field',
+                'placeholder': 'https://amazon.com/wedding/your-registry',
+                'onblur': 'detectRegistryFromUrl(this)'
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Display name for this registry'
+                'placeholder': 'Home Essentials Registry'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'What types of items are on this registry?'
+                'placeholder': 'Kitchen appliances, home decor, and everyday essentials'
             })
         }
+        labels = {
+            'registry_type': 'Registry Type',
+            'registry_name': 'Registry Name',
+            'original_url': 'Registry URL',
+            'display_name': 'Display Name',
+            'description': 'Description'
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['registry_type'].empty_label = "Select Registry"
+        self.fields['original_url'].help_text = "We'll automatically detect the registry type from your URL"
+        self.fields['display_name'].help_text = "A friendly name for this registry (e.g., 'Our Home Registry')"
+        self.fields['description'].help_text = "What types of items are on this registry?"
     
     def clean(self):
         cleaned_data = super().clean()
         registry_type = cleaned_data.get('registry_type')
         registry_name = cleaned_data.get('registry_name')
+        url = cleaned_data.get('original_url')
         
         if registry_type == 'other' and not registry_name:
             raise ValidationError("Registry name is required when 'Other' is selected.")
         
+        # Validate URL format
+        if url and not url.startswith(('http://', 'https://')):
+            cleaned_data['original_url'] = 'https://' + url
+        
         return cleaned_data
 
 
-class WeddingPhotoCollectionForm(forms.ModelForm):
-    """Form for linking to wedding photo collections"""
-    
-    class Meta:
-        model = WeddingPhotoCollection
-        fields = ['collection_name', 'description', 'studio_collection_id', 'is_featured']
-        widgets = {
-            'collection_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Our Wedding Venue Transformations'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Describe your wedding venue transformation collection'
-            }),
-            'studio_collection_id': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Collection ID from Wedding Studio'
-            }),
-            'is_featured': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        }
-        help_texts = {
-            'studio_collection_id': 'The ID of your collection from the Wedding Studio (found in the collection URL)',
-            'is_featured': 'Display this collection prominently on your wedding page'
-        }
-
-
-# Formsets for managing multiple links
+# Enhanced formsets with better configuration
 SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=1, 
+    extra=0,  # Will be set dynamically in view
     can_delete=True,
     min_num=0,
-    max_num=10
+    max_num=8,  # Reasonable limit
+    validate_min=False,
+    validate_max=True,
+    can_order=False
 )
 
 RegistryFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     RegistryLink, 
     form=RegistryLinkForm,
-    extra=1, 
+    extra=0,  # Will be set dynamically in view
     can_delete=True,
     min_num=0,
-    max_num=10
-)
-
-PhotoCollectionFormSet = forms.inlineformset_factory(
-    CoupleProfile, 
-    WeddingPhotoCollection, 
-    form=WeddingPhotoCollectionForm,
-    extra=1, 
-    can_delete=True,
-    min_num=0,
-    max_num=5
+    max_num=6,  # Reasonable limit for registries
+    validate_min=False,
+    validate_max=True,
+    can_order=False
 )
