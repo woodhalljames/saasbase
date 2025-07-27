@@ -102,7 +102,6 @@ class CoupleProfileForm(forms.ModelForm):
         
         # Check if names will create a valid URL
         if name1 and name2:
-            # Clean names like the model does
             clean1 = re.sub(r'[^a-zA-Z0-9]', '', name1.lower())[:15]
             clean2 = re.sub(r'[^a-zA-Z0-9]', '', name2.lower())[:15]
             
@@ -116,24 +115,16 @@ class CoupleProfileForm(forms.ModelForm):
 
 
 class SocialMediaLinkForm(forms.ModelForm):
-    """Enhanced form for adding social media links with auto-detection"""
+    """Simplified form for social media links - just URL and display name"""
     
     class Meta:
         model = SocialMediaLink
-        fields = ['platform', 'platform_name', 'url', 'display_name']
+        fields = ['url', 'display_name']
         widgets = {
-            'platform': forms.Select(attrs={
-                'class': 'form-select platform-select',
-                'onchange': 'updatePlatformFields(this)'
-            }),
-            'platform_name': forms.TextInput(attrs={
-                'class': 'form-control platform-name-field',
-                'placeholder': 'Platform name (if Other selected)',
-            }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
                 'placeholder': 'https://instagram.com/yourusername',
-                'onblur': 'detectPlatformFromUrl(this)'
+                'onblur': 'detectBrandingFromUrl(this)'
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -141,68 +132,37 @@ class SocialMediaLinkForm(forms.ModelForm):
             })
         }
         labels = {
-            'platform': 'Platform',
-            'platform_name': 'Platform Name',
-            'url': 'URL',
+            'url': 'Social Media URL',
             'display_name': 'Display Name'
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['platform'].empty_label = "Select Platform"
         self.fields['url'].help_text = "We'll automatically detect the platform from your URL"
         self.fields['display_name'].help_text = "How this link should appear on your wedding page"
-        
-        # Platform name field is only required when platform is 'other'
-        self.fields['platform_name'].required = False
     
-    def clean(self):
-        cleaned_data = super().clean()
-        platform = cleaned_data.get('platform')
-        platform_name = cleaned_data.get('platform_name')
-        url = cleaned_data.get('url')
-        
-        # Only require platform_name when platform is 'other' AND we have a platform value
-        if platform == 'other':
-            if not platform_name or not platform_name.strip():
-                raise ValidationError({
-                    'platform_name': "Platform name is required when 'Other' is selected."
-                })
-            cleaned_data['platform_name'] = platform_name.strip()
-        else:
-            # Clear platform_name if not using 'other'
-            cleaned_data['platform_name'] = ''
-        
-        # Validate URL format
+    def clean_url(self):
+        url = self.cleaned_data.get('url')
         if url and not url.startswith(('http://', 'https://')):
-            cleaned_data['url'] = 'https://' + url
-        
-        return cleaned_data
+            url = 'https://' + url
+        return url
 
 
 class RegistryLinkForm(forms.ModelForm):
-    """Enhanced form for adding registry links with auto-detection and branding"""
+    """Simplified form for registry links - just URL, name, and description"""
     
     class Meta:
         model = RegistryLink
-        fields = ['registry_type', 'registry_name', 'original_url', 'display_name', 'description']
+        fields = ['url', 'registry_name', 'description']
         widgets = {
-            'registry_type': forms.Select(attrs={
-                'class': 'form-select registry-select',
-                'onchange': 'updateRegistryFields(this)'
-            }),
-            'registry_name': forms.TextInput(attrs={
-                'class': 'form-control registry-name-field',
-                'placeholder': 'Registry name (if Other selected)',
-            }),
-            'original_url': forms.URLInput(attrs={
+            'url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
                 'placeholder': 'https://amazon.com/wedding/your-registry',
-                'onblur': 'detectRegistryFromUrl(this)'
+                'onblur': 'detectBrandingFromUrl(this)'
             }),
-            'display_name': forms.TextInput(attrs={
+            'registry_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Home Essentials Registry'
+                'placeholder': 'Our Home Registry'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
@@ -211,56 +171,42 @@ class RegistryLinkForm(forms.ModelForm):
             })
         }
         labels = {
-            'registry_type': 'Registry Type',
+            'url': 'Registry URL',
             'registry_name': 'Registry Name',
-            'original_url': 'Registry URL',
-            'display_name': 'Display Name',
             'description': 'Description'
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['registry_type'].empty_label = "Select Registry"
-        self.fields['original_url'].help_text = "We'll automatically detect the registry type from your URL"
-        self.fields['display_name'].help_text = "A friendly name for this registry (e.g., 'Our Home Registry')"
+        self.fields['url'].help_text = "We'll automatically detect the store from your URL"
+        self.fields['registry_name'].help_text = "A friendly name for this registry (e.g., 'Our Home Registry')"
         self.fields['description'].help_text = "What types of items are on this registry?"
         
-        # Registry name field is only required when registry_type is 'other'
-        self.fields['registry_name'].required = False
+        # Make registry_name required
+        self.fields['registry_name'].required = True
     
-    def clean(self):
-        cleaned_data = super().clean()
-        registry_type = cleaned_data.get('registry_type')
-        registry_name = cleaned_data.get('registry_name')
-        url = cleaned_data.get('original_url')
-        
-        # Only require registry_name when registry_type is 'other' AND we have a registry_type value
-        if registry_type == 'other':
-            if not registry_name or not registry_name.strip():
-                raise ValidationError({
-                    'registry_name': "Registry name is required when 'Other' is selected."
-                })
-            cleaned_data['registry_name'] = registry_name.strip()
-        else:
-            # Clear registry_name if not using 'other'
-            cleaned_data['registry_name'] = ''
-        
-        # Validate URL format
+    def clean_url(self):
+        url = self.cleaned_data.get('url')
         if url and not url.startswith(('http://', 'https://')):
-            cleaned_data['original_url'] = 'https://' + url
-        
-        return cleaned_data
+            url = 'https://' + url
+        return url
+    
+    def clean_registry_name(self):
+        name = self.cleaned_data.get('registry_name', '')
+        if not name or len(name.strip()) < 1:
+            raise ValidationError("Registry name is required.")
+        return name.strip()
 
 
-# Enhanced formsets with better configuration
+# Simplified formsets
 SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=0,  # Will be set dynamically in view
+    extra=2,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
-    max_num=8,  # Reasonable limit
+    max_num=8,
     validate_min=False,
     validate_max=True,
     can_order=False
@@ -270,10 +216,10 @@ RegistryFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     RegistryLink, 
     form=RegistryLinkForm,
-    extra=0,  # Will be set dynamically in view
+    extra=1,  # Start with 1 empty form
     can_delete=True,
     min_num=0,
-    max_num=6,  # Reasonable limit for registries
+    max_num=6,
     validate_min=False,
     validate_max=True,
     can_order=False

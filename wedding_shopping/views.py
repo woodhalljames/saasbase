@@ -1,4 +1,4 @@
-# wedding_shopping/views.py
+# wedding_shopping/views.py - Simplified version
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -19,9 +19,16 @@ from .forms import (
 
 
 def detect_registry_branding(url):
-    """Detect registry type and branding from URL"""
+    """Detect registry type and branding from URL - simplified"""
     if not url:
-        return {'type': 'other', 'name': '', 'icon': 'bi-gift'}
+        return {
+            'detected': False,
+            'type': 'other',
+            'name': 'Unknown Registry',
+            'icon': 'bi-gift',
+            'color': '#6c757d',
+            'suggestions': {}
+        }
     
     url_lower = url.lower()
     domain = urlparse(url).netloc.lower()
@@ -31,80 +38,113 @@ def detect_registry_branding(url):
             'patterns': ['amazon.com', 'amzn.com'],
             'name': 'Amazon',
             'icon': 'bi-amazon',
-            'color': '#FF9900'
+            'color': '#FF9900',
+            'suggestions': {'display_name': 'Amazon Registry'}
         },
         'target': {
             'patterns': ['target.com'],
             'name': 'Target',
             'icon': 'bi-bullseye',
-            'color': '#CC0000'
+            'color': '#CC0000',
+            'suggestions': {'display_name': 'Target Registry'}
         },
         'bed_bath_beyond': {
             'patterns': ['bedbathandbeyond.com', 'buybuybaby.com'],
             'name': 'Bed Bath & Beyond',
             'icon': 'bi-house-fill',
-            'color': '#003087'
+            'color': '#003087',
+            'suggestions': {'display_name': 'Bed Bath & Beyond Registry'}
         },
         'williams_sonoma': {
             'patterns': ['williams-sonoma.com', 'williamssonoma.com'],
             'name': 'Williams Sonoma',
             'icon': 'bi-cup-hot-fill',
-            'color': '#8B4513'
+            'color': '#8B4513',
+            'suggestions': {'display_name': 'Williams Sonoma Registry'}
         },
         'crate_barrel': {
             'patterns': ['crateandbarrel.com', 'cb2.com'],
             'name': 'Crate & Barrel',
             'icon': 'bi-house-door-fill',
-            'color': '#000000'
+            'color': '#000000',
+            'suggestions': {'display_name': 'Crate & Barrel Registry'}
         },
         'pottery_barn': {
             'patterns': ['potterybarn.com', 'pbteen.com', 'pbkids.com'],
             'name': 'Pottery Barn',
             'icon': 'bi-home-fill',
-            'color': '#8B4513'
+            'color': '#8B4513',
+            'suggestions': {'display_name': 'Pottery Barn Registry'}
         },
         'macy': {
             'patterns': ['macys.com'],
             'name': "Macy's",
             'icon': 'bi-bag-fill',
-            'color': '#E21937'
+            'color': '#E21937',
+            'suggestions': {'display_name': "Macy's Registry"}
         },
         'zola': {
             'patterns': ['zola.com'],
             'name': 'Zola',
             'icon': 'bi-heart-fill',
-            'color': '#FF6B6B'
+            'color': '#FF6B6B',
+            'suggestions': {'display_name': 'Zola Registry'}
         },
         'the_knot': {
             'patterns': ['theknot.com'],
             'name': 'The Knot',
             'icon': 'bi-heart',
-            'color': '#FF69B4'
+            'color': '#FF69B4',
+            'suggestions': {'display_name': 'The Knot Registry'}
         },
         'wayfair': {
             'patterns': ['wayfair.com'],
             'name': 'Wayfair',
             'icon': 'bi-house-fill',
-            'color': '#663399'
+            'color': '#663399',
+            'suggestions': {'display_name': 'Wayfair Registry'}
+        },
+        'honeyfund': {
+            'patterns': ['honeyfund.com'],
+            'name': 'Honeyfund',
+            'icon': 'bi-airplane-fill',
+            'color': '#FFA500',
+            'suggestions': {'display_name': 'Honeymoon Fund'}
         }
     }
     
     for registry_type, config in registry_patterns.items():
         if any(pattern in domain for pattern in config['patterns']):
             return {
+                'detected': True,
                 'type': registry_type,
                 'name': config['name'],
                 'icon': config['icon'],
-                'color': config.get('color', '#007bff')
+                'color': config.get('color', '#007bff'),
+                'suggestions': config.get('suggestions', {})
             }
     
-    return {'type': 'other', 'name': '', 'icon': 'bi-gift', 'color': '#6c757d'}
+    return {
+        'detected': False,
+        'type': 'other',
+        'name': 'Custom Registry',
+        'icon': 'bi-gift',
+        'color': '#6c757d',
+        'suggestions': {}
+    }
 
 
 def detect_social_platform(url):
-    """Detect social media platform from URL"""
+    """Detect social media platform from URL - simplified"""
     if not url:
-        return {'platform': 'other', 'icon': 'bi-link-45deg'}
+        return {
+            'detected': False,
+            'platform': 'other',
+            'name': 'Unknown Platform',
+            'icon': 'bi-link-45deg',
+            'color': '#6c757d',
+            'suggestions': {}
+        }
     
     url_lower = url.lower()
     domain = urlparse(url).netloc.lower()
@@ -112,73 +152,85 @@ def detect_social_platform(url):
     platform_patterns = {
         'instagram': {
             'patterns': ['instagram.com', 'instagr.am'],
-            'icon': 'bi-instagram'
+            'name': 'Instagram',
+            'icon': 'bi-instagram',
+            'color': '#E4405F',
+            'suggestions': {'display_name': '@username'}
         },
         'facebook': {
             'patterns': ['facebook.com', 'fb.com'],
-            'icon': 'bi-facebook'
+            'name': 'Facebook',
+            'icon': 'bi-facebook',
+            'color': '#1877F2',
+            'suggestions': {'display_name': 'Facebook Page'}
         },
         'twitter': {
             'patterns': ['twitter.com', 'x.com'],
-            'icon': 'bi-twitter'
+            'name': 'X (Twitter)',
+            'icon': 'bi-twitter-x',
+            'color': '#000000',
+            'suggestions': {'display_name': '@username'}
         },
         'tiktok': {
             'patterns': ['tiktok.com'],
-            'icon': 'bi-tiktok'
+            'name': 'TikTok',
+            'icon': 'bi-tiktok',
+            'color': '#FF0050',
+            'suggestions': {'display_name': '@username'}
         },
-        'website': {
-            'patterns': ['www.', '.com', '.org', '.net'],
-            'icon': 'bi-globe'
+        'youtube': {
+            'patterns': ['youtube.com', 'youtu.be'],
+            'name': 'YouTube',
+            'icon': 'bi-youtube',
+            'color': '#FF0000',
+            'suggestions': {'display_name': 'YouTube Channel'}
+        },
+        'pinterest': {
+            'patterns': ['pinterest.com'],
+            'name': 'Pinterest',
+            'icon': 'bi-pinterest',
+            'color': '#BD081C',
+            'suggestions': {'display_name': 'Pinterest'}
+        },
+        'linkedin': {
+            'patterns': ['linkedin.com'],
+            'name': 'LinkedIn',
+            'icon': 'bi-linkedin',
+            'color': '#0A66C2',
+            'suggestions': {'display_name': 'LinkedIn'}
         }
     }
     
     for platform, config in platform_patterns.items():
         if any(pattern in domain for pattern in config['patterns']):
             return {
+                'detected': True,
                 'platform': platform,
-                'icon': config['icon']
+                'name': config['name'],
+                'icon': config['icon'],
+                'color': config.get('color', '#007bff'),
+                'suggestions': config.get('suggestions', {})
             }
     
-    return {'platform': 'other', 'icon': 'bi-link-45deg'}
-
-
-def get_user_wedding_context(user):
-    """Helper function to get wedding-related context for user dashboard"""
-    context = {
-        'has_couple_profile': False,
-        'couple_profile': None,
-        'wedding_stats': None,
-    }
-    
-    try:
-        couple_profile = CoupleProfile.objects.get(user=user)
-        context['has_couple_profile'] = True
-        context['couple_profile'] = couple_profile
-        
-        # Calculate wedding stats
-        stats = {
-            'registries_count': couple_profile.registry_links.count(),
-            'social_links_count': couple_profile.social_links.count(),
-            'total_clicks': sum(r.click_count for r in couple_profile.registry_links.all()),
+    # Check if it's a website
+    if any(tld in domain for tld in ['.com', '.org', '.net', '.co', '.io']):
+        return {
+            'detected': True,
+            'platform': 'website',
+            'name': 'Website',
+            'icon': 'bi-globe',
+            'color': '#007bff',
+            'suggestions': {'display_name': 'Our Website'}
         }
-        
-        # Days until wedding
-        if couple_profile.wedding_date:
-            today = timezone.now().date()
-            if couple_profile.wedding_date > today:
-                stats['days_until_wedding'] = (couple_profile.wedding_date - today).days
-            elif couple_profile.wedding_date == today:
-                stats['is_wedding_day'] = True
-            else:
-                stats['wedding_passed'] = True
-                stats['days_since_wedding'] = (today - couple_profile.wedding_date).days
-        
-        context['wedding_stats'] = stats
-        
-    except CoupleProfile.DoesNotExist:
-        pass
     
-    return context
+    return {
+        'detected': False,
+        'platform': 'other',
+        'name': 'Custom Link',
+        'icon': 'bi-link-45deg',
+        'color': '#6c757d',
+        'suggestions': {}
+    }
 
 
 class PublicCoupleDetailView(DetailView):
@@ -224,21 +276,6 @@ class PublicCoupleDetailView(DetailView):
         context['social_links'] = couple.social_links.filter(pk__isnull=False)
         context['registry_links'] = couple.registry_links.filter(pk__isnull=False)
         
-        # Get photo collections for wedding venue transformations
-        context['collections_with_images'] = []
-        try:
-            photo_collections = couple.photo_collections.filter(is_featured=True)
-            for collection in photo_collections:
-                collection_data = {
-                    'collection': collection,
-                    'sample_items': [],  # You can populate this if you have image processing integration
-                    'studio_collection': None  # You can populate this if you have studio integration
-                }
-                context['collections_with_images'].append(collection_data)
-        except AttributeError:
-            # photo_collections relationship doesn't exist yet
-            pass
-        
         return context
 
 
@@ -265,7 +302,7 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         context['is_new'] = is_new
         context['title'] = "Create Your Wedding Page" if is_new else "Manage Your Wedding Page"
         
-        # Configure formsets with proper minimum forms
+        # Configure formsets
         if self.request.POST:
             context['social_formset'] = SocialMediaFormSet(
                 self.request.POST, 
@@ -278,7 +315,6 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 prefix='registry'
             )
         else:
-            # For new profiles, ensure we have at least 2 empty forms for each
             context['social_formset'] = SocialMediaFormSet(
                 instance=self.object if not is_new else None,
                 prefix='social'
@@ -319,6 +355,9 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 social_instances = social_formset.save(commit=False)
                 for social in social_instances:
                     social.couple_profile = self.object
+                    # Clean URL
+                    if social.url and not social.url.startswith(('http://', 'https://')):
+                        social.url = 'https://' + social.url
                     social.save()
                 # Handle deletions
                 for obj in social_formset.deleted_objects:
@@ -329,15 +368,9 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 registry_instances = registry_formset.save(commit=False)
                 for registry in registry_instances:
                     registry.couple_profile = self.object
-                    
-                    # Auto-detect registry type if not set
-                    if not registry.registry_type or registry.registry_type == 'other':
-                        branding = detect_registry_branding(registry.original_url)
-                        if branding['type'] != 'other':
-                            registry.registry_type = branding['type']
-                            if not registry.display_name:
-                                registry.display_name = branding['name']
-                    
+                    # Clean URL
+                    if registry.url and not registry.url.startswith(('http://', 'https://')):
+                        registry.url = 'https://' + registry.url
                     registry.save()
                 # Handle deletions
                 for obj in registry_formset.deleted_objects:
@@ -389,7 +422,7 @@ def registry_redirect(request, pk):
     """Click tracking and redirect to registry"""
     registry = get_object_or_404(RegistryLink, pk=pk)
     registry.increment_clicks()
-    return redirect(registry.original_url)
+    return redirect(registry.url)
 
 
 def legacy_couple_redirect(request, slug=None, share_token=None):
@@ -414,7 +447,10 @@ def detect_url_branding_api(request):
         else:
             branding = detect_social_platform(url)
         
-        return JsonResponse(branding)
+        return JsonResponse({
+            'success': True,
+            'branding': branding
+        })
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 

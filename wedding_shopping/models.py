@@ -1,10 +1,12 @@
-# wedding_shopping/models.py - Enhanced with better branding support
+# wedding_shopping/models.py - Simplified without platform/registry type choices
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 import uuid
 from django.utils.text import slugify
 import re
+from urllib.parse import urlparse
+
 User = get_user_model()
 
 
@@ -48,46 +50,35 @@ class CoupleProfile(models.Model):
         """Clean name for URL: remove spaces, special chars, keep only alphanumeric"""
         if not name:
             return ""
-        # Remove spaces and special characters, keep only letters and numbers
         cleaned = re.sub(r'[^a-zA-Z0-9]', '', name.lower())
-        # Limit length to prevent super long URLs
         return cleaned[:15]
     
     def _generate_wedding_slug(self):
         """Generate slug in format: name1name2MMDDYY"""
-        # Clean the names
         name1 = self._clean_name(self.partner_1_name)
         name2 = self._clean_name(self.partner_2_name)
         
-        # If no wedding date, use a placeholder
         if self.wedding_date:
             date_str = self.wedding_date.strftime('%m%d%y')
         else:
-            date_str = 'tbd'  # "to be determined"
+            date_str = 'tbd'
         
-        # Combine into base slug
         base_slug = f"{name1}{name2}{date_str}"
         
-        # Ensure we have something
         if not base_slug or len(base_slug) < 3:
             base_slug = f"wedding{self.pk or 'new'}"
         
         return base_slug
     
     def save(self, *args, **kwargs):
-        # Generate custom slug if not exists or if names/date changed
         if not self.slug or self._should_regenerate_slug():
             base_slug = self._generate_wedding_slug()
-            
-            # Ensure uniqueness by adding number suffix if needed
             counter = 1
             self.slug = base_slug
             
-            # Check for existing slugs and increment if needed
             while CoupleProfile.objects.filter(slug=self.slug).exclude(pk=self.pk).exists():
                 self.slug = f"{base_slug}{counter}"
                 counter += 1
-                # Prevent infinite loop
                 if counter > 999:
                     self.slug = f"{base_slug}{uuid.uuid4().hex[:4]}"
                     break
@@ -95,7 +86,6 @@ class CoupleProfile(models.Model):
         super().save(*args, **kwargs)
     
     def _should_regenerate_slug(self):
-        """Check if slug should be regenerated based on changed fields"""
         if not self.pk:
             return True
         
@@ -110,15 +100,12 @@ class CoupleProfile(models.Model):
             return True
     
     def get_absolute_url(self):
-        """Return the custom wedding URL"""
         return reverse('wedding_shopping:wedding_page', kwargs={'slug': self.slug})
     
     def get_public_url(self):
-        """Return the public URL (same as absolute for now)"""
         return self.get_absolute_url()
     
     def get_share_url(self):
-        """Return shareable URL using token (fallback)"""
         return reverse('wedding_shopping:wedding_page_token', kwargs={'share_token': str(self.share_token)})
     
     @property
@@ -127,39 +114,53 @@ class CoupleProfile(models.Model):
     
     @property
     def wedding_url_preview(self):
-        """Show what the URL will look like"""
         return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
 
 
 class SocialMediaLink(models.Model):
-    """Social media profiles for the couple with enhanced branding"""
-    
-    PLATFORM_CHOICES = [
-        ('instagram', 'Instagram'),
-        ('facebook', 'Facebook'),
-        ('twitter', 'X (Twitter)'),
-        ('tiktok', 'TikTok'),
-        ('youtube', 'YouTube'),
-        ('pinterest', 'Pinterest'),
-        ('linkedin', 'LinkedIn'),
-        ('other', 'Other'),
-    ]
+    """Simplified social media links - auto-detect platform from URL"""
     
     couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='social_links')
-    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
-    platform_name = models.CharField(max_length=50, blank=True, help_text="Custom platform name if 'Other'")
     url = models.URLField()
     display_name = models.CharField(max_length=100, blank=True, help_text="Display name (e.g., @username)")
     
     class Meta:
-        unique_together = ['couple_profile', 'platform', 'url']
+        unique_together = ['couple_profile', 'url']
     
     def __str__(self):
-        return f"{self.couple_profile} - {self.get_platform_display()}"
+        return f"{self.couple_profile} - {self.display_name or self.url}"
+    
+    def _detect_platform_from_url(self):
+        """Auto-detect platform from URL"""
+        if not self.url:
+            return 'other'
+        
+        domain = urlparse(self.url).netloc.lower()
+        
+        platform_patterns = {
+            'instagram': ['instagram.com', 'instagr.am'],
+            'facebook': ['facebook.com', 'fb.com'],
+            'twitter': ['twitter.com', 'x.com'],
+            'tiktok': ['tiktok.com'],
+            'youtube': ['youtube.com', 'youtu.be'],
+            'pinterest': ['pinterest.com'],
+            'linkedin': ['linkedin.com'],
+        }
+        
+        for platform, patterns in platform_patterns.items():
+            if any(pattern in domain for pattern in patterns):
+                return platform
+        
+        return 'website' if any(tld in domain for tld in ['.com', '.org', '.net']) else 'other'
+    
+    @property
+    def platform(self):
+        """Returns detected platform"""
+        return self._detect_platform_from_url()
     
     @property
     def platform_icon(self):
-        """Returns Bootstrap icon class for the platform with fallback"""
+        """Returns Bootstrap icon class for the platform"""
         icons = {
             'instagram': 'bi-instagram',
             'facebook': 'bi-facebook',
@@ -171,11 +172,11 @@ class SocialMediaLink(models.Model):
             'website': 'bi-globe',
             'other': 'bi-link-45deg',
         }
-        return icons.get(self.platform, 'bi-link-45deg')  # Always returns something
+        return icons.get(self.platform, 'bi-link-45deg')
 
     @property
     def platform_color(self):
-        """Returns brand color for the platform with fallback"""
+        """Returns brand color for the platform"""
         colors = {
             'instagram': '#E4405F',
             'facebook': '#1877F2',
@@ -187,44 +188,20 @@ class SocialMediaLink(models.Model):
             'website': '#007bff',
             'other': '#6c757d',
         }
-        return colors.get(self.platform, '#6c757d')  # Always returns something
+        return colors.get(self.platform, '#6c757d')
     
     @property
     def platform_display_name(self):
         """Returns the display name to show on the wedding page"""
-        if self.display_name:
-            return self.display_name
-        elif self.platform_name:
-            return self.platform_name
-        else:
-            return self.get_platform_display()
+        return self.display_name or self.url
 
 
 class RegistryLink(models.Model):
-    """Wedding registry links with enhanced branding and tracking"""
-    
-    REGISTRY_TYPES = [
-        ('amazon', 'Amazon'),
-        ('target', 'Target'),
-        ('bed_bath_beyond', 'Bed Bath & Beyond'),
-        ('williams_sonoma', 'Williams Sonoma'),
-        ('crate_barrel', 'Crate & Barrel'),
-        ('pottery_barn', 'Pottery Barn'),
-        ('macy', 'Macy\'s'),
-        ('zola', 'Zola'),
-        ('the_knot', 'The Knot'),
-        ('wayfair', 'Wayfair'),
-        ('registry_finder', 'Registry Finder'),
-        ('honeyfund', 'Honeyfund'),
-        ('other', 'Other'),
-    ]
+    """Simplified registry links - auto-detect type from URL"""
     
     couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='registry_links')
-    registry_type = models.CharField(max_length=30, choices=REGISTRY_TYPES)
-    registry_name = models.CharField(max_length=100, blank=True, help_text="Custom registry name if 'Other'")
-    original_url = models.URLField(help_text="Original registry URL")
-    affiliate_url = models.URLField(blank=True, help_text="Our affiliate URL (auto-generated if possible)")
-    display_name = models.CharField(max_length=100, blank=True, help_text="Display name for the registry")
+    url = models.URLField(help_text="Registry URL")
+    registry_name = models.CharField(max_length=100, help_text="Registry name (e.g., 'Our Home Registry')")
     description = models.TextField(blank=True, help_text="Description of what's on this registry")
     
     # Tracking
@@ -232,19 +209,47 @@ class RegistryLink(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['registry_type', 'created_at']
+        ordering = ['created_at']
     
     def __str__(self):
-        return f"{self.couple_profile} - {self.get_registry_type_display()}"
+        return f"{self.couple_profile} - {self.registry_name}"
+    
+    def _detect_registry_from_url(self):
+        """Auto-detect registry type from URL"""
+        if not self.url:
+            return 'other'
+        
+        domain = urlparse(self.url).netloc.lower()
+        
+        registry_patterns = {
+            'amazon': ['amazon.com', 'amzn.com'],
+            'target': ['target.com'],
+            'bed_bath_beyond': ['bedbathandbeyond.com', 'buybuybaby.com'],
+            'williams_sonoma': ['williams-sonoma.com', 'williamssonoma.com'],
+            'crate_barrel': ['crateandbarrel.com', 'cb2.com'],
+            'pottery_barn': ['potterybarn.com', 'pbteen.com', 'pbkids.com'],
+            'macy': ['macys.com'],
+            'zola': ['zola.com'],
+            'the_knot': ['theknot.com'],
+            'wayfair': ['wayfair.com'],
+            'registry_finder': ['registryfinder.com'],
+            'honeyfund': ['honeyfund.com'],
+        }
+        
+        for registry_type, patterns in registry_patterns.items():
+            if any(pattern in domain for pattern in patterns):
+                return registry_type
+        
+        return 'other'
     
     @property
-    def final_url(self):
-        """Returns the original URL for now (affiliate logic removed)"""
-        return self.original_url
+    def registry_type(self):
+        """Returns detected registry type"""
+        return self._detect_registry_from_url()
     
     @property
     def registry_icon(self):
-        """Returns appropriate Bootstrap icon for the registry with fallback"""
+        """Returns appropriate Bootstrap icon for the registry"""
         icons = {
             'amazon': 'bi-amazon',
             'target': 'bi-bullseye',
@@ -260,11 +265,11 @@ class RegistryLink(models.Model):
             'honeyfund': 'bi-airplane-fill',
             'other': 'bi-gift',
         }
-        return icons.get(self.registry_type, 'bi-gift')  # Always returns something
+        return icons.get(self.registry_type, 'bi-gift')
 
     @property
     def registry_color(self):
-        """Returns brand color for the registry with fallback"""
+        """Returns brand color for the registry"""
         colors = {
             'amazon': '#FF9900',
             'target': '#CC0000',
@@ -280,19 +285,19 @@ class RegistryLink(models.Model):
             'honeyfund': '#FFA500',
             'other': '#6c757d',
         }
-        return colors.get(self.registry_type, '#6c757d')  # Always returns something
+        return colors.get(self.registry_type, '#6c757d')
 
     @property
     def registry_display_name(self):
-        """Returns the display name to show on the wedding page with fallback"""
-        if self.display_name:
-            return self.display_name
-        elif self.registry_name:
-            return self.registry_name
-        else:
-            return f"{self.get_registry_type_display()}"
+        """Returns the display name to show on the wedding page"""
+        return self.registry_name
     
     def increment_clicks(self):
         """Increment click count"""
         self.click_count += 1
         self.save(update_fields=['click_count'])
+    
+    @property
+    def final_url(self):
+        """Returns the URL to redirect to"""
+        return self.url

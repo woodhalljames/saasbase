@@ -126,7 +126,7 @@
     </div>
     {% endif %}
 
-    <!-- Wedding Registries - New Table Format -->
+    <!-- Wedding Registries - Improved Responsive Layout -->
     {% if registry_links %}
     <div class="row mb-5">
       <div class="col-12">
@@ -138,57 +138,91 @@
         
         <div class="card border-0 shadow-sm">
           <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th class="border-0 ps-4" style="width: 80px;">Store</th>
-                    <th class="border-0">Registry Details</th>
-                    <th class="border-0 text-center" style="width: 150px;">Shop</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for registry in registry_links %}
-                    {% if registry.pk %}
+            <!-- Desktop Table View (hidden on mobile) -->
+            <div class="d-none d-lg-block">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="border-0 ps-4" style="width: 80px;">Store</th>
+                      <th class="border-0" style="width: 200px;">Registry</th>
+                      <th class="border-0" style="width: auto;">Description</th>
+                      <th class="border-0 text-center" style="width: 120px;">Shop</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for registry in registry_links %}
                     <tr class="registry-row">
                       <td class="ps-4 align-middle">
                         <div class="registry-brand-icon d-flex align-items-center justify-content-center rounded-circle" 
                              style="width: 50px; height: 50px; background-color: {{ registry.registry_color }}15; border: 2px solid {{ registry.registry_color }}30;">
-                          <i class="{{ registry.registry_icon }} text-white fs-4"></i>
+                          <i class="{{ registry.registry_icon }} fs-4" style="color: {{ registry.registry_color }};"></i>
                         </div>
                       </td>
                       <td class="align-middle">
-                        <div>
-                          <h6 class="mb-1 fw-bold">
-                            {% if registry.display_name %}
-                              {{ registry.display_name }}
-                            {% else %}
-                              {{ registry.get_registry_type_display }}
-                            {% endif %}
-                          </h6>
-                          {% if registry.description %}
-                            <p class="text-muted mb-0 small">{{ registry.description|truncatewords:20 }}</p>
-                          {% else %}
-                            <p class="text-muted mb-0 small">{{ registry.get_registry_type_display }} Registry</p>
-                          {% endif %}
-                        </div>
+                        <h6 class="mb-0 fw-bold">{{ registry.registry_display_name }}</h6>
+                        <small class="text-muted">{{ registry.registry_type|title }}</small>
+                      </td>
+                      <td class="align-middle">
+                        {% if registry.description %}
+                          <p class="mb-0 text-muted">{{ registry.description }}</p>
+                        {% else %}
+                          <p class="mb-0 text-muted fst-italic">Wedding registry items</p>
+                        {% endif %}
                       </td>
                       <td class="text-center align-middle">
                         <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
-                           class="btn btn-sm px-4 py-2 fw-bold text-white registry-shop-btn"
+                           class="btn btn-sm px-3 py-2 fw-bold text-white registry-shop-btn"
                            style="background-color: {{ registry.registry_color }}; border-color: {{ registry.registry_color }};"
-                           target="_blank"
-                           onmouseover="this.style.backgroundColor='{{ registry.registry_color }}cc'"
-                           onmouseout="this.style.backgroundColor='{{ registry.registry_color }}'">
+                           target="_blank">
                           <i class="bi bi-gift me-1"></i>
                           Shop
                         </a>
                       </td>
                     </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <!-- Mobile Card View (visible on mobile/tablet) -->
+            <div class="d-lg-none">
+              {% for registry in registry_links %}
+              <div class="registry-card border-bottom p-4 {% if not forloop.last %}border-bottom{% endif %}">
+                <div class="row align-items-start">
+                  <!-- Store Icon & Name -->
+                  <div class="col-3 col-sm-2 text-center">
+                    <div class="registry-brand-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                         style="width: 50px; height: 50px; background-color: {{ registry.registry_color }}15; border: 2px solid {{ registry.registry_color }}30;">
+                      <i class="{{ registry.registry_icon }} fs-4" style="color: {{ registry.registry_color }};"></i>
+                    </div>
+                    <div class="small text-muted">{{ registry.registry_type|title }}</div>
+                  </div>
+                  
+                  <!-- Registry Details & Description -->
+                  <div class="col-6 col-sm-7">
+                    <h6 class="mb-2 fw-bold">{{ registry.registry_display_name }}</h6>
+                    {% if registry.description %}
+                      <p class="mb-0 text">{{ registry.description }}</p>
+                    {% else %}
+                      <p class="mb-0 text-muted small fst-italic">Wedding registry items</p>
                     {% endif %}
-                  {% endfor %}
-                </tbody>
-              </table>
+                  </div>
+                  
+                  <!-- Shop Button -->
+                  <div class="col-3 col-sm-3 text-end">
+                    <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
+                       class="btn btn-sm px-3 py-2 fw-bold text-white registry-shop-btn w-100"
+                       style="background-color: {{ registry.registry_color }}; border-color: {{ registry.registry_color }};"
+                       target="_blank">
+                      <i class="bi bi-gift me-1 d-none d-sm-inline"></i>
+                      Shop
+                    </a>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
             </div>
           </div>
         </div>
@@ -196,7 +230,7 @@
     </div>
     {% endif %}
 
-    <!-- Social Media Links - Improved Compact Design -->
+    <!-- Social Media Links - Updated for simplified model -->
     {% if social_links %}
     <div class="row mb-5">
       <div class="col-12">
@@ -215,15 +249,9 @@
                  style="border-color: {{ social.platform_color }}30; transition: all 0.3s ease;"
                  onmouseover="this.style.backgroundColor='{{ social.platform_color }}'; this.style.borderColor='{{ social.platform_color }}'; this.style.color='white';"
                  onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='{{ social.platform_color }}30'; this.style.color='#212529';">
-                <i class="{{ social.platform_icon }} mb-2" style="font-size: 1.5rem;"></i>
+                <i class="{{ social.platform_icon }} mb-2" style="font-size: 1.5rem; color: {{ social.platform_color }};"></i>
                 <small class="text-truncate w-100 text-center">
-                  {% if social.display_name %}
-                    {{ social.display_name }}
-                  {% elif social.platform_name %}
-                    {{ social.platform_name }}
-                  {% else %}
-                    {{ social.get_platform_display }}
-                  {% endif %}
+                  {{ social.platform_display_name }}
                 </small>
               </a>
             </div>
@@ -256,7 +284,7 @@
 </div>
 
 <style>
-/* Registry Table Styling */
+/* Registry Table Styling - Enhanced for better responsiveness */
 .registry-row {
   transition: all 0.2s ease;
   border-left: 4px solid transparent;
@@ -271,7 +299,8 @@
   transition: all 0.3s ease;
 }
 
-.registry-row:hover .registry-brand-icon {
+.registry-row:hover .registry-brand-icon,
+.registry-card:hover .registry-brand-icon {
   transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
@@ -286,6 +315,15 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
 }
 
+/* Mobile Registry Cards */
+.registry-card {
+  transition: all 0.2s ease;
+}
+
+.registry-card:hover {
+  background-color: #f8f9fa;
+}
+
 /* Social Media Styling */
 .social-btn {
   transition: all 0.3s ease;
@@ -296,6 +334,10 @@
 .social-btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+.social-btn:hover i {
+  color: white !important;
 }
 
 /* General Improvements */
@@ -323,7 +365,7 @@
   animation: heartbeat 2s infinite;
 }
 
-/* Table customizations */
+/* Table improvements */
 .table > tbody > tr > td {
   vertical-align: middle;
   padding: 1rem 0.75rem;
@@ -335,9 +377,39 @@
   padding: 1rem 0.75rem;
   font-weight: 600;
   color: #495057;
+  white-space: nowrap;
+}
+
+/* Description column styling */
+.table td:nth-child(3) {
+  max-width: 300px;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Remove horizontal scroll by ensuring content fits */
+.table-responsive {
+  overflow-x: auto;
+}
+
+@media (min-width: 992px) {
+  .table-responsive {
+    overflow-x: visible;
+  }
 }
 
 /* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .registry-brand-icon {
+    width: 45px !important;
+    height: 45px !important;
+  }
+  
+  .registry-brand-icon i {
+    font-size: 1.1rem !important;
+  }
+}
+
 @media (max-width: 768px) {
   .display-4 {
     font-size: 2.5rem;
@@ -345,15 +417,6 @@
   
   .display-6 {
     font-size: 2rem;
-  }
-  
-  .registry-brand-icon {
-    width: 40px !important;
-    height: 40px !important;
-  }
-  
-  .registry-brand-icon i {
-    font-size: 1rem !important;
   }
   
   .social-btn {
@@ -365,19 +428,26 @@
   }
 }
 
-/* Brand color utilities */
-.text-brand-primary { color: var(--registry-color, #007bff); }
-.bg-brand-primary { background-color: var(--registry-color, #007bff); }
-.border-brand-primary { border-color: var(--registry-color, #007bff); }
+@media (max-width: 575.98px) {
+  .registry-brand-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .registry-brand-icon i {
+    font-size: 1rem !important;
+  }
+  
+  .registry-card {
+    padding: 1rem !important;
+  }
+}
 </style>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 
 <script>
 // Enhanced brand integration
 document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects for registry rows
+    // Add hover effects for registry rows (desktop table)
     const registryRows = document.querySelectorAll('.registry-row');
     registryRows.forEach(row => {
         const brandIcon = row.querySelector('.registry-brand-icon');
@@ -396,6 +466,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Add hover effects for registry cards (mobile)
+    const registryCards = document.querySelectorAll('.registry-card');
+    registryCards.forEach(card => {
+        const shopBtn = card.querySelector('.registry-shop-btn');
+        
+        if (shopBtn) {
+            const brandColor = shopBtn.style.backgroundColor;
+            
+            card.addEventListener('mouseenter', function() {
+                card.style.borderLeftColor = brandColor;
+                card.style.borderLeftWidth = '4px';
+                card.style.borderLeftStyle = 'solid';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                card.style.borderLeft = 'none';
+            });
+        }
+    });
+    
     // Add click tracking for social links
     const socialLinks = document.querySelectorAll('.social-btn');
     socialLinks.forEach(link => {
@@ -405,14 +495,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// API integration for dynamic brand updates (future enhancement)
-function updateBrandColors() {
-    const registryButtons = document.querySelectorAll('.registry-shop-btn');
-    registryButtons.forEach(btn => {
-        // Future: Fetch latest brand colors from API
-        // This would allow for dynamic brand color updates
-    });
-}
 </script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

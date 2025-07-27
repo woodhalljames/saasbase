@@ -171,7 +171,6 @@
             </label>
             {{ form.couple_photo }}
             
-            <!-- Current Image Preview -->
             {% if form.instance.couple_photo %}
               <div class="mt-2">
                 <div class="d-flex align-items-center">
@@ -183,17 +182,6 @@
                 </div>
               </div>
             {% endif %}
-            
-            <!-- New Image Preview -->
-            <div id="couple-photo-preview" class="mt-2" style="display: none;">
-              <div class="d-flex align-items-center">
-                <img id="couple-photo-img" 
-                     class="img-thumbnail me-2" 
-                     style="width: 60px; height: 60px; object-fit: cover;"
-                     alt="New couple photo">
-                <small class="text-muted">New photo preview</small>
-              </div>
-            </div>
             
             {% if form.couple_photo.help_text %}
               <div class="form-text">{{ form.couple_photo.help_text }}</div>
@@ -210,7 +198,6 @@
             </label>
             {{ form.venue_photo }}
             
-            <!-- Current Image Preview -->
             {% if form.instance.venue_photo %}
               <div class="mt-2">
                 <div class="d-flex align-items-center">
@@ -222,17 +209,6 @@
                 </div>
               </div>
             {% endif %}
-            
-            <!-- New Image Preview -->
-            <div id="venue-photo-preview" class="mt-2" style="display: none;">
-              <div class="d-flex align-items-center">
-                <img id="venue-photo-img" 
-                     class="img-thumbnail me-2" 
-                     style="width: 60px; height: 60px; object-fit: cover;"
-                     alt="New venue photo">
-                <small class="text-muted">New photo preview</small>
-              </div>
-            </div>
             
             {% if form.venue_photo.help_text %}
               <div class="form-text">{{ form.venue_photo.help_text }}</div>
@@ -251,70 +227,46 @@
         <h5 class="mb-0">
           <i class="bi bi-share"></i> Social Media Links
         </h5>
-        <button type="button" class="btn btn-light btn-sm" onclick="addSocialForm()">
+        <button type="button" class="btn btn-light btn-sm" id="add-social-btn">
           <i class="bi bi-plus"></i> Add Link
         </button>
       </div>
       <div class="card-body">
-        <div id="social-forms">
+        <div id="social-formset">
           {{ social_formset.management_form }}
           {% for form in social_formset %}
             <div class="social-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
               <div class="row">
-                <div class="col-lg-3 mb-2">
-                  <label class="form-label">Platform</label>
-                  <select name="{{ form.platform.name }}" class="form-select platform-select" id="{{ form.platform.id_for_label }}">
-                    <option value="">Select Platform</option>
-                    {% for value, label in form.platform.field.choices %}
-                      {% if value %}
-                        <option value="{{ value }}" {% if form.platform.value == value %}selected{% endif %}>{{ label }}</option>
-                      {% endif %}
-                    {% endfor %}
-                  </select>
+                <div class="col-lg-5 mb-2">
+                  <label class="form-label">{{ form.url.label }}</label>
+                  {{ form.url }}
+                  {% if form.url.help_text %}
+                    <div class="form-text">{{ form.url.help_text }}</div>
+                  {% endif %}
+                  {% if form.url.errors %}
+                    <div class="text-danger small">{{ form.url.errors.0 }}</div>
+                  {% endif %}
                 </div>
-                <div class="col-lg-4 mb-2">
-                  <label class="form-label">URL</label>
-                  <input type="url" name="{{ form.url.name }}" class="form-control url-field" id="{{ form.url.id_for_label }}" placeholder="https://instagram.com/yourusername" value="{{ form.url.value|default:'' }}">
-                </div>
-                <div class="col-lg-3 mb-2">
-                  <label class="form-label">Display Name</label>
-                  <input type="text" name="{{ form.display_name.name }}" class="form-control" id="{{ form.display_name.id_for_label }}" placeholder="@yourusername or Your Page Name" value="{{ form.display_name.value|default:'' }}">
+                <div class="col-lg-5 mb-2">
+                  <label class="form-label">{{ form.display_name.label }}</label>
+                  {{ form.display_name }}
+                  {% if form.display_name.help_text %}
+                    <div class="form-text">{{ form.display_name.help_text }}</div>
+                  {% endif %}
+                  {% if form.display_name.errors %}
+                    <div class="text-danger small">{{ form.display_name.errors.0 }}</div>
+                  {% endif %}
                 </div>
                 <div class="col-lg-2 mb-2 d-flex align-items-end">
-                  {% if form.instance.pk or forloop.counter > 2 %}
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markSocialForDeletion(this)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  {% endif %}
-                </div>
-              </div>
-              
-              <!-- Platform Name Field for "Other" option -->
-              <div class="row platform-name-row" style="{% if form.platform.value != 'other' %}display: none;{% endif %}">
-                <div class="col-lg-6 mb-2">
-                  <label class="form-label">Platform Name <span class="text-danger">*</span></label>
-                  <input type="text" name="{{ form.platform_name.name }}" class="form-control" id="{{ form.platform_name.id_for_label }}" placeholder="Platform name (e.g., Bluesky, Threads)" value="{{ form.platform_name.value|default:'' }}">
-                  <div class="form-text">Enter the name of the platform (e.g., "Bluesky", "Threads")</div>
-                  {% if form.platform_name.errors %}
-                    <div class="text-danger small">{{ form.platform_name.errors.0 }}</div>
-                  {% endif %}
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="social">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </div>
               
               <!-- Hidden fields -->
               {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
               {% if form.id %}{{ form.id.as_hidden }}{% endif %}
-              
-              <!-- Error messages -->
-              {% if form.errors %}
-                <div class="text-danger small mt-1">
-                  {% for field, errors in form.errors.items %}
-                    {% if field != 'platform_name' %}
-                      <div>{{ field }}: {{ errors.0 }}</div>
-                    {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
           {% endfor %}
         </div>
@@ -331,77 +283,59 @@
         <h5 class="mb-0">
           <i class="bi bi-gift"></i> Wedding Registries
         </h5>
-        <button type="button" class="btn btn-dark btn-sm" onclick="addRegistryForm()">
+        <button type="button" class="btn btn-dark btn-sm" id="add-registry-btn">
           <i class="bi bi-plus"></i> Add Registry
         </button>
       </div>
       <div class="card-body">
-        <div id="registry-forms">
+        <div id="registry-formset">
           {{ registry_formset.management_form }}
           {% for form in registry_formset %}
             <div class="registry-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
               <div class="row">
-                <div class="col-lg-3 mb-2">
-                  <label class="form-label">Registry Type</label>
-                  <select name="{{ form.registry_type.name }}" class="form-select registry-select" id="{{ form.registry_type.id_for_label }}">
-                    <option value="">Select Registry</option>
-                    {% for value, label in form.registry_type.field.choices %}
-                      {% if value %}
-                        <option value="{{ value }}" {% if form.registry_type.value == value %}selected{% endif %}>{{ label }}</option>
-                      {% endif %}
-                    {% endfor %}
-                  </select>
-                </div>
                 <div class="col-lg-4 mb-2">
-                  <label class="form-label">Registry URL</label>
-                  <input type="url" name="{{ form.original_url.name }}" class="form-control url-field" id="{{ form.original_url.id_for_label }}" placeholder="https://amazon.com/wedding/your-registry" value="{{ form.original_url.value|default:'' }}">
-                </div>
-                <div class="col-lg-3 mb-2">
-                  <label class="form-label">Display Name</label>
-                  <input type="text" name="{{ form.display_name.name }}" class="form-control" id="{{ form.display_name.id_for_label }}" placeholder="Home Essentials Registry" value="{{ form.display_name.value|default:'' }}">
-                </div>
-                <div class="col-lg-2 mb-2 d-flex align-items-end">
-                  {% if form.instance.pk or forloop.counter > 2 %}
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markRegistryForDeletion(this)">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                  <label class="form-label">{{ form.url.label }}</label>
+                  {{ form.url }}
+                  {% if form.url.help_text %}
+                    <div class="form-text">{{ form.url.help_text }}</div>
+                  {% endif %}
+                  {% if form.url.errors %}
+                    <div class="text-danger small">{{ form.url.errors.0 }}</div>
                   {% endif %}
                 </div>
-              </div>
-              
-              <!-- Registry Name Field for "Other" option -->
-              <div class="row registry-name-row" style="{% if form.registry_type.value != 'other' %}display: none;{% endif %}">
-                <div class="col-lg-6 mb-2">
-                  <label class="form-label">Registry Name <span class="text-danger">*</span></label>
-                  <input type="text" name="{{ form.registry_name.name }}" class="form-control" id="{{ form.registry_name.id_for_label }}" placeholder="Local Store Registry" value="{{ form.registry_name.value|default:'' }}">
-                  <div class="form-text">Enter the name of the registry (e.g., "Local Store Registry", "Custom Gift List")</div>
+                <div class="col-lg-4 mb-2">
+                  <label class="form-label">{{ form.registry_name.label }} <span class="text-danger">*</span></label>
+                  {{ form.registry_name }}
+                  {% if form.registry_name.help_text %}
+                    <div class="form-text">{{ form.registry_name.help_text }}</div>
+                  {% endif %}
                   {% if form.registry_name.errors %}
                     <div class="text-danger small">{{ form.registry_name.errors.0 }}</div>
                   {% endif %}
+                </div>
+                <div class="col-lg-4 mb-2 d-flex align-items-end">
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="registry">
+                    <i class="bi bi-trash"></i>
+                  </button>
                 </div>
               </div>
               
               <div class="row">
                 <div class="col-12 mb-2">
-                  <label class="form-label">Description</label>
-                  <textarea name="{{ form.description.name }}" class="form-control" id="{{ form.description.id_for_label }}" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials">{{ form.description.value|default:'' }}</textarea>
+                  <label class="form-label">{{ form.description.label }}</label>
+                  {{ form.description }}
+                  {% if form.description.help_text %}
+                    <div class="form-text">{{ form.description.help_text }}</div>
+                  {% endif %}
+                  {% if form.description.errors %}
+                    <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                  {% endif %}
                 </div>
               </div>
               
               <!-- Hidden fields -->
               {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
               {% if form.id %}{{ form.id.as_hidden }}{% endif %}
-              
-              <!-- Error messages -->
-              {% if form.errors %}
-                <div class="text-danger small mt-1">
-                  {% for field, errors in form.errors.items %}
-                    {% if field != 'registry_name' %}
-                      <div>{{ field }}: {{ errors.0 }}</div>
-                    {% endif %}
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
           {% endfor %}
         </div>
@@ -413,15 +347,14 @@
     </div>
 
     <!-- Submit Section -->
-    
-      <div class="card-body text-center">
-        <button type="submit" class="btn btn-primary btn-lg me-3">
-          <i class="bi bi-heart-fill"></i>
-          {% if is_new %}Create Wedding Site{% else %}Update Wedding Site{% endif %}
-        </button><br>
-        <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
-          Cancel
-        </a>
+    <div class="card-body text-center">
+      <button type="submit" class="btn btn-primary btn-lg me-3">
+        <i class="bi bi-heart-fill"></i>
+        {% if is_new %}Create Wedding Site{% else %}Update Wedding Site{% endif %}
+      </button><br><br>
+      <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
+        Cancel
+      </a>
     </div>
   </form>
 </div>
@@ -438,10 +371,6 @@
 
 .social-form:hover, .registry-form:hover {
   background-color: #e9ecef;
-}
-
-.social-form[style*="opacity: 0.5"], .registry-form[style*="opacity: 0.5"] {
-  transition: all 0.3s ease;
 }
 
 .card-header {
@@ -461,14 +390,15 @@
   font-family: monospace;
   background-color: #f8f9fa;
 }
-
-.platform-name-row, .registry-name-row {
-  transition: all 0.3s ease;
-}
 </style>
 
 <script>
+// Global form counters
+let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
+let registryFormCount = parseInt(document.getElementById('id_registry-TOTAL_FORMS').value);
+
 // URL Preview Update
+// URL Preview Update - FIXED VERSION
 function updateUrlPreview() {
     const name1 = document.getElementById('id_partner_1_name').value;
     const name2 = document.getElementById('id_partner_2_name').value;
@@ -476,17 +406,20 @@ function updateUrlPreview() {
     const preview = document.getElementById('url-preview');
     
     if (name1 && name2) {
-        // Clean names like Django model does
         const clean1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
         const clean2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
         
         let dateStr = 'tbd';
         if (date) {
-            const d = new Date(date);
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const year = String(d.getFullYear()).slice(-2);
-            dateStr = month + day + year;
+            // Parse date manually to avoid timezone issues
+            // date format is YYYY-MM-DD from HTML date input
+            const dateParts = date.split('-');
+            if (dateParts.length === 3) {
+                const month = dateParts[1].padStart(2, '0');
+                const day = dateParts[2].padStart(2, '0');
+                const year = dateParts[0].slice(-2);
+                dateStr = month + day + year;
+            }
         }
         
         const slug = clean1 + clean2 + dateStr;
@@ -496,287 +429,131 @@ function updateUrlPreview() {
     }
 }
 
-// Image Preview Functions
-function setupImagePreview(inputId, previewId, imgId) {
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    const img = document.getElementById(imgId);
-    
-    if (input) {
-        input.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else {
-                preview.style.display = 'none';
-            }
-        });
-    }
-}
-
-// Enhanced Formset Management
-let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
-let registryFormCount = parseInt(document.getElementById('id_registry-TOTAL_FORMS').value);
-
-// Platform field toggle
-function updatePlatformFields(selectElement) {
-    const form = selectElement.closest('.social-form');
-    const platformNameRow = form.querySelector('.platform-name-row');
-    const platformNameField = form.querySelector('input[name*="platform_name"]');
-    
-    if (platformNameRow && platformNameField) {
-        if (selectElement.value === 'other') {
-            platformNameRow.style.display = 'block';
-            platformNameField.required = true;
-        } else {
-            platformNameRow.style.display = 'none';
-            platformNameField.required = false;
-            platformNameField.value = '';
-        }
-    }
-}
-
-// Registry field toggle
-function updateRegistryFields(selectElement) {
-    const form = selectElement.closest('.registry-form');
-    const registryNameRow = form.querySelector('.registry-name-row');
-    const registryNameField = form.querySelector('input[name*="registry_name"]');
-    
-    if (registryNameRow && registryNameField) {
-        if (selectElement.value === 'other') {
-            registryNameRow.style.display = 'block';
-            registryNameField.required = true;
-        } else {
-            registryNameRow.style.display = 'none';
-            registryNameField.required = false;
-            registryNameField.value = '';
-        }
-    }
-}
-
+// Add new social form
 function addSocialForm() {
-    const formsContainer = document.getElementById('social-forms');
-    const emptyForm = `
-        <div class="social-form border rounded p-3 mb-3" data-form-index="${socialFormCount}">
-            <div class="row">
-                <div class="col-lg-3 mb-2">
-                    <label class="form-label">Platform</label>
-                    <select name="social-${socialFormCount}-platform" class="form-select" id="id_social-${socialFormCount}-platform" onchange="updatePlatformFields(this)">
-                        <option value="">Select Platform</option>
-                        <option value="instagram">Instagram</option>
-                        <option value="facebook">Facebook</option>
-                        <option value="twitter">X (Twitter)</option>
-                        <option value="tiktok">TikTok</option>
-                        <option value="youtube">YouTube</option>
-                        <option value="pinterest">Pinterest</option>
-                        <option value="linkedin">LinkedIn</option>
-                        <option value="website">Website</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div class="col-lg-4 mb-2">
-                    <label class="form-label">URL</label>
-                    <input type="url" name="social-${socialFormCount}-url" class="form-control url-field" id="id_social-${socialFormCount}-url" placeholder="https://instagram.com/yourusername">
-                </div>
-                <div class="col-lg-3 mb-2">
-                    <label class="form-label">Display Name</label>
-                    <input type="text" name="social-${socialFormCount}-display_name" class="form-control" id="id_social-${socialFormCount}-display_name" placeholder="@yourusername or Your Page Name">
-                </div>
-                <div class="col-lg-2 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markSocialForDeletion(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
+    const formsetDiv = document.getElementById('social-formset');
+    const newForm = document.createElement('div');
+    newForm.className = 'social-form border rounded p-3 mb-3';
+    newForm.setAttribute('data-form-index', socialFormCount);
+    
+    newForm.innerHTML = `
+        <div class="row">
+            <div class="col-lg-5 mb-2">
+                <label class="form-label">Social Media URL</label>
+                <input type="url" name="social-${socialFormCount}-url" class="form-control url-field" placeholder="https://instagram.com/yourusername" onblur="detectBrandingFromUrl(this)">
+                <div class="form-text">We'll automatically detect the platform from your URL</div>
             </div>
-            <div class="row platform-name-row" style="display: none;">
-                <div class="col-lg-6 mb-2">
-                    <label class="form-label">Platform Name <span class="text-danger">*</span></label>
-                    <input type="text" name="social-${socialFormCount}-platform_name" class="form-control" id="id_social-${socialFormCount}-platform_name" placeholder="Platform name (e.g., Bluesky, Threads)">
-                    <div class="form-text">Enter the name of the platform</div>
-                </div>
+            <div class="col-lg-5 mb-2">
+                <label class="form-label">Display Name</label>
+                <input type="text" name="social-${socialFormCount}-display_name" class="form-control" placeholder="@yourusername or Your Page Name">
+                <div class="form-text">How this link should appear on your wedding page</div>
+            </div>
+            <div class="col-lg-2 mb-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="social">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
         </div>
     `;
     
-    formsContainer.insertAdjacentHTML('beforeend', emptyForm);
+    formsetDiv.appendChild(newForm);
     socialFormCount++;
     document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
 }
 
+// Add new registry form
 function addRegistryForm() {
-    const formsContainer = document.getElementById('registry-forms');
-    const emptyForm = `
-        <div class="registry-form border rounded p-3 mb-3" data-form-index="${registryFormCount}">
-            <div class="row">
-                <div class="col-lg-3 mb-2">
-                    <label class="form-label">Registry Type</label>
-                    <select name="registry-${registryFormCount}-registry_type" class="form-select" id="id_registry-${registryFormCount}-registry_type" onchange="updateRegistryFields(this)">
-                        <option value="">Select Registry</option>
-                        <option value="amazon">Amazon</option>
-                        <option value="target">Target</option>
-                        <option value="bed_bath_beyond">Bed Bath & Beyond</option>
-                        <option value="williams_sonoma">Williams Sonoma</option>
-                        <option value="crate_barrel">Crate & Barrel</option>
-                        <option value="pottery_barn">Pottery Barn</option>
-                        <option value="macy">Macy's</option>
-                        <option value="zola">Zola</option>
-                        <option value="the_knot">The Knot</option>
-                        <option value="wayfair">Wayfair</option>
-                        <option value="registry_finder">Registry Finder</option>
-                        <option value="honeyfund">Honeyfund</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div class="col-lg-4 mb-2">
-                    <label class="form-label">Registry URL</label>
-                    <input type="url" name="registry-${registryFormCount}-original_url" class="form-control url-field" id="id_registry-${registryFormCount}-original_url" placeholder="https://amazon.com/wedding/your-registry">
-                </div>
-                <div class="col-lg-3 mb-2">
-                    <label class="form-label">Display Name</label>
-                    <input type="text" name="registry-${registryFormCount}-display_name" class="form-control" id="id_registry-${registryFormCount}-display_name" placeholder="Home Essentials Registry">
-                </div>
-                <div class="col-lg-2 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markRegistryForDeletion(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
+    const formsetDiv = document.getElementById('registry-formset');
+    const newForm = document.createElement('div');
+    newForm.className = 'registry-form border rounded p-3 mb-3';
+    newForm.setAttribute('data-form-index', registryFormCount);
+    
+    newForm.innerHTML = `
+        <div class="row">
+            <div class="col-lg-4 mb-2">
+                <label class="form-label">Registry URL</label>
+                <input type="url" name="registry-${registryFormCount}-url" class="form-control url-field" placeholder="https://amazon.com/wedding/your-registry" onblur="detectBrandingFromUrl(this)">
+                <div class="form-text">We'll automatically detect the store from your URL</div>
             </div>
-            <div class="row registry-name-row" style="display: none;">
-                <div class="col-lg-6 mb-2">
-                    <label class="form-label">Registry Name <span class="text-danger">*</span></label>
-                    <input type="text" name="registry-${registryFormCount}-registry_name" class="form-control" id="id_registry-${registryFormCount}-registry_name" placeholder="Local Store Registry">
-                    <div class="form-text">Enter the name of the registry</div>
-                </div>
+            <div class="col-lg-4 mb-2">
+                <label class="form-label">Registry Name <span class="text-danger">*</span></label>
+                <input type="text" name="registry-${registryFormCount}-registry_name" class="form-control" placeholder="Our Home Registry">
+                <div class="form-text">A friendly name for this registry</div>
             </div>
-            <div class="row">
-                <div class="col-12 mb-2">
-                    <label class="form-label">Description</label>
-                    <textarea name="registry-${registryFormCount}-description" class="form-control" id="id_registry-${registryFormCount}-description" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials"></textarea>
-                </div>
+            <div class="col-lg-4 mb-2 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="registry">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 mb-2">
+                <label class="form-label">Description</label>
+                <textarea name="registry-${registryFormCount}-description" class="form-control" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials"></textarea>
+                <div class="form-text">What types of items are on this registry?</div>
             </div>
         </div>
     `;
     
-    formsContainer.insertAdjacentHTML('beforeend', emptyForm);
+    formsetDiv.appendChild(newForm);
     registryFormCount++;
     document.getElementById('id_registry-TOTAL_FORMS').value = registryFormCount;
 }
 
-function markSocialForDeletion(button) {
-    const form = button.closest('.social-form');
-    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+// Simple delete function
+function deleteForm(button) {
+    const form = button.closest('.social-form, .registry-form');
+    const deleteInput = form.querySelector('input[name$="-DELETE"]');
     
-    if (deleteCheckbox) {
-        // This is an existing form - mark for deletion
-        deleteCheckbox.checked = true;
+    if (deleteInput) {
+        // Mark for deletion
+        deleteInput.checked = true;
         form.style.opacity = '0.5';
         form.style.backgroundColor = '#ffebee';
-        
-        // Disable all form inputs
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
-                input.disabled = true;
-            }
-        });
         
         button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
         button.classList.remove('btn-outline-danger');
         button.classList.add('btn-outline-success');
-        button.setAttribute('onclick', 'unmarkSocialForDeletion(this)');
-        button.setAttribute('title', 'Click to restore');
+        button.onclick = () => restoreForm(button);
     } else {
-        // This is a new form - just remove it
+        // Remove new form
         form.remove();
     }
 }
 
-function unmarkSocialForDeletion(button) {
-    const form = button.closest('.social-form');
-    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+// Restore deleted form
+function restoreForm(button) {
+    const form = button.closest('.social-form, .registry-form');
+    const deleteInput = form.querySelector('input[name$="-DELETE"]');
     
-    if (deleteCheckbox) {
-        deleteCheckbox.checked = false;
+    if (deleteInput) {
+        deleteInput.checked = false;
         form.style.opacity = '1';
         form.style.backgroundColor = '#f8f9fa';
-        
-        // Re-enable all form inputs
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            input.disabled = false;
-        });
         
         button.innerHTML = '<i class="bi bi-trash"></i>';
         button.classList.remove('btn-outline-success');
         button.classList.add('btn-outline-danger');
-        button.setAttribute('onclick', 'markSocialForDeletion(this)');
-        button.removeAttribute('title');
+        button.onclick = () => deleteForm(button);
     }
 }
 
-function markRegistryForDeletion(button) {
-    const form = button.closest('.registry-form');
-    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+// Simple branding detection (placeholder)
+function detectBrandingFromUrl(input) {
+    const url = input.value.trim();
+    if (!url) return;
     
-    if (deleteCheckbox) {
-        // This is an existing form - mark for deletion
-        deleteCheckbox.checked = true;
-        form.style.opacity = '0.5';
-        form.style.backgroundColor = '#ffebee';
-        
-        // Disable all form inputs
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
-                input.disabled = true;
-            }
-        });
-        
-        button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
-        button.classList.remove('btn-outline-danger');
-        button.classList.add('btn-outline-success');
-        button.setAttribute('onclick', 'unmarkRegistryForDeletion(this)');
-        button.setAttribute('title', 'Click to restore');
-    } else {
-        // This is a new form - just remove it
-        form.remove();
+    // Simple URL validation
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        input.value = 'https://' + url;
     }
-}
-
-function unmarkRegistryForDeletion(button) {
-    const form = button.closest('.registry-form');
-    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
     
-    if (deleteCheckbox) {
-        deleteCheckbox.checked = false;
-        form.style.opacity = '1';
-        form.style.backgroundColor = '#f8f9fa';
-        
-        // Re-enable all form inputs
-        const inputs = form.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            input.disabled = false;
-        });
-        
-        button.innerHTML = '<i class="bi bi-trash"></i>';
-        button.classList.remove('btn-outline-success');
-        button.classList.add('btn-outline-danger');
-        button.setAttribute('onclick', 'markRegistryForDeletion(this)');
-        button.removeAttribute('title');
-    }
+    // You could add API call here for advanced detection
+    console.log('Detecting branding for:', url);
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    // Setup image previews
-    setupImagePreview('id_couple_photo', 'couple-photo-preview', 'couple-photo-img');
-    setupImagePreview('id_venue_photo', 'venue-photo-preview', 'venue-photo-img');
-    
     // Setup URL preview updates
     document.getElementById('id_partner_1_name').addEventListener('input', updateUrlPreview);
     document.getElementById('id_partner_2_name').addEventListener('input', updateUrlPreview);
@@ -785,53 +562,30 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial URL preview
     updateUrlPreview();
     
-    // Setup existing platform/registry select handlers and initialize visibility
-    document.querySelectorAll('select[name*="platform"]').forEach(select => {
-        // Add event listener for changes
-        select.addEventListener('change', function() {
-            updatePlatformFields(this);
-        });
-        // Initialize visibility based on current value on page load
-        updatePlatformFields(select);
+    // Add button handlers
+    document.getElementById('add-social-btn').addEventListener('click', addSocialForm);
+    document.getElementById('add-registry-btn').addEventListener('click', addRegistryForm);
+    
+    // Add delete button handlers
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-form-btn')) {
+            deleteForm(e.target.closest('.delete-form-btn'));
+        }
     });
     
-    document.querySelectorAll('select[name*="registry_type"]').forEach(select => {
-        // Add event listener for changes
-        select.addEventListener('change', function() {
-            updateRegistryFields(this);
-        });
-        // Initialize visibility based on current value on page load
-        updateRegistryFields(select);
-    });
-    
-    // Check for any forms already marked for deletion (after form errors)
-    document.querySelectorAll('input[name$="-DELETE"]:checked').forEach(function(deleteCheckbox) {
-        const form = deleteCheckbox.closest('.social-form, .registry-form');
+    // Check for forms already marked for deletion
+    document.querySelectorAll('input[name$="-DELETE"]:checked').forEach(function(deleteInput) {
+        const form = deleteInput.closest('.social-form, .registry-form');
         if (form) {
             form.style.opacity = '0.5';
             form.style.backgroundColor = '#ffebee';
             
-            // Disable form inputs
-            const inputs = form.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
-                if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
-                    input.disabled = true;
-                }
-            });
-            
-            // Update delete button
-            const deleteButton = form.querySelector('button[onclick*="mark"][onclick*="ForDeletion"]');
+            const deleteButton = form.querySelector('.delete-form-btn');
             if (deleteButton) {
                 deleteButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
                 deleteButton.classList.remove('btn-outline-danger');
                 deleteButton.classList.add('btn-outline-success');
-                deleteButton.setAttribute('title', 'Click to restore');
-                
-                if (form.classList.contains('social-form')) {
-                    deleteButton.setAttribute('onclick', 'unmarkSocialForDeletion(this)');
-                } else {
-                    deleteButton.setAttribute('onclick', 'unmarkRegistryForDeletion(this)');
-                }
+                deleteButton.onclick = () => restoreForm(deleteButton);
             }
         }
     });
