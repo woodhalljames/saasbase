@@ -273,43 +273,43 @@ class WeddingFormManager {
      * @param {string} formsetType - Type of formset (social or registry)
      */
     async detectAndApplyBranding(urlField, formsetType) {
-        const url = urlField.value.trim();
-        const form = urlField.closest('[id*="-form-"]');
-        
-        if (!url || !form) return;
+    const url = urlField.value.trim();
+    const form = urlField.closest('[id*="-form-"]');
+    
+    if (!url || !form) return;
 
-        // Check cache first
-        const cacheKey = `${formsetType}-${url}`;
-        if (this.brandingCache.has(cacheKey)) {
-            this.applyBrandingData(form, this.brandingCache.get(cacheKey), formsetType);
-            return;
-        }
-
-        // Show loading indicator
-        this.showBrandingLoading(urlField);
-
-        try {
-            const response = await fetch(`${this.apiBaseUrl}detect-branding/?url=${encodeURIComponent(url)}&type=${formsetType}`);
-            const data = await response.json();
-            
-            if (response.ok && data.detected) {
-                // Cache the result
-                this.brandingCache.set(cacheKey, data);
-                
-                // Apply branding
-                this.applyBrandingData(form, data, formsetType);
-                
-                // Show success indicator
-                this.showBrandingIndicator(urlField, data, 'success');
-            } else {
-                this.showBrandingIndicator(urlField, { name: 'Unknown', type: 'other' }, 'warning');
-            }
-        } catch (error) {
-            console.error('Error detecting branding:', error);
-            this.showBrandingIndicator(urlField, null, 'error');
-        }
+    // Check cache first
+    const cacheKey = `${formsetType}-${url}`;
+    if (this.brandingCache.has(cacheKey)) {
+        this.applyBrandingData(form, this.brandingCache.get(cacheKey), formsetType);
+        return;
     }
 
+    // Show loading indicator
+    this.showBrandingLoading(urlField);
+
+    try {
+        const response = await fetch(`${this.apiBaseUrl}detect-branding/?url=${encodeURIComponent(url)}&type=${formsetType}`);
+        const data = await response.json();
+        
+        // Updated to work with new API response format
+        if (response.ok && data.success && data.branding.detected) {
+            // Cache the result
+            this.brandingCache.set(cacheKey, data.branding);
+            
+            // Apply branding
+            this.applyBrandingData(form, data.branding, formsetType);
+            
+            // Show success indicator with enhanced branding info
+            this.showBrandingIndicator(urlField, data.branding, 'success');
+        } else {
+            this.showBrandingIndicator(urlField, { name: 'Unknown', type: 'other' }, 'warning');
+        }
+    } catch (error) {
+        console.error('Error detecting branding:', error);
+        this.showBrandingIndicator(urlField, null, 'error');
+    }
+}
     /**
      * Apply detected branding data to form
      * @param {HTMLElement} form - The form element
@@ -317,32 +317,41 @@ class WeddingFormManager {
      * @param {string} formsetType - Type of formset
      */
     applyBrandingData(form, brandingData, formsetType) {
-        if (formsetType === 'social') {
-            const platformSelect = form.querySelector('.platform-select');
-            const displayNameField = form.querySelector('input[name*="display_name"]');
-            
-            if (platformSelect && brandingData.platform && brandingData.platform !== 'other') {
-                platformSelect.value = brandingData.platform;
-                this.updatePlatformFields(platformSelect);
-            }
-            
-            if (displayNameField && !displayNameField.value && brandingData.suggested_display_name) {
-                displayNameField.value = brandingData.suggested_display_name;
-            }
-        } else {
-            const registrySelect = form.querySelector('.registry-select');
-            const displayNameField = form.querySelector('input[name*="display_name"]');
-            
-            if (registrySelect && brandingData.type && brandingData.type !== 'other') {
-                registrySelect.value = brandingData.type;
-                this.updateRegistryFields(registrySelect);
-            }
-            
-            if (displayNameField && !displayNameField.value && brandingData.suggested_display_name) {
-                displayNameField.value = brandingData.suggested_display_name;
-            }
+    if (formsetType === 'social') {
+        const platformSelect = form.querySelector('.platform-select');
+        const displayNameField = form.querySelector('input[name*="display_name"]');
+        
+        if (platformSelect && brandingData.platform && brandingData.platform !== 'other') {
+            platformSelect.value = brandingData.platform;
+            this.updatePlatformFields(platformSelect);
+        }
+        
+        // Use enhanced API suggestions
+        if (displayNameField && !displayNameField.value && brandingData.suggestions?.display_name) {
+            displayNameField.value = brandingData.suggestions.display_name;
+        }
+    } else {
+        const registrySelect = form.querySelector('.registry-select');
+        const displayNameField = form.querySelector('input[name*="display_name"]');
+        const descriptionField = form.querySelector('textarea[name*="description"]');
+        
+        if (registrySelect && brandingData.type && brandingData.type !== 'other') {
+            registrySelect.value = brandingData.type;
+            this.updateRegistryFields(registrySelect);
+        }
+        
+        // Use enhanced API suggestions
+        if (displayNameField && !displayNameField.value && brandingData.suggestions?.display_name) {
+            displayNameField.value = brandingData.suggestions.display_name;
+        }
+        
+        // Auto-fill description if available
+        if (descriptionField && !descriptionField.value && brandingData.description) {
+            descriptionField.value = brandingData.description;
         }
     }
+}
+
 
     /**
      * Show branding detection indicator
@@ -351,30 +360,37 @@ class WeddingFormManager {
      * @param {string} type - Type of indicator (success, warning, error)
      */
     showBrandingIndicator(urlField, brandingData, type) {
-        this.clearBrandingIndicator(urlField);
-        
-        const indicator = document.createElement('div');
-        indicator.className = `branding-indicator alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} alert-sm mt-1`;
-        
-        let content = '';
-        if (type === 'success' && brandingData) {
-            content = `<i class="bi bi-check-circle"></i> ${brandingData.name} detected automatically`;
-        } else if (type === 'warning') {
-            content = `<i class="bi bi-exclamation-triangle"></i> Platform not recognized - please select manually`;
-        } else {
-            content = `<i class="bi bi-exclamation-circle"></i> Could not detect platform`;
-        }
-        
-        indicator.innerHTML = content;
-        urlField.parentNode.appendChild(indicator);
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (indicator.parentNode) {
-                indicator.remove();
-            }
-        }, 5000);
+    this.clearBrandingIndicator(urlField);
+    
+    const indicator = document.createElement('div');
+    indicator.className = `branding-indicator alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} alert-sm mt-1`;
+    
+    let content = '';
+    if (type === 'success' && brandingData) {
+        // Enhanced indicator with brand colors and icons
+        const icon = brandingData.icon || 'bi-check-circle';
+        const color = brandingData.color || '#28a745';
+        content = `
+            <i class="${icon}" style="color: ${color};"></i> 
+            <strong>${brandingData.name}</strong> detected automatically
+            ${brandingData.description ? `<br><small class="text-muted">${brandingData.description}</small>` : ''}
+        `;
+    } else if (type === 'warning') {
+        content = `<i class="bi bi-exclamation-triangle"></i> Platform not recognized - please select manually`;
+    } else {
+        content = `<i class="bi bi-exclamation-circle"></i> Could not detect platform`;
     }
+    
+    indicator.innerHTML = content;
+    urlField.parentNode.appendChild(indicator);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (indicator.parentNode) {
+            indicator.remove();
+        }
+    }, 5000);
+}
 
     /**
      * Show loading indicator for branding detection
@@ -582,3 +598,15 @@ window.updateRegistryFields = function(selectElement) {
 document.addEventListener('DOMContentLoaded', function() {
     window.weddingFormManager = new WeddingFormManager();
 });
+
+
+
+
+// Update these sections in your existing project.js file:
+
+// 1. Update the detectAndApplyBranding method around line 200:
+
+
+// 2. Update the applyBrandingData method around line 240:
+
+// 3. Enhance the showBrandingIndicator method around line 270:

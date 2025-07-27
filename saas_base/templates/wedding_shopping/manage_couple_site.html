@@ -263,15 +263,22 @@
               <div class="row">
                 <div class="col-lg-3 mb-2">
                   <label class="form-label">Platform</label>
-                  {{ form.platform }}
+                  <select name="{{ form.platform.name }}" class="form-select platform-select" id="{{ form.platform.id_for_label }}">
+                    <option value="">Select Platform</option>
+                    {% for value, label in form.platform.field.choices %}
+                      {% if value %}
+                        <option value="{{ value }}" {% if form.platform.value == value %}selected{% endif %}>{{ label }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
                 </div>
                 <div class="col-lg-4 mb-2">
                   <label class="form-label">URL</label>
-                  {{ form.url }}
+                  <input type="url" name="{{ form.url.name }}" class="form-control url-field" id="{{ form.url.id_for_label }}" placeholder="https://instagram.com/yourusername" value="{{ form.url.value|default:'' }}">
                 </div>
                 <div class="col-lg-3 mb-2">
                   <label class="form-label">Display Name</label>
-                  {{ form.display_name }}
+                  <input type="text" name="{{ form.display_name.name }}" class="form-control" id="{{ form.display_name.id_for_label }}" placeholder="@yourusername or Your Page Name" value="{{ form.display_name.value|default:'' }}">
                 </div>
                 <div class="col-lg-2 mb-2 d-flex align-items-end">
                   {% if form.instance.pk or forloop.counter > 2 %}
@@ -282,16 +289,29 @@
                 </div>
               </div>
               
+              <!-- Platform Name Field for "Other" option -->
+              <div class="row platform-name-row" style="{% if form.platform.value != 'other' %}display: none;{% endif %}">
+                <div class="col-lg-6 mb-2">
+                  <label class="form-label">Platform Name <span class="text-danger">*</span></label>
+                  <input type="text" name="{{ form.platform_name.name }}" class="form-control" id="{{ form.platform_name.id_for_label }}" placeholder="Platform name (e.g., Bluesky, Threads)" value="{{ form.platform_name.value|default:'' }}">
+                  <div class="form-text">Enter the name of the platform (e.g., "Bluesky", "Threads")</div>
+                  {% if form.platform_name.errors %}
+                    <div class="text-danger small">{{ form.platform_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
               <!-- Hidden fields -->
-              {{ form.platform_name.as_hidden }}
-              {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+              {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
               {% if form.id %}{{ form.id.as_hidden }}{% endif %}
               
               <!-- Error messages -->
               {% if form.errors %}
                 <div class="text-danger small mt-1">
                   {% for field, errors in form.errors.items %}
-                    <div>{{ field }}: {{ errors.0 }}</div>
+                    {% if field != 'platform_name' %}
+                      <div>{{ field }}: {{ errors.0 }}</div>
+                    {% endif %}
                   {% endfor %}
                 </div>
               {% endif %}
@@ -323,15 +343,22 @@
               <div class="row">
                 <div class="col-lg-3 mb-2">
                   <label class="form-label">Registry Type</label>
-                  {{ form.registry_type }}
+                  <select name="{{ form.registry_type.name }}" class="form-select registry-select" id="{{ form.registry_type.id_for_label }}">
+                    <option value="">Select Registry</option>
+                    {% for value, label in form.registry_type.field.choices %}
+                      {% if value %}
+                        <option value="{{ value }}" {% if form.registry_type.value == value %}selected{% endif %}>{{ label }}</option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
                 </div>
                 <div class="col-lg-4 mb-2">
                   <label class="form-label">Registry URL</label>
-                  {{ form.original_url }}
+                  <input type="url" name="{{ form.original_url.name }}" class="form-control url-field" id="{{ form.original_url.id_for_label }}" placeholder="https://amazon.com/wedding/your-registry" value="{{ form.original_url.value|default:'' }}">
                 </div>
                 <div class="col-lg-3 mb-2">
                   <label class="form-label">Display Name</label>
-                  {{ form.display_name }}
+                  <input type="text" name="{{ form.display_name.name }}" class="form-control" id="{{ form.display_name.id_for_label }}" placeholder="Home Essentials Registry" value="{{ form.display_name.value|default:'' }}">
                 </div>
                 <div class="col-lg-2 mb-2 d-flex align-items-end">
                   {% if form.instance.pk or forloop.counter > 2 %}
@@ -342,23 +369,36 @@
                 </div>
               </div>
               
+              <!-- Registry Name Field for "Other" option -->
+              <div class="row registry-name-row" style="{% if form.registry_type.value != 'other' %}display: none;{% endif %}">
+                <div class="col-lg-6 mb-2">
+                  <label class="form-label">Registry Name <span class="text-danger">*</span></label>
+                  <input type="text" name="{{ form.registry_name.name }}" class="form-control" id="{{ form.registry_name.id_for_label }}" placeholder="Local Store Registry" value="{{ form.registry_name.value|default:'' }}">
+                  <div class="form-text">Enter the name of the registry (e.g., "Local Store Registry", "Custom Gift List")</div>
+                  {% if form.registry_name.errors %}
+                    <div class="text-danger small">{{ form.registry_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+              
               <div class="row">
                 <div class="col-12 mb-2">
                   <label class="form-label">Description</label>
-                  {{ form.description }}
+                  <textarea name="{{ form.description.name }}" class="form-control" id="{{ form.description.id_for_label }}" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials">{{ form.description.value|default:'' }}</textarea>
                 </div>
               </div>
               
               <!-- Hidden fields -->
-              {{ form.registry_name.as_hidden }}
-              {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+              {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
               {% if form.id %}{{ form.id.as_hidden }}{% endif %}
               
               <!-- Error messages -->
               {% if form.errors %}
                 <div class="text-danger small mt-1">
                   {% for field, errors in form.errors.items %}
-                    <div>{{ field }}: {{ errors.0 }}</div>
+                    {% if field != 'registry_name' %}
+                      <div>{{ field }}: {{ errors.0 }}</div>
+                    {% endif %}
                   {% endfor %}
                 </div>
               {% endif %}
@@ -373,16 +413,15 @@
     </div>
 
     <!-- Submit Section -->
-    <div class="card">
+    
       <div class="card-body text-center">
         <button type="submit" class="btn btn-primary btn-lg me-3">
           <i class="bi bi-heart-fill"></i>
           {% if is_new %}Create Wedding Site{% else %}Update Wedding Site{% endif %}
-        </button>
+        </button><br>
         <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
           Cancel
         </a>
-      </div>
     </div>
   </form>
 </div>
@@ -421,6 +460,10 @@
 #url-preview {
   font-family: monospace;
   background-color: #f8f9fa;
+}
+
+.platform-name-row, .registry-name-row {
+  transition: all 0.3s ease;
 }
 </style>
 
@@ -476,9 +519,45 @@ function setupImagePreview(inputId, previewId, imgId) {
     }
 }
 
-// Formset Management
+// Enhanced Formset Management
 let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
 let registryFormCount = parseInt(document.getElementById('id_registry-TOTAL_FORMS').value);
+
+// Platform field toggle
+function updatePlatformFields(selectElement) {
+    const form = selectElement.closest('.social-form');
+    const platformNameRow = form.querySelector('.platform-name-row');
+    const platformNameField = form.querySelector('input[name*="platform_name"]');
+    
+    if (platformNameRow && platformNameField) {
+        if (selectElement.value === 'other') {
+            platformNameRow.style.display = 'block';
+            platformNameField.required = true;
+        } else {
+            platformNameRow.style.display = 'none';
+            platformNameField.required = false;
+            platformNameField.value = '';
+        }
+    }
+}
+
+// Registry field toggle
+function updateRegistryFields(selectElement) {
+    const form = selectElement.closest('.registry-form');
+    const registryNameRow = form.querySelector('.registry-name-row');
+    const registryNameField = form.querySelector('input[name*="registry_name"]');
+    
+    if (registryNameRow && registryNameField) {
+        if (selectElement.value === 'other') {
+            registryNameRow.style.display = 'block';
+            registryNameField.required = true;
+        } else {
+            registryNameRow.style.display = 'none';
+            registryNameField.required = false;
+            registryNameField.value = '';
+        }
+    }
+}
 
 function addSocialForm() {
     const formsContainer = document.getElementById('social-forms');
@@ -487,19 +566,22 @@ function addSocialForm() {
             <div class="row">
                 <div class="col-lg-3 mb-2">
                     <label class="form-label">Platform</label>
-                    <select name="social-${socialFormCount}-platform" class="form-select" id="id_social-${socialFormCount}-platform">
+                    <select name="social-${socialFormCount}-platform" class="form-select" id="id_social-${socialFormCount}-platform" onchange="updatePlatformFields(this)">
                         <option value="">Select Platform</option>
                         <option value="instagram">Instagram</option>
                         <option value="facebook">Facebook</option>
-                        <option value="twitter">Twitter</option>
+                        <option value="twitter">X (Twitter)</option>
                         <option value="tiktok">TikTok</option>
+                        <option value="youtube">YouTube</option>
+                        <option value="pinterest">Pinterest</option>
+                        <option value="linkedin">LinkedIn</option>
                         <option value="website">Website</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="col-lg-4 mb-2">
                     <label class="form-label">URL</label>
-                    <input type="url" name="social-${socialFormCount}-url" class="form-control" id="id_social-${socialFormCount}-url" placeholder="https://instagram.com/yourusername">
+                    <input type="url" name="social-${socialFormCount}-url" class="form-control url-field" id="id_social-${socialFormCount}-url" placeholder="https://instagram.com/yourusername">
                 </div>
                 <div class="col-lg-3 mb-2">
                     <label class="form-label">Display Name</label>
@@ -511,7 +593,13 @@ function addSocialForm() {
                     </button>
                 </div>
             </div>
-            <input type="hidden" name="social-${socialFormCount}-platform_name" id="id_social-${socialFormCount}-platform_name">
+            <div class="row platform-name-row" style="display: none;">
+                <div class="col-lg-6 mb-2">
+                    <label class="form-label">Platform Name <span class="text-danger">*</span></label>
+                    <input type="text" name="social-${socialFormCount}-platform_name" class="form-control" id="id_social-${socialFormCount}-platform_name" placeholder="Platform name (e.g., Bluesky, Threads)">
+                    <div class="form-text">Enter the name of the platform</div>
+                </div>
+            </div>
         </div>
     `;
     
@@ -527,7 +615,7 @@ function addRegistryForm() {
             <div class="row">
                 <div class="col-lg-3 mb-2">
                     <label class="form-label">Registry Type</label>
-                    <select name="registry-${registryFormCount}-registry_type" class="form-select" id="id_registry-${registryFormCount}-registry_type">
+                    <select name="registry-${registryFormCount}-registry_type" class="form-select" id="id_registry-${registryFormCount}-registry_type" onchange="updateRegistryFields(this)">
                         <option value="">Select Registry</option>
                         <option value="amazon">Amazon</option>
                         <option value="target">Target</option>
@@ -538,12 +626,15 @@ function addRegistryForm() {
                         <option value="macy">Macy's</option>
                         <option value="zola">Zola</option>
                         <option value="the_knot">The Knot</option>
+                        <option value="wayfair">Wayfair</option>
+                        <option value="registry_finder">Registry Finder</option>
+                        <option value="honeyfund">Honeyfund</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
                 <div class="col-lg-4 mb-2">
                     <label class="form-label">Registry URL</label>
-                    <input type="url" name="registry-${registryFormCount}-original_url" class="form-control" id="id_registry-${registryFormCount}-original_url" placeholder="https://amazon.com/wedding/your-registry">
+                    <input type="url" name="registry-${registryFormCount}-original_url" class="form-control url-field" id="id_registry-${registryFormCount}-original_url" placeholder="https://amazon.com/wedding/your-registry">
                 </div>
                 <div class="col-lg-3 mb-2">
                     <label class="form-label">Display Name</label>
@@ -555,13 +646,19 @@ function addRegistryForm() {
                     </button>
                 </div>
             </div>
+            <div class="row registry-name-row" style="display: none;">
+                <div class="col-lg-6 mb-2">
+                    <label class="form-label">Registry Name <span class="text-danger">*</span></label>
+                    <input type="text" name="registry-${registryFormCount}-registry_name" class="form-control" id="id_registry-${registryFormCount}-registry_name" placeholder="Local Store Registry">
+                    <div class="form-text">Enter the name of the registry</div>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-12 mb-2">
                     <label class="form-label">Description</label>
                     <textarea name="registry-${registryFormCount}-description" class="form-control" id="id_registry-${registryFormCount}-description" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials"></textarea>
                 </div>
             </div>
-            <input type="hidden" name="registry-${registryFormCount}-registry_name" id="id_registry-${registryFormCount}-registry_name">
         </div>
     `;
     
@@ -687,6 +784,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial URL preview
     updateUrlPreview();
+    
+    // Setup existing platform/registry select handlers and initialize visibility
+    document.querySelectorAll('select[name*="platform"]').forEach(select => {
+        // Add event listener for changes
+        select.addEventListener('change', function() {
+            updatePlatformFields(this);
+        });
+        // Initialize visibility based on current value on page load
+        updatePlatformFields(select);
+    });
+    
+    document.querySelectorAll('select[name*="registry_type"]').forEach(select => {
+        // Add event listener for changes
+        select.addEventListener('change', function() {
+            updateRegistryFields(this);
+        });
+        // Initialize visibility based on current value on page load
+        updateRegistryFields(select);
+    });
     
     // Check for any forms already marked for deletion (after form errors)
     document.querySelectorAll('input[name$="-DELETE"]:checked').forEach(function(deleteCheckbox) {

@@ -142,7 +142,6 @@ class SocialMediaLink(models.Model):
         ('youtube', 'YouTube'),
         ('pinterest', 'Pinterest'),
         ('linkedin', 'LinkedIn'),
-        ('website', 'Website'),
         ('other', 'Other'),
     ]
     
@@ -160,7 +159,7 @@ class SocialMediaLink(models.Model):
     
     @property
     def platform_icon(self):
-        """Returns Bootstrap icon class for the platform with enhanced icons"""
+        """Returns Bootstrap icon class for the platform with fallback"""
         icons = {
             'instagram': 'bi-instagram',
             'facebook': 'bi-facebook',
@@ -172,11 +171,11 @@ class SocialMediaLink(models.Model):
             'website': 'bi-globe',
             'other': 'bi-link-45deg',
         }
-        return icons.get(self.platform, 'bi-link-45deg')
-    
+        return icons.get(self.platform, 'bi-link-45deg')  # Always returns something
+
     @property
     def platform_color(self):
-        """Returns brand color for the platform"""
+        """Returns brand color for the platform with fallback"""
         colors = {
             'instagram': '#E4405F',
             'facebook': '#1877F2',
@@ -188,7 +187,7 @@ class SocialMediaLink(models.Model):
             'website': '#007bff',
             'other': '#6c757d',
         }
-        return colors.get(self.platform, '#6c757d')
+        return colors.get(self.platform, '#6c757d')  # Always returns something
     
     @property
     def platform_display_name(self):
@@ -245,7 +244,7 @@ class RegistryLink(models.Model):
     
     @property
     def registry_icon(self):
-        """Returns appropriate Bootstrap icon for the registry"""
+        """Returns appropriate Bootstrap icon for the registry with fallback"""
         icons = {
             'amazon': 'bi-amazon',
             'target': 'bi-bullseye',
@@ -261,11 +260,11 @@ class RegistryLink(models.Model):
             'honeyfund': 'bi-airplane-fill',
             'other': 'bi-gift',
         }
-        return icons.get(self.registry_type, 'bi-gift')
-    
+        return icons.get(self.registry_type, 'bi-gift')  # Always returns something
+
     @property
     def registry_color(self):
-        """Returns brand color for the registry"""
+        """Returns brand color for the registry with fallback"""
         colors = {
             'amazon': '#FF9900',
             'target': '#CC0000',
@@ -281,17 +280,17 @@ class RegistryLink(models.Model):
             'honeyfund': '#FFA500',
             'other': '#6c757d',
         }
-        return colors.get(self.registry_type, '#6c757d')
-    
+        return colors.get(self.registry_type, '#6c757d')  # Always returns something
+
     @property
     def registry_display_name(self):
-        """Returns the display name to show on the wedding page"""
+        """Returns the display name to show on the wedding page with fallback"""
         if self.display_name:
             return self.display_name
         elif self.registry_name:
             return self.registry_name
         else:
-            return f"{self.get_registry_type_display()} Registry"
+            return f"{self.get_registry_type_display()}"
     
     def increment_clicks(self):
         """Increment click count"""

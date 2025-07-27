@@ -129,7 +129,6 @@ class SocialMediaLinkForm(forms.ModelForm):
             'platform_name': forms.TextInput(attrs={
                 'class': 'form-control platform-name-field',
                 'placeholder': 'Platform name (if Other selected)',
-                'style': 'display: none;'
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
@@ -153,6 +152,9 @@ class SocialMediaLinkForm(forms.ModelForm):
         self.fields['platform'].empty_label = "Select Platform"
         self.fields['url'].help_text = "We'll automatically detect the platform from your URL"
         self.fields['display_name'].help_text = "How this link should appear on your wedding page"
+        
+        # Platform name field is only required when platform is 'other'
+        self.fields['platform_name'].required = False
     
     def clean(self):
         cleaned_data = super().clean()
@@ -160,8 +162,16 @@ class SocialMediaLinkForm(forms.ModelForm):
         platform_name = cleaned_data.get('platform_name')
         url = cleaned_data.get('url')
         
-        if platform == 'other' and not platform_name:
-            raise ValidationError("Platform name is required when 'Other' is selected.")
+        # Only require platform_name when platform is 'other' AND we have a platform value
+        if platform == 'other':
+            if not platform_name or not platform_name.strip():
+                raise ValidationError({
+                    'platform_name': "Platform name is required when 'Other' is selected."
+                })
+            cleaned_data['platform_name'] = platform_name.strip()
+        else:
+            # Clear platform_name if not using 'other'
+            cleaned_data['platform_name'] = ''
         
         # Validate URL format
         if url and not url.startswith(('http://', 'https://')):
@@ -184,7 +194,6 @@ class RegistryLinkForm(forms.ModelForm):
             'registry_name': forms.TextInput(attrs={
                 'class': 'form-control registry-name-field',
                 'placeholder': 'Registry name (if Other selected)',
-                'style': 'display: none;'
             }),
             'original_url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
@@ -215,6 +224,9 @@ class RegistryLinkForm(forms.ModelForm):
         self.fields['original_url'].help_text = "We'll automatically detect the registry type from your URL"
         self.fields['display_name'].help_text = "A friendly name for this registry (e.g., 'Our Home Registry')"
         self.fields['description'].help_text = "What types of items are on this registry?"
+        
+        # Registry name field is only required when registry_type is 'other'
+        self.fields['registry_name'].required = False
     
     def clean(self):
         cleaned_data = super().clean()
@@ -222,8 +234,16 @@ class RegistryLinkForm(forms.ModelForm):
         registry_name = cleaned_data.get('registry_name')
         url = cleaned_data.get('original_url')
         
-        if registry_type == 'other' and not registry_name:
-            raise ValidationError("Registry name is required when 'Other' is selected.")
+        # Only require registry_name when registry_type is 'other' AND we have a registry_type value
+        if registry_type == 'other':
+            if not registry_name or not registry_name.strip():
+                raise ValidationError({
+                    'registry_name': "Registry name is required when 'Other' is selected."
+                })
+            cleaned_data['registry_name'] = registry_name.strip()
+        else:
+            # Clear registry_name if not using 'other'
+            cleaned_data['registry_name'] = ''
         
         # Validate URL format
         if url and not url.startswith(('http://', 'https://')):
