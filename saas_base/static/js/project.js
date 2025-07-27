@@ -1,12 +1,14 @@
-/* Project specific Javascript goes here. */
+/* Enhanced Project specific Javascript with Wedding Branding Detection */
+
 /**
- * Wedding Form Management
- * Handles dynamic formsets, URL detection, and branding for wedding page creation
+ * Enhanced Wedding Form Management
+ * Handles dynamic formsets, URL detection, and enhanced branding for wedding page creation
  */
 
 class WeddingFormManager {
     constructor() {
         this.apiBaseUrl = '/wedding/api/';
+        this.brandingCache = new Map(); // Cache branding results
         this.init();
     }
 
@@ -15,6 +17,7 @@ class WeddingFormManager {
             this.initializeDynamicFormsets();
             this.setupUrlDetection();
             this.setupUrlPreview();
+            this.setupBrandingDetection();
         });
     }
 
@@ -73,7 +76,7 @@ class WeddingFormManager {
         const maxForms = parseInt(document.querySelector(`input[name="${formsetType}-MAX_NUM_FORMS"]`).value);
 
         if (currentFormCount >= maxForms) {
-            alert(`Maximum ${maxForms} ${displayName.toLowerCase()}s allowed.`);
+            this.showAlert(`Maximum ${maxForms} ${displayName.toLowerCase()}s allowed.`, 'warning');
             return;
         }
 
@@ -211,6 +214,194 @@ class WeddingFormManager {
     }
 
     /**
+     * Setup enhanced branding detection for all forms
+     */
+    setupBrandingDetection() {
+        // Setup for existing forms
+        document.querySelectorAll('.url-field').forEach(urlField => {
+            this.setupBrandingForField(urlField);
+        });
+
+        // Setup for platform/registry selects
+        document.querySelectorAll('.platform-select, .registry-select').forEach(select => {
+            this.setupSelectField(select);
+        });
+    }
+
+    /**
+     * Setup branding detection for a specific URL field
+     * @param {HTMLElement} urlField - The URL input field
+     */
+    setupBrandingForField(urlField) {
+        urlField.addEventListener('blur', async () => {
+            const url = urlField.value.trim();
+            if (!url) return;
+
+            const form = urlField.closest('[id*="-form-"]');
+            if (!form) return;
+
+            const formsetType = form.id.includes('social') ? 'social' : 'registry';
+            await this.detectAndApplyBranding(urlField, formsetType);
+        });
+
+        urlField.addEventListener('input', () => {
+            // Clear previous branding indicators on input
+            this.clearBrandingIndicator(urlField);
+        });
+    }
+
+    /**
+     * Setup select field change handlers
+     * @param {HTMLElement} select - The select element
+     */
+    setupSelectField(select) {
+        select.addEventListener('change', () => {
+            const form = select.closest('[id*="-form-"]');
+            if (!form) return;
+
+            if (select.classList.contains('platform-select')) {
+                this.updatePlatformFields(select);
+            } else if (select.classList.contains('registry-select')) {
+                this.updateRegistryFields(select);
+            }
+        });
+    }
+
+    /**
+     * Enhanced branding detection and application
+     * @param {HTMLElement} urlField - The URL input field
+     * @param {string} formsetType - Type of formset (social or registry)
+     */
+    async detectAndApplyBranding(urlField, formsetType) {
+        const url = urlField.value.trim();
+        const form = urlField.closest('[id*="-form-"]');
+        
+        if (!url || !form) return;
+
+        // Check cache first
+        const cacheKey = `${formsetType}-${url}`;
+        if (this.brandingCache.has(cacheKey)) {
+            this.applyBrandingData(form, this.brandingCache.get(cacheKey), formsetType);
+            return;
+        }
+
+        // Show loading indicator
+        this.showBrandingLoading(urlField);
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}detect-branding/?url=${encodeURIComponent(url)}&type=${formsetType}`);
+            const data = await response.json();
+            
+            if (response.ok && data.detected) {
+                // Cache the result
+                this.brandingCache.set(cacheKey, data);
+                
+                // Apply branding
+                this.applyBrandingData(form, data, formsetType);
+                
+                // Show success indicator
+                this.showBrandingIndicator(urlField, data, 'success');
+            } else {
+                this.showBrandingIndicator(urlField, { name: 'Unknown', type: 'other' }, 'warning');
+            }
+        } catch (error) {
+            console.error('Error detecting branding:', error);
+            this.showBrandingIndicator(urlField, null, 'error');
+        }
+    }
+
+    /**
+     * Apply detected branding data to form
+     * @param {HTMLElement} form - The form element
+     * @param {Object} brandingData - Branding information from API
+     * @param {string} formsetType - Type of formset
+     */
+    applyBrandingData(form, brandingData, formsetType) {
+        if (formsetType === 'social') {
+            const platformSelect = form.querySelector('.platform-select');
+            const displayNameField = form.querySelector('input[name*="display_name"]');
+            
+            if (platformSelect && brandingData.platform && brandingData.platform !== 'other') {
+                platformSelect.value = brandingData.platform;
+                this.updatePlatformFields(platformSelect);
+            }
+            
+            if (displayNameField && !displayNameField.value && brandingData.suggested_display_name) {
+                displayNameField.value = brandingData.suggested_display_name;
+            }
+        } else {
+            const registrySelect = form.querySelector('.registry-select');
+            const displayNameField = form.querySelector('input[name*="display_name"]');
+            
+            if (registrySelect && brandingData.type && brandingData.type !== 'other') {
+                registrySelect.value = brandingData.type;
+                this.updateRegistryFields(registrySelect);
+            }
+            
+            if (displayNameField && !displayNameField.value && brandingData.suggested_display_name) {
+                displayNameField.value = brandingData.suggested_display_name;
+            }
+        }
+    }
+
+    /**
+     * Show branding detection indicator
+     * @param {HTMLElement} urlField - The URL field
+     * @param {Object} brandingData - Branding data
+     * @param {string} type - Type of indicator (success, warning, error)
+     */
+    showBrandingIndicator(urlField, brandingData, type) {
+        this.clearBrandingIndicator(urlField);
+        
+        const indicator = document.createElement('div');
+        indicator.className = `branding-indicator alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} alert-sm mt-1`;
+        
+        let content = '';
+        if (type === 'success' && brandingData) {
+            content = `<i class="bi bi-check-circle"></i> ${brandingData.name} detected automatically`;
+        } else if (type === 'warning') {
+            content = `<i class="bi bi-exclamation-triangle"></i> Platform not recognized - please select manually`;
+        } else {
+            content = `<i class="bi bi-exclamation-circle"></i> Could not detect platform`;
+        }
+        
+        indicator.innerHTML = content;
+        urlField.parentNode.appendChild(indicator);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.remove();
+            }
+        }, 5000);
+    }
+
+    /**
+     * Show loading indicator for branding detection
+     * @param {HTMLElement} urlField - The URL field
+     */
+    showBrandingLoading(urlField) {
+        this.clearBrandingIndicator(urlField);
+        
+        const indicator = document.createElement('div');
+        indicator.className = 'branding-indicator alert alert-info alert-sm mt-1';
+        indicator.innerHTML = '<i class="bi bi-hourglass-split"></i> Detecting platform...';
+        
+        urlField.parentNode.appendChild(indicator);
+    }
+
+    /**
+     * Clear branding indicator
+     * @param {HTMLElement} urlField - The URL field
+     */
+    clearBrandingIndicator(urlField) {
+        const existing = urlField.parentNode.querySelector('.branding-indicator');
+        if (existing) {
+            existing.remove();
+        }
+    }
+
+    /**
      * Setup URL detection for all forms
      */
     setupUrlDetection() {
@@ -232,93 +423,13 @@ class WeddingFormManager {
         const urlField = formElement.querySelector('.url-field');
         if (!urlField) return;
 
-        // Setup URL blur detection
-        urlField.addEventListener('blur', () => {
-            if (formsetType === 'social') {
-                this.detectPlatformFromUrl(urlField);
-            } else {
-                this.detectRegistryFromUrl(urlField);
-            }
-        });
+        // Setup branding detection
+        this.setupBrandingForField(urlField);
 
         // Setup select field change handlers
         const selectField = formElement.querySelector(`.${formsetType}-select`);
         if (selectField) {
-            selectField.addEventListener('change', () => {
-                if (formsetType === 'social') {
-                    this.updatePlatformFields(selectField);
-                } else {
-                    this.updateRegistryFields(selectField);
-                }
-            });
-        }
-    }
-
-    /**
-     * Detect social media platform from URL
-     * @param {HTMLElement} urlField - The URL input field
-     */
-    async detectPlatformFromUrl(urlField) {
-        const url = urlField.value.trim();
-        if (!url) return;
-
-        try {
-            const response = await fetch(`${this.apiBaseUrl}detect-branding/?url=${encodeURIComponent(url)}&type=social`);
-            const data = await response.json();
-            
-            if (data.platform && data.platform !== 'other') {
-                const form = urlField.closest('[id*="-form-"]');
-                const platformSelect = form.querySelector('.platform-select');
-                
-                if (platformSelect) {
-                    platformSelect.value = data.platform;
-                    this.updatePlatformFields(platformSelect);
-                    
-                    // Auto-fill display name if empty
-                    const displayNameField = form.querySelector('input[name*="display_name"]');
-                    if (displayNameField && !displayNameField.value) {
-                        displayNameField.value = this.extractUsernameFromUrl(url, data.platform);
-                    }
-                    
-                    this.addBrandingIndicator(form, data);
-                }
-            }
-        } catch (error) {
-            console.error('Error detecting platform:', error);
-        }
-    }
-
-    /**
-     * Detect registry type from URL
-     * @param {HTMLElement} urlField - The URL input field
-     */
-    async detectRegistryFromUrl(urlField) {
-        const url = urlField.value.trim();
-        if (!url) return;
-
-        try {
-            const response = await fetch(`${this.apiBaseUrl}detect-branding/?url=${encodeURIComponent(url)}&type=registry`);
-            const data = await response.json();
-            
-            if (data.type && data.type !== 'other') {
-                const form = urlField.closest('[id*="-form-"]');
-                const registrySelect = form.querySelector('.registry-select');
-                
-                if (registrySelect) {
-                    registrySelect.value = data.type;
-                    this.updateRegistryFields(registrySelect);
-                    
-                    // Auto-fill display name if empty
-                    const displayNameField = form.querySelector('input[name*="display_name"]');
-                    if (displayNameField && !displayNameField.value && data.name) {
-                        displayNameField.value = `${data.name} Registry`;
-                    }
-                    
-                    this.addBrandingIndicator(form, data);
-                }
-            }
-        } catch (error) {
-            console.error('Error detecting registry:', error);
+            this.setupSelectField(selectField);
         }
     }
 
@@ -359,55 +470,6 @@ class WeddingFormManager {
                 registryNameField.required = false;
                 registryNameField.value = '';
             }
-        }
-    }
-
-    /**
-     * Add visual branding indicator to form
-     * @param {HTMLElement} form - The form element
-     * @param {Object} brandingData - Branding information from API
-     */
-    addBrandingIndicator(form, brandingData) {
-        const urlField = form.querySelector('.url-field');
-        const existingIndicator = form.querySelector('.brand-indicator');
-        
-        if (existingIndicator) {
-            existingIndicator.remove();
-        }
-        
-        if (brandingData.name && brandingData.type !== 'other') {
-            const indicator = document.createElement('small');
-            indicator.className = 'brand-indicator text-muted ms-2';
-            indicator.innerHTML = `<i class="${brandingData.icon || 'bi-check-circle'}"></i> ${brandingData.name} detected`;
-            indicator.style.color = brandingData.color || '#6c757d';
-            
-            urlField.parentNode.appendChild(indicator);
-        }
-    }
-
-    /**
-     * Extract username from social media URL
-     * @param {string} url - The social media URL
-     * @param {string} platform - The detected platform
-     * @returns {string} The extracted username or empty string
-     */
-    extractUsernameFromUrl(url, platform) {
-        try {
-            const urlObj = new URL(url);
-            const pathname = urlObj.pathname;
-            
-            switch (platform) {
-                case 'instagram':
-                case 'facebook':
-                case 'twitter':
-                case 'tiktok':
-                    const match = pathname.match(/^\/([^\/\?]+)/);
-                    return match ? `@${match[1]}` : '';
-                default:
-                    return '';
-            }
-        } catch (error) {
-            return '';
         }
     }
 
@@ -458,7 +520,65 @@ class WeddingFormManager {
         // Initial update
         updatePreview();
     }
+
+    /**
+     * Show alert message
+     * @param {string} message - Alert message
+     * @param {string} type - Alert type (success, warning, danger, info)
+     */
+    showAlert(message, type = 'info') {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at top of page
+        const container = document.querySelector('.container') || document.body;
+        container.insertBefore(alert, container.firstChild);
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
 }
 
-// Initialize the wedding form manager
-const weddingFormManager = new WeddingFormManager();
+// Global functions for compatibility with existing form HTML
+window.detectPlatformFromUrl = function(urlField) {
+    if (window.weddingFormManager) {
+        const form = urlField.closest('[id*="-form-"]');
+        if (form) {
+            window.weddingFormManager.detectAndApplyBranding(urlField, 'social');
+        }
+    }
+};
+
+window.detectRegistryFromUrl = function(urlField) {
+    if (window.weddingFormManager) {
+        const form = urlField.closest('[id*="-form-"]');
+        if (form) {
+            window.weddingFormManager.detectAndApplyBranding(urlField, 'registry');
+        }
+    }
+};
+
+window.updatePlatformFields = function(selectElement) {
+    if (window.weddingFormManager) {
+        window.weddingFormManager.updatePlatformFields(selectElement);
+    }
+};
+
+window.updateRegistryFields = function(selectElement) {
+    if (window.weddingFormManager) {
+        window.weddingFormManager.updateRegistryFields(selectElement);
+    }
+};
+
+// Initialize the enhanced wedding form manager
+document.addEventListener('DOMContentLoaded', function() {
+    window.weddingFormManager = new WeddingFormManager();
+});

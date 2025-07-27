@@ -1,4 +1,4 @@
-# wedding_shopping/models.py
+# wedding_shopping/models.py - Enhanced with better branding support
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -131,15 +131,17 @@ class CoupleProfile(models.Model):
         return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
 
 
-
 class SocialMediaLink(models.Model):
-    """Social media profiles for the couple"""
+    """Social media profiles for the couple with enhanced branding"""
     
     PLATFORM_CHOICES = [
         ('instagram', 'Instagram'),
         ('facebook', 'Facebook'),
-        ('twitter', 'Twitter'),
+        ('twitter', 'X (Twitter)'),
         ('tiktok', 'TikTok'),
+        ('youtube', 'YouTube'),
+        ('pinterest', 'Pinterest'),
+        ('linkedin', 'LinkedIn'),
         ('website', 'Website'),
         ('other', 'Other'),
     ]
@@ -158,20 +160,49 @@ class SocialMediaLink(models.Model):
     
     @property
     def platform_icon(self):
-        """Returns Bootstrap icon class for the platform"""
+        """Returns Bootstrap icon class for the platform with enhanced icons"""
         icons = {
             'instagram': 'bi-instagram',
             'facebook': 'bi-facebook',
-            'twitter': 'bi-twitter',
+            'twitter': 'bi-twitter-x',
             'tiktok': 'bi-tiktok',
+            'youtube': 'bi-youtube',
+            'pinterest': 'bi-pinterest',
+            'linkedin': 'bi-linkedin',
             'website': 'bi-globe',
             'other': 'bi-link-45deg',
         }
         return icons.get(self.platform, 'bi-link-45deg')
+    
+    @property
+    def platform_color(self):
+        """Returns brand color for the platform"""
+        colors = {
+            'instagram': '#E4405F',
+            'facebook': '#1877F2',
+            'twitter': '#000000',
+            'tiktok': '#FF0050',
+            'youtube': '#FF0000',
+            'pinterest': '#BD081C',
+            'linkedin': '#0A66C2',
+            'website': '#007bff',
+            'other': '#6c757d',
+        }
+        return colors.get(self.platform, '#6c757d')
+    
+    @property
+    def platform_display_name(self):
+        """Returns the display name to show on the wedding page"""
+        if self.display_name:
+            return self.display_name
+        elif self.platform_name:
+            return self.platform_name
+        else:
+            return self.get_platform_display()
 
 
 class RegistryLink(models.Model):
-    """Wedding registry links with affiliate tracking"""
+    """Wedding registry links with enhanced branding and tracking"""
     
     REGISTRY_TYPES = [
         ('amazon', 'Amazon'),
@@ -183,6 +214,9 @@ class RegistryLink(models.Model):
         ('macy', 'Macy\'s'),
         ('zola', 'Zola'),
         ('the_knot', 'The Knot'),
+        ('wayfair', 'Wayfair'),
+        ('registry_finder', 'Registry Finder'),
+        ('honeyfund', 'Honeyfund'),
         ('other', 'Other'),
     ]
     
@@ -211,41 +245,55 @@ class RegistryLink(models.Model):
     
     @property
     def registry_icon(self):
-        """Returns appropriate icon for the registry"""
+        """Returns appropriate Bootstrap icon for the registry"""
         icons = {
             'amazon': 'bi-amazon',
             'target': 'bi-bullseye',
+            'bed_bath_beyond': 'bi-house-fill',
+            'williams_sonoma': 'bi-cup-hot-fill',
+            'crate_barrel': 'bi-house-door-fill',
+            'pottery_barn': 'bi-home-fill',
+            'macy': 'bi-bag-fill',
             'zola': 'bi-heart-fill',
             'the_knot': 'bi-heart',
+            'wayfair': 'bi-house-fill',
+            'registry_finder': 'bi-search-heart',
+            'honeyfund': 'bi-airplane-fill',
             'other': 'bi-gift',
         }
         return icons.get(self.registry_type, 'bi-gift')
+    
+    @property
+    def registry_color(self):
+        """Returns brand color for the registry"""
+        colors = {
+            'amazon': '#FF9900',
+            'target': '#CC0000',
+            'bed_bath_beyond': '#003087',
+            'williams_sonoma': '#8B4513',
+            'crate_barrel': '#000000',
+            'pottery_barn': '#8B4513',
+            'macy': '#E21937',
+            'zola': '#FF6B6B',
+            'the_knot': '#FF69B4',
+            'wayfair': '#663399',
+            'registry_finder': '#28a745',
+            'honeyfund': '#FFA500',
+            'other': '#6c757d',
+        }
+        return colors.get(self.registry_type, '#6c757d')
+    
+    @property
+    def registry_display_name(self):
+        """Returns the display name to show on the wedding page"""
+        if self.display_name:
+            return self.display_name
+        elif self.registry_name:
+            return self.registry_name
+        else:
+            return f"{self.get_registry_type_display()} Registry"
     
     def increment_clicks(self):
         """Increment click count"""
         self.click_count += 1
         self.save(update_fields=['click_count'])
-
-
-class WeddingPhotoCollection(models.Model):
-    """Link to showcase wedding venue transformations"""
-    
-    couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='photo_collections')
-    collection_name = models.CharField(max_length=100, default="Our Wedding Venue Transformations")
-    description = models.TextField(blank=True, help_text="Description of the photo collection")
-    
-    # Link to image_processing collection or individual images
-    # We'll reference by collection name/id since it's in a different app
-    studio_collection_id = models.IntegerField(null=True, blank=True, 
-                                             help_text="ID of the studio collection to display")
-    
-    is_featured = models.BooleanField(default=True, help_text="Show this collection prominently")
-    display_order = models.PositiveIntegerField(default=0)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['display_order', '-created_at']
-    
-    def __str__(self):
-        return f"{self.couple_profile} - {self.collection_name}"

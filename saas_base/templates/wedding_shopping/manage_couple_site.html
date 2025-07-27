@@ -1,0 +1,724 @@
+<!-- saas_base/templates/wedding_shopping/manage_couple_site.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h1 class="h2 mb-1">
+            <i class="bi bi-heart-fill text-primary"></i>
+            {{ title }}
+          </h1>
+          <p class="text-muted mb-0">
+            {% if is_new %}
+              Create your beautiful wedding website to share with friends and family
+            {% else %}
+              Update your wedding details and share with your loved ones
+            {% endif %}
+          </p>
+        </div>
+        {% if not is_new and object.slug %}
+          <div class="text-end">
+            <a href="{% url 'wedding_shopping:wedding_page' slug=object.slug %}" 
+               class="btn btn-outline-primary"
+               target="_blank">
+              <i class="bi bi-eye"></i> Preview Site
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <form method="post" enctype="multipart/form-data" id="couple-form">
+    {% csrf_token %}
+
+    <!-- Wedding Information Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-info-circle"></i> Wedding Information
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Partner Names -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.partner_1_name.id_for_label }}" class="form-label">
+              {{ form.partner_1_name.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.partner_1_name }}
+            {% if form.partner_1_name.help_text %}
+              <div class="form-text">{{ form.partner_1_name.help_text }}</div>
+            {% endif %}
+            {% if form.partner_1_name.errors %}
+              <div class="text-danger small">{{ form.partner_1_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">
+              {{ form.partner_2_name.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.partner_2_name }}
+            {% if form.partner_2_name.help_text %}
+              <div class="form-text">{{ form.partner_2_name.help_text }}</div>
+            {% endif %}
+            {% if form.partner_2_name.errors %}
+              <div class="text-danger small">{{ form.partner_2_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Wedding Date -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.wedding_date.id_for_label }}" class="form-label">
+              {{ form.wedding_date.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.wedding_date }}
+            {% if form.wedding_date.help_text %}
+              <div class="form-text">{{ form.wedding_date.help_text }}</div>
+            {% endif %}
+            {% if form.wedding_date.errors %}
+              <div class="text-danger small">{{ form.wedding_date.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- URL Preview -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.url_preview.id_for_label }}" class="form-label">
+              {{ form.url_preview.label }}
+            </label>
+            {{ form.url_preview }}
+            {% if form.url_preview.help_text %}
+              <div class="form-text">{{ form.url_preview.help_text }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Venue Information -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.venue_name.id_for_label }}" class="form-label">
+              {{ form.venue_name.label }}
+            </label>
+            {{ form.venue_name }}
+            {% if form.venue_name.errors %}
+              <div class="text-danger small">{{ form.venue_name.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.venue_location.id_for_label }}" class="form-label">
+              {{ form.venue_location.label }}
+            </label>
+            {{ form.venue_location }}
+            {% if form.venue_location.help_text %}
+              <div class="form-text">{{ form.venue_location.help_text }}</div>
+            {% endif %}
+            {% if form.venue_location.errors %}
+              <div class="text-danger small">{{ form.venue_location.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Couple Story -->
+          <div class="col-12 mb-3">
+            <label for="{{ form.couple_story.id_for_label }}" class="form-label">
+              {{ form.couple_story.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.couple_story }}
+            {% if form.couple_story.help_text %}
+              <div class="form-text">{{ form.couple_story.help_text }}</div>
+            {% endif %}
+            {% if form.couple_story.errors %}
+              <div class="text-danger small">{{ form.couple_story.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Public Setting -->
+          <div class="col-12">
+            <div class="form-check">
+              {{ form.is_public }}
+              <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                {{ form.is_public.label }}
+              </label>
+              {% if form.is_public.help_text %}
+                <div class="form-text">{{ form.is_public.help_text }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photos Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-camera"></i> Photos
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Couple Photo -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.couple_photo.id_for_label }}" class="form-label">
+              {{ form.couple_photo.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.couple_photo }}
+            
+            <!-- Current Image Preview -->
+            {% if form.instance.couple_photo %}
+              <div class="mt-2">
+                <div class="d-flex align-items-center">
+                  <img src="{{ form.instance.couple_photo.url }}" 
+                       class="img-thumbnail me-2" 
+                       style="width: 60px; height: 60px; object-fit: cover;"
+                       alt="Current couple photo">
+                  <small class="text-muted">Current photo</small>
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- New Image Preview -->
+            <div id="couple-photo-preview" class="mt-2" style="display: none;">
+              <div class="d-flex align-items-center">
+                <img id="couple-photo-img" 
+                     class="img-thumbnail me-2" 
+                     style="width: 60px; height: 60px; object-fit: cover;"
+                     alt="New couple photo">
+                <small class="text-muted">New photo preview</small>
+              </div>
+            </div>
+            
+            {% if form.couple_photo.help_text %}
+              <div class="form-text">{{ form.couple_photo.help_text }}</div>
+            {% endif %}
+            {% if form.couple_photo.errors %}
+              <div class="text-danger small">{{ form.couple_photo.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Venue Photo -->
+          <div class="col-lg-6 mb-3">
+            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
+              {{ form.venue_photo.label }}
+            </label>
+            {{ form.venue_photo }}
+            
+            <!-- Current Image Preview -->
+            {% if form.instance.venue_photo %}
+              <div class="mt-2">
+                <div class="d-flex align-items-center">
+                  <img src="{{ form.instance.venue_photo.url }}" 
+                       class="img-thumbnail me-2" 
+                       style="width: 60px; height: 60px; object-fit: cover;"
+                       alt="Current venue photo">
+                  <small class="text-muted">Current photo</small>
+                </div>
+              </div>
+            {% endif %}
+            
+            <!-- New Image Preview -->
+            <div id="venue-photo-preview" class="mt-2" style="display: none;">
+              <div class="d-flex align-items-center">
+                <img id="venue-photo-img" 
+                     class="img-thumbnail me-2" 
+                     style="width: 60px; height: 60px; object-fit: cover;"
+                     alt="New venue photo">
+                <small class="text-muted">New photo preview</small>
+              </div>
+            </div>
+            
+            {% if form.venue_photo.help_text %}
+              <div class="form-text">{{ form.venue_photo.help_text }}</div>
+            {% endif %}
+            {% if form.venue_photo.errors %}
+              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Media Links Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-share"></i> Social Media Links
+        </h5>
+        <button type="button" class="btn btn-light btn-sm" onclick="addSocialForm()">
+          <i class="bi bi-plus"></i> Add Link
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="social-forms">
+          {{ social_formset.management_form }}
+          {% for form in social_formset %}
+            <div class="social-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+              <div class="row">
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">Platform</label>
+                  {{ form.platform }}
+                </div>
+                <div class="col-lg-4 mb-2">
+                  <label class="form-label">URL</label>
+                  {{ form.url }}
+                </div>
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">Display Name</label>
+                  {{ form.display_name }}
+                </div>
+                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                  {% if form.instance.pk or forloop.counter > 2 %}
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markSocialForDeletion(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <!-- Hidden fields -->
+              {{ form.platform_name.as_hidden }}
+              {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+              {% if form.id %}{{ form.id.as_hidden }}{% endif %}
+              
+              <!-- Error messages -->
+              {% if form.errors %}
+                <div class="text-danger small mt-1">
+                  {% for field, errors in form.errors.items %}
+                    <div>{{ field }}: {{ errors.0 }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <small class="text-muted">
+          <i class="bi bi-info-circle"></i> 
+          Add your social media profiles so guests can follow your journey
+        </small>
+      </div>
+    </div>
+
+    <!-- Wedding Registry Section -->
+    <div class="card mb-4">
+      <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-gift"></i> Wedding Registries
+        </h5>
+        <button type="button" class="btn btn-dark btn-sm" onclick="addRegistryForm()">
+          <i class="bi bi-plus"></i> Add Registry
+        </button>
+      </div>
+      <div class="card-body">
+        <div id="registry-forms">
+          {{ registry_formset.management_form }}
+          {% for form in registry_formset %}
+            <div class="registry-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+              <div class="row">
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">Registry Type</label>
+                  {{ form.registry_type }}
+                </div>
+                <div class="col-lg-4 mb-2">
+                  <label class="form-label">Registry URL</label>
+                  {{ form.original_url }}
+                </div>
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">Display Name</label>
+                  {{ form.display_name }}
+                </div>
+                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                  {% if form.instance.pk or forloop.counter > 2 %}
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markRegistryForDeletion(this)">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+              
+              <div class="row">
+                <div class="col-12 mb-2">
+                  <label class="form-label">Description</label>
+                  {{ form.description }}
+                </div>
+              </div>
+              
+              <!-- Hidden fields -->
+              {{ form.registry_name.as_hidden }}
+              {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+              {% if form.id %}{{ form.id.as_hidden }}{% endif %}
+              
+              <!-- Error messages -->
+              {% if form.errors %}
+                <div class="text-danger small mt-1">
+                  {% for field, errors in form.errors.items %}
+                    <div>{{ field }}: {{ errors.0 }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <small class="text-muted">
+          <i class="bi bi-info-circle"></i> 
+          Add your wedding registries so guests can find the perfect gifts for you
+        </small>
+      </div>
+    </div>
+
+    <!-- Submit Section -->
+    <div class="card">
+      <div class="card-body text-center">
+        <button type="submit" class="btn btn-primary btn-lg me-3">
+          <i class="bi bi-heart-fill"></i>
+          {% if is_new %}Create Wedding Site{% else %}Update Wedding Site{% endif %}
+        </button>
+        <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
+          Cancel
+        </a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<style>
+.img-thumbnail {
+  border: 2px solid #dee2e6;
+}
+
+.social-form, .registry-form {
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.social-form:hover, .registry-form:hover {
+  background-color: #e9ecef;
+}
+
+.social-form[style*="opacity: 0.5"], .registry-form[style*="opacity: 0.5"] {
+  transition: all 0.3s ease;
+}
+
+.card-header {
+  font-weight: 500;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #495057;
+}
+
+.text-danger {
+  font-weight: 500;
+}
+
+#url-preview {
+  font-family: monospace;
+  background-color: #f8f9fa;
+}
+</style>
+
+<script>
+// URL Preview Update
+function updateUrlPreview() {
+    const name1 = document.getElementById('id_partner_1_name').value;
+    const name2 = document.getElementById('id_partner_2_name').value;
+    const date = document.getElementById('id_wedding_date').value;
+    const preview = document.getElementById('url-preview');
+    
+    if (name1 && name2) {
+        // Clean names like Django model does
+        const clean1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+        const clean2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+        
+        let dateStr = 'tbd';
+        if (date) {
+            const d = new Date(date);
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const year = String(d.getFullYear()).slice(-2);
+            dateStr = month + day + year;
+        }
+        
+        const slug = clean1 + clean2 + dateStr;
+        preview.value = `yoursite.com/wedding/${slug}/`;
+    } else {
+        preview.value = 'yoursite.com/wedding/[your-custom-url]/';
+    }
+}
+
+// Image Preview Functions
+function setupImagePreview(inputId, previewId, imgId) {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const img = document.getElementById(imgId);
+    
+    if (input) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+    }
+}
+
+// Formset Management
+let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
+let registryFormCount = parseInt(document.getElementById('id_registry-TOTAL_FORMS').value);
+
+function addSocialForm() {
+    const formsContainer = document.getElementById('social-forms');
+    const emptyForm = `
+        <div class="social-form border rounded p-3 mb-3" data-form-index="${socialFormCount}">
+            <div class="row">
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Platform</label>
+                    <select name="social-${socialFormCount}-platform" class="form-select" id="id_social-${socialFormCount}-platform">
+                        <option value="">Select Platform</option>
+                        <option value="instagram">Instagram</option>
+                        <option value="facebook">Facebook</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="tiktok">TikTok</option>
+                        <option value="website">Website</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">URL</label>
+                    <input type="url" name="social-${socialFormCount}-url" class="form-control" id="id_social-${socialFormCount}-url" placeholder="https://instagram.com/yourusername">
+                </div>
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" name="social-${socialFormCount}-display_name" class="form-control" id="id_social-${socialFormCount}-display_name" placeholder="@yourusername or Your Page Name">
+                </div>
+                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markSocialForDeletion(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" name="social-${socialFormCount}-platform_name" id="id_social-${socialFormCount}-platform_name">
+        </div>
+    `;
+    
+    formsContainer.insertAdjacentHTML('beforeend', emptyForm);
+    socialFormCount++;
+    document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
+}
+
+function addRegistryForm() {
+    const formsContainer = document.getElementById('registry-forms');
+    const emptyForm = `
+        <div class="registry-form border rounded p-3 mb-3" data-form-index="${registryFormCount}">
+            <div class="row">
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Registry Type</label>
+                    <select name="registry-${registryFormCount}-registry_type" class="form-select" id="id_registry-${registryFormCount}-registry_type">
+                        <option value="">Select Registry</option>
+                        <option value="amazon">Amazon</option>
+                        <option value="target">Target</option>
+                        <option value="bed_bath_beyond">Bed Bath & Beyond</option>
+                        <option value="williams_sonoma">Williams Sonoma</option>
+                        <option value="crate_barrel">Crate & Barrel</option>
+                        <option value="pottery_barn">Pottery Barn</option>
+                        <option value="macy">Macy's</option>
+                        <option value="zola">Zola</option>
+                        <option value="the_knot">The Knot</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">Registry URL</label>
+                    <input type="url" name="registry-${registryFormCount}-original_url" class="form-control" id="id_registry-${registryFormCount}-original_url" placeholder="https://amazon.com/wedding/your-registry">
+                </div>
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" name="registry-${registryFormCount}-display_name" class="form-control" id="id_registry-${registryFormCount}-display_name" placeholder="Home Essentials Registry">
+                </div>
+                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="markRegistryForDeletion(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <label class="form-label">Description</label>
+                    <textarea name="registry-${registryFormCount}-description" class="form-control" id="id_registry-${registryFormCount}-description" rows="3" placeholder="Kitchen appliances, home decor, and everyday essentials"></textarea>
+                </div>
+            </div>
+            <input type="hidden" name="registry-${registryFormCount}-registry_name" id="id_registry-${registryFormCount}-registry_name">
+        </div>
+    `;
+    
+    formsContainer.insertAdjacentHTML('beforeend', emptyForm);
+    registryFormCount++;
+    document.getElementById('id_registry-TOTAL_FORMS').value = registryFormCount;
+}
+
+function markSocialForDeletion(button) {
+    const form = button.closest('.social-form');
+    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteCheckbox) {
+        // This is an existing form - mark for deletion
+        deleteCheckbox.checked = true;
+        form.style.opacity = '0.5';
+        form.style.backgroundColor = '#ffebee';
+        
+        // Disable all form inputs
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
+                input.disabled = true;
+            }
+        });
+        
+        button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+        button.classList.remove('btn-outline-danger');
+        button.classList.add('btn-outline-success');
+        button.setAttribute('onclick', 'unmarkSocialForDeletion(this)');
+        button.setAttribute('title', 'Click to restore');
+    } else {
+        // This is a new form - just remove it
+        form.remove();
+    }
+}
+
+function unmarkSocialForDeletion(button) {
+    const form = button.closest('.social-form');
+    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteCheckbox) {
+        deleteCheckbox.checked = false;
+        form.style.opacity = '1';
+        form.style.backgroundColor = '#f8f9fa';
+        
+        // Re-enable all form inputs
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+        
+        button.innerHTML = '<i class="bi bi-trash"></i>';
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-outline-danger');
+        button.setAttribute('onclick', 'markSocialForDeletion(this)');
+        button.removeAttribute('title');
+    }
+}
+
+function markRegistryForDeletion(button) {
+    const form = button.closest('.registry-form');
+    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteCheckbox) {
+        // This is an existing form - mark for deletion
+        deleteCheckbox.checked = true;
+        form.style.opacity = '0.5';
+        form.style.backgroundColor = '#ffebee';
+        
+        // Disable all form inputs
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
+                input.disabled = true;
+            }
+        });
+        
+        button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+        button.classList.remove('btn-outline-danger');
+        button.classList.add('btn-outline-success');
+        button.setAttribute('onclick', 'unmarkRegistryForDeletion(this)');
+        button.setAttribute('title', 'Click to restore');
+    } else {
+        // This is a new form - just remove it
+        form.remove();
+    }
+}
+
+function unmarkRegistryForDeletion(button) {
+    const form = button.closest('.registry-form');
+    const deleteCheckbox = form.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteCheckbox) {
+        deleteCheckbox.checked = false;
+        form.style.opacity = '1';
+        form.style.backgroundColor = '#f8f9fa';
+        
+        // Re-enable all form inputs
+        const inputs = form.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.disabled = false;
+        });
+        
+        button.innerHTML = '<i class="bi bi-trash"></i>';
+        button.classList.remove('btn-outline-success');
+        button.classList.add('btn-outline-danger');
+        button.setAttribute('onclick', 'markRegistryForDeletion(this)');
+        button.removeAttribute('title');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Setup image previews
+    setupImagePreview('id_couple_photo', 'couple-photo-preview', 'couple-photo-img');
+    setupImagePreview('id_venue_photo', 'venue-photo-preview', 'venue-photo-img');
+    
+    // Setup URL preview updates
+    document.getElementById('id_partner_1_name').addEventListener('input', updateUrlPreview);
+    document.getElementById('id_partner_2_name').addEventListener('input', updateUrlPreview);
+    document.getElementById('id_wedding_date').addEventListener('change', updateUrlPreview);
+    
+    // Initial URL preview
+    updateUrlPreview();
+    
+    // Check for any forms already marked for deletion (after form errors)
+    document.querySelectorAll('input[name$="-DELETE"]:checked').forEach(function(deleteCheckbox) {
+        const form = deleteCheckbox.closest('.social-form, .registry-form');
+        if (form) {
+            form.style.opacity = '0.5';
+            form.style.backgroundColor = '#ffebee';
+            
+            // Disable form inputs
+            const inputs = form.querySelectorAll('input, select, textarea');
+            inputs.forEach(input => {
+                if (!input.name.endsWith('-DELETE') && !input.name.endsWith('-id')) {
+                    input.disabled = true;
+                }
+            });
+            
+            // Update delete button
+            const deleteButton = form.querySelector('button[onclick*="mark"][onclick*="ForDeletion"]');
+            if (deleteButton) {
+                deleteButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+                deleteButton.classList.remove('btn-outline-danger');
+                deleteButton.classList.add('btn-outline-success');
+                deleteButton.setAttribute('title', 'Click to restore');
+                
+                if (form.classList.contains('social-form')) {
+                    deleteButton.setAttribute('onclick', 'unmarkSocialForDeletion(this)');
+                } else {
+                    deleteButton.setAttribute('onclick', 'unmarkRegistryForDeletion(this)');
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

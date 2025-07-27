@@ -12,7 +12,7 @@ from datetime import datetime
 import re
 from urllib.parse import urlparse
 
-from .models import CoupleProfile, RegistryLink, SocialMediaLink, WeddingPhotoCollection
+from .models import CoupleProfile, RegistryLink, SocialMediaLink
 from .forms import (
     CoupleProfileForm, SocialMediaFormSet, RegistryFormSet
 )
@@ -220,9 +220,24 @@ class PublicCoupleDetailView(DetailView):
                 context['wedding_passed'] = True
                 context['days_since_wedding'] = (today - couple.wedding_date).days
         
-        # Get related data
-        context['social_links'] = couple.social_links.all()
-        context['registry_links'] = couple.registry_links.all()
+        # Get related data - only include saved objects with valid PKs
+        context['social_links'] = couple.social_links.filter(pk__isnull=False)
+        context['registry_links'] = couple.registry_links.filter(pk__isnull=False)
+        
+        # Get photo collections for wedding venue transformations
+        context['collections_with_images'] = []
+        try:
+            photo_collections = couple.photo_collections.filter(is_featured=True)
+            for collection in photo_collections:
+                collection_data = {
+                    'collection': collection,
+                    'sample_items': [],  # You can populate this if you have image processing integration
+                    'studio_collection': None  # You can populate this if you have studio integration
+                }
+                context['collections_with_images'].append(collection_data)
+        except AttributeError:
+            # photo_collections relationship doesn't exist yet
+            pass
         
         return context
 
@@ -231,7 +246,7 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
     """Single view to create or update couple profile with social and registry formsets"""
     model = CoupleProfile
     form_class = CoupleProfileForm
-    template_name = 'wedding_shopping/couple_manage.html'
+    template_name = 'wedding_shopping/manage_couple_site.html'
     
     def get_object(self, queryset=None):
         """Get existing profile or create a new one"""
@@ -264,18 +279,13 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
             )
         else:
             # For new profiles, ensure we have at least 2 empty forms for each
-            extra_social = 2 if is_new else 1
-            extra_registry = 2 if is_new else 1
-            
             context['social_formset'] = SocialMediaFormSet(
                 instance=self.object if not is_new else None,
-                prefix='social',
-                extra=extra_social
+                prefix='social'
             )
             context['registry_formset'] = RegistryFormSet(
                 instance=self.object if not is_new else None,
-                prefix='registry',
-                extra=extra_registry
+                prefix='registry'
             )
         
         return context
@@ -306,26 +316,32 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
             # Save formsets
             if social_formset:
                 social_formset.instance = self.object
-                social_formset.save()
+                social_instances = social_formset.save(commit=False)
+                for social in social_instances:
+                    social.couple_profile = self.object
+                    social.save()
+                # Handle deletions
+                for obj in social_formset.deleted_objects:
+                    obj.delete()
             
             if registry_formset:
                 registry_formset.instance = self.object
-                # Auto-detect registry types and enhance data
-                for registry_form in registry_formset:
-                    if registry_form.cleaned_data and not registry_form.cleaned_data.get('DELETE'):
-                        registry = registry_form.save(commit=False)
-                        registry.couple_profile = self.object
-                        
-                        # Auto-detect registry type if not set
-                        if not registry.registry_type or registry.registry_type == 'other':
-                            branding = detect_registry_branding(registry.original_url)
-                            if branding['type'] != 'other':
-                                registry.registry_type = branding['type']
-                                if not registry.display_name:
-                                    registry.display_name = branding['name']
-                        
-                        registry.save()
-                registry_formset.save()
+                registry_instances = registry_formset.save(commit=False)
+                for registry in registry_instances:
+                    registry.couple_profile = self.object
+                    
+                    # Auto-detect registry type if not set
+                    if not registry.registry_type or registry.registry_type == 'other':
+                        branding = detect_registry_branding(registry.original_url)
+                        if branding['type'] != 'other':
+                            registry.registry_type = branding['type']
+                            if not registry.display_name:
+                                registry.display_name = branding['name']
+                    
+                    registry.save()
+                # Handle deletions
+                for obj in registry_formset.deleted_objects:
+                    obj.delete()
         
         # Success messages
         if is_new:
