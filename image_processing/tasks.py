@@ -146,43 +146,6 @@ def process_image_async(self, job_id):
 
 
 @shared_task
-def cleanup_temporary_images():
-    """
-    Clean up temporary (unsaved) processed images older than 48 hours
-    """
-    from datetime import timedelta
-    import os
-    from django.conf import settings
-    
-    cutoff_date = timezone.now() - timedelta(hours=48)
-    
-    temporary_images = ProcessedImage.objects.filter(
-        is_saved=False,
-        created_at__lt=cutoff_date
-    )
-    
-    deleted_count = 0
-    for processed_image in temporary_images:
-        try:
-            # Delete the image file
-            if processed_image.processed_image:
-                file_path = processed_image.processed_image.path
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logger.info(f"Deleted temporary wedding image: {file_path}")
-            
-            # Delete the database record
-            processed_image.delete()
-            deleted_count += 1
-            
-        except Exception as e:
-            logger.error(f"Error deleting temporary image {processed_image.id}: {str(e)}")
-    
-    logger.info(f"Cleaned up {deleted_count} temporary wedding images")
-    return deleted_count
-
-
-@shared_task
 def cleanup_failed_jobs():
     """
     Clean up failed processing jobs older than 7 days
@@ -292,3 +255,67 @@ def optimize_sd35_parameters(job_id):
             'success': False,
             'error': str(e)
         }
+
+
+@shared_task
+def cleanup_orphaned_images():
+    """
+    Clean up orphaned processed images (without processing jobs) older than 30 days
+    This is a safety cleanup for any data integrity issues
+    """
+    from datetime import timedelta
+    import os
+    
+    cutoff_date = timezone.now() - timedelta(days=30)
+    
+    # Find processed images without processing jobs
+    orphaned_images = ProcessedImage.objects.filter(
+        processing_job__isnull=True,
+        created_at__lt=cutoff_date
+    )
+    
+    deleted_count = 0
+    for processed_image in orphaned_images:
+        try:
+            # Delete the image file
+            if processed_image.processed_image:
+                file_path = processed_image.processed_image.path
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Deleted orphaned image file: {file_path}")
+            
+            # Delete the database record
+            processed_image.delete()
+            deleted_count += 1
+            
+        except Exception as e:
+            logger.error(f"Error deleting orphaned image {processed_image.id}: {str(e)}")
+    
+    logger.info(f"Cleaned up {deleted_count} orphaned processed images")
+    return deleted_count
+
+
+@shared_task
+def optimize_image_storage():
+    """
+    Optimize image storage by compressing old images and generating missing thumbnails
+    """
+    from PIL import Image as PILImage
+    import io
+    from django.core.files.base import ContentFile
+    
+    optimized_count = 0
+    
+    # Generate missing thumbnails for user images
+    user_images_without_thumbnails = UserImage.objects.filter(thumbnail__isnull=True)
+    
+    for user_image in user_images_without_thumbnails[:50]:  # Process 50 at a time
+        try:
+            user_image.create_thumbnail()
+            optimized_count += 1
+            logger.info(f"Generated thumbnail for image: {user_image.original_filename}")
+        except Exception as e:
+            logger.error(f"Error generating thumbnail for {user_image.id}: {str(e)}")
+    
+    logger.info(f"Optimized {optimized_count} images")
+    return optimized_count

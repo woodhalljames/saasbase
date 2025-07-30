@@ -196,7 +196,7 @@ class ImageProcessingService:
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a wedding venue image with SD3.5 Large"""
+        """Process a wedding venue image with SD3.5 Large - images are permanently saved"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -217,7 +217,7 @@ class ImageProcessingService:
             )
             
             if result["success"] and result["results"]:
-                # Save the processed image
+                # Save the processed image (permanently)
                 img_result = result["results"][0]
                 processed_image = ProcessedImage(
                     processing_job=processing_job,

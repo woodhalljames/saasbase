@@ -1,10 +1,3 @@
-/* Simplified Wedding Form Management */
-
-/**
- * Simplified Wedding Form Manager
- * Handles dynamic formsets and basic URL detection for wedding page creation
- */
-
 class WeddingFormManager {
     constructor() {
         this.apiBaseUrl = '/wedding/api/';
@@ -372,6 +365,358 @@ class WeddingFormManager {
     }
 }
 
+/**
+ * Modern Homepage Enhancement Manager
+ * Handles scroll animations, interactive elements, and enhanced UX
+ */
+class HomepageManager {
+    constructor() {
+        this.isHomepage = document.querySelector('.homepage') !== null;
+        if (this.isHomepage) {
+            this.init();
+        }
+    }
+
+    init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupScrollAnimations();
+            this.setupInteractiveElements();
+            this.setupSmoothScrolling();
+            this.setupCountUpAnimations();
+            this.setupParallaxEffects();
+            this.setupDemoInteractions();
+        });
+    }
+
+    /**
+     * Setup scroll-triggered animations using Intersection Observer
+     */
+    setupScrollAnimations() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        // Observe elements for animation
+        const animateElements = document.querySelectorAll(
+            '.feature-card, .theme-card, .tool-card, .testimonial-card, .step-card'
+        );
+        
+        animateElements.forEach((el, index) => {
+            el.classList.add(`stagger-${(index % 4) + 1}`);
+            observer.observe(el);
+        });
+    }
+
+    /**
+     * Setup interactive demo elements
+     */
+    setupDemoInteractions() {
+        const beforeAfterContainer = document.querySelector('.before-after-container');
+        if (beforeAfterContainer) {
+            let isTransformed = false;
+            
+            beforeAfterContainer.addEventListener('click', () => {
+                const arrow = beforeAfterContainer.querySelector('.transform-arrow');
+                const beforeImg = beforeAfterContainer.querySelector('.before-image');
+                const afterImg = beforeAfterContainer.querySelector('.after-image');
+                
+                if (!isTransformed) {
+                    // Add transformation effect
+                    beforeAfterContainer.style.filter = 'brightness(1.1) saturate(1.2)';
+                    arrow.innerHTML = '<i class="bi bi-check-circle"></i>';
+                    arrow.style.background = 'linear-gradient(135deg, #00F5FF 0%, #0099CC 100%)';
+                    
+                    // Show loading state briefly
+                    arrow.innerHTML = '<i class="bi bi-hourglass-split rotating"></i>';
+                    setTimeout(() => {
+                        arrow.innerHTML = '<i class="bi bi-check-circle"></i>';
+                    }, 1500);
+                    
+                    isTransformed = true;
+                } else {
+                    // Reset
+                    beforeAfterContainer.style.filter = '';
+                    arrow.innerHTML = '<i class="bi bi-arrow-right"></i>';
+                    arrow.style.background = 'var(--gradient-rose)';
+                    isTransformed = false;
+                }
+            });
+
+            // Add cursor pointer
+            beforeAfterContainer.style.cursor = 'pointer';
+            
+            // Add tooltip
+            beforeAfterContainer.title = 'Click to see AI transformation in action!';
+        }
+    }
+
+    /**
+     * Setup smooth scrolling for anchor links
+     */
+    setupSmoothScrolling() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    }
+
+    /**
+     * Setup count-up animations for statistics
+     */
+    setupCountUpAnimations() {
+        const statNumbers = document.querySelectorAll('.stat-number');
+        
+        const countUp = (element, target) => {
+            const increment = target / 60; // 60 frames for 1 second
+            let current = 0;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    element.textContent = this.formatStatNumber(target);
+                    clearInterval(timer);
+                } else {
+                    element.textContent = this.formatStatNumber(Math.floor(current));
+                }
+            }, 16); // ~60fps
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const element = entry.target;
+                    const text = element.textContent;
+                    const target = parseInt(text.replace(/[^\d]/g, ''));
+                    
+                    if (target && !element.classList.contains('counted')) {
+                        element.classList.add('counted');
+                        countUp(element, target);
+                        observer.unobserve(element);
+                    }
+                }
+            });
+        });
+
+        statNumbers.forEach(stat => observer.observe(stat));
+    }
+
+    /**
+     * Format stat numbers with appropriate suffixes
+     */
+    formatStatNumber(num) {
+        if (num >= 1000) {
+            return Math.floor(num / 1000) + 'K+';
+        }
+        return num + '+';
+    }
+
+    /**
+     * Setup subtle parallax effects
+     */
+    setupParallaxEffects() {
+        const parallaxElements = document.querySelectorAll('.floating-element');
+        
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.pageYOffset;
+            
+            parallaxElements.forEach((element, index) => {
+                const speed = 0.5 + (index * 0.1);
+                const yPos = -(scrollTop * speed);
+                element.style.transform = `translateY(${yPos}px)`;
+            });
+        });
+    }
+
+    /**
+     * Setup interactive elements with enhanced feedback
+     */
+    setupInteractiveElements() {
+        // Enhanced button interactions
+        document.querySelectorAll('.hero-cta-primary, .hero-cta-secondary').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                btn.style.transform = 'translateY(-2px) scale(1.02)';
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Theme card interactions
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-10px) scale(1.02)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Add click effects to interactive elements
+        document.querySelectorAll('.tool-card, .feature-card').forEach(card => {
+            card.addEventListener('click', () => {
+                card.style.transform = 'translateY(-5px) scale(0.98)';
+                setTimeout(() => {
+                    card.style.transform = 'translateY(-5px) scale(1)';
+                }, 150);
+            });
+        });
+    }
+
+    /**
+     * Add loading states for CTA buttons
+     */
+    addLoadingState(button, loadingText = 'Loading...') {
+        const originalText = button.innerHTML;
+        button.innerHTML = `<i class="bi bi-hourglass-split rotating me-2"></i>${loadingText}`;
+        button.disabled = true;
+        
+        // Simulate loading (remove in production)
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }, 2000);
+    }
+
+    /**
+     * Show notification toast
+     */
+    showNotification(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} position-fixed`;
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.zIndex = '9999';
+        toast.style.minWidth = '300px';
+        toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                ${message}
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(0)';
+        }, 10);
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
+    }
+}
+
+/**
+ * Enhanced Form Interactions
+ */
+class FormEnhancements {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupFormValidation();
+            this.setupInputEnhancements();
+        });
+    }
+
+    setupFormValidation() {
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', (e) => {
+                if (!this.validateForm(form)) {
+                    e.preventDefault();
+                }
+            });
+        });
+    }
+
+    validateForm(form) {
+        let isValid = true;
+        const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+        
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                this.showFieldError(input, 'This field is required');
+                isValid = false;
+            } else {
+                this.clearFieldError(input);
+            }
+        });
+        
+        return isValid;
+    }
+
+    showFieldError(input, message) {
+        this.clearFieldError(input);
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback d-block';
+        errorDiv.textContent = message;
+        
+        input.classList.add('is-invalid');
+        input.parentNode.appendChild(errorDiv);
+    }
+
+    clearFieldError(input) {
+        input.classList.remove('is-invalid');
+        const existingError = input.parentNode.querySelector('.invalid-feedback');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+
+    setupInputEnhancements() {
+        // Add floating label effect
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.parentNode.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    input.parentNode.classList.remove('focused');
+                }
+            });
+            
+            // Check initial state
+            if (input.value) {
+                input.parentNode.classList.add('focused');
+            }
+        });
+    }
+}
+
 // Global functions for compatibility with existing form HTML
 window.detectBrandingFromUrl = function(urlField) {
     if (window.weddingFormManager) {
@@ -383,7 +728,9 @@ window.detectBrandingFromUrl = function(urlField) {
     }
 };
 
-// Initialize the wedding form manager
+// Initialize all managers
 document.addEventListener('DOMContentLoaded', function() {
     window.weddingFormManager = new WeddingFormManager();
+    window.homepageManager = new HomepageManager();
+    window.formEnhancements = new FormEnhancements();
 });

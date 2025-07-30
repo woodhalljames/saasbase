@@ -298,7 +298,6 @@ def get_wedding_choices():
     }
 
 
-# Rest of the models remain the same...
 class UserImage(models.Model):
     """User uploaded images"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='images')
@@ -485,18 +484,13 @@ class ImageProcessingJob(models.Model):
         }
 
 
-
 class ProcessedImage(models.Model):
-    """Store processed wedding venue images with save/discard functionality"""
+    """Store processed wedding venue images - permanently saved"""
     processing_job = models.ForeignKey(ImageProcessingJob, on_delete=models.CASCADE, related_name='processed_images')
     processed_image = models.ImageField(upload_to=processed_image_upload_path)
     file_size = models.PositiveIntegerField(help_text="Size in bytes")
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
-    
-    # Save/Keep functionality
-    is_saved = models.BooleanField(default=False, help_text="Whether user has chosen to save this image")
-    saved_at = models.DateTimeField(blank=True, null=True, help_text="When the user saved this image")
     
     # Metadata from Stability AI
     stability_seed = models.BigIntegerField(blank=True, null=True)
@@ -513,51 +507,8 @@ class ProcessedImage(models.Model):
             
         super().save(*args, **kwargs)
     
-    def mark_as_saved(self, collection=None):
-        """Mark this image as saved by the user, optionally to a specific collection"""
-        from django.utils import timezone
-        self.is_saved = True
-        self.saved_at = timezone.now()
-        self.save(update_fields=['is_saved', 'saved_at'])
-        
-        # Add to collection if specified
-        if collection:
-            CollectionItem.objects.get_or_create(
-                collection=collection,
-                processed_image=self,
-                defaults={'notes': f"Saved on {self.saved_at.strftime('%B %d, %Y')}"}
-            )
-    
-    @property
-    def is_temporary(self):
-        """Check if this is a temporary (unsaved) image"""
-        return not self.is_saved
-    
-    @property
-    def expires_at(self):
-        """When this temporary image will be deleted (48 hours after creation)"""
-        if self.is_saved:
-            return None
-        return self.created_at + timedelta(hours=48)
-    
-    @property
-    def time_until_deletion(self):
-        """Human readable time until deletion for temporary images"""
-        if self.is_saved:
-            return None
-        expires = self.expires_at
-        if expires and expires > timezone.now():
-            diff = expires - timezone.now()
-            if diff.days > 0:
-                return f"{diff.days} day{'s' if diff.days != 1 else ''}"
-            else:
-                hours = diff.seconds // 3600
-                return f"{hours} hour{'s' if hours != 1 else ''}"
-        return "Expired"
-    
     def __str__(self):
-        status = "Saved" if self.is_saved else "Temporary"
-        return f"Wedding Transformation - Job {self.processing_job.id} ({status})"
+        return f"Wedding Transformation - Job {self.processing_job.id}"
 
 
 class Collection(models.Model):

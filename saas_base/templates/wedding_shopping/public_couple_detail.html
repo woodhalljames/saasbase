@@ -1,108 +1,124 @@
-<!-- saas_base/templates/wedding_shopping/public_couple_detail.html -->
 {% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-0">
+<div class="wedding-detail-page">
   <!-- Hero Section -->
-  <div class="row g-0">
-    <div class="col-12">
-      <div class="position-relative" style="height: 70vh; min-height: 500px;">
-        {% if couple.couple_photo %}
-          <img src="{{ couple.couple_photo.url }}" 
-               class="w-100 h-100" 
-               style="object-fit: cover;"
-               alt="{{ couple.couple_names }}">
-        {% else %}
-          <div class="w-100 h-100 bg-gradient d-flex align-items-center justify-content-center"
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <i class="bi bi-heart text-white" style="font-size: 5rem;"></i>
-          </div>
-        {% endif %}
-        
-        <!-- Overlay with couple names and countdown -->
-        <div class="position-absolute bottom-0 start-0 end-0 p-4" 
-             style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
-          <div class="container">
-            <div class="row">
-              <div class="col-lg-8">
-                <h1 class="display-4 text-white mb-2">{{ couple.couple_names }}</h1>
-                {% if couple.wedding_date %}
-                  <p class="lead text-white mb-3">
-                    {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
-                    {% if couple.venue_location %}
-                      {% if couple.venue_name %} • {% endif %}
-                      {{ couple.venue_location }}
-                    {% endif %}
-                  </p>
-                  <p class="text-white h4">{{ couple.wedding_date|date:"F j, Y" }}</p>
-                {% endif %}
-              </div>
-              
-              <!-- Countdown -->
-              <div class="col-lg-4 text-lg-end">
-                {% if days_until_wedding %}
-                  <div class="text-center text-lg-end">
-                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
-                      <div class="display-6 text-white fw-bold">{{ days_until_wedding }}</div>
-                      <div class="text-white">day{{ days_until_wedding|pluralize }} to go!</div>
-                    </div>
-                  </div>
-                {% elif is_wedding_day %}
-                  <div class="text-center text-lg-end">
-                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
-                      <div class="display-6 text-white fw-bold">Today!</div>
-                      <div class="text-white">It's the big day! 🎉</div>
-                    </div>
-                  </div>
-                {% elif wedding_passed %}
-                  <div class="text-center text-lg-end">
-                    <div class="bg-white bg-opacity-20 rounded p-3 d-inline-block">
-                      <div class="display-6 text-white fw-bold">💍</div>
-                      <div class="text-white">Happily Married!</div>
-                      <small class="text-white">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</small>
-                    </div>
-                  </div>
-                {% endif %}
-              </div>
+  <section class="wedding-hero-section">
+    <div class="wedding-hero-image">
+      {% if couple.couple_photo %}
+        <img src="{{ couple.couple_photo.url }}" 
+             class="hero-background-image" 
+             alt="{{ couple.couple_names }}">
+      {% else %}
+        <div class="hero-background-placeholder">
+          <i class="bi bi-heart-fill"></i>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Hero Overlay Content -->
+    <div class="wedding-hero-overlay">
+      <div class="container">
+        <div class="row align-items-end min-vh-75">
+          <div class="col-lg-8">
+            <div class="hero-content">
+              <h1 class="hero-title">{{ couple.couple_names }}</h1>
+              {% if couple.wedding_date %}
+                <div class="hero-details">
+                  {% if couple.venue_name or couple.venue_location %}
+                    <p class="hero-venue">
+                      <i class="bi bi-geo-alt me-2"></i>
+                      {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
+                      {% if couple.venue_location %}
+                        {% if couple.venue_name %} • {% endif %}
+                        {{ couple.venue_location }}
+                      {% endif %}
+                    </p>
+                  {% endif %}
+                  <p class="hero-date">{{ couple.wedding_date|date:"F j, Y" }}</p>
+                </div>
+              {% endif %}
             </div>
+          </div>
+          
+          <!-- Countdown Card -->
+          <div class="col-lg-4">
+            {% if days_until_wedding %}
+              <div class="countdown-card countdown-upcoming">
+                <div class="countdown-content">
+                  <div class="countdown-number">{{ days_until_wedding }}</div>
+                  <div class="countdown-label">day{{ days_until_wedding|pluralize }} to go!</div>
+                  <div class="countdown-icon"><i class="bi bi-calendar-heart"></i></div>
+                </div>
+              </div>
+            {% elif is_wedding_day %}
+              <div class="countdown-card countdown-today">
+                <div class="countdown-content">
+                  <div class="countdown-number">Today!</div>
+                  <div class="countdown-label">It's the big day!</div>
+                  <div class="countdown-icon"><i class="bi bi-heart-fill"></i></div>
+                </div>
+              </div>
+            {% elif wedding_passed %}
+              <div class="countdown-card countdown-married">
+                <div class="countdown-content">
+                  <div class="countdown-number">💍</div>
+                  <div class="countdown-label">Happily Married!</div>
+                  <small class="countdown-sublabel">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</small>
+                </div>
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 
   <!-- Main Content -->
   <div class="container py-5">
-    
     <!-- Venue Section -->
     {% if couple.venue_photo %}
     <div class="row mb-5">
       <div class="col-12">
-        <div class="card border-0 shadow-sm">
+        <div class="section-header text-center mb-4">
+          <h2 class="section-title">Wedding Venue</h2>
+          <div class="section-divider"></div>
+        </div>
+        
+        <div class="venue-showcase-card">
           <div class="row g-0">
-            <div class="col-md-6">
-              <img src="{{ couple.venue_photo.url }}" 
-                   class="img-fluid h-100 w-100" 
-                   style="object-fit: cover; min-height: 300px;"
-                   alt="{{ couple.venue_name }}">
+            <div class="col-lg-6">
+              <div class="venue-image-container">
+                <img src="{{ couple.venue_photo.url }}" 
+                     class="venue-image" 
+                     alt="{{ couple.venue_name }}">
+                <div class="venue-image-overlay">
+                  <i class="bi bi-camera-fill"></i>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="card-body h-100 d-flex flex-column justify-content-center">
-                <h3 class="card-title">Our Wedding Venue</h3>
+            <div class="col-lg-6">
+              <div class="venue-details">
                 {% if couple.venue_name %}
-                  <h5 class="text-primary mb-3">{{ couple.venue_name }}</h5>
+                  <h3 class="venue-name">{{ couple.venue_name }}</h3>
                 {% endif %}
                 {% if couple.venue_location %}
-                  <p class="text-muted mb-3">
-                    <i class="bi bi-geo-alt"></i> {{ couple.venue_location }}
+                  <p class="venue-location">
+                    <i class="bi bi-geo-alt text-cyan"></i>
+                    {{ couple.venue_location }}
                   </p>
                 {% endif %}
-                <p class="card-text">
-                  Join us at this beautiful venue as we celebrate our love and begin our journey as husband and wife.
-                </p>
+                    <i class="bi bi-heart text-rose"></i>
+                    <span>Where our love story continues</span>
+                  </div>
+                  <div class="feature-item">
+                    <i class="bi bi-people text-cyan"></i>
+                    <span>Surrounded by the people most important</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -111,72 +127,86 @@
     </div>
     {% endif %}
 
-    <!-- Couple Story -->
+    <!-- Love Story Section -->
     {% if couple.couple_story %}
     <div class="row mb-5">
-      <div class="col-lg-8 mx-auto">
-        <div class="text-center mb-4">
-          <h2>Our Love Story</h2>
-          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+      <div class="col-lg-10 mx-auto">
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">Our Love Story</h2>
+          <div class="section-divider"></div>
+          
         </div>
-        <div class="lead text-center">
-          {{ couple.couple_story|linebreaks }}
+        
+        <div class="story-card">
+          <div class="story-content">
+           
+              
+            </div>
+            <div class="story-text">
+              {{ couple.couple_story|linebreaks }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
     {% endif %}
 
-    <!-- Wedding Registries - Improved Responsive Layout -->
+    <!-- Wedding Registry Section -->
     {% if registry_links %}
     <div class="row mb-5">
       <div class="col-12">
-        <div class="text-center mb-4">
-          <h2>Wedding Registry</h2>
-          <p class="text-muted">Help us start our new life together</p>
-          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">Wedding Registry</h2>
+          <div class="section-divider"></div>
+          <p class="section-subtitle">Help us start our new life together</p>
         </div>
         
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-0">
-            <!-- Desktop Table View (hidden on mobile) -->
-            <div class="d-none d-lg-block">
+        <div class="registry-section">
+          <!-- Desktop Registry Table -->
+          <div class="registry-desktop d-none d-lg-block">
+            <div class="registry-table-card">
               <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <thead class="table-light">
+                <table class="registry-table">
+                  <thead>
                     <tr>
-                      <th class="border-0 ps-4" style="width: 80px;">Store</th>
-                      <th class="border-0" style="width: 200px;">Registry</th>
-                      <th class="border-0" style="width: auto;">Description</th>
-                      <th class="border-0 text-center" style="width: 120px;">Shop</th>
+                      <th>Store</th>
+                      <th>Registry</th>
+                      <th>Description</th>
+                      <th class="text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for registry in registry_links %}
-                    <tr class="registry-row">
-                      <td class="ps-4 align-middle">
-                        <div class="registry-brand-icon d-flex align-items-center justify-content-center rounded-circle" 
-                             style="width: 50px; height: 50px; background-color: {{ registry.registry_color }}15; border: 2px solid {{ registry.registry_color }}30;">
-                          <i class="{{ registry.registry_icon }} fs-4" style="color: {{ registry.registry_color }};"></i>
+                    <tr class="registry-row" data-color="{{ registry.registry_color }}">
+                      <td>
+                        <div class="registry-brand">
+                          <div class="registry-icon" style="background-color: {{ registry.registry_color }}15; border-color: {{ registry.registry_color }}30;">
+                            <i class="{{ registry.registry_icon }}" style="color: {{ registry.registry_color }};"></i>
+                          </div>
                         </div>
                       </td>
-                      <td class="align-middle">
-                        <h6 class="mb-0 fw-bold">{{ registry.registry_display_name }}</h6>
-                        <small class="text-muted">{{ registry.registry_type|title }}</small>
+                      <td>
+                        <div class="registry-info">
+                          <h6 class="registry-name">{{ registry.registry_display_name }}</h6>
+                          <small class="registry-type">{{ registry.registry_type|title }}</small>
+                        </div>
                       </td>
-                      <td class="align-middle">
-                        {% if registry.description %}
-                          <p class="mb-0 text-muted">{{ registry.description }}</p>
-                        {% else %}
-                          <p class="mb-0 text-muted fst-italic">Wedding registry items</p>
-                        {% endif %}
+                      <td>
+                        <p class="registry-description">
+                          {% if registry.description %}
+                            {{ registry.description }}
+                          {% else %}
+                            Perfect gifts for our new home together
+                          {% endif %}
+                        </p>
                       </td>
-                      <td class="text-center align-middle">
+                      <td class="text-center">
                         <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
-                           class="btn btn-sm px-3 py-2 fw-bold text-white registry-shop-btn"
-                           style="background-color: {{ registry.registry_color }}; border-color: {{ registry.registry_color }};"
+                           class="registry-shop-btn"
+                           style="background-color: {{ registry.registry_color }};"
                            target="_blank">
-                          <i class="bi bi-gift me-1"></i>
-                          Shop
+                          <i class="bi bi-gift"></i>
+                          <span>Shop Registry</span>
                         </a>
                       </td>
                     </tr>
@@ -185,39 +215,39 @@
                 </table>
               </div>
             </div>
-            
-            <!-- Mobile Card View (visible on mobile/tablet) -->
-            <div class="d-lg-none">
+          </div>
+          
+          <!-- Mobile Registry Cards -->
+          <div class="registry-mobile d-lg-none">
+            <div class="row g-4">
               {% for registry in registry_links %}
-              <div class="registry-card border-bottom p-4 {% if not forloop.last %}border-bottom{% endif %}">
-                <div class="row align-items-start">
-                  <!-- Store Icon & Name -->
-                  <div class="col-3 col-sm-2 text-center">
-                    <div class="registry-brand-icon d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
-                         style="width: 50px; height: 50px; background-color: {{ registry.registry_color }}15; border: 2px solid {{ registry.registry_color }}30;">
-                      <i class="{{ registry.registry_icon }} fs-4" style="color: {{ registry.registry_color }};"></i>
+              <div class="col-md-6">
+                <div class="registry-mobile-card" data-color="{{ registry.registry_color }}">
+                  <div class="registry-card-header">
+                    <div class="registry-icon" style="background-color: {{ registry.registry_color }}15; border-color: {{ registry.registry_color }}30;">
+                      <i class="{{ registry.registry_icon }}" style="color: {{ registry.registry_color }};"></i>
                     </div>
-                    <div class="small text-muted">{{ registry.registry_type|title }}</div>
+                    <div class="registry-info">
+                      <h6 class="registry-name">{{ registry.registry_display_name }}</h6>
+                      <small class="registry-type">{{ registry.registry_type|title }}</small>
+                    </div>
                   </div>
                   
-                  <!-- Registry Details & Description -->
-                  <div class="col-6 col-sm-7">
-                    <h6 class="mb-2 fw-bold">{{ registry.registry_display_name }}</h6>
+                  <div class="registry-card-body">
                     {% if registry.description %}
-                      <p class="mb-0 text">{{ registry.description }}</p>
+                      <p class="registry-description">{{ registry.description }}</p>
                     {% else %}
-                      <p class="mb-0 text-muted small fst-italic">Wedding registry items</p>
+                      <p class="registry-description">Perfect gifts for our new home together</p>
                     {% endif %}
                   </div>
                   
-                  <!-- Shop Button -->
-                  <div class="col-3 col-sm-3 text-end">
+                  <div class="registry-card-footer">
                     <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
-                       class="btn btn-sm px-3 py-2 fw-bold text-white registry-shop-btn w-100"
-                       style="background-color: {{ registry.registry_color }}; border-color: {{ registry.registry_color }};"
+                       class="registry-shop-btn"
+                       style="background-color: {{ registry.registry_color }};"
                        target="_blank">
-                      <i class="bi bi-gift me-1 d-none d-sm-inline"></i>
-                      Shop
+                      <i class="bi bi-gift"></i>
+                      <span>Shop Registry</span>
                     </a>
                   </div>
                 </div>
@@ -230,255 +260,49 @@
     </div>
     {% endif %}
 
-    <!-- Social Media Links - Updated for simplified model -->
+    <!-- Social Media Section -->
     {% if social_links %}
     <div class="row mb-5">
       <div class="col-12">
-        <div class="text-center mb-4">
-          <h2>Follow Our Journey</h2>
-          <p class="text-muted">Stay connected with us on social media</p>
-          <div class="border-bottom border-primary w-25 mx-auto mb-4"></div>
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">Follow Us</h2>
+          <div class="section-divider"></div>
+          <p class="section-subtitle">Stay connected with us on social me</p>
         </div>
         
-        <div class="row justify-content-center g-3">
-          {% for social in social_links %}
-            <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-              <a href="{{ social.url }}" 
-                 target="_blank" 
-                 class="btn btn-outline-dark w-100 social-btn d-flex flex-column align-items-center py-3"
-                 style="border-color: {{ social.platform_color }}30; transition: all 0.3s ease;"
-                 onmouseover="this.style.backgroundColor='{{ social.platform_color }}'; this.style.borderColor='{{ social.platform_color }}'; this.style.color='white';"
-                 onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='{{ social.platform_color }}30'; this.style.color='#212529';">
-                <i class="{{ social.platform_icon }} mb-2" style="font-size: 1.5rem; color: {{ social.platform_color }};"></i>
-                <small class="text-truncate w-100 text-center">
-                  {{ social.platform_display_name }}
-                </small>
-              </a>
-            </div>
-          {% endfor %}
+        <div class="social-links-section">
+          <div class="row g-4 justify-content-center">
+            {% for social in social_links %}
+              <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                <a href="{{ social.url }}" 
+                   target="_blank" 
+                   class="social-link-card"
+                   data-color="{{ social.platform_color }}">
+                  <div class="social-icon" style="color: {{ social.platform_color }};">
+                    <i class="{{ social.platform_icon }}"></i>
+                  </div>
+                  <div class="social-name">{{ social.platform_display_name }}</div>
+                  <div class="social-hover-effect" style="background-color: {{ social.platform_color }};"></div>
+                </a>
+              </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
     </div>
     {% endif %}
 
-  
+    <!-- Back to Discovery CTA -->
+    <div class="row mt-5">
+      <div class="col-12 text-center">
+        <div class="back-to-discovery">
+          <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary">
+            <i class="bi bi-arrow-left"></i>
+            <span>Discover More Wedding Stories</span>
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-
-<style>
-/* Registry Table Styling - Enhanced for better responsiveness */
-.registry-row {
-  transition: all 0.2s ease;
-  border-left: 4px solid transparent;
-}
-
-.registry-row:hover {
-  background-color: #f8f9fa;
-  transform: translateX(2px);
-}
-
-.registry-brand-icon {
-  transition: all 0.3s ease;
-}
-
-.registry-row:hover .registry-brand-icon,
-.registry-card:hover .registry-brand-icon {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.registry-shop-btn {
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.registry-shop-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
-}
-
-/* Mobile Registry Cards */
-.registry-card {
-  transition: all 0.2s ease;
-}
-
-.registry-card:hover {
-  background-color: #f8f9fa;
-}
-
-/* Social Media Styling */
-.social-btn {
-  transition: all 0.3s ease;
-  min-height: 80px;
-  border-width: 2px;
-}
-
-.social-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-}
-
-.social-btn:hover i {
-  color: white !important;
-}
-
-/* General Improvements */
-.card {
-  border: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.bg-gradient {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-/* Countdown animation */
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.display-6 {
-  animation: heartbeat 2s infinite;
-}
-
-/* Table improvements */
-.table > tbody > tr > td {
-  vertical-align: middle;
-  padding: 1rem 0.75rem;
-  border-top: 1px solid #e9ecef;
-}
-
-.table > thead > tr > th {
-  vertical-align: middle;
-  padding: 1rem 0.75rem;
-  font-weight: 600;
-  color: #495057;
-  white-space: nowrap;
-}
-
-/* Description column styling */
-.table td:nth-child(3) {
-  max-width: 300px;
-  word-wrap: break-word;
-  hyphens: auto;
-}
-
-/* Remove horizontal scroll by ensuring content fits */
-.table-responsive {
-  overflow-x: auto;
-}
-
-@media (min-width: 992px) {
-  .table-responsive {
-    overflow-x: visible;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 991.98px) {
-  .registry-brand-icon {
-    width: 45px !important;
-    height: 45px !important;
-  }
-  
-  .registry-brand-icon i {
-    font-size: 1.1rem !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .display-4 {
-    font-size: 2.5rem;
-  }
-  
-  .display-6 {
-    font-size: 2rem;
-  }
-  
-  .social-btn {
-    min-height: 70px;
-  }
-  
-  .social-btn i {
-    font-size: 1.2rem !important;
-  }
-}
-
-@media (max-width: 575.98px) {
-  .registry-brand-icon {
-    width: 40px !important;
-    height: 40px !important;
-  }
-  
-  .registry-brand-icon i {
-    font-size: 1rem !important;
-  }
-  
-  .registry-card {
-    padding: 1rem !important;
-  }
-}
-</style>
-
-<script>
-// Enhanced brand integration
-document.addEventListener('DOMContentLoaded', function() {
-    // Add hover effects for registry rows (desktop table)
-    const registryRows = document.querySelectorAll('.registry-row');
-    registryRows.forEach(row => {
-        const brandIcon = row.querySelector('.registry-brand-icon');
-        const shopBtn = row.querySelector('.registry-shop-btn');
-        
-        if (brandIcon && shopBtn) {
-            const brandColor = shopBtn.style.backgroundColor;
-            
-            row.addEventListener('mouseenter', function() {
-                row.style.borderLeftColor = brandColor;
-            });
-            
-            row.addEventListener('mouseleave', function() {
-                row.style.borderLeftColor = 'transparent';
-            });
-        }
-    });
-    
-    // Add hover effects for registry cards (mobile)
-    const registryCards = document.querySelectorAll('.registry-card');
-    registryCards.forEach(card => {
-        const shopBtn = card.querySelector('.registry-shop-btn');
-        
-        if (shopBtn) {
-            const brandColor = shopBtn.style.backgroundColor;
-            
-            card.addEventListener('mouseenter', function() {
-                card.style.borderLeftColor = brandColor;
-                card.style.borderLeftWidth = '4px';
-                card.style.borderLeftStyle = 'solid';
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                card.style.borderLeft = 'none';
-            });
-        }
-    });
-    
-    // Add click tracking for social links
-    const socialLinks = document.querySelectorAll('.social-btn');
-    socialLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            // You can add analytics tracking here
-            console.log('Social link clicked:', link.href);
-        });
-    });
-});
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

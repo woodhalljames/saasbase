@@ -1,5 +1,3 @@
-
-
 {% extends "base.html" %}
 {% load static %}
 
@@ -7,74 +5,81 @@
 
 {% block content %}
 <div class="homepage">
-  <!-- Hero Section -->
+  <!-- Hero Section - Dark Theme -->
   <section class="hero-section position-relative overflow-hidden">
-    <div class="hero-bg"></div>
+    <div class="hero-particles"></div>
     <div class="container">
       <div class="row min-vh-100 align-items-center">
         <div class="col-lg-6 hero-content">
-          <h1 class="display-3 fw-bold mb-4">
+          <h1 class="display-3 fw-bold mb-4 text-white">
             Transform Any Space Into Your 
             <span class="text-gradient">Dream Wedding</span>
           </h1>
-          <p class="lead mb-4 text-dark-emphasis">
-            Visualize your perfect wedding celebration before the big day. Upload any venue photo and watch it transform into your dream wedding space in seconds.
+          <p class="lead mb-4 text-white-75">
+            Visualize your perfect wedding celebration before the big day. Upload any venue photo and watch our AI transform it into your dream wedding space in seconds.
           </p>
           <div class="hero-buttons mb-4">
             {% if user.is_authenticated %}
-              <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg px-4 py-3 me-3">
+              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
                 <i class="bi bi-magic"></i> Start Visualizing
               </a>
             {% else %}
-              <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-4 py-3 me-3">
+              <a href="{% url 'account_signup' %}" class="hero-cta-primary me-3">
                 <i class="bi bi-heart-fill"></i> Get Started Free
               </a>
             {% endif %}
-            <a href="#features" class="btn btn-outline-primary btn-lg px-4 py-3">
-              <i class="bi bi-play-circle"></i> See How It Works
+            <a href="#demo" class="hero-cta-secondary">
+              <i class="bi bi-play-circle"></i> See AI in Action
             </a>
           </div>
           <div class="hero-stats">
             <div class="row text-center">
               <div class="col-4">
-                <div class="stat-number">10K+</div>
-                <div class="stat-label">Venues Transformed</div>
+                <div class="stat-number">5k+</div>
+                <div class="stat-label text-white-50">Venues Transformed</div>
               </div>
               <div class="col-4">
-                <div class="stat-number">500+</div>
-                <div class="stat-label">Happy Couples</div>
+                <div class="stat-number">100+</div>
+                <div class="stat-label text-white-50">Happy Couples</div>
               </div>
               <div class="col-4">
                 <div class="stat-number">50+</div>
-                <div class="stat-label">Wedding Styles</div>
+                <div class="stat-label text-white-50">Wedding Themes</div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-lg-6">
-          <div class="hero-image-container">
-            <div class="floating-card card-1">
-              <div class="card-content">
-                <div class="card-icon">📸</div>
-                <div class="card-text">Upload Your Venue</div>
+          <div class="hero-visual">
+            <div class="floating-element">
+              <div class="d-flex align-items-center">
+                <div class="me-3" style="font-size: 1.5rem;">📸</div>
+                <div>
+                  <div class="fw-bold">Upload Photo</div>
+                  <small class="opacity-75">Any venue, any angle</small>
+                </div>
               </div>
             </div>
-            <div class="floating-card card-2">
-              <div class="card-content">
-                <div class="card-icon">✨</div>
-                <div class="card-text">Choose Your Style</div>
+            <div class="floating-element">
+              <div class="d-flex align-items-center">
+                <div class="me-3" style="font-size: 1.5rem;">✨</div>
+                <div>
+                  <div class="fw-bold">Visualize</div>
+                  <small class="opacity-75">50+ wedding themes</small>
+                </div>
               </div>
             </div>
-            <div class="floating-card card-3">
-              <div class="card-content">
-                <div class="card-icon">💍</div>
-                <div class="card-text">See Your Dream</div>
+            <div class="floating-element">
+              <div class="d-flex align-items-center">
+                <div class="me-3" style="font-size: 1.5rem;">💍</div>
+                <div>
+                  <div class="fw-bold">Perfect your Vision</div>
+                  <small class="opacity-75">See your big day a million ways</small>
+                </div>
               </div>
             </div>
             <div class="hero-main-image">
-              <div class="image-placeholder">
-                <i class="bi bi-camera-reels" style="font-size: 4rem; color: #ff6b9d;"></i>
-              </div>
+              <i class="bi bi-magic" style="font-size: 4rem;"></i>
             </div>
           </div>
         </div>
@@ -82,92 +87,186 @@
     </div>
   </section>
 
-   <section id="features" class="features-section py-5">
+  <!-- AI Visualization Demo Section -->
+  <section id="demo" class="ai-visualization">
     <div class="container">
-      <div class="row mb-5">
-        <div class="col-12 text-center">
-          <h2 class="display-5 fw-bold mb-3">No More Wedding Day Surprises</h2>
-          <p class="lead text-muted">See exactly how your venue will look before you walk down the aisle</p>
+      <div class="row">
+        <div class="col-12 text-center mb-5">
+          <h2 class="section-title text-dark">See our Smart Studio in Action</h2>
+          <p class="section-subtitle text-muted">Watch how our wedding planner & designer visualization prompts instantly transforms anywhere into your perfect wedding space</p>
         </div>
       </div>
-      
-      <div class="row g-4">
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-lightning-charge"></i>
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <div class="before-after-container interactive-demo">
+            <div class="before-after-images">
+              <div class="before-image">
+                <div class="image-label">📷 Original Venue</div>
+              </div>
+              <div class="after-image">
+                <div class="image-label">✨ Planned & Designed</div>
+              </div>
             </div>
-            <h4 class="mb-3">Instant Transformations</h4>
-            <p class="text-muted">Upload any venue photo and see it transformed into your dream wedding space in under 60 seconds. No waiting, no guessing.</p>
+            <div class="transform-arrow">
+              <i class="bi bi-arrow-right"></i>
+            </div>
+          </div>
+          <div class="text-center mt-4">
+            <p class="text-muted mb-0">
+              <i class="bi bi-stopwatch me-2"></i>
+              Transformation completed in under 60 seconds • <i class="bi bi-cursor me-2"></i>Subscribe today to try it!
+            </p>
           </div>
         </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-palette"></i>
-            </div>
-            <h4 class="mb-3">50+ Wedding Styles</h4>
-            <p class="text-muted">From rustic barn to modern minimalist, garden party to elegant ballroom - find the perfect style for your celebration.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Studio Showcase Section -->
+  <section class="studio-showcase">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 text-center mb-5">
+          <h2 class="section-title text-dark">Endless Wedding Styles & Themes</h2>
+          <p class="section-subtitle text-muted">From rustic barns to elegant ballrooms - explore 50+ professionally designed wedding themes</p>
+        </div>
+      </div>
+      <div class="theme-gallery">
+        <div class="theme-card">
+          <div class="theme-preview rustic">
+            <i class="bi bi-tree text-white" style="font-size: 3rem;"></i>
+          </div>
+          <div class="theme-card-content">
+            <span class="theme-tag">Rustic</span>
+            <h4 class="mb-2">Barn & Country</h4>
+            <p class="text-muted mb-0">Warm, cozy atmosphere with natural wood tones and vintage charm</p>
           </div>
         </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-heart-fill"></i>
-            </div>
-            <h4 class="mb-3">Create Wedding Pages</h4>
-            <p class="text-muted">Build a beautiful wedding page to share your love story, venue transformations, and registries with family and friends.</p>
+        <div class="theme-card">
+          <div class="theme-preview modern">
+            <i class="bi bi-building text-white" style="font-size: 3rem;"></i>
+          </div>
+          <div class="theme-card-content">
+            <span class="theme-tag">Modern</span>
+            <h4 class="mb-2">Sleek & Minimalist</h4>
+            <p class="text-muted mb-0">Clean lines, contemporary design with sophisticated elegance</p>
           </div>
         </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-collection"></i>
-            </div>
-            <h4 class="mb-3">Organize & Compare</h4>
-            <p class="text-muted">Save your favorite transformations in collections. Compare different styles side-by-side to make the perfect choice.</p>
+        <div class="theme-card">
+          <div class="theme-preview garden">
+            <i class="bi bi-flower1 text-white" style="font-size: 3rem;"></i>
+          </div>
+          <div class="theme-card-content">
+            <span class="theme-tag">Garden</span>
+            <h4 class="mb-2">Outdoor Romance</h4>
+            <p class="text-muted mb-0">Natural beauty with floral arrangements and outdoor charm</p>
           </div>
         </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-phone"></i>
-            </div>
-            <h4 class="mb-3">Mobile Friendly</h4>
-            <p class="text-muted">Take photos on-site and transform them instantly. Perfect for venue visits and planning meetings on the go.</p>
+        <div class="theme-card">
+          <div class="theme-preview elegant">
+            <i class="bi bi-gem text-white" style="font-size: 3rem;"></i>
+          </div>
+          <div class="theme-card-content">
+            <span class="theme-tag">Elegant</span>
+            <h4 class="mb-2">Luxury Ballroom</h4>
+            <p class="text-muted mb-0">Glamorous sophistication with crystal chandeliers and rich fabrics</p>
           </div>
         </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card h-100">
-            <div class="feature-icon">
-              <i class="bi bi-gift"></i>
-            </div>
-            <h4 class="mb-3">Registry Integration</h4>
-            <p class="text-muted">Link all your wedding registries in one beautiful page. Share your gift preferences with guests in style.</p>
+      </div>
+      <div class="text-center mt-5">
+        <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+          <i class="bi bi-palette"></i> Explore All 50+ Themes
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wedding Pages Section -->
+  <section class="wedding-pages">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <span class="free-badge">
+            <i class="bi bi-gift"></i> FREE Forever
+          </span>
+          <h2 class="section-title">Beautiful Wedding Pages</h2>
+          <p class="section-subtitle">Share your love story, showcase your dream wedding venue, and manage your registries, RSVPs all in one stunning wedding website.</p>
+          <ul class="list-unstyled mb-4">
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Custom wedding website</li>
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Share details about your wedding</li>
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Manage all your registries, RSVPs & more</li>
+          </ul>
+          <div>
+            <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary me-3">
+              <i class="bi bi-eye"></i> See Examples
+            </a>
+            <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+              <i class="bi bi-heart"></i> Create Your Page Free
+            </a>
           </div>
+        </div>
+       
+      </div>
+    </div>
+  </section>
+
+  <!-- Business Tools Section -->
+  <section class="business-tools">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 text-center mb-5">
+          <h2 class="section-title text-dark">Complete Wedding Planning Suite</h2>
+          <p class="section-subtitle text-muted">Everything you need to plan and visualize the perfect wedding day</p>
+        </div>
+      </div>
+      <div class="tool-grid">
+        <div class="tool-card">
+          <div class="tool-icon">
+            <i class="bi bi-collection"></i>
+          </div>
+          <h4 class="mb-3">Collections & Favorites</h4>
+          <p class="text-muted">Organize favorite venue transformations and compare different styles fast.</p>
+        </div>
+        
+        <div class="tool-card">
+          <div class="tool-icon">
+            <i class="bi bi-share"></i>
+          </div>
+          <h4 class="mb-3">Easy Collaboration</h4>
+          <p class="text-muted">Share your vision with clients and coworkers for feedback and input.</p>
+        </div>
+        
+        <div class="tool-card">
+          <div class="tool-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h4 class="mb-3">Wedding Organization</h4>
+          <p class="text-muted">Increase wedding day satisfaction with organization tools for a dream wedding day.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-icon">
+            <i class="bi bi-phone"></i>
+          </div>
+          <h4 class="mb-3">Access Anywhere</h4>
+          <p class="text-muted">Transform venues on-the-go in real-time during venue visits with your mobile phone.</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- How It Works Section -->
-  <section class="how-it-works-section py-5 bg-light">
+  <section class="how-it-works-section py-5">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="display-5 fw-bold mb-3">How It Works</h2>
-          <p class="lead text-muted">Transform your venue in three simple steps</p>
+          <h2 class="section-title text-dark">How It Works</h2>
+          <p class="section-subtitle text-muted">Transform your venue in three simple steps</p>
         </div>
       </div>
       
       <div class="row g-4">
         <div class="col-lg-4">
-          <div class="step-card text-center">
+          <div class="step-card">
             <div class="step-number">1</div>
             <div class="step-icon">
               <i class="bi bi-cloud-upload"></i>
@@ -178,24 +277,24 @@
         </div>
         
         <div class="col-lg-4">
-          <div class="step-card text-center">
+          <div class="step-card">
             <div class="step-number">2</div>
             <div class="step-icon">
               <i class="bi bi-sliders"></i>
             </div>
             <h4 class="mb-3">Choose Your Style</h4>
-            <p class="text-muted">Select from rustic, modern, garden, ballroom, and dozens of other wedding styles. Customize colors, season, and guest count.</p>
+            <p class="text-muted">Select from rustic, modern, garden, ballroom, and dozens of other wedding styles. Customize colors, season, budget and guest count.</p>
           </div>
         </div>
         
         <div class="col-lg-4">
-          <div class="step-card text-center">
+          <div class="step-card">
             <div class="step-number">3</div>
             <div class="step-icon">
               <i class="bi bi-heart-eyes"></i>
             </div>
             <h4 class="mb-3">See Your Dream</h4>
-            <p class="text-muted">Watch your venue transform into your perfect wedding space. Save favorites, share with your partner, and plan with confidence.</p>
+            <p class="text-muted">Watch your venue transform into your perfect wedding space. Save favorites, share, and plan with confidence.</p>
           </div>
         </div>
       </div>
@@ -203,12 +302,12 @@
   </section>
 
   <!-- Social Proof Section -->
-  <section class="testimonials-section py-5">
+  <section class="testimonials-section">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="display-5 fw-bold mb-3">Love Stories Made Real</h2>
-          <p class="lead text-muted">See what couples are saying about their DreamWedAI experience</p>
+          <h2 class="section-title text-dark">Love Stories Made Real</h2>
+          <p class="section-subtitle text-muted">See what couples and wedding planners are saying about their DreamWedAI experience</p>
         </div>
       </div>
       
@@ -223,11 +322,11 @@
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
               </div>
-              <p class="mb-3">"DreamWedAI helped us visualize our outdoor wedding perfectly. We could see exactly how the space would look decorated, which made planning so much easier!"</p>
+              <p class="mb-3">"DreamWedAI helped us visualize our spring outdoor wedding perfectly. We could see exactly how the space will look decorated, which made picking a season so much easier!"</p>
               <div class="testimonial-author">
                 <div class="author-info">
-                  <strong>Sarah & Mike</strong>
-                  <div class="text-muted">Garden Wedding • May 2024</div>
+                  <strong>Danielle & Antwon</strong>
+                  <div class="text-muted">Garden Wedding • May 202</div>
                 </div>
               </div>
             </div>
@@ -247,8 +346,8 @@
               <p class="mb-3">"The barn looked so different than I imagined! DreamWedAI showed us how beautiful it could be with the right decorations. Our guests were amazed!"</p>
               <div class="testimonial-author">
                 <div class="author-info">
-                  <strong>Emma & James</strong>
-                  <div class="text-muted">Rustic Wedding • September 2024</div>
+                  <strong>Anna & James</strong>
+                  <div class="text-muted">Rustic Wedding • September 2025</div>
                 </div>
               </div>
             </div>
@@ -265,11 +364,11 @@
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
               </div>
-              <p class="mb-3">"Being able to share our wedding vision with our families was amazing. The wedding page made it so easy to show everyone what we were planning!"</p>
+              <p class="mb-3">"Being able to share wedding visions with our clients is amazing. The organization and support tools offered has been a game changer in customer satisfaction."</p>
               <div class="testimonial-author">
                 <div class="author-info">
-                  <strong>Alex & Jordan</strong>
-                  <div class="text-muted">Modern Wedding • October 2024</div>
+                  <strong>Alex</strong>
+                  <div class="text-muted">Modern Weddings • Miami, FL</div>
                 </div>
               </div>
             </div>
@@ -279,358 +378,34 @@
     </div>
   </section>
 
-  <!-- CTA Section -->
-  <section class="cta-section py-5">
+  <!-- Final CTA Section -->
+  <section class="final-cta">
     <div class="container">
       <div class="row">
-        <div class="col-12">
-          <div class="cta-card text-center">
-            <h2 class="display-5 fw-bold mb-3 text-white">Ready to See Your Dream Wedding?</h2>
-            <p class="lead mb-4 text-white-50">Join thousands of couples who've transformed their wedding vision into reality</p>
-            <div class="cta-buttons">
-              {% if user.is_authenticated %}
-                <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-light btn-lg px-5 py-3 me-3">
-                  <i class="bi bi-magic"></i> Start Transforming
-                </a>
-              {% else %}
-                <a href="{% url 'account_signup' %}" class="btn btn-light btn-lg px-5 py-3 me-3">
-                  <i class="bi bi-heart-fill"></i> Get Started Free
-                </a>
-              {% endif %}
-              <a href="{% url 'subscriptions:pricing' %}" class="btn btn-outline-light btn-lg px-5 py-3">
-                <i class="bi bi-tag"></i> View Pricing
+        <div class="col-12 text-center">
+          <h2 class="section-title">Ready to See Your Dream Wedding?</h2>
+          <p class="section-subtitle">Join thousands of couples who wedding vision into reality</p>
+          <div class="mb-4">
+            {% if user.is_authenticated %}
+              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
+                <i class="bi bi-magic"></i> See your wedding day
               </a>
-            </div>
+            {% else %}
+              <a href="{% url 'account_signup' %}" class="hero-cta-primary me-3">
+                <i class="bi bi-magic"></i> See your wedding day
+              </a>
+            {% endif %}
+            <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
+              <i class="bi bi-info-circle"></i> Learn More
+            </a>
           </div>
+          <p class="small opacity-75 mb-0">
+            <i class="bi bi-shield-check me-2"></i>
+            No credit card required for free wedding page • Sign-up & Cancel anytime
+          </p>
         </div>
       </div>
     </div>
   </section>
 </div>
-
-<style>
-.homepage {
-  overflow-x: hidden;
-}
-
-/* Hero Section */
-.hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-}
-
-.hero-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #f8b500 100%);
-  opacity: 0.1;
-  z-index: 1;
-}
-
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
-
-.text-gradient {
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero-buttons .btn {
-  border-radius: 50px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.hero-buttons .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.hero-stats {
-  margin-top: 2rem;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #2c3e50;
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-/* Hero Animation */
-.hero-image-container {
-  position: relative;
-  height: 500px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.floating-card {
-  position: absolute;
-  background: white;
-  border-radius: 20px;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-  animation: float 3s ease-in-out infinite;
-}
-
-.floating-card.card-1 {
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.floating-card.card-2 {
-  top: 60%;
-  right: 10%;
-  animation-delay: 1s;
-}
-
-.floating-card.card-3 {
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 2s;
-}
-
-.card-content {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.card-icon {
-  font-size: 1.5rem;
-}
-
-.card-text {
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.hero-main-image {
-  width: 300px;
-  height: 300px;
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.3);
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-/* Features Section */
-.features-section {
-  padding: 5rem 0;
-}
-
-.feature-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
-
-.feature-card:hover::before {
-  transform: scaleX(1);
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-}
-
-.feature-icon {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 2rem;
-  color: white;
-}
-
-/* How It Works Section */
-.how-it-works-section {
-  background: #f8f9fa;
-}
-
-.step-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  position: relative;
-  border: 1px solid #e9ecef;
-  height: 100%;
-  transition: all 0.3s ease;
-}
-
-.step-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-}
-
-.step-number {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #ff6b9d, #c44569);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.step-icon {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 1rem auto;
-  font-size: 2rem;
-  color: white;
-}
-
-/* Testimonials Section */
-.testimonials-section {
-  padding: 5rem 0;
-  background: white;
-}
-
-.testimonial-card {
-  background: #f8f9fa;
-  border-radius: 20px;
-  padding: 2rem;
-  height: 100%;
-  border: 1px solid #e9ecef;
-  transition: all 0.3s ease;
-}
-
-.testimonial-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-}
-
-.stars {
-  color: #f8b500;
-}
-
-.testimonial-author {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-/* CTA Section */
-.cta-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-}
-
-.cta-card {
-  padding: 3rem 2rem;
-  position: relative;
-  z-index: 2;
-}
-
-.cta-buttons .btn {
-  border-radius: 50px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.cta-buttons .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .hero-section {
-    padding: 3rem 0;
-  }
-  
-  .display-3 {
-    font-size: 2.5rem;
-  }
-  
-  .hero-image-container {
-    height: 300px;
-    margin-top: 2rem;
-  }
-  
-  .hero-main-image {
-    width: 200px;
-    height: 200px;
-  }
-  
-  .floating-card {
-    display: none;
-  }
-  
-  .hero-buttons .btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-  
-  .cta-buttons .btn {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-}
-</style>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

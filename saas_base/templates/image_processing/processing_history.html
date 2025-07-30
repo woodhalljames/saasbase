@@ -1,4 +1,4 @@
-<!-- saas_base/templates/image_processing/processing_history.html - COMPLETE WITH FAVORITES -->
+<!-- saas_base/templates/image_processing/processing_history.html - SIMPLIFIED WITHOUT TEMPORARY LOGIC -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -53,22 +53,6 @@
                             <div class="position-absolute top-0 start-0 p-2">
                               {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_img %}
                             </div>
-                            
-                            <!-- Save/Temporary Status Badge -->
-                            {% if processed_img.is_saved %}
-                              <span class="position-absolute top-0 end-0 badge bg-success m-2">
-                                <i class="bi bi-check-circle"></i> Saved
-                              </span>
-                            {% else %}
-                              <span class="position-absolute top-0 end-0 badge bg-warning text-dark m-2">
-                                <i class="bi bi-clock"></i> Temporary
-                              </span>
-                              {% if processed_img.time_until_deletion %}
-                                <span class="position-absolute top-0 end-0 badge bg-danger m-2" style="margin-top: 32px !important;">
-                                  <i class="bi bi-hourglass-split"></i> {{ processed_img.time_until_deletion }} left
-                                </span>
-                              {% endif %}
-                            {% endif %}
                           </div>
                         {% endfor %}
                       {% else %}
@@ -166,45 +150,48 @@
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
                           <div class="mb-3">
-                            <!-- Save/Discard buttons for temporary images -->
-                            {% if not processed_img.is_saved %}
-                              <div class="d-grid gap-2 mb-2">
-                                <button class="btn btn-success btn-sm save-btn" 
-                                        data-image-id="{{ processed_img.id }}">
-                                  <i class="bi bi-collection"></i> Save to Collection
-                                </button>
-                                <button class="btn btn-outline-danger btn-sm discard-btn" 
-                                        data-image-id="{{ processed_img.id }}">
-                                  <i class="bi bi-trash"></i> Discard
-                                </button>
-                              </div>
-                              <hr class="my-2">
-                            {% else %}
-                              <!-- Show which collection it's saved in -->
-                              {% with collection_item=processed_img.collectionitem_set.first %}
-                                {% if collection_item %}
-                                  <div class="alert alert-success py-2 mb-2">
-                                    <small>
-                                      <i class="bi bi-collection-fill"></i> 
-                                      Saved in "{{ collection_item.collection.name }}"
-                                    </small>
-                                  </div>
-                                {% endif %}
-                              {% endwith %}
-                            {% endif %}
-                            
-                            <!-- Standard action buttons -->
+                            <!-- Action buttons -->
                             <div class="d-grid gap-2 mb-2">
+                              <a href="{% url 'image_processing:processed_image_detail' processed_img.pk %}" 
+                                 class="btn btn-success btn-sm">
+                                <i class="bi bi-eye"></i> View Details
+                              </a>
                               <a href="{{ processed_img.processed_image.url }}" 
                                  class="btn btn-outline-primary btn-sm" 
                                  target="_blank">
-                                <i class="bi bi-eye"></i> View Full Size
+                                <i class="bi bi-arrows-fullscreen"></i> View Full Size
                               </a>
                               <a href="{{ processed_img.processed_image.url }}" 
                                  class="btn btn-outline-secondary btn-sm" 
                                  download="wedding-{{ job.wedding_theme }}-{{ job.space_type }}.png">
                                 <i class="bi bi-download"></i> Download
                               </a>
+                            </div>
+                            
+                            <!-- Collection Actions -->
+                            <div class="d-grid gap-2">
+                              <div class="dropdown">
+                                <button class="btn btn-outline-info btn-sm dropdown-toggle w-100" 
+                                        type="button" 
+                                        data-bs-toggle="dropdown">
+                                  <i class="bi bi-collection"></i> Add to Collection
+                                </button>
+                                <ul class="dropdown-menu">
+                                  <li><h6 class="dropdown-header">Add to Collection</h6></li>
+                                  <li><a class="dropdown-item add-to-collection" 
+                                         href="#" 
+                                         data-processed-image-id="{{ processed_img.id }}"
+                                         data-collection-type="default">
+                                    <i class="bi bi-star"></i> Default Collection
+                                  </a></li>
+                                  <li><hr class="dropdown-divider"></li>
+                                  <li>
+                                    <a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+                                      <i class="bi bi-plus"></i> Manage Collections
+                                    </a>
+                                  </li>
+                                </ul>
+                              </div>
                             </div>
                           </div>
                         {% endfor %}
@@ -309,68 +296,6 @@
   {% endif %}
 </div>
 
-<!-- Save to Collection Modal -->
-<div class="modal fade" id="saveToCollectionModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Save to Collection</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <form id="saveToCollectionForm">
-          <!-- Collection Choice -->
-          <div class="mb-3">
-            <label class="form-label">Where would you like to save this?</label>
-            
-            <!-- Default Collection Option -->
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="collection_choice" value="default" id="defaultCollection" checked>
-              <label class="form-check-label" for="defaultCollection">
-                <strong>Saved Transformations</strong> (default collection)
-              </label>
-            </div>
-            
-            <!-- Existing Collection Option -->
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="collection_choice" value="existing" id="existingCollection">
-              <label class="form-check-label" for="existingCollection">
-                Choose existing collection
-              </label>
-            </div>
-            
-            <!-- Existing Collections Dropdown -->
-            <div id="existingCollectionSelect" class="ms-4 mt-2" style="display: none;">
-              <select class="form-select" name="collection_id" id="collectionSelect">
-                <option value="">Loading collections...</option>
-              </select>
-            </div>
-            
-            <!-- New Collection Option -->
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="collection_choice" value="new" id="newCollection">
-              <label class="form-check-label" for="newCollection">
-                Create new collection
-              </label>
-            </div>
-            
-            <!-- New Collection Name Input -->
-            <div id="newCollectionInput" class="ms-4 mt-2" style="display: none;">
-              <input type="text" class="form-control" name="new_collection_name" placeholder="Enter collection name" maxlength="100">
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" id="confirmSaveBtn">
-          <i class="bi bi-collection"></i> Save to Collection
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 function checkJobStatus(jobId) {
     fetch(`/studio/job/${jobId}/status/`)
@@ -397,162 +322,42 @@ function checkJobStatus(jobId) {
         });
 }
 
-// Handle save and discard buttons
+// Handle add to collection buttons
 document.addEventListener('DOMContentLoaded', function() {
-    let currentImageId = null;
-    
-    // Save buttons - open modal instead of direct save
-    document.querySelectorAll('.save-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            currentImageId = this.dataset.imageId;
-            openSaveToCollectionModal();
-        });
-    });
-    
-    // Collection choice radio buttons
-    document.querySelectorAll('input[name="collection_choice"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            toggleCollectionInputs(this.value);
-        });
-    });
-    
-    // Confirm save button
-    document.getElementById('confirmSaveBtn').addEventListener('click', function() {
-        saveToCollection();
-    });
-    
-    function openSaveToCollectionModal() {
-        // Load user's collections
-        fetch('{% url "image_processing:get_user_collections" %}')
-            .then(response => response.json())
-            .then(data => {
-                const select = document.getElementById('collectionSelect');
-                select.innerHTML = '<option value="">Choose a collection...</option>';
-                
-                data.collections.forEach(collection => {
-                    const option = document.createElement('option');
-                    option.value = collection.id;
-                    option.textContent = `${collection.name} (${collection.count} items)`;
-                    select.appendChild(option);
-                });
-                
-                if (data.collections.length === 0) {
-                    select.innerHTML = '<option value="">No collections yet</option>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading collections:', error);
-                document.getElementById('collectionSelect').innerHTML = '<option value="">Error loading collections</option>';
-            });
-        
-        // Reset form and show modal
-        document.getElementById('saveToCollectionForm').reset();
-        document.getElementById('defaultCollection').checked = true;
-        toggleCollectionInputs('default');
-        
-        new bootstrap.Modal(document.getElementById('saveToCollectionModal')).show();
-    }
-    
-    function toggleCollectionInputs(choice) {
-        const existingSelect = document.getElementById('existingCollectionSelect');
-        const newInput = document.getElementById('newCollectionInput');
-        
-        existingSelect.style.display = choice === 'existing' ? 'block' : 'none';
-        newInput.style.display = choice === 'new' ? 'block' : 'none';
-    }
-    
-    function saveToCollection() {
-        if (!currentImageId) return;
-        
-        const formData = new FormData();
-        const choice = document.querySelector('input[name="collection_choice"]:checked').value;
-        
-        formData.append('collection_choice', choice);
-        
-        if (choice === 'existing') {
-            const collectionId = document.getElementById('collectionSelect').value;
-            if (!collectionId) {
-                alert('Please select a collection');
-                return;
-            }
-            formData.append('collection_id', collectionId);
-        } else if (choice === 'new') {
-            const newName = document.querySelector('input[name="new_collection_name"]').value.trim();
-            if (!newName) {
-                alert('Please enter a collection name');
-                return;
-            }
-            formData.append('new_collection_name', newName);
-        }
-        
-        const btn = document.getElementById('confirmSaveBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
-        
-        fetch(`/studio/processed/${currentImageId}/save/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('saveToCollectionModal')).hide();
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                showToast(data.message, 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-collection"></i> Save to Collection';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Error saving image', 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-collection"></i> Save to Collection';
-        });
-    }
-    
-    // Discard buttons
-    document.querySelectorAll('.discard-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            if (!confirm('Are you sure you want to discard this transformation? This cannot be undone.')) {
-                return;
+    document.querySelectorAll('.add-to-collection').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const processedImageId = this.dataset.processedImageId;
+            const collectionType = this.dataset.collectionType;
+            
+            // Simple add to default collection
+            const formData = new FormData();
+            formData.append('processed_image_id', processedImageId);
+            if (collectionType === 'default') {
+                // Will use default collection
+                formData.append('use_default', 'true');
             }
             
-            const imageId = this.dataset.imageId;
-            const btn = this;
-            
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Discarding...';
-            
-            fetch(`/studio/processed/${imageId}/discard/`, {
+            fetch('{% url "image_processing:add_to_collection" %}', {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     showToast(data.message, 'success');
-                    setTimeout(() => window.location.reload(), 1000);
                 } else {
-                    showToast(data.message, 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+                    showToast(data.message || 'Failed to add to collection', 'warning');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showToast('Error discarding image', 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-trash"></i> Discard';
+                showToast('Network error', 'error');
             });
         });
     });
@@ -561,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function showToast(message, type) {
     // Simple toast notification
     const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed top-0 end-0 m-3`;
     toast.style.zIndex = '9999';
     toast.innerHTML = `
         ${message}

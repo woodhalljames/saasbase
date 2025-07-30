@@ -1,4 +1,4 @@
-# image_processing/views.py - Fixed transaction handling for Celery tasks
+# image_processing/views.py - Simplified without temporary save logic
 
 import json
 import logging
@@ -287,15 +287,14 @@ def processing_history(request):
 
 @login_required 
 def image_gallery(request):
-    """Display user's uploaded images and saved transformations"""
+    """Display user's uploaded images and processed transformations"""
     # Original uploaded images
     uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
-    # Saved processed images
-    saved_transformations = ProcessedImage.objects.filter(
-        processing_job__user_image__user=request.user,
-        is_saved=True
-    ).select_related('processing_job__user_image').order_by('-saved_at')
+    # All processed images
+    all_transformations = ProcessedImage.objects.filter(
+        processing_job__user_image__user=request.user
+    ).select_related('processing_job__user_image').order_by('-created_at')
     
     # Get usage data
     from usage_limits.usage_tracker import UsageTracker
@@ -316,14 +315,14 @@ def image_gallery(request):
             'url': img.thumbnail.url if img.thumbnail else img.image.url
         })
     
-    for transformation in saved_transformations:
+    for transformation in all_transformations:
         job = transformation.processing_job
         theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
         space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
         all_images.append({
             'type': 'transformation',
             'object': transformation,
-            'date': transformation.saved_at,
+            'date': transformation.created_at,
             'title': f"{theme_display} {space_display}",
             'url': transformation.processed_image.url
         })
@@ -340,7 +339,7 @@ def image_gallery(request):
         'page_obj': page_obj,
         'total_images': len(all_images),
         'uploaded_count': uploaded_images.count(),
-        'saved_count': saved_transformations.count(),
+        'transformation_count': all_transformations.count(),
         'usage_data': usage_data,
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
@@ -351,7 +350,7 @@ def image_gallery(request):
 
 @login_required
 def processed_image_detail(request, pk):
-    """View details of a processed wedding image with save/discard options"""
+    """View details of a processed wedding image"""
     processed_image = get_object_or_404(
         ProcessedImage, 
         pk=pk, 
@@ -374,149 +373,73 @@ def processed_image_detail(request, pk):
 
 @login_required
 @require_POST
-def save_processed_image(request, pk):
-    """Save a processed image to user's permanent collection"""
-    processed_image = get_object_or_404(
-        ProcessedImage, 
-        pk=pk, 
-        processing_job__user_image__user=request.user
-    )
+def add_to_collection(request):
+    """Add an image to a collection"""
+    from django.utils import timezone
     
-    if processed_image.is_saved:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'Image is already saved'
-            })
-        messages.info(request, 'This transformation is already saved')
-        return redirect('image_processing:processed_image_detail', pk=pk)
-    
-    # Get collection choice from request
-    collection_choice = request.POST.get('collection_choice')  # 'default', 'existing', or 'new'
-    collection_id = request.POST.get('collection_id')  # for existing collection
-    new_collection_name = request.POST.get('new_collection_name')  # for new collection
+    collection_id = request.POST.get('collection_id')
+    processed_image_id = request.POST.get('processed_image_id')
+    user_image_id = request.POST.get('user_image_id')
+    use_default = request.POST.get('use_default') == 'true'
     
     try:
         # Determine which collection to use
-        if collection_choice == 'new' and new_collection_name:
-            # Create new collection
-            collection, created = Collection.objects.get_or_create(
-                user=request.user,
-                name=new_collection_name.strip(),
-                defaults={'description': f'Created when saving wedding transformation'}
-            )
-            if not created:
-                # Collection name already exists
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({
-                        'success': False,
-                        'message': f'Collection "{new_collection_name}" already exists'
-                    })
-                messages.error(request, f'Collection "{new_collection_name}" already exists')
-                return redirect('image_processing:processed_image_detail', pk=pk)
-                
-        elif collection_choice == 'existing' and collection_id:
-            # Use existing collection
-            collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-        else:
-            # Use default collection
+        if use_default or not collection_id:
             collection = Collection.get_or_create_default(request.user)
+        else:
+            collection = get_object_or_404(Collection, id=collection_id, user=request.user)
         
-        # Save the image to the collection
-        processed_image.mark_as_saved(collection=collection)
-        
-        # Handle AJAX requests
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Saved to "{collection.name}"!',
-                'is_saved': True,
-                'collection_name': collection.name,
-                'saved_at': processed_image.saved_at.isoformat()
-            })
-        
-        messages.success(request, f'Wedding transformation saved to "{collection.name}"!')
-        
+        if processed_image_id:
+            processed_image = get_object_or_404(
+                ProcessedImage,
+                id=processed_image_id,
+                processing_job__user_image__user=request.user
+            )
+            
+            collection_item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                processed_image=processed_image,
+                defaults={'notes': f'Added on {timezone.now().strftime("%B %d, %Y")}'}
+            )
+            
+            if created:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Added to "{collection.name}"!'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Image already in this collection'
+                })
+                
+        elif user_image_id:
+            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
+            
+            collection_item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                user_image=user_image,
+                defaults={'notes': f'Added on {timezone.now().strftime("%B %d, %Y")}'}
+            )
+            
+            if created:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Added to "{collection.name}"!'
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Image already in this collection'
+                })
+        else:
+            return JsonResponse({'success': False, 'message': 'No image specified'})
+            
     except Exception as e:
-        logger.error(f"Error saving image to collection: {str(e)}")
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'Error saving transformation'
-            })
-        messages.error(request, 'Error saving transformation')
-    
-    # Redirect back to the image detail page
-    return redirect('image_processing:processed_image_detail', pk=pk)
+        logger.error(f"Error adding to collection: {str(e)}")
+        return JsonResponse({'success': False, 'message': 'Error adding to collection'})
 
 
-@login_required
-@require_POST
-def discard_processed_image(request, pk):
-    """Discard a processed image (delete immediately)"""
-    processed_image = get_object_or_404(
-        ProcessedImage, 
-        pk=pk, 
-        processing_job__user_image__user=request.user
-    )
-    
-    if processed_image.is_saved:
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'Cannot discard a saved image'
-            })
-        messages.error(request, 'Cannot discard a saved transformation')
-        return redirect('image_processing:processed_image_detail', pk=pk)
-    
-    # Delete the image file and record
-    try:
-        import os
-        if processed_image.processed_image and os.path.exists(processed_image.processed_image.path):
-            os.remove(processed_image.processed_image.path)
-        processed_image.delete()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': 'Transformation discarded',
-                'redirect_url': reverse('image_processing:processing_history')
-            })
-        
-        messages.success(request, 'Wedding transformation discarded')
-        return redirect('image_processing:processing_history')
-        
-    except Exception as e:
-        logger.error(f"Error discarding image: {str(e)}")
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': 'Error discarding transformation'
-            })
-        messages.error(request, 'Error discarding transformation')
-        return redirect('image_processing:processed_image_detail', pk=pk)
-
-
-# Collection and favorites views remain the same but simplified
-@login_required
-def collections_list(request):
-    """Display user's wedding inspiration collections"""
-    # Get default collection separately
-    default_collection = Collection.objects.filter(user=request.user, is_default=True).first()
-    
-    # Get custom collections (non-default)
-    collections = Collection.objects.filter(user=request.user, is_default=False).order_by('-updated_at')
-    
-    # Get recent favorites
-    recent_favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')[:6]
-    
-    context = {
-        'default_collection': default_collection,
-        'collections': collections,
-        'recent_favorites': recent_favorites,
-    }
-    
-    return render(request, 'image_processing/collections_list.html', context)
 @login_required
 @require_POST
 def toggle_favorite(request):
@@ -683,6 +606,27 @@ def collection_detail(request, collection_id):
 
 
 @login_required
+def collections_list(request):
+    """Display user's wedding inspiration collections"""
+    # Get default collection separately
+    default_collection = Collection.objects.filter(user=request.user, is_default=True).first()
+    
+    # Get custom collections (non-default)
+    collections = Collection.objects.filter(user=request.user, is_default=False).order_by('-updated_at')
+    
+    # Get recent favorites
+    recent_favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')[:6]
+    
+    context = {
+        'default_collection': default_collection,
+        'collections': collections,
+        'recent_favorites': recent_favorites,
+    }
+    
+    return render(request, 'image_processing/collections_list.html', context)
+
+
+@login_required
 @require_POST
 def ajax_upload_image(request):
     """Handle AJAX image uploads without page reload"""
@@ -728,69 +672,54 @@ def ajax_upload_image(request):
             'success': False,
             'error': f'Upload failed: {str(e)}'
         }, status=500)
+
+
+@login_required
+def delete_processed_image(request, pk):
+    """Delete a processed image (user's own images only)"""
+    if request.method == 'POST':
+        processed_image = get_object_or_404(
+            ProcessedImage, 
+            pk=pk, 
+            processing_job__user_image__user=request.user
+        )
+        
+        try:
+            import os
+            # Delete the image file
+            if processed_image.processed_image and os.path.exists(processed_image.processed_image.path):
+                os.remove(processed_image.processed_image.path)
+            
+            # Delete from database
+            processed_image.delete()
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Image deleted successfully',
+                    'redirect_url': reverse('image_processing:processing_history')
+                })
+            
+            messages.success(request, 'Wedding transformation deleted successfully')
+            return redirect('image_processing:processing_history')
+            
+        except Exception as e:
+            logger.error(f"Error deleting processed image: {str(e)}")
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Error deleting image'
+                })
+            messages.error(request, 'Error deleting image')
+            return redirect('image_processing:processed_image_detail', pk=pk)
     
-@login_required 
-def image_gallery(request):
-    """Display user's uploaded images and saved transformations"""
-    # Original uploaded images
-    uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
+    # GET request - show confirmation page
+    processed_image = get_object_or_404(
+        ProcessedImage, 
+        pk=pk, 
+        processing_job__user_image__user=request.user
+    )
     
-    # Saved processed images with favorite status
-    saved_transformations = ProcessedImage.objects.filter(
-        processing_job__user_image__user=request.user,
-        is_saved=True
-    ).select_related('processing_job__user_image').order_by('-saved_at')
-    
-    # Add favorite status to processed images
-    add_favorite_status_to_processed_images(request.user, saved_transformations)
-    
-    # Get usage data
-    from usage_limits.usage_tracker import UsageTracker
-    usage_data = UsageTracker.get_usage_data(request.user)
-    
-    # Combine and paginate all images
-    from itertools import chain
-    from django.core.paginator import Paginator
-    
-    # Create a combined list with type indicators
-    all_images = []
-    for img in uploaded_images:
-        all_images.append({
-            'type': 'original',
-            'object': img,
-            'date': img.uploaded_at,
-            'title': img.original_filename,
-            'url': img.thumbnail.url if img.thumbnail else img.image.url
-        })
-    
-    for transformation in saved_transformations:
-        job = transformation.processing_job
-        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
-        space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
-        all_images.append({
-            'type': 'transformation',
-            'object': transformation,
-            'date': transformation.saved_at,
-            'title': f"{theme_display} {space_display}",
-            'url': transformation.processed_image.url
-        })
-    
-    # Sort by date (newest first)
-    all_images.sort(key=lambda x: x['date'], reverse=True)
-    
-    # Pagination
-    paginator = Paginator(all_images, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'total_images': len(all_images),
-        'uploaded_count': uploaded_images.count(),
-        'saved_count': saved_transformations.count(),
-        'usage_data': usage_data,
-        'wedding_themes': WEDDING_THEMES,
-        'space_types': SPACE_TYPES,
-    }
-    
-    return render(request, 'image_processing/image_gallery.html', context)
+    return render(request, 'image_processing/confirm_delete.html', {
+        'processed_image': processed_image
+    })

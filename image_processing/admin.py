@@ -1,4 +1,4 @@
-# image_processing/admin.py
+# image_processing/admin.py - Updated without temporary save fields
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, Favorite, WEDDING_THEMES, SPACE_TYPES
@@ -31,8 +31,8 @@ class UserImageAdmin(admin.ModelAdmin):
 class ProcessedImageInline(admin.TabularInline):
     model = ProcessedImage
     extra = 0
-    readonly_fields = ('processed_image_preview', 'file_size', 'width', 'height', 'stability_seed', 'created_at', 'is_saved')
-    fields = ('processed_image_preview', 'is_saved', 'file_size', 'width', 'height', 'stability_seed', 'created_at')
+    readonly_fields = ('processed_image_preview', 'file_size', 'width', 'height', 'stability_seed', 'created_at')
+    fields = ('processed_image_preview', 'file_size', 'width', 'height', 'stability_seed', 'created_at')
     
     def processed_image_preview(self, obj):
         if obj.processed_image:
@@ -92,10 +92,10 @@ class ImageProcessingJobAdmin(admin.ModelAdmin):
 
 @admin.register(ProcessedImage)
 class ProcessedImageAdmin(admin.ModelAdmin):
-    list_display = ('processing_job', 'wedding_style', 'image_preview', 'dimensions', 'file_size_display', 'is_saved', 'created_at')
-    list_filter = ('is_saved', 'processing_job__wedding_theme', 'processing_job__space_type', 'created_at')
+    list_display = ('processing_job', 'wedding_style', 'image_preview', 'dimensions', 'file_size_display', 'created_at')
+    list_filter = ('processing_job__wedding_theme', 'processing_job__space_type', 'created_at')
     search_fields = ('processing_job__user_image__original_filename', 'processing_job__user_image__user__username')
-    readonly_fields = ('processing_job', 'file_size', 'width', 'height', 'stability_seed', 'finish_reason', 'created_at', 'saved_at', 'image_preview')
+    readonly_fields = ('processing_job', 'file_size', 'width', 'height', 'stability_seed', 'finish_reason', 'created_at', 'image_preview')
     
     def image_preview(self, obj):
         if obj.processed_image:

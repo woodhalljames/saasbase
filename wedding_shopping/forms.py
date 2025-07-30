@@ -203,7 +203,7 @@ SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=2,  # Start with 2 empty forms
+    extra=1,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
     max_num=8,

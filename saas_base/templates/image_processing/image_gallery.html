@@ -1,4 +1,4 @@
-<!-- saas_base/templates/image_processing/image_gallery.html - FIXED VISUALIZE LINK -->
+<!-- saas_base/templates/image_processing/image_gallery.html - SIMPLIFIED WITHOUT TEMPORARY LOGIC -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -11,7 +11,7 @@
   <div class="row mb-4">
     <div class="col-md-6">
       <h1>My Images</h1>
-      <p class="text-muted">{{ total_images }} image{{ total_images|pluralize }} uploaded</p>
+      <p class="text-muted">{{ total_images }} image{{ total_images|pluralize }} • {{ uploaded_count }} original{{ uploaded_count|pluralize }}, {{ transformation_count }} transformation{{ transformation_count|pluralize }}</p>
     </div>
     <div class="col-md-6 text-end">
       <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary me-2">
@@ -85,13 +85,14 @@
                 
                 <div class="mt-auto">
                   <a href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.object.pk }}" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-magic"></i> Visualize
+                    <i class="bi bi-magic"></i> Transform
                   </a>
                 </div>
               {% else %}
                 <small class="text-muted mb-2">
-                  <i class="bi bi-calendar"></i> Saved {{ image.object.saved_at|date:"M d, Y" }}<br>
-                  <i class="bi bi-magic"></i> Wedding Transformation
+                  <i class="bi bi-calendar"></i> Created {{ image.object.created_at|date:"M d, Y" }}<br>
+                  <i class="bi bi-magic"></i> Wedding Transformation<br>
+                  <i class="bi bi-hdd"></i> {{ image.object.file_size|filesizeformat }}
                 </small>
                 
                 <div class="mt-auto">
@@ -120,6 +121,14 @@
                         <i class="bi bi-download"></i> Download
                       </a>
                     </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <a class="dropdown-item add-to-collection" 
+                         href="#" 
+                         data-user-image-id="{{ image.object.id }}">
+                        <i class="bi bi-collection"></i> Add to Collection
+                      </a>
+                    </li>
                   {% else %}
                     <li>
                       <a class="dropdown-item" href="{{ image.object.processed_image.url }}" target="_blank">
@@ -131,13 +140,22 @@
                         <i class="bi bi-download"></i> Download
                       </a>
                     </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <a class="dropdown-item add-to-collection" 
+                         href="#" 
+                         data-processed-image-id="{{ image.object.id }}">
+                        <i class="bi bi-collection"></i> Add to Collection
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item text-danger" 
+                         href="#" 
+                         onclick="confirmDelete('{{ image.object.pk }}', '{{ image.title }}', 'transformation')">
+                        <i class="bi bi-trash"></i> Delete
+                      </a>
+                    </li>
                   {% endif %}
-                  <li><hr class="dropdown-divider"></li>
-                  <li>
-                    <a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ image.object.pk }}, '{{ image.title }}')">
-                      <i class="bi bi-trash"></i> Delete
-                    </a>
-                  </li>
                 </ul>
               </div>
             </div>
@@ -212,7 +230,7 @@
       </div>
       <div class="modal-body">
         <p>Are you sure you want to delete <strong id="deleteImageName"></strong>?</p>
-        <p class="text-danger"><small>This action cannot be undone. All processed versions will also be deleted.</small></p>
+        <p class="text-danger"><small>This action cannot be undone.</small></p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -224,21 +242,115 @@
 
 <script>
 let deleteImageId = null;
+let deleteImageType = null;
 
-function confirmDelete(imageId, imageName) {
+function confirmDelete(imageId, imageName, imageType) {
     deleteImageId = imageId;
+    deleteImageType = imageType;
     document.getElementById('deleteImageName').textContent = imageName;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-    if (deleteImageId) {
-        // Here you would implement the delete functionality
-        // For now, we'll just show an alert
-        alert('Delete functionality would be implemented here');
-        bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+    if (deleteImageId && deleteImageType) {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
+        
+        let deleteUrl;
+        if (deleteImageType === 'transformation') {
+            deleteUrl = `/studio/processed/${deleteImageId}/delete/`;
+        } else {
+            // Add original image delete URL if needed
+            deleteUrl = `/studio/image/${deleteImageId}/delete/`;
+        }
+        
+        fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(data.message || 'Error deleting image', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Network error', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = 'Delete';
+        });
     }
 });
+
+// Add to collection functionality
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.add-to-collection').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const processedImageId = this.dataset.processedImageId;
+            const userImageId = this.dataset.userImageId;
+            
+            const formData = new FormData();
+            if (processedImageId) {
+                formData.append('processed_image_id', processedImageId);
+            } else if (userImageId) {
+                formData.append('user_image_id', userImageId);
+            }
+            formData.append('use_default', 'true');
+            
+            fetch('{% url "image_processing:add_to_collection" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.message || 'Failed to add to collection', 'warning');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Network error', 'error');
+            });
+        });
+    });
+});
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
 </script>
 
 <!-- Bootstrap Icons -->
