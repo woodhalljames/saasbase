@@ -140,15 +140,16 @@
           
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
-              <a class="nav-link text-white-nav" href="{% url 'account_login' %}">
-                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-              </a>
-            </li>
-            <li class="nav-item">
               <a class="btn btn-gradient-rose ms-2 px-3 py-2" href="{% url 'account_signup' %}">
                 <i class="bi bi-heart-fill me-1"></i> Get Started
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link text-white-nav" href="{% url 'account_login' %}">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+              </a>
+            </li>
+            
           </ul>
         {% endif %}
       </div>

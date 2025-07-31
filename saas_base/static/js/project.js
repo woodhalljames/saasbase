@@ -647,6 +647,11 @@ class FormEnhancements {
         document.addEventListener('DOMContentLoaded', () => {
             this.setupFormValidation();
             this.setupInputEnhancements();
+            this.setupImagePreview();
+            this.setupDeleteConfirmations();
+            this.setupCollectionActions();
+            this.setupFavoriteHearts();
+            this.setupFormsetManagement();
         });
     }
 
@@ -715,6 +720,812 @@ class FormEnhancements {
             }
         });
     }
+
+    setupImagePreview() {
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Find existing preview or create new one
+                        let preview = input.parentNode.querySelector('.image-preview');
+                        if (!preview) {
+                            preview = document.createElement('div');
+                            preview.className = 'image-preview mt-2';
+                            input.parentNode.appendChild(preview);
+                        }
+                        
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" 
+                                 class="img-thumbnail" 
+                                 style="max-width: 200px; max-height: 200px;" 
+                                 alt="Preview">
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    }
+
+    setupDeleteConfirmations() {
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.confirm-delete, .confirm-delete *')) {
+                const button = e.target.closest('.confirm-delete');
+                const message = button.dataset.message || 'Are you sure you want to delete this?';
+                
+                if (!confirm(message)) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
+    setupCollectionActions() {
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.add-to-collection')) {
+                e.preventDefault();
+                const button = e.target;
+                const imageId = button.dataset.imageId;
+                const imageType = button.dataset.imageType || 'processed';
+                
+                this.addToCollection(imageId, imageType);
+            }
+        });
+    }
+
+    async addToCollection(imageId, imageType) {
+        try {
+            const formData = new FormData();
+            formData.append(`${imageType}_image_id`, imageId);
+            formData.append('use_default', 'true');
+            
+            const response = await fetch('/studio/collections/add/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.showToast(data.message, 'success');
+            } else {
+                this.showToast(data.message || 'Failed to add to collection', 'warning');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Network error', 'error');
+        }
+    }
+
+    setupFavoriteHearts() {
+        // Favorite heart functionality is already in the CSS/HTML component
+        // This ensures it works properly with dynamic content
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.favorite-heart-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const button = e.target.closest('.favorite-heart-btn');
+                const processedImageId = button.dataset.processedImageId;
+                const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
+                
+                this.toggleFavorite(processedImageId, button);
+            }
+        });
+    }
+
+    async toggleFavorite(processedImageId, button) {
+        button.disabled = true;
+        
+        try {
+            const formData = new FormData();
+            formData.append('processed_image_id', processedImageId);
+            
+            const response = await fetch('/studio/favorites/toggle/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                const icon = button.querySelector('i');
+                if (data.is_favorited) {
+                    icon.className = 'bi bi-heart-fill';
+                    button.classList.add('favorited');
+                    button.classList.remove('not-favorited');
+                    button.title = 'Remove from favorites';
+                } else {
+                    icon.className = 'bi bi-heart';
+                    button.classList.remove('favorited');
+                    button.classList.add('not-favorited');
+                    button.title = 'Add to favorites';
+                }
+                button.dataset.isFavorited = data.is_favorited.toString();
+                this.showToast(data.message, 'success');
+            } else {
+                this.showToast(data.error || 'Error updating favorite', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            this.showToast('Network error', 'error');
+        } finally {
+            button.disabled = false;
+        }
+    }
+
+    setupFormsetManagement() {
+        // Global form counters
+        let socialFormCount = 0;
+        let registryFormCount = 0;
+
+        // Initialize counters if management forms exist
+        const socialTotalForms = document.getElementById('id_social-TOTAL_FORMS');
+        const registryTotalForms = document.getElementById('id_registry-TOTAL_FORMS');
+        
+        if (socialTotalForms) {
+            socialFormCount = parseInt(socialTotalForms.value);
+        }
+        if (registryTotalForms) {
+            registryFormCount = parseInt(registryTotalForms.value);
+        }
+
+        // Add form handlers
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#add-social-btn')) {
+                e.preventDefault();
+                this.addFormToFormset('social', socialFormCount++);
+                if (socialTotalForms) socialTotalForms.value = socialFormCount;
+            }
+            
+            if (e.target.matches('#add-registry-btn')) {
+                e.preventDefault();
+                this.addFormToFormset('registry', registryFormCount++);
+                if (registryTotalForms) registryTotalForms.value = registryFormCount;
+            }
+            
+            if (e.target.matches('.delete-form-btn')) {
+                e.preventDefault();
+                this.handleFormDelete(e.target);
+            }
+        });
+
+        // URL preview update
+        ['id_partner_1_name', 'id_partner_2_name', 'id_wedding_date'].forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('input', this.updateUrlPreview);
+                field.addEventListener('change', this.updateUrlPreview);
+            }
+        });
+    }
+
+    addFormToFormset(formsetType, formIndex) {
+        const formsetDiv = document.getElementById(`${formsetType}-formset`);
+        if (!formsetDiv) return;
+
+        const newForm = document.createElement('div');
+        newForm.className = `${formsetType}-form border rounded p-3 mb-3`;
+        newForm.setAttribute('data-form-index', formIndex);
+        
+        if (formsetType === 'social') {
+            newForm.innerHTML = this.getSocialFormHTML(formIndex);
+        } else {
+            newForm.innerHTML = this.getRegistryFormHTML(formIndex);
+        }
+        
+        formsetDiv.appendChild(newForm);
+    }
+
+    getSocialFormHTML(index) {
+        return `
+            <div class="row">
+                <div class="col-lg-5 mb-2">
+                    <label class="form-label">Social Media URL</label>
+                    <input type="url" name="social-${index}-url" class="form-control url-field" 
+                           placeholder="https://instagram.com/yourusername">
+                    <div class="form-text">We'll automatically detect the platform</div>
+                </div>
+                <div class="col-lg-5 mb-2">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" name="social-${index}-display_name" class="form-control" 
+                           placeholder="@yourusername">
+                    <div class="form-text">How this appears on your page</div>
+                </div>
+                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getRegistryFormHTML(index) {
+        return `
+            <div class="row">
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">Registry URL</label>
+                    <input type="url" name="registry-${index}-url" class="form-control url-field" 
+                           placeholder="https://amazon.com/wedding/registry">
+                    <div class="form-text">We'll detect the store automatically</div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">Registry Name <span class="text-danger">*</span></label>
+                    <input type="text" name="registry-${index}-registry_name" class="form-control" 
+                           placeholder="Our Home Registry" required>
+                </div>
+                <div class="col-lg-4 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <label class="form-label">Description</label>
+                    <textarea name="registry-${index}-description" class="form-control" rows="2" 
+                              placeholder="Kitchen appliances, home decor..."></textarea>
+                </div>
+            </div>
+        `;
+    }
+
+    handleFormDelete(button) {
+        const form = button.closest('.social-form, .registry-form');
+        const deleteInput = form.querySelector('input[name$="-DELETE"]');
+        
+        if (deleteInput) {
+            // Mark for deletion
+            deleteInput.checked = true;
+            form.classList.add('marked-for-deletion');
+            button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+            button.classList.remove('btn-outline-danger');
+            button.classList.add('btn-outline-success');
+            button.onclick = () => this.restoreForm(button);
+        } else {
+            // Remove new form
+            form.remove();
+        }
+    }
+
+    restoreForm(button) {
+        const form = button.closest('.social-form, .registry-form');
+        const deleteInput = form.querySelector('input[name$="-DELETE"]');
+        
+        if (deleteInput) {
+            deleteInput.checked = false;
+            form.classList.remove('marked-for-deletion');
+            button.innerHTML = '<i class="bi bi-trash"></i>';
+            button.classList.remove('btn-outline-success'); 
+            button.classList.add('btn-outline-danger');
+            button.onclick = () => this.handleFormDelete(button);
+        }
+    }
+
+    updateUrlPreview() {
+        const previewField = document.getElementById('url-preview');
+        if (!previewField) return;
+
+        const name1 = document.getElementById('id_partner_1_name')?.value || '';
+        const name2 = document.getElementById('id_partner_2_name')?.value || '';
+        const date = document.getElementById('id_wedding_date')?.value || '';
+        
+        if (name1 && name2) {
+            const clean1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+            const clean2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+            
+            let dateStr = 'tbd';
+            if (date) {
+                // Parse date manually to avoid timezone issues
+                const dateParts = date.split('-');
+                if (dateParts.length === 3) {
+                    const month = dateParts[1].padStart(2, '0');
+                    const day = dateParts[2].padStart(2, '0');
+                    const year = dateParts[0].slice(-2);
+                    dateStr = month + day + year;
+                }
+            }
+            
+            const slug = clean1 + clean2 + dateStr;
+            previewField.value = `yoursite.com/wedding/${slug}/`;
+        } else {
+            previewField.value = 'yoursite.com/wedding/[your-custom-url]/';
+        }
+    }
+
+    getCSRFToken() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                         document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        return csrfToken;
+    }
+
+    showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+}
+
+/**
+ * Studio & Image Processing Manager
+ */
+class StudioManager {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupFileUpload();
+            this.setupImageSelection();
+            this.setupProcessingForms();
+            this.setupStatusChecking();
+        });
+    }
+
+    setupFileUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dropZone = document.getElementById('dropZone');
+        
+        if (!fileInput || !uploadBtn || !dropZone) return;
+        
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.handleFileUpload(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                this.handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
+
+    async handleFileUpload(file) {
+        if (!file.type.startsWith('image/')) {
+            this.showToast('Please select an image file', 'error');
+            return;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+            this.showToast('File too large (max 10MB)', 'error');
+            return;
+        }
+        
+        this.showUploadProgress();
+        
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('csrfmiddlewaretoken', this.getCSRFToken());
+            
+            const response = await fetch('/studio/upload/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.handleUploadSuccess(data);
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            this.showToast(error.message || 'Upload failed', 'error');
+            this.showUploadArea();
+        }
+    }
+
+    handleUploadSuccess(data) {
+        this.addImageToRecent(data);
+        this.selectImage(data.image_id, data);
+        this.showToast('Image uploaded successfully!', 'success');
+    }
+
+    addImageToRecent(data) {
+        const container = document.getElementById('recentImagesContainer');
+        if (!container) return;
+        
+        const newThumbnail = this.createThumbnailElement(data);
+        container.insertBefore(newThumbnail, container.firstChild);
+        
+        // Remove excess thumbnails
+        const thumbnails = container.querySelectorAll('.col-4');
+        if (thumbnails.length > 3) {
+            thumbnails[3].remove();
+        }
+    }
+
+    createThumbnailElement(data) {
+        const div = document.createElement('div');
+        div.className = 'col-4';
+        div.innerHTML = `
+            <div class="venue-thumbnail" 
+                 data-image-id="${data.image_id}"
+                 data-image-url="${data.image_url}"
+                 data-thumbnail-url="${data.thumbnail_url}"
+                 data-image-name="${data.image_name}">
+                <img src="${data.thumbnail_url}" 
+                     class="card-img-top" 
+                     style="height: 80px; object-fit: cover; border-radius: 0.25rem;" 
+                     alt="${data.image_name}">
+            </div>
+        `;
+        
+        div.querySelector('.venue-thumbnail').addEventListener('click', () => {
+            this.selectImageFromThumbnail(div.querySelector('.venue-thumbnail'));
+        });
+        
+        return div;
+    }
+
+    setupImageSelection() {
+        document.querySelectorAll('.venue-thumbnail').forEach(thumbnail => {
+            thumbnail.addEventListener('click', () => {
+                this.selectImageFromThumbnail(thumbnail);
+            });
+        });
+    }
+
+    selectImageFromThumbnail(thumbnail) {
+        // Clear previous selections
+        document.querySelectorAll('.venue-thumbnail').forEach(t => {
+            t.classList.remove('selected');
+        });
+        
+        thumbnail.classList.add('selected');
+        
+        const imageId = thumbnail.dataset.imageId;
+        const imageUrl = thumbnail.dataset.imageUrl;
+        const imageName = thumbnail.dataset.imageName;
+        
+        // Update preview
+        this.showImagePreview(imageUrl, imageName);
+        this.updateTransformButton(true);
+        
+        // Store selected image ID
+        this.selectedImageId = imageId;
+    }
+
+    selectImage(imageId, data) {
+        this.selectedImageId = imageId;
+        this.showImagePreview(data.image_url, data.image_name);
+        this.updateTransformButton(true);
+    }
+
+    showUploadProgress() {
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        if (uploadArea) uploadArea.classList.add('d-none');
+        if (imagePreview) imagePreview.classList.add('d-none');
+        if (uploadProgress) {
+            uploadProgress.classList.remove('d-none');
+            uploadProgress.classList.add('d-flex');
+        }
+    }
+
+    showImagePreview(imageUrl, imageName) {
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const imagePreview = document.getElementById('imagePreview');
+        const selectedImage = document.getElementById('selectedImage');
+        const selectedImageName = document.getElementById('selectedImageName');
+        
+        if (uploadArea) uploadArea.classList.add('d-none');
+        if (uploadProgress) {
+            uploadProgress.classList.add('d-none');
+            uploadProgress.classList.remove('d-flex');
+        }
+        if (imagePreview) {
+            imagePreview.classList.remove('d-none');
+            imagePreview.classList.add('d-flex');
+        }
+        
+        if (selectedImage) selectedImage.src = imageUrl;
+        if (selectedImageName) selectedImageName.textContent = imageName;
+    }
+
+    showUploadArea() {
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        if (imagePreview) imagePreview.classList.add('d-none');
+        if (uploadProgress) {
+            uploadProgress.classList.add('d-none');
+            uploadProgress.classList.remove('d-flex');
+        }
+        if (uploadArea) uploadArea.classList.remove('d-none');
+    }
+
+    setupProcessingForms() {
+        const transformBtn = document.getElementById('transformBtn');
+        if (!transformBtn) return;
+        
+        transformBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.processImage();
+        });
+        
+        // Setup form change listeners
+        ['wedding-theme', 'space-type'].forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('change', () => {
+                    this.updateTransformButton();
+                    this.showSmartSuggestions();
+                });
+            }
+        });
+    }
+
+    updateTransformButton(hasImage = null) {
+        const transformBtn = document.getElementById('transformBtn');
+        if (!transformBtn) return;
+        
+        const hasSelectedImage = hasImage !== null ? hasImage : !!this.selectedImageId;
+        const hasTheme = document.getElementById('wedding-theme')?.value;
+        const hasSpace = document.getElementById('space-type')?.value;
+        
+        transformBtn.disabled = !(hasSelectedImage && hasTheme && hasSpace);
+    }
+
+    showSmartSuggestions() {
+        const theme = document.getElementById('wedding-theme')?.value;
+        const space = document.getElementById('space-type')?.value;
+        const suggestionsDiv = document.getElementById('smartSuggestions');
+        
+        if (!theme || !space || !suggestionsDiv) return;
+        
+        const suggestions = this.getSuggestions(theme, space);
+        if (suggestions) {
+            document.getElementById('suggestionText').textContent = suggestions;
+            suggestionsDiv.style.display = 'block';
+        } else {
+            suggestionsDiv.style.display = 'none';
+        }
+    }
+
+    getSuggestions(theme, space) {
+        const suggestionMap = {
+            'rustic_reception_area': 'Medium guest count, moderate budget, fall season, earth tones',
+            'rustic_barn': 'Intimate to medium guests, string lights, warm colors',
+            'modern_ballroom': 'Large guest count, luxury budget, evening time, monochrome colors',
+            'garden_wedding_ceremony': 'Any size, spring/summer, afternoon, natural colors',
+            'beach_wedding_ceremony': 'Medium guests, summer, sunset time, coastal colors',
+            'vintage_reception_area': 'Medium guests, moderate to luxury budget, pastels',
+            'classic_ballroom': 'Large to grand, luxury budget, evening, neutral palette'
+        };
+        
+        return suggestionMap[`${theme}_${space}`];
+    }
+
+    async processImage() {
+        if (!this.selectedImageId) {
+            this.showToast('Please select an image first', 'error');
+            return;
+        }
+        
+        const theme = document.getElementById('wedding-theme')?.value;
+        const space = document.getElementById('space-type')?.value;
+        
+        if (!theme || !space) {
+            this.showToast('Please select both wedding style and space type', 'error');
+            return;
+        }
+        
+        this.showProcessingStatus();
+        
+        const data = {
+            wedding_theme: theme,
+            space_type: space,
+            guest_count: document.getElementById('guest-count')?.value || '',
+            budget_level: document.getElementById('budget-level')?.value || '',
+            season: document.getElementById('season')?.value || '',
+            time_of_day: document.getElementById('time-of-day')?.value || '',
+            color_scheme: document.getElementById('color-scheme')?.value || '',
+            custom_colors: document.getElementById('custom-colors')?.value || '',
+            additional_details: document.getElementById('additional-details')?.value || ''
+        };
+        
+        try {
+            const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken()
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                this.showToast('✨ Transformation started! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = result.redirect_url;
+                }, 2000);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Processing error:', error);
+            this.showToast('Error: ' + error.message, 'error');
+            this.hideProcessingStatus();
+        }
+    }
+
+    showProcessingStatus() {
+        const statusDiv = document.getElementById('processingStatus');
+        const transformBtn = document.getElementById('transformBtn');
+        
+        if (statusDiv) statusDiv.style.display = 'block';
+        if (transformBtn) {
+            transformBtn.disabled = true;
+            transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Magic...';
+        }
+    }
+
+    hideProcessingStatus() {
+        const statusDiv = document.getElementById('processingStatus');
+        const transformBtn = document.getElementById('transformBtn');
+        
+        if (statusDiv) statusDiv.style.display = 'none';
+        if (transformBtn) {
+            transformBtn.disabled = false;
+            transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Transform Space</span>';
+            this.updateTransformButton();
+        }
+    }
+
+    setupStatusChecking() {
+        // Auto-refresh processing jobs
+        const processingJobs = document.querySelectorAll('.processing-status');
+        if (processingJobs.length > 0) {
+            this.checkJobStatuses();
+            setInterval(() => this.checkJobStatuses(), 30000); // Check every 30 seconds
+        }
+    }
+
+    async checkJobStatuses() {
+        const processingJobs = document.querySelectorAll('[data-job-id]');
+        
+        for (const jobElement of processingJobs) {
+            const jobId = jobElement.dataset.jobId;
+            if (jobId) {
+                try {
+                    const response = await fetch(`/studio/job/${jobId}/status/`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        // Reload page to show updated status
+                        window.location.reload();
+                        break;
+                    }
+                } catch (error) {
+                    console.error('Error checking job status:', error);
+                }
+            }
+        }
+    }
+
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+               document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    }
+
+    showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, 5000);
+    }
+}
+
+/**
+ * Dashboard Manager
+ */
+class DashboardManager {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        document.addEventListener('DOMContentLoaded', () => {
+            this.setupUsageDisplay();
+            this.setupQuickActions();
+            this.setupSubscriptionManagement();
+        });
+    }
+
+    setupUsageDisplay() {
+        // Update usage indicators with smooth animations
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 500);
+        });
+    }
+
+    setupQuickActions() {
+        // Add hover effects to quick action buttons
+        document.querySelectorAll('.btn-outline-primary, .btn-outline-secondary, .btn-outline-danger').forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                btn.style.transform = 'translateY(-2px)';
+            });
+            
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = 'translateY(0)';
+            });
+        });
+    }
+
+    setupSubscriptionManagement() {
+        // Handle subscription upgrade prompts
+        const upgradeButtons = document.querySelectorAll('[href*="pricing"]');
+        upgradeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // Could add analytics tracking here
+                console.log('User clicked upgrade button');
+            });
+        });
+    }
 }
 
 // Global functions for compatibility with existing form HTML
@@ -728,9 +1539,31 @@ window.detectBrandingFromUrl = function(urlField) {
     }
 };
 
+// Global confirmation function
+window.confirmDelete = function(id, name, type = 'item') {
+    return confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`);
+};
+
+// Global toast function
+window.showToast = function(message, type = 'info') {
+    if (window.formEnhancements) {
+        window.formEnhancements.showToast(message, type);
+    } else {
+        // Fallback toast
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `${message} <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+};
+
 // Initialize all managers
 document.addEventListener('DOMContentLoaded', function() {
     window.weddingFormManager = new WeddingFormManager();
     window.homepageManager = new HomepageManager();
     window.formEnhancements = new FormEnhancements();
+    window.studioManager = new StudioManager();
+    window.dashboardManager = new DashboardManager();
 });
