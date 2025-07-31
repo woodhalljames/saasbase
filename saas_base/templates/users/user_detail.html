@@ -34,13 +34,11 @@
               <div class="col-md-3">
                 {% if user_couple_profile.couple_photo %}
                   <img src="{{ user_couple_profile.couple_photo.url }}" 
-                       class="img-fluid rounded" 
-                       alt="Couple photo"
-                       style="max-height: 120px;">
+                       class="img-fluid rounded dashboard-couple-photo" 
+                       alt="Couple photo">
                 {% else %}
-                  <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                       style="height: 120px;">
-                    <i class="bi bi-heart text-muted" style="font-size: 2rem;"></i>
+                  <div class="bg-light rounded d-flex align-items-center justify-content-center dashboard-couple-placeholder">
+                    <i class="bi bi-heart text-muted"></i>
                   </div>
                 {% endif %}
               </div>
@@ -85,7 +83,7 @@
           {% else %}
             <!-- No Wedding Page Yet -->
             <div class="text-center py-4">
-              <i class="bi bi-heart text-muted mb-3" style="font-size: 3rem;"></i>
+              <i class="bi bi-heart text-muted mb-3 dashboard-empty-icon"></i>
               <h6>Create Your Wedding Page</h6>
               <p class="text-muted mb-3">
                 Share your love story, venue transformations, and registries with family and friends.
@@ -117,8 +115,7 @@
                 <div class="col-md-3 col-sm-6 mb-3">
                   <div class="card">
                     <img src="{{ transformation.processed_image.url }}" 
-                         class="card-img-top" 
-                         style="height: 120px; object-fit: cover;"
+                         class="card-img-top dashboard-transformation-thumb" 
                          alt="Wedding transformation">
                     <div class="card-body p-2">
                       <small class="text-muted d-block text-truncate">
@@ -140,7 +137,7 @@
             </div>
           {% else %}
             <div class="text-center py-3">
-              <i class="bi bi-camera text-muted mb-2" style="font-size: 2rem;"></i>
+              <i class="bi bi-camera text-muted mb-2 dashboard-empty-icon"></i>
               <p class="text-muted mb-3">No transformations yet</p>
               <a href="{% url 'image_processing:wedding_studio' %}" 
                  class="btn btn-outline-primary">
@@ -162,22 +159,22 @@
           <div class="row g-3">
             <div class="col-md-4">
               <a href="{% url 'image_processing:wedding_studio' %}" 
-                 class="btn btn-outline-primary w-100">
-                <i class="bi bi-camera d-block mb-1" style="font-size: 1.5rem;"></i>
+                 class="btn btn-outline-primary w-100 dashboard-action-btn">
+                <i class="bi bi-camera d-block mb-1 dashboard-action-icon"></i>
                 Upload & Transform
               </a>
             </div>
             <div class="col-md-4">
               <a href="{% url 'image_processing:collections_list' %}" 
-                 class="btn btn-outline-secondary w-100">
-                <i class="bi bi-collection d-block mb-1" style="font-size: 1.5rem;"></i>
+                 class="btn btn-outline-secondary w-100 dashboard-action-btn">
+                <i class="bi bi-collection d-block mb-1 dashboard-action-icon"></i>
                 View Collections
               </a>
             </div>
             <div class="col-md-4">
               <a href="{% url 'image_processing:favorites_list' %}" 
-                 class="btn btn-outline-danger w-100">
-                <i class="bi bi-heart d-block mb-1" style="font-size: 1.5rem;"></i>
+                 class="btn btn-outline-danger w-100 dashboard-action-btn">
+                <i class="bi bi-heart d-block mb-1 dashboard-action-icon"></i>
                 View Favorites
               </a>
             </div>
@@ -218,7 +215,7 @@
                       <span>Usage this month</span>
                       <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
                     </div>
-                    <div class="progress" style="height: 8px;">
+                    <div class="progress dashboard-usage-progress">
                       <div class="progress-bar {% if usage_data.percentage > 80 %}bg-warning{% elif usage_data.percentage > 95 %}bg-danger{% else %}bg-primary{% endif %}" 
                            style="width: {{ usage_data.percentage }}%"></div>
                     </div>
@@ -251,7 +248,7 @@
                     <span>Free usage</span>
                     <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
                   </div>
-                  <div class="progress" style="height: 8px;">
+                  <div class="progress dashboard-usage-progress">
                     <div class="progress-bar bg-secondary" 
                          style="width: {{ usage_data.percentage }}%"></div>
                   </div>
@@ -311,40 +308,4 @@
     </div>
   </div>
 </div>
-
-<style>
-.card {
-  border: none;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.progress {
-  border-radius: 10px;
-  background-color: #e9ecef;
-}
-
-.progress-bar {
-  border-radius: 10px;
-}
-
-.btn-outline-primary:hover,
-.btn-outline-secondary:hover,
-.btn-outline-danger:hover {
-  transform: translateY(-1px);
-}
-
-.card-header {
-  border-bottom: 1px solid rgba(0,0,0,0.125);
-  background-color: rgba(0,0,0,0.03);
-}
-
-.card-header.bg-primary {
-  background-color: #0d6efd !important;
-}
-</style>
 {% endblock content %}

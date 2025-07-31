@@ -141,7 +141,7 @@
           <ul class="navbar-nav ms-auto">
             <li class="nav-item">
               <a class="btn btn-gradient-rose ms-2 px-3 py-2" href="{% url 'account_signup' %}">
-                <i class="bi bi-heart-fill me-1"></i> Get Started
+                 Get Started
               </a>
             </li>
             <li class="nav-item">
@@ -302,21 +302,35 @@
 
         <!-- Newsletter Column -->
         <div class="col-lg-3 col-md-12 mb-4">
-          <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
-          <p class="text-white-75 small mb-3">Get the latest wedding AI tips and features delivered to your inbox.</p>
-          <form class="newsletter-form">
-            <div class="input-group mb-3">
-              <input type="email" class="form-control bg-transparent border-light-subtle text-white" 
-                     placeholder="Enter your email" aria-label="Email address" required
-                     style="backdrop-filter: blur(10px);">
-              <button class="btn btn-gradient-rose" type="submit">
-                <i class="bi bi-envelope-fill"></i>
-              </button>
-            </div>
-            <small class="text-white-50 d-block">We respect your privacy. Unsubscribe anytime.</small>
-          </form>
-        </div>
-      </div>
+  <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
+  <p class="text-white-75 small mb-3">Get the latest wedding AI tips and features delivered to your inbox.</p>
+  
+  <!-- Newsletter Form -->
+  <form class="newsletter-form" id="newsletter-form">
+    {% csrf_token %}
+    <div class="input-group mb-3">
+      <input type="email" 
+             class="form-control bg-transparent border-light-subtle text-white newsletter-email-input" 
+             placeholder="Enter your email" 
+             aria-label="Email address" 
+             id="newsletter-email"
+             name="email"
+             required
+             style="backdrop-filter: blur(10px);">
+      <button class="btn btn-gradient-rose" type="submit" id="newsletter-submit-btn">
+        <i class="bi bi-envelope-fill" id="newsletter-icon"></i>
+        <span class="spinner-border spinner-border-sm d-none" id="newsletter-spinner" role="status" aria-hidden="true"></span>
+      </button>
+    </div>
+    
+    <!-- Messages Area -->
+    <div id="newsletter-messages" class="mb-2"></div>
+    
+    <small class="text-white-50 d-block">We respect your privacy. Unsubscribe anytime.</small>
+  </form>
+  </div>
+
+
 
       <!-- Footer Bottom -->
       <hr class="border-light-subtle my-4">
@@ -339,16 +353,6 @@
   <!-- /container -->
   {% block modal %}
   {% endblock modal %}
-  {% block inline_javascript %}
-    {% comment %}
-    Script tags with only code, no src (defer by default). To run
-    with a "defer" so that you run inline code:
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        /* Run whatever you want */
-      });
-    </script>
-    {% endcomment %}
-  {% endblock inline_javascript %}
+  
 </body>
 </html>

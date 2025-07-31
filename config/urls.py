@@ -24,6 +24,8 @@ urlpatterns = [
     # Media files
     #Shopping
     path("wedding/", include("wedding_shopping.urls", namespace="wedding_shopping")),
+    path("newsletter/", include("newsletter.urls", namespace="newsletter")),  # ADD THIS LINE
+    
     
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]

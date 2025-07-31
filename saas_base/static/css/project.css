@@ -1060,7 +1060,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* Newsletter Form */
+/* Newsletter Form OG colors. */
 .newsletter-form .form-control {
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -1079,6 +1079,63 @@ body {
   color: white !important;
 }
 
+
+/* Newsletter Form needing sync to look like OG. */
+.newsletter-form .form-control {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    transition: all 0.3s ease;
+}
+
+.newsletter-form .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.newsletter-form .form-control:focus {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: var(--bright-cyan) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25) !important;
+    color: white !important;
+}
+
+.newsletter-form .form-control:disabled {
+    background: rgba(255, 255, 255, 0.05) !important;
+    opacity: 0.6;
+}
+
+.newsletter-form .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.newsletter-form .alert-sm {
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 0;
+}
+
+.newsletter-form .alert-success {
+    background-color: rgba(40, 167, 69, 0.9);
+    color: white;
+}
+
+.newsletter-form .alert-danger {
+    background-color: rgba(220, 53, 69, 0.9);
+    color: white;
+}
+
+/* Pulse animation for success state */
+@keyframes newsletter-success-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+.newsletter-form .alert-success {
+    animation: newsletter-success-pulse 1s;
+}
 /* ============================================
    DROPDOWN & MODAL STYLES
    ============================================ */

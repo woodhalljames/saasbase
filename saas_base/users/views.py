@@ -35,8 +35,7 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             from image_processing.models import ProcessedImage
             context['recent_transformations'] = ProcessedImage.objects.filter(
                 processing_job__user_image__user=self.object,
-                is_saved=True
-            ).order_by('-created_at')[:4]
+            ).order_by('-created_at')[:5]
         except (ImportError, AttributeError):
             context['recent_transformations'] = []
         

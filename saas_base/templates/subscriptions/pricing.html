@@ -30,7 +30,7 @@
   <div class="row">
     {% for product in products %}
     <div class="col-md-4 mb-4">
-      <div class="card h-100 shadow-sm {% if product.highlight %}border-primary{% endif %}">
+      <div class="card pricing-card h-100 shadow-sm {% if product.highlight %}border-primary{% endif %}">
         {% if product.highlight %}
         <div class="card-header text-center text-white bg-primary">
           <h3 class="my-0">{{ product.name }}</h3>
@@ -70,7 +70,12 @@
                 <small class="text-muted">/ month</small>
               </h2>
               <button class="btn btn-lg btn-block btn-primary mt-auto plan-button" 
-                     data-price-id="{{ product.prices.monthly.id }}">
+                     data-price-id="{{ product.prices.monthly.id }}"
+                     data-stripe-key="{{ stripe_public_key }}"
+                     data-user-authenticated="{{ user_authenticated|yesno:'true,false' }}"
+                     data-checkout-url="{% url 'subscriptions:checkout' %}"
+                     data-signup-url="{% url 'account_signup' %}"
+                     data-csrf-token="{{ csrf_token }}">
                 Get Started
               </button>
             {% else %}
@@ -81,14 +86,19 @@
           </div>
           
           <!-- Yearly pricing (default hidden) -->
-          <div class="pricing yearly-pricing" style="display: none;">
+          <div class="pricing yearly-pricing pricing-yearly-hidden">
             {% if product.prices.yearly %}
               <h2 class="card-title pricing-card-title text-center mb-4">
                 {{ product.prices.yearly.amount|floatformat:2 }} {{ product.prices.yearly.currency|upper }}
                 <small class="text-muted">/ year</small>
               </h2>
               <button class="btn btn-lg btn-block btn-primary mt-auto plan-button" 
-                     data-price-id="{{ product.prices.yearly.id }}">
+                     data-price-id="{{ product.prices.yearly.id }}"
+                     data-stripe-key="{{ stripe_public_key }}"
+                     data-user-authenticated="{{ user_authenticated|yesno:'true,false' }}"
+                     data-checkout-url="{% url 'subscriptions:checkout' %}"
+                     data-signup-url="{% url 'account_signup' %}"
+                     data-csrf-token="{{ csrf_token }}">
                 Get Started
               </button>
             {% else %}
@@ -108,104 +118,14 @@
   </div>
 </div>
 
-<!-- Bootstrap Icons CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<!-- Hidden data for JavaScript -->
+<script id="pricing-data" type="application/json">
+{
+  "autoCheckoutPriceId": "{{ auto_checkout_price_id }}",
+  "stripePublicKey": "{{ stripe_public_key }}",
+  "userAuthenticated": {{ user_authenticated|yesno:'true,false' }}
+}
+</script>
 
 <script src="https://js.stripe.com/v3/"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Toggle between monthly and yearly pricing
-    const monthlyToggle = document.getElementById('monthly-toggle');
-    const yearlyToggle = document.getElementById('yearly-toggle');
-    const monthlyPricing = document.querySelectorAll('.monthly-pricing');
-    const yearlyPricing = document.querySelectorAll('.yearly-pricing');
-    
-    // Ensure monthly is active and visible by default
-    monthlyToggle.classList.add('active');
-    yearlyToggle.classList.remove('active');
-    monthlyPricing.forEach(el => el.style.display = 'block');
-    yearlyPricing.forEach(el => el.style.display = 'none');
-    
-    monthlyToggle.addEventListener('click', function() {
-      monthlyToggle.classList.add('active');
-      yearlyToggle.classList.remove('active');
-      monthlyPricing.forEach(el => el.style.display = 'block');
-      yearlyPricing.forEach(el => el.style.display = 'none');
-    });
-    
-    yearlyToggle.addEventListener('click', function() {
-      yearlyToggle.classList.add('active');
-      monthlyToggle.classList.remove('active');
-      yearlyPricing.forEach(el => el.style.display = 'block');
-      monthlyPricing.forEach(el => el.style.display = 'none');
-    });
-    
-    // Handle plan selection
-    const stripe = Stripe('{{ stripe_public_key }}');
-    const userAuthenticated = {{ user_authenticated|lower }};
-    
-    // Auto checkout functionality - ensure it runs after we've set monthly as default
-    const autoCheckoutPriceId = '{{ auto_checkout_price_id }}';
-    if (userAuthenticated && autoCheckoutPriceId) {
-      // User is logged in and has an auto-checkout parameter
-      // Find the button with this price ID and trigger a click
-      setTimeout(() => {
-        const buttons = document.querySelectorAll('.plan-button');
-        buttons.forEach(button => {
-          if (button.getAttribute('data-price-id') === autoCheckoutPriceId) {
-            console.log('Auto-triggering checkout for price:', autoCheckoutPriceId);
-            button.click();
-          }
-        });
-        
-        // If in yearly pricing but auto-checkout is monthly or vice versa, switch view
-        const isMonthlyPrice = !autoCheckoutPriceId.includes('year');
-        if (!isMonthlyPrice && monthlyToggle.classList.contains('active')) {
-          yearlyToggle.click();
-        }
-      }, 500); // Small delay to ensure page is ready
-    }
-    
-    document.querySelectorAll('.plan-button').forEach(button => {
-      button.addEventListener('click', function() {
-        const priceId = this.getAttribute('data-price-id');
-        
-        if (!userAuthenticated) {
-          // If user is not logged in, redirect to signup page with price_id in query parameter
-          window.location.href = "{% url 'account_signup' %}?next={% url 'subscriptions:pricing' %}&price_id=" + priceId;
-          return;
-        }
-        
-        // User is authenticated, proceed to checkout
-        this.disabled = true;
-        this.textContent = 'Processing...';
-        
-        fetch('{% url "subscriptions:checkout" %}', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': '{{ csrf_token }}'
-          },
-          body: `price_id=${priceId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            alert(data.error);
-            this.disabled = false;
-            this.textContent = 'Get Started';
-          } else {
-            return stripe.redirectToCheckout({ sessionId: data.sessionId });
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          alert('An error occurred. Please try again.');
-          this.disabled = false;
-          this.textContent = 'Get Started';
-        });
-      });
-    });
-  });
-</script>
 {% endblock %}

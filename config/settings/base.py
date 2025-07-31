@@ -95,6 +95,7 @@ LOCAL_APPS = [
     "usage_limits",
     "image_processing",
     "wedding_shopping",
+    "newsletter",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

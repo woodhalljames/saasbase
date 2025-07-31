@@ -1567,3 +1567,127 @@ document.addEventListener('DOMContentLoaded', function() {
     window.studioManager = new StudioManager();
     window.dashboardManager = new DashboardManager();
 });
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const newsletterForm = document.getElementById('newsletter-form');
+    const emailInput = document.getElementById('newsletter-email');
+    const submitBtn = document.getElementById('newsletter-submit-btn');
+    const icon = document.getElementById('newsletter-icon');
+    const spinner = document.getElementById('newsletter-spinner');
+    const messagesDiv = document.getElementById('newsletter-messages');
+    
+    if (!newsletterForm) return; // Exit if form not found
+    
+    newsletterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = emailInput.value.trim();
+        if (!email) {
+            showMessage('Please enter your email address.', 'error');
+            return;
+        }
+        
+        // Validate email format
+        if (!isValidEmail(email)) {
+            showMessage('Please enter a valid email address.', 'error');
+            return;
+        }
+        
+        // Show loading state
+        setLoadingState(true);
+        clearMessages();
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Submit via AJAX
+        fetch('/newsletter/signup/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            setLoadingState(false);
+            
+            if (data.success) {
+                showMessage(data.message, 'success');
+                emailInput.value = ''; // Clear the form
+                
+                // Disable form temporarily
+                emailInput.disabled = true;
+                submitBtn.disabled = true;
+                
+                // Re-enable after 5 seconds
+                setTimeout(() => {
+                    emailInput.disabled = false;
+                    submitBtn.disabled = false;
+                    clearMessages();
+                }, 5000);
+                
+            } else {
+                showMessage(data.message || 'Something went wrong. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Newsletter signup error:', error);
+            setLoadingState(false);
+            showMessage('Network error. Please check your connection and try again.', 'error');
+        });
+    });
+    
+    function setLoadingState(loading) {
+        if (loading) {
+            submitBtn.disabled = true;
+            icon.classList.add('d-none');
+            spinner.classList.remove('d-none');
+        } else {
+            submitBtn.disabled = false;
+            icon.classList.remove('d-none');
+            spinner.classList.add('d-none');
+        }
+    }
+    
+    function showMessage(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+        
+        messagesDiv.innerHTML = `
+            <div class="alert ${alertClass} alert-sm py-2 px-3 small" role="alert">
+                <i class="${iconClass} me-1"></i>
+                ${message}
+            </div>
+        `;
+        
+        // Auto-hide success messages after 4 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                clearMessages();
+            }, 4000);
+        }
+    }
+    
+    function clearMessages() {
+        messagesDiv.innerHTML = '';
+    }
+    
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Clear messages when user starts typing again
+    emailInput.addEventListener('input', function() {
+        if (messagesDiv.innerHTML) {
+            setTimeout(clearMessages, 500);
+        }
+    });
+});
