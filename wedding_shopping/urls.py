@@ -13,7 +13,7 @@ urlpatterns = [
     path('discover/', views.public_couples_list, name='public_couples_list'),
     
     # Tracking and redirects
-    path('registry/<int:pk>/', views.registry_redirect, name='registry_redirect'),
+    path('link/<int:pk>/', views.wedding_link_redirect, name='wedding_link_redirect'), 
     
     # API endpoints
     path('api/detect-branding/', views.detect_url_branding_api, name='api_detect_branding'),

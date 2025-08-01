@@ -1,4 +1,4 @@
-# wedding_shopping/models.py - Simplified without platform/registry type choices
+# wedding_shopping/models.py - Enhanced with partner-specific social media and expanded link types
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -115,20 +115,63 @@ class CoupleProfile(models.Model):
     @property
     def wedding_url_preview(self):
         return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
+    
+    # Helper methods for social media organization
+    @property
+    def partner_1_social_links(self):
+        return self.social_links.filter(owner='partner_1')
+    
+    @property
+    def partner_2_social_links(self):
+        return self.social_links.filter(owner='partner_2')
+    
+    @property
+    def shared_social_links(self):
+        return self.social_links.filter(owner='shared')
+    
+    # Helper methods for wedding links by category
+    @property
+    def registry_links(self):
+        return self.wedding_links.filter(link_type='registry')
+    
+    @property
+    def rsvp_links(self):
+        return self.wedding_links.filter(link_type='rsvp')
+    
+    @property
+    def livestream_links(self):
+        return self.wedding_links.filter(link_type='livestream')
+    
+    @property
+    def photo_links(self):
+        return self.wedding_links.filter(link_type='photos')
+    
+    @property
+    def other_links(self):
+        return self.wedding_links.filter(link_type='other')
 
 
 class SocialMediaLink(models.Model):
-    """Simplified social media links - auto-detect platform from URL"""
+    """Enhanced social media links with partner ownership"""
+    
+    OWNER_CHOICES = [
+        ('partner_1', 'Partner 1'),
+        ('partner_2', 'Partner 2'),  
+        ('shared', 'Both/Shared'),
+    ]
     
     couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='social_links')
+    owner = models.CharField(max_length=20, choices=OWNER_CHOICES, default='shared')
     url = models.URLField()
     display_name = models.CharField(max_length=100, blank=True, help_text="Display name (e.g., @username)")
     
     class Meta:
         unique_together = ['couple_profile', 'url']
+        ordering = ['owner', 'id']
     
     def __str__(self):
-        return f"{self.couple_profile} - {self.display_name or self.url}"
+        owner_display = dict(self.OWNER_CHOICES).get(self.owner, self.owner)
+        return f"{self.couple_profile} - {owner_display} - {self.display_name or self.url}"
     
     def _detect_platform_from_url(self):
         """Auto-detect platform from URL"""
@@ -194,34 +237,55 @@ class SocialMediaLink(models.Model):
     def platform_display_name(self):
         """Returns the display name to show on the wedding page"""
         return self.display_name or self.url
-
-
-class RegistryLink(models.Model):
-    """Simplified registry links - auto-detect type from URL"""
     
-    couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='registry_links')
-    url = models.URLField(help_text="Registry URL")
-    registry_name = models.CharField(max_length=100, help_text="Registry name (e.g., 'Our Home Registry')")
-    description = models.TextField(blank=True, help_text="Description of what's on this registry")
+    @property
+    def owner_display_name(self):
+        """Return the display name for the owner"""
+        if self.owner == 'partner_1':
+            return self.couple_profile.partner_1_name
+        elif self.owner == 'partner_2':
+            return self.couple_profile.partner_2_name
+        else:
+            return "Both"
+
+
+class WeddingLink(models.Model):
+    """Enhanced link model for registries, RSVP, livestreams, and other wedding content"""
+    
+    LINK_TYPE_CHOICES = [
+        ('registry', 'Wedding Registry'),
+        ('rsvp', 'RSVP Site'),
+        ('livestream', 'Live Stream'),
+        ('photos', 'Wedding Photos'),
+        ('website', 'Wedding Website'),
+        ('other', 'Other'),
+    ]
+    
+    couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='wedding_links')
+    link_type = models.CharField(max_length=20, choices=LINK_TYPE_CHOICES, default='registry')
+    url = models.URLField(help_text="Link URL")
+    title = models.CharField(max_length=100, help_text="Title for this link")
+    description = models.TextField(blank=True, help_text="Description of this link")
     
     # Tracking
     click_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['created_at']
+        ordering = ['link_type', 'created_at']
     
     def __str__(self):
-        return f"{self.couple_profile} - {self.registry_name}"
+        return f"{self.couple_profile} - {self.get_link_type_display()} - {self.title}"
     
-    def _detect_registry_from_url(self):
-        """Auto-detect registry type from URL"""
+    def _detect_service_from_url(self):
+        """Auto-detect service type from URL"""
         if not self.url:
             return 'other'
         
         domain = urlparse(self.url).netloc.lower()
         
-        registry_patterns = {
+        service_patterns = {
+            # Registries
             'amazon': ['amazon.com', 'amzn.com'],
             'target': ['target.com'],
             'bed_bath_beyond': ['bedbathandbeyond.com', 'buybuybaby.com'],
@@ -232,45 +296,69 @@ class RegistryLink(models.Model):
             'zola': ['zola.com'],
             'the_knot': ['theknot.com'],
             'wayfair': ['wayfair.com'],
-            'registry_finder': ['registryfinder.com'],
             'honeyfund': ['honeyfund.com'],
+            
+            # RSVP Sites
+            'rsvpify': ['rsvpify.com'],
+            'wedding_wire': ['rsvp.weddingwire.com'],
+            'anrsvp': ['anrsvp.com'],
+            'withjoy': ['withjoy.com'],
+            
+            # Livestream
+            'zoom': ['zoom.us', 'zoom.com'],
+            'youtube_live': ['youtube.com/watch', 'youtu.be'],
+            'facebook_live': ['facebook.com'],
+            'instagram_live': ['instagram.com'],
+            
+            # Photo sharing
+            'google_photos': ['photos.google.com', 'photos.app.goo.gl'],
+            'dropbox': ['dropbox.com'],
+            'shutterfly': ['shutterfly.com'],
+            'smugmug': ['smugmug.com'],
         }
         
-        for registry_type, patterns in registry_patterns.items():
+        for service_type, patterns in service_patterns.items():
             if any(pattern in domain for pattern in patterns):
-                return registry_type
+                return service_type
         
-        return 'other'
+        return 'custom'
     
     @property
-    def registry_type(self):
-        """Returns detected registry type"""
-        return self._detect_registry_from_url()
+    def service_type(self):
+        """Returns detected service type"""
+        return self._detect_service_from_url()
     
     @property
-    def registry_icon(self):
-        """Returns appropriate Bootstrap icon for the registry"""
-        icons = {
+    def service_icon(self):
+        """Returns appropriate Bootstrap icon based on link type and detected service"""
+        link_type_icons = {
+            'registry': 'bi-gift',
+            'rsvp': 'bi-envelope-check',
+            'livestream': 'bi-camera-video',
+            'photos': 'bi-camera',
+            'website': 'bi-globe',
+            'other': 'bi-link-45deg',
+        }
+        
+        # Service-specific icons
+        service_icons = {
             'amazon': 'bi-amazon',
             'target': 'bi-bullseye',
-            'bed_bath_beyond': 'bi-house-fill',
-            'williams_sonoma': 'bi-cup-hot-fill',
-            'crate_barrel': 'bi-house-door-fill',
-            'pottery_barn': 'bi-home-fill',
-            'macy': 'bi-bag-fill',
-            'zola': 'bi-heart-fill',
-            'the_knot': 'bi-heart',
-            'wayfair': 'bi-house-fill',
-            'registry_finder': 'bi-search-heart',
-            'honeyfund': 'bi-airplane-fill',
-            'other': 'bi-gift',
+            'zoom': 'bi-camera-video',
+            'youtube_live': 'bi-youtube',
+            'facebook_live': 'bi-facebook',
+            'google_photos': 'bi-google',
+            'dropbox': 'bi-dropbox',
         }
-        return icons.get(self.registry_type, 'bi-gift')
+        
+        # Try service-specific icon first, then link type icon
+        return service_icons.get(self.service_type, link_type_icons.get(self.link_type, 'bi-link-45deg'))
 
     @property
-    def registry_color(self):
-        """Returns brand color for the registry"""
+    def service_color(self):
+        """Returns brand color based on detected service"""
         colors = {
+            # Registries
             'amazon': '#FF9900',
             'target': '#CC0000',
             'bed_bath_beyond': '#003087',
@@ -281,16 +369,42 @@ class RegistryLink(models.Model):
             'zola': '#FF6B6B',
             'the_knot': '#FF69B4',
             'wayfair': '#663399',
-            'registry_finder': '#28a745',
             'honeyfund': '#FFA500',
+            
+            # RSVP
+            'rsvpify': '#007bff',
+            'wedding_wire': '#28a745',
+            'anrsvp': '#6f42c1',
+            'withjoy': '#fd7e14',
+            
+            # Livestream
+            'zoom': '#2D8CFF',
+            'youtube_live': '#FF0000',
+            'facebook_live': '#1877F2',
+            'instagram_live': '#E4405F',
+            
+            # Photos
+            'google_photos': '#4285F4',
+            'dropbox': '#0061FF',
+            'shutterfly': '#00A651',
+            'smugmug': '#6DB33F',
+        }
+        
+        link_type_colors = {
+            'registry': '#007bff',
+            'rsvp': '#28a745', 
+            'livestream': '#dc3545',
+            'photos': '#6f42c1',
+            'website': '#17a2b8',
             'other': '#6c757d',
         }
-        return colors.get(self.registry_type, '#6c757d')
-
+        
+        return colors.get(self.service_type, link_type_colors.get(self.link_type, '#6c757d'))
+    
     @property
-    def registry_display_name(self):
-        """Returns the display name to show on the wedding page"""
-        return self.registry_name
+    def display_title(self):
+        """Returns the title to display on the wedding page"""
+        return self.title
     
     def increment_clicks(self):
         """Increment click count"""
@@ -301,3 +415,7 @@ class RegistryLink(models.Model):
     def final_url(self):
         """Returns the URL to redirect to"""
         return self.url
+
+
+# For backwards compatibility, keep RegistryLink as an alias
+RegistryLink = WeddingLink

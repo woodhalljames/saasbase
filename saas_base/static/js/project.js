@@ -14,13 +14,13 @@ class WeddingFormManager {
     }
 
     /**
-     * Initialize dynamic formset management for social media and registry forms
+     * Initialize dynamic formset management for social media and wedding link forms
      */
     initializeDynamicFormsets() {
         this.setupDynamicFormset('social', 'Social Media Link');
-        this.setupDynamicFormset('registry', 'Wedding Registry');
+        this.setupDynamicFormset('weddinglink', 'Wedding Link');
+        this.setupDynamicFormset('registry', 'Wedding Registry'); // Backwards compatibility
     }
-
     /**
      * Setup dynamic formset functionality for a specific formset type
      * @param {string} formsetType - The type of formset (social or registry)
@@ -1691,3 +1691,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+

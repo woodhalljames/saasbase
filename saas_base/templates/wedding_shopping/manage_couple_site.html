@@ -237,7 +237,17 @@
           {% for form in social_formset %}
             <div class="social-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
               <div class="row">
-                <div class="col-lg-5 mb-2">
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">{{ form.owner.label }}</label>
+                  {{ form.owner }}
+                  {% if form.owner.help_text %}
+                    <div class="form-text">{{ form.owner.help_text }}</div>
+                  {% endif %}
+                  {% if form.owner.errors %}
+                    <div class="text-danger small">{{ form.owner.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-lg-4 mb-2">
                   <label class="form-label">{{ form.url.label }}</label>
                   {{ form.url }}
                   {% if form.url.help_text %}
@@ -247,7 +257,7 @@
                     <div class="text-danger small">{{ form.url.errors.0 }}</div>
                   {% endif %}
                 </div>
-                <div class="col-lg-5 mb-2">
+                <div class="col-lg-4 mb-2">
                   <label class="form-label">{{ form.display_name.label }}</label>
                   {{ form.display_name }}
                   {% if form.display_name.help_text %}
@@ -257,7 +267,7 @@
                     <div class="text-danger small">{{ form.display_name.errors.0 }}</div>
                   {% endif %}
                 </div>
-                <div class="col-lg-2 mb-2 d-flex align-items-end">
+                <div class="col-lg-1 mb-2 d-flex align-items-end">
                   <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="social">
                     <i class="bi bi-trash"></i>
                   </button>
@@ -272,28 +282,35 @@
         </div>
         <small class="text-muted">
           <i class="bi bi-info-circle"></i> 
-          Add your social media profiles so guests can follow your journey
+          Add social media profiles for each partner or shared accounts. Guests can follow your journey!
         </small>
       </div>
     </div>
 
-    <!-- Wedding Registry Section -->
+    <!-- Wedding Links Section (Enhanced) -->
     <div class="card mb-4">
       <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-          <i class="bi bi-gift"></i> Wedding Registries
+          <i class="bi bi-link-45deg"></i> Wedding Links
         </h5>
-        <button type="button" class="btn btn-dark btn-sm" id="add-registry-btn">
-          <i class="bi bi-plus"></i> Add Registry
+        <button type="button" class="btn btn-dark btn-sm" id="add-wedding-link-btn">
+          <i class="bi bi-plus"></i> Add Link
         </button>
       </div>
       <div class="card-body">
-        <div id="registry-formset">
-          {{ registry_formset.management_form }}
-          {% for form in registry_formset %}
-            <div class="registry-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+        <div id="wedding-link-formset">
+          {{ wedding_link_formset.management_form }}
+          {% for form in wedding_link_formset %}
+            <div class="wedding-link-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
               <div class="row">
-                <div class="col-lg-4 mb-2">
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">{{ form.link_type.label }}</label>
+                  {{ form.link_type }}
+                  {% if form.link_type.errors %}
+                    <div class="text-danger small">{{ form.link_type.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-lg-5 mb-2">
                   <label class="form-label">{{ form.url.label }}</label>
                   {{ form.url }}
                   {% if form.url.help_text %}
@@ -303,18 +320,18 @@
                     <div class="text-danger small">{{ form.url.errors.0 }}</div>
                   {% endif %}
                 </div>
-                <div class="col-lg-4 mb-2">
-                  <label class="form-label">{{ form.registry_name.label }} <span class="text-danger">*</span></label>
-                  {{ form.registry_name }}
-                  {% if form.registry_name.help_text %}
-                    <div class="form-text">{{ form.registry_name.help_text }}</div>
+                <div class="col-lg-3 mb-2">
+                  <label class="form-label">{{ form.title.label }} <span class="text-danger">*</span></label>
+                  {{ form.title }}
+                  {% if form.title.help_text %}
+                    <div class="form-text">{{ form.title.help_text }}</div>
                   {% endif %}
-                  {% if form.registry_name.errors %}
-                    <div class="text-danger small">{{ form.registry_name.errors.0 }}</div>
+                  {% if form.title.errors %}
+                    <div class="text-danger small">{{ form.title.errors.0 }}</div>
                   {% endif %}
                 </div>
-                <div class="col-lg-4 mb-2 d-flex align-items-end">
-                  <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="registry">
+                <div class="col-lg-1 mb-2 d-flex align-items-end">
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="wedding-link">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>
@@ -341,7 +358,7 @@
         </div>
         <small class="text-muted">
           <i class="bi bi-info-circle"></i> 
-          Add your wedding registries so guests can find the perfect gifts for you
+          Add links to your wedding registries, RSVP pages, live streams, photo galleries, and more!
         </small>
       </div>
     </div>
@@ -358,4 +375,59 @@
     </div>
   </form>
 </div>
+
+<!-- Link Type Helper Script -->
+<script>
+// Update placeholders based on link type selection
+function updateLinkPlaceholders(selectElement) {
+    const linkType = selectElement.value;
+    const form = selectElement.closest('.wedding-link-form');
+    const urlField = form.querySelector('input[name*="url"]');
+    const titleField = form.querySelector('input[name*="title"]');
+    const descriptionField = form.querySelector('textarea[name*="description"]');
+    
+    const placeholders = {
+        'registry': {
+            url: 'https://amazon.com/wedding/your-registry',
+            title: 'Our Home Registry',
+            description: 'Kitchen appliances, home decor, and everyday essentials'
+        },
+        'rsvp': {
+            url: 'https://rsvpify.com/your-event',
+            title: 'RSVP for Our Wedding', 
+            description: 'Please let us know if you can attend'
+        },
+        'livestream': {
+            url: 'https://zoom.us/j/your-meeting-id',
+            title: 'Wedding Ceremony Live Stream',
+            description: 'Watch our ceremony live online'
+        },
+        'photos': {
+            url: 'https://photos.google.com/share/your-album',
+            title: 'Wedding Photo Gallery',
+            description: 'View and download our wedding photos'
+        },
+        'website': {
+            url: 'https://ourweddingwebsite.com',
+            title: 'Our Wedding Website',
+            description: 'More details about our special day'
+        },
+        'other': {
+            url: 'https://example.com',
+            title: 'Custom Link',
+            description: 'Additional wedding information'
+        }
+    };
+    
+    const config = placeholders[linkType] || placeholders['other'];
+    if (urlField) urlField.placeholder = config.url;
+    if (titleField) titleField.placeholder = config.title;
+    if (descriptionField) descriptionField.placeholder = config.description;
+}
+
+// Initialize placeholders on page load
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('select[name*="link_type"]').forEach(updateLinkPlaceholders);
+});
+</script>
 {% endblock %}

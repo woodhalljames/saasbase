@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import CoupleProfile, SocialMediaLink, RegistryLink
+from .models import CoupleProfile, SocialMediaLink, WeddingLink
 import re
 
 
@@ -115,12 +115,15 @@ class CoupleProfileForm(forms.ModelForm):
 
 
 class SocialMediaLinkForm(forms.ModelForm):
-    """Simplified form for social media links - just URL and display name"""
+    """Enhanced form for social media links with owner selection"""
     
     class Meta:
         model = SocialMediaLink
-        fields = ['url', 'display_name']
+        fields = ['owner', 'url', 'display_name']
         widgets = {
+            'owner': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
                 'placeholder': 'https://instagram.com/yourusername',
@@ -132,14 +135,27 @@ class SocialMediaLinkForm(forms.ModelForm):
             })
         }
         labels = {
+            'owner': 'Belongs To',
             'url': 'Social Media URL',
             'display_name': 'Display Name'
         }
     
     def __init__(self, *args, **kwargs):
+        # Get couple profile to customize owner field labels
+        couple_profile = kwargs.pop('couple_profile', None)
         super().__init__(*args, **kwargs)
+        
+        # Customize owner field choices with actual partner names
+        if couple_profile:
+            self.fields['owner'].choices = [
+                ('partner_1', couple_profile.partner_1_name),
+                ('partner_2', couple_profile.partner_2_name),
+                ('shared', 'Both/Shared'),
+            ]
+        
         self.fields['url'].help_text = "We'll automatically detect the platform from your URL"
         self.fields['display_name'].help_text = "How this link should appear on your wedding page"
+        self.fields['owner'].help_text = "Who does this social media account belong to?"
     
     def clean_url(self):
         url = self.cleaned_data.get('url')
@@ -148,42 +164,51 @@ class SocialMediaLinkForm(forms.ModelForm):
         return url
 
 
-class RegistryLinkForm(forms.ModelForm):
-    """Simplified form for registry links - just URL, name, and description"""
+class WeddingLinkForm(forms.ModelForm):
+    """Enhanced form for all wedding-related links (registries, RSVP, livestreams, etc.)"""
     
     class Meta:
-        model = RegistryLink
-        fields = ['url', 'registry_name', 'description']
+        model = WeddingLink
+        fields = ['link_type', 'url', 'title', 'description']
         widgets = {
+            'link_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control url-field',
-                'placeholder': 'https://amazon.com/wedding/your-registry',
+                'placeholder': 'https://example.com/your-link',
                 'onblur': 'detectBrandingFromUrl(this)'
             }),
-            'registry_name': forms.TextInput(attrs={
+            'title': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Our Home Registry'
+                'placeholder': 'Link Title'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Kitchen appliances, home decor, and everyday essentials'
+                'placeholder': 'Description of this link (optional)'
             })
         }
         labels = {
-            'url': 'Registry URL',
-            'registry_name': 'Registry Name',
+            'link_type': 'Link Type',
+            'url': 'URL',
+            'title': 'Title',
             'description': 'Description'
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['url'].help_text = "We'll automatically detect the store from your URL"
-        self.fields['registry_name'].help_text = "A friendly name for this registry (e.g., 'Our Home Registry')"
-        self.fields['description'].help_text = "What types of items are on this registry?"
+        self.fields['url'].help_text = "We'll automatically detect the service from your URL"
+        self.fields['title'].help_text = "A friendly name for this link"
+        self.fields['description'].help_text = "Additional details about this link (optional)"
         
-        # Make registry_name required
-        self.fields['registry_name'].required = True
+        # Make title required
+        self.fields['title'].required = True
+        
+        # Add placeholder text based on link type
+        self.fields['link_type'].widget.attrs.update({
+            'onchange': 'updateLinkPlaceholders(this)'
+        })
     
     def clean_url(self):
         url = self.cleaned_data.get('url')
@@ -191,36 +216,39 @@ class RegistryLinkForm(forms.ModelForm):
             url = 'https://' + url
         return url
     
-    def clean_registry_name(self):
-        name = self.cleaned_data.get('registry_name', '')
-        if not name or len(name.strip()) < 1:
-            raise ValidationError("Registry name is required.")
-        return name.strip()
+    def clean_title(self):
+        title = self.cleaned_data.get('title', '')
+        if not title or len(title.strip()) < 1:
+            raise ValidationError("Title is required.")
+        return title.strip()
 
 
-# Simplified formsets
+# Create formsets for the new models
 SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=1,  # Start with 2 empty forms
+    extra=3,  # Start with 3 empty forms (one for each owner type)
     can_delete=True,
     min_num=0,
-    max_num=8,
+    max_num=12,  # Allow more social media links
     validate_min=False,
     validate_max=True,
     can_order=False
 )
 
-RegistryFormSet = forms.inlineformset_factory(
+WeddingLinkFormSet = forms.inlineformset_factory(
     CoupleProfile, 
-    RegistryLink, 
-    form=RegistryLinkForm,
-    extra=1,  # Start with 1 empty form
+    WeddingLink, 
+    form=WeddingLinkForm,
+    extra=2,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
-    max_num=6,
+    max_num=10,  # Allow up to 10 wedding links
     validate_min=False,
     validate_max=True,
     can_order=False
 )
+
+# Backwards compatibility alias
+RegistryFormSet = WeddingLinkFormSet

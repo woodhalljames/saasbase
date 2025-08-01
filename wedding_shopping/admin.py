@@ -1,13 +1,13 @@
 # wedding_shopping/admin.py
 from django.contrib import admin
-from .models import CoupleProfile, SocialMediaLink, RegistryLink
+from .models import CoupleProfile, SocialMediaLink, WeddingLink
 
 
 class SocialMediaLinkInline(admin.TabularInline):
     """Inline admin for social media links"""
     model = SocialMediaLink
     extra = 1
-    fields = ['url', 'display_name']
+    fields = ['owner', 'url', 'display_name']
     readonly_fields = ['platform_info']
     
     def platform_info(self, obj):
@@ -18,19 +18,19 @@ class SocialMediaLinkInline(admin.TabularInline):
     platform_info.short_description = "Detected Platform"
 
 
-class RegistryLinkInline(admin.TabularInline):
-    """Inline admin for registry links"""
-    model = RegistryLink
+class WeddingLinkInline(admin.TabularInline):
+    """Inline admin for wedding links"""
+    model = WeddingLink
     extra = 1
-    fields = ['url', 'registry_name', 'description', 'click_count']
-    readonly_fields = ['registry_info', 'click_count']
+    fields = ['link_type', 'url', 'title', 'description', 'click_count']
+    readonly_fields = ['service_info', 'click_count']
     
-    def registry_info(self, obj):
-        """Show detected registry info"""
+    def service_info(self, obj):
+        """Show detected service info"""
         if obj.pk:
-            return f"{obj.registry_type.replace('_', ' ').title()} ({obj.registry_icon})"
+            return f"{obj.service_type.replace('_', ' ').title()} ({obj.service_icon})"
         return "Will be detected from URL"
-    registry_info.short_description = "Detected Registry"
+    service_info.short_description = "Detected Service"
 
 
 @admin.register(CoupleProfile)
@@ -38,7 +38,7 @@ class CoupleProfileAdmin(admin.ModelAdmin):
     """Admin interface for couple profiles"""
     list_display = [
         'couple_names', 'wedding_date', 'venue_name', 'is_public', 
-        'social_count', 'registry_count', 'created_at'
+        'social_count', 'wedding_links_count', 'created_at'
     ]
     list_filter = ['is_public', 'wedding_date', 'created_at']
     search_fields = ['partner_1_name', 'partner_2_name', 'venue_name', 'venue_location']
@@ -70,54 +70,57 @@ class CoupleProfileAdmin(admin.ModelAdmin):
         }),
     )
     
-    inlines = [SocialMediaLinkInline, RegistryLinkInline]
+    inlines = [SocialMediaLinkInline, WeddingLinkInline]
     
     def social_count(self, obj):
         """Count of social media links"""
         return obj.social_links.count()
     social_count.short_description = "Social Links"
     
-    def registry_count(self, obj):
-        """Count of registry links"""
-        return obj.registry_links.count()
-    registry_count.short_description = "Registries"
+    def wedding_links_count(self, obj):
+        """Count of wedding links"""
+        return obj.wedding_links.count()
+    wedding_links_count.short_description = "Wedding Links"
     
     def get_queryset(self, request):
         """Optimize queries"""
         return super().get_queryset(request).select_related('user').prefetch_related(
-            'social_links', 'registry_links'
+            'social_links', 'wedding_links'
         )
 
 
 @admin.register(SocialMediaLink)
 class SocialMediaLinkAdmin(admin.ModelAdmin):
     """Admin interface for social media links"""
-    list_display = ['couple_profile', 'platform', 'display_name', 'url']
-    list_filter = ['couple_profile__is_public']
+    list_display = ['couple_profile', 'owner', 'platform', 'display_name', 'url']
+    list_filter = ['owner', 'couple_profile__is_public']
     search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'display_name', 'url']
     readonly_fields = ['platform', 'platform_icon', 'platform_color']
     
-    fields = ['couple_profile', 'url', 'display_name', 'platform', 'platform_icon', 'platform_color']
+    fields = ['couple_profile', 'owner', 'url', 'display_name', 'platform', 'platform_icon', 'platform_color']
     
     def get_queryset(self, request):
         """Optimize queries"""
         return super().get_queryset(request).select_related('couple_profile')
 
 
-@admin.register(RegistryLink)
-class RegistryLinkAdmin(admin.ModelAdmin):
-    """Admin interface for registry links"""
-    list_display = ['couple_profile', 'registry_type', 'registry_name', 'click_count', 'created_at']
-    list_filter = ['couple_profile__is_public', 'created_at']
-    search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'registry_name', 'url']
-    readonly_fields = ['registry_type', 'registry_icon', 'registry_color', 'click_count', 'created_at']
+@admin.register(WeddingLink)
+class WeddingLinkAdmin(admin.ModelAdmin):
+    """Admin interface for wedding links"""
+    list_display = ['couple_profile', 'link_type', 'title', 'service_type', 'click_count', 'created_at']
+    list_filter = ['link_type', 'couple_profile__is_public', 'created_at']
+    search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'title', 'url']
+    readonly_fields = ['service_type', 'service_icon', 'service_color', 'click_count', 'created_at']
     
     fields = [
-        'couple_profile', 'url', 'registry_name', 'description', 
-        'registry_type', 'registry_icon', 'registry_color',
+        'couple_profile', 'link_type', 'url', 'title', 'description', 
+        'service_type', 'service_icon', 'service_color',
         'click_count', 'created_at'
     ]
     
     def get_queryset(self, request):
         """Optimize queries"""
         return super().get_queryset(request).select_related('couple_profile')
+
+
+# Note: RegistryLink is now just an alias for WeddingLink, so no separate registration needed

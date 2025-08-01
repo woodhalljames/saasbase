@@ -111,12 +111,14 @@
                     {{ couple.venue_location }}
                   </p>
                 {% endif %}
+                <div class="venue-features">
+                  <div class="feature-item">
                     <i class="bi bi-heart text-rose"></i>
                     <span>Where our love story continues</span>
                   </div>
                   <div class="feature-item">
                     <i class="bi bi-people text-cyan"></i>
-                    <span>Surrounded by the people most important</span>
+                    <span>Surrounded by the people most important to us</span>
                   </div>
                 </div>
               </div>
@@ -134,18 +136,61 @@
         <div class="section-header text-center mb-5">
           <h2 class="section-title">Our Love Story</h2>
           <div class="section-divider"></div>
-          
         </div>
         
         <div class="story-card">
           <div class="story-content">
-           
-              
-            </div>
             <div class="story-text">
               {{ couple.couple_story|linebreaks }}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- RSVP Section -->
+    {% if rsvp_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">RSVP</h2>
+          <div class="section-divider"></div>
+          <p class="section-subtitle">Please let us know if you can celebrate with us!</p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+          {% for rsvp in rsvp_links %}
+          <div class="col-md-6 col-lg-4">
+            <div class="wedding-link-card rsvp-card">
+              <div class="wedding-link-header">
+                <div class="wedding-link-icon" style="background-color: {{ rsvp.service_color }}15; border-color: {{ rsvp.service_color }}30;">
+                  <i class="{{ rsvp.service_icon }}" style="color: {{ rsvp.service_color }};"></i>
+                </div>
+                <div class="wedding-link-info">
+                  <h6 class="wedding-link-title">{{ rsvp.display_title }}</h6>
+                  <small class="wedding-link-service">{{ rsvp.get_link_type_display }}</small>
+                </div>
+              </div>
+              
+              {% if rsvp.description %}
+              <div class="wedding-link-body">
+                <p class="wedding-link-description">{{ rsvp.description }}</p>
+              </div>
+              {% endif %}
+              
+              <div class="wedding-link-footer">
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' rsvp.pk %}" 
+                   class="wedding-link-btn rsvp-btn"
+                   style="background-color: {{ rsvp.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-envelope-check"></i>
+                  <span>RSVP Now</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
       </div>
     </div>
@@ -177,18 +222,18 @@
                   </thead>
                   <tbody>
                     {% for registry in registry_links %}
-                    <tr class="registry-row" data-color="{{ registry.registry_color }}">
+                    <tr class="registry-row" data-color="{{ registry.service_color }}">
                       <td>
                         <div class="registry-brand">
-                          <div class="registry-icon" style="background-color: {{ registry.registry_color }}15; border-color: {{ registry.registry_color }}30;">
-                            <i class="{{ registry.registry_icon }}" style="color: {{ registry.registry_color }};"></i>
+                          <div class="registry-icon" style="background-color: {{ registry.service_color }}15; border-color: {{ registry.service_color }}30;">
+                            <i class="{{ registry.service_icon }}" style="color: {{ registry.service_color }};"></i>
                           </div>
                         </div>
                       </td>
                       <td>
                         <div class="registry-info">
-                          <h6 class="registry-name">{{ registry.registry_display_name }}</h6>
-                          <small class="registry-type">{{ registry.registry_type|title }}</small>
+                          <h6 class="registry-name">{{ registry.display_title }}</h6>
+                          <small class="registry-type">{{ registry.get_link_type_display }}</small>
                         </div>
                       </td>
                       <td>
@@ -201,9 +246,9 @@
                         </p>
                       </td>
                       <td class="text-center">
-                        <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
+                        <a href="{% url 'wedding_shopping:wedding_link_redirect' registry.pk %}" 
                            class="registry-shop-btn"
-                           style="background-color: {{ registry.registry_color }};"
+                           style="background-color: {{ registry.service_color }};"
                            target="_blank">
                           <i class="bi bi-gift"></i>
                           <span>Shop Registry</span>
@@ -222,14 +267,14 @@
             <div class="row g-4">
               {% for registry in registry_links %}
               <div class="col-md-6">
-                <div class="registry-mobile-card" data-color="{{ registry.registry_color }}">
+                <div class="registry-mobile-card" data-color="{{ registry.service_color }}">
                   <div class="registry-card-header">
-                    <div class="registry-icon" style="background-color: {{ registry.registry_color }}15; border-color: {{ registry.registry_color }}30;">
-                      <i class="{{ registry.registry_icon }}" style="color: {{ registry.registry_color }};"></i>
+                    <div class="registry-icon" style="background-color: {{ registry.service_color }}15; border-color: {{ registry.service_color }}30;">
+                      <i class="{{ registry.service_icon }}" style="color: {{ registry.service_color }};"></i>
                     </div>
                     <div class="registry-info">
-                      <h6 class="registry-name">{{ registry.registry_display_name }}</h6>
-                      <small class="registry-type">{{ registry.registry_type|title }}</small>
+                      <h6 class="registry-name">{{ registry.display_title }}</h6>
+                      <small class="registry-type">{{ registry.get_link_type_display }}</small>
                     </div>
                   </div>
                   
@@ -242,9 +287,9 @@
                   </div>
                   
                   <div class="registry-card-footer">
-                    <a href="{% url 'wedding_shopping:registry_redirect' registry.pk %}" 
+                    <a href="{% url 'wedding_shopping:wedding_link_redirect' registry.pk %}" 
                        class="registry-shop-btn"
-                       style="background-color: {{ registry.registry_color }};"
+                       style="background-color: {{ registry.service_color }};"
                        target="_blank">
                       <i class="bi bi-gift"></i>
                       <span>Shop Registry</span>
@@ -260,33 +305,234 @@
     </div>
     {% endif %}
 
-    <!-- Social Media Section -->
-    {% if social_links %}
+    <!-- Live Stream Section -->
+    {% if livestream_links %}
     <div class="row mb-5">
       <div class="col-12">
         <div class="section-header text-center mb-5">
-          <h2 class="section-title">Follow Us</h2>
+          <h2 class="section-title">Watch Live</h2>
           <div class="section-divider"></div>
-          <p class="section-subtitle">Stay connected with us on social me</p>
+          <p class="section-subtitle">Join us virtually for our special day</p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+          {% for livestream in livestream_links %}
+          <div class="col-md-6 col-lg-4">
+            <div class="wedding-link-card livestream-card">
+              <div class="wedding-link-header">
+                <div class="wedding-link-icon" style="background-color: {{ livestream.service_color }}15; border-color: {{ livestream.service_color }}30;">
+                  <i class="{{ livestream.service_icon }}" style="color: {{ livestream.service_color }};"></i>
+                </div>
+                <div class="wedding-link-info">
+                  <h6 class="wedding-link-title">{{ livestream.display_title }}</h6>
+                  <small class="wedding-link-service">{{ livestream.get_link_type_display }}</small>
+                </div>
+              </div>
+              
+              {% if livestream.description %}
+              <div class="wedding-link-body">
+                <p class="wedding-link-description">{{ livestream.description }}</p>
+              </div>
+              {% endif %}
+              
+              <div class="wedding-link-footer">
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' livestream.pk %}" 
+                   class="wedding-link-btn livestream-btn"
+                   style="background-color: {{ livestream.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-camera-video"></i>
+                  <span>Join Stream</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Photo Gallery Section -->
+    {% if photo_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">Wedding Photos</h2>
+          <div class="section-divider"></div>
+          <p class="section-subtitle">View and share our special moments</p>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+          {% for photo in photo_links %}
+          <div class="col-md-6 col-lg-4">
+            <div class="wedding-link-card photo-card">
+              <div class="wedding-link-header">
+                <div class="wedding-link-icon" style="background-color: {{ photo.service_color }}15; border-color: {{ photo.service_color }}30;">
+                  <i class="{{ photo.service_icon }}" style="color: {{ photo.service_color }};"></i>
+                </div>
+                <div class="wedding-link-info">
+                  <h6 class="wedding-link-title">{{ photo.display_title }}</h6>
+                  <small class="wedding-link-service">{{ photo.get_link_type_display }}</small>
+                </div>
+              </div>
+              
+              {% if photo.description %}
+              <div class="wedding-link-body">
+                <p class="wedding-link-description">{{ photo.description }}</p>
+              </div>
+              {% endif %}
+              
+              <div class="wedding-link-footer">
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' photo.pk %}" 
+                   class="wedding-link-btn photo-btn"
+                   style="background-color: {{ photo.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-camera"></i>
+                  <span>View Photos</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Other Wedding Links -->
+    {% if other_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">More Information</h2>
+          <div class="section-divider"></div>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+          {% for other in other_links %}
+          <div class="col-md-6 col-lg-4">
+            <div class="wedding-link-card other-card">
+              <div class="wedding-link-header">
+                <div class="wedding-link-icon" style="background-color: {{ other.service_color }}15; border-color: {{ other.service_color }}30;">
+                  <i class="{{ other.service_icon }}" style="color: {{ other.service_color }};"></i>
+                </div>
+                <div class="wedding-link-info">
+                  <h6 class="wedding-link-title">{{ other.display_title }}</h6>
+                  <small class="wedding-link-service">{{ other.get_link_type_display }}</small>
+                </div>
+              </div>
+              
+              {% if other.description %}
+              <div class="wedding-link-body">
+                <p class="wedding-link-description">{{ other.description }}</p>
+              </div>
+              {% endif %}
+              
+              <div class="wedding-link-footer">
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' other.pk %}" 
+                   class="wedding-link-btn other-btn"
+                   style="background-color: {{ other.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-link-45deg"></i>
+                  <span>Visit Link</span>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Enhanced Social Media Section -->
+    {% if partner_1_social_links or partner_2_social_links or shared_social_links %}
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="section-header text-center mb-5">
+          <h2 class="section-title">Follow Our Journey</h2>
+          <div class="section-divider"></div>
+          <p class="section-subtitle">Stay connected with us on social media</p>
         </div>
         
         <div class="social-links-section">
-          <div class="row g-4 justify-content-center">
-            {% for social in social_links %}
-              <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                <a href="{{ social.url }}" 
-                   target="_blank" 
-                   class="social-link-card"
-                   data-color="{{ social.platform_color }}">
-                  <div class="social-icon" style="color: {{ social.platform_color }};">
-                    <i class="{{ social.platform_icon }}"></i>
-                  </div>
-                  <div class="social-name">{{ social.platform_display_name }}</div>
-                  <div class="social-hover-effect" style="background-color: {{ social.platform_color }};"></div>
-                </a>
-              </div>
-            {% endfor %}
+          <!-- Partner 1 Social Links -->
+          {% if partner_1_social_links %}
+          <div class="partner-social-section mb-4">
+            <h4 class="partner-social-title text-center mb-3">
+              <i class="bi bi-person-circle text-rose"></i>
+              {{ couple.partner_1_name }}
+            </h4>
+            <div class="row g-3 justify-content-center">
+              {% for social in partner_1_social_links %}
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                  <a href="{{ social.url }}" 
+                     target="_blank" 
+                     class="social-link-card"
+                     data-color="{{ social.platform_color }}">
+                    <div class="social-icon" style="color: {{ social.platform_color }};">
+                      <i class="{{ social.platform_icon }}"></i>
+                    </div>
+                    <div class="social-name">{{ social.platform_display_name }}</div>
+                    <div class="social-hover-effect" style="background-color: {{ social.platform_color }};"></div>
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
           </div>
+          {% endif %}
+
+          <!-- Partner 2 Social Links -->
+          {% if partner_2_social_links %}
+          <div class="partner-social-section mb-4">
+            <h4 class="partner-social-title text-center mb-3">
+              <i class="bi bi-person-circle text-cyan"></i>
+              {{ couple.partner_2_name }}
+            </h4>
+            <div class="row g-3 justify-content-center">
+              {% for social in partner_2_social_links %}
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                  <a href="{{ social.url }}" 
+                     target="_blank" 
+                     class="social-link-card"
+                     data-color="{{ social.platform_color }}">
+                    <div class="social-icon" style="color: {{ social.platform_color }};">
+                      <i class="{{ social.platform_icon }}"></i>
+                    </div>
+                    <div class="social-name">{{ social.platform_display_name }}</div>
+                    <div class="social-hover-effect" style="background-color: {{ social.platform_color }};"></div>
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Shared Social Links -->
+          {% if shared_social_links %}
+          <div class="partner-social-section mb-4">
+            <h4 class="partner-social-title text-center mb-3">
+              <i class="bi bi-heart-fill text-rose"></i>
+              Together
+            </h4>
+            <div class="row g-3 justify-content-center">
+              {% for social in shared_social_links %}
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                  <a href="{{ social.url }}" 
+                     target="_blank" 
+                     class="social-link-card"
+                     data-color="{{ social.platform_color }}">
+                    <div class="social-icon" style="color: {{ social.platform_color }};">
+                      <i class="{{ social.platform_icon }}"></i>
+                    </div>
+                    <div class="social-name">{{ social.platform_display_name }}</div>
+                    <div class="social-hover-effect" style="background-color: {{ social.platform_color }};"></div>
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
