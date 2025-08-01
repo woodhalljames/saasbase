@@ -1,32 +1,49 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
-{% block title %}Update Profile{% endblock title %}
+{% block title %}Update Profile - DreamWedAI{% endblock title %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-8">
       <div class="card">
-        <div class="card-header">
-          <h4 class="mb-0">Update Profile</h4>
+        <div class="card-header bg-gradient-cyan text-white">
+          <h4 class="mb-0">
+            <i class="bi bi-person-gear"></i> Update Profile
+          </h4>
         </div>
         <div class="card-body">
+          <div class="text-center mb-4">
+            <div class="feature-icon mx-auto mb-3">
+              <i class="bi bi-person-circle"></i>
+            </div>
+            <h5 class="fw-bold">Profile Settings</h5>
+            <p class="text-muted">Keep your account information up to date</p>
+          </div>
+
           <form method="post">
             {% csrf_token %}
             {{ form|crispy }}
             
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info border-0 mt-4">
+              <i class="bi bi-lightbulb me-2"></i>
               <strong>Username Tips:</strong>
-              <ul class="mb-0">
-                <li>Useful when you wish to share your account with wedding planners & trusted parties.</li>
+              <ul class="mb-0 mt-2">
+                <li>Useful when you wish to share your account with wedding planners & trusted parties</li>
                 <li>Can be used to login (along with email)</li>
                 <li>3-150 characters, letters, numbers, and @/./+/-/_ only</li>
               </ul>
             </div>
             
-            <div class="d-grid">
-              <button type="submit" class="btn btn-primary">Update Profile</button>
+            <div class="d-flex gap-3 mt-4">
+              <button type="submit" class="btn btn-gradient-cyan flex-fill">
+                <i class="bi bi-check-circle"></i> Update Profile
+              </button>
+              <a href="{% url 'users:detail' request.user.username %}" 
+                 class="btn btn-outline-secondary flex-fill">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+              </a>
             </div>
           </form>
         </div>

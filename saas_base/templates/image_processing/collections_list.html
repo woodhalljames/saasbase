@@ -1,4 +1,3 @@
-<!-- image_processing/templates/image_processing/collections_list.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -171,16 +170,26 @@
                   <i class="bi bi-three-dots"></i>
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#" onclick="editCollection({{ collection.id }}, '{{ collection.name }}', '{{ collection.description }}', {{ collection.is_public|yesno:'true,false' }})">
+                  <li><a class="dropdown-item edit-collection-btn" 
+                         href="#" 
+                         data-collection-id="{{ collection.id }}"
+                         data-collection-name="{{ collection.name }}"
+                         data-collection-description="{{ collection.description }}"
+                         data-collection-public="{{ collection.is_public|yesno:'true,false' }}">
                     <i class="bi bi-pencil"></i> Edit
                   </a></li>
                   {% if collection.is_public %}
-                    <li><a class="dropdown-item" href="#" onclick="shareCollection({{ collection.id }})">
+                    <li><a class="dropdown-item share-collection-btn" 
+                           href="#" 
+                           data-collection-id="{{ collection.id }}">
                       <i class="bi bi-share"></i> Share
                     </a></li>
                   {% endif %}
                   <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item text-danger" href="#" onclick="deleteCollection({{ collection.id }}, '{{ collection.name }}')">
+                  <li><a class="dropdown-item text-danger delete-collection-btn" 
+                         href="#" 
+                         data-collection-id="{{ collection.id }}"
+                         data-collection-name="{{ collection.name }}">
                     <i class="bi bi-trash"></i> Delete
                   </a></li>
                 </ul>
@@ -243,37 +252,4 @@
     </div>
   </div>
 </div>
-
-<script>
-function deleteCollection(id, name) {
-    if (confirm(`Are you sure you want to delete the collection "${name}"? This cannot be undone.`)) {
-        // Create form and submit
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/studio/collections/${id}/delete/`;
-        
-        const csrfToken = document.createElement('input');
-        csrfToken.type = 'hidden';
-        csrfToken.name = 'csrfmiddlewaretoken';
-        csrfToken.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        form.appendChild(csrfToken);
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function editCollection(id, name, description, isPublic) {
-    // For now, just show an alert. You could implement an edit modal here
-    alert(`Edit functionality would open a modal for "${name}"`);
-}
-
-function shareCollection(id) {
-    // For now, just show an alert. You could implement sharing functionality here
-    alert('Share functionality would generate a public link');
-}
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

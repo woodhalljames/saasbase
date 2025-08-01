@@ -233,15 +233,15 @@
             <i class="bi bi-share"></i>
           </div>
           <h4 class="mb-3">Easy Collaboration</h4>
-          <p class="text-muted">Share your vision with clients and coworkers for feedback and input.</p>
+          <p class="text-muted">Share your vision with family and/or clients for feedback and input.</p>
         </div>
         
         <div class="tool-card">
           <div class="tool-icon">
             <i class="bi bi-people"></i>
           </div>
-          <h4 class="mb-3">Wedding Organization</h4>
-          <p class="text-muted">Increase wedding day satisfaction with organization tools for a dream wedding day.</p>
+          <h4 class="mb-3">Wedding Day Satisfaction</h4>
+          <p class="text-muted">Increase wedding day satisfaction with organization & visualization tools for a dream wedding day.</p>
         </div>
         <div class="tool-card">
           <div class="tool-icon">
@@ -272,7 +272,7 @@
               <i class="bi bi-cloud-upload"></i>
             </div>
             <h4 class="mb-3">Upload Your Venue</h4>
-            <p class="text-muted">Take a photo of your venue space or upload an existing image. Any angle, any lighting - we'll work with what you have.</p>
+            <p class="text-muted">Add your venue space. Any angle, any lighting - we'll work with what you have.</p>
           </div>
         </div>
         
@@ -283,7 +283,7 @@
               <i class="bi bi-sliders"></i>
             </div>
             <h4 class="mb-3">Choose Your Style</h4>
-            <p class="text-muted">Select from rustic, modern, garden, ballroom, and dozens of other wedding styles. Customize colors, season, budget and guest count.</p>
+            <p class="text-muted">Select from rustic, modern, garden, bohemian, and dozens of other wedding styles. Customize colors, season, budget and guest count.</p>
           </div>
         </div>
         
@@ -293,7 +293,7 @@
             <div class="step-icon">
               <i class="bi bi-heart-eyes"></i>
             </div>
-            <h4 class="mb-3">See Your Dream</h4>
+            <h4 class="mb-3">See Your Dream Wedding</h4>
             <p class="text-muted">Watch your venue transform into your perfect wedding space. Save favorites, share, and plan with confidence.</p>
           </div>
         </div>
@@ -306,7 +306,7 @@
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="section-title text-dark">Love Stories Made Real</h2>
+          <h2 class="section-title text-dark">Dream Weddings Made Real</h2>
           <p class="section-subtitle text-muted">See what couples and wedding planners are saying about their DreamWedAI experience</p>
         </div>
       </div>
@@ -322,11 +322,11 @@
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
               </div>
-              <p class="mb-3">"DreamWedAI helped us visualize our spring outdoor wedding perfectly. We could see exactly how the space will look decorated, which made picking a season so much easier!"</p>
+              <p class="mb-3">"DreamWedAI helped us visualize our spring outdoor wedding perfectly. We can see exactly how the space will look decorated, which made picking a season so much easier!"</p>
               <div class="testimonial-author">
                 <div class="author-info">
                   <strong>Danielle & Antwon</strong>
-                  <div class="text-muted">Garden Wedding • May 202</div>
+                  <div class="text-muted">Garden Wedding • May 2026</div>
                 </div>
               </div>
             </div>
@@ -383,20 +383,18 @@
     <div class="container">
       <div class="row">
         <div class="col-12 text-center">
-          <h2 class="section-title">Ready to See Your Dream Wedding?</h2>
-          <p class="section-subtitle">Join thousands of couples who wedding vision into reality</p>
+          <h2 class="section-title">Ready to See Your Wedding?</h2>
+          <p class="section-subtitle">Join thousands who have turned dreams into reality</p>
           <div class="mb-4">
             {% if user.is_authenticated %}
               <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
                 <i class="bi bi-magic"></i> See your wedding day
               </a>
-            {% else %}
-              <a href="{% url 'account_signup' %}" class="hero-cta-primary me-3">
-                <i class="bi bi-magic"></i> See your wedding day
-              </a>
+             
             {% endif %}
+            <br>
             <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
-              <i class="bi bi-info-circle"></i> Learn More
+              <i class="bi bi-info-circle"></i> Subscribe!
             </a>
           </div>
           <p class="small opacity-75 mb-0">

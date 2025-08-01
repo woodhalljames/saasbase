@@ -6,51 +6,59 @@
 {% block content %}
 <div class="about-page">
   <!-- Hero Section -->
-  <section class="about-hero-section">
-    <div class="hero-particles"></div>
+  <section class="hero-section">
     <div class="container">
       <div class="row align-items-center min-vh-75">
         <div class="col-lg-6">
-          <h1 class="display-4 fw-bold mb-4 text-white">
+          <h1 class="display-3 fw-bold mb-4 text-white">
             We Believe Every Couple Deserves to 
             <span class="text-gradient">See Their Dream</span>
           </h1>
           <p class="lead mb-4 text-white-75">
             DreamWedAI was born from a simple idea: wedding planning shouldn't be filled with uncertainty and stress. We're here to help you visualize your perfect day before it happens.
           </p>
-          <div class="about-stats">
-            <div class="row">
+          <div class="hero-stats">
+            <div class="row text-center">
               <div class="col-md-4 mb-3">
-                <div class="stat-item">
-                  <div class="stat-number">2024</div>
-                  <div class="stat-label text-white-50">Founded</div>
-                </div>
+                <div class="stat-number">2024</div>
+                <div class="stat-label">Founded</div>
               </div>
               <div class="col-md-4 mb-3">
-                <div class="stat-item">
-                  <div class="stat-number">15K</div>
-                  <div class="stat-label text-white-50">Transformations</div>
-                </div>
+                <div class="stat-number">15k+</div>
+                <div class="stat-label">Transformations</div>
               </div>
               <div class="col-md-4 mb-3">
-                <div class="stat-item">
-                  <div class="stat-number">800</div>
-                  <div class="stat-label text-white-50">Happy Couples</div>
-                </div>
+                <div class="stat-number">800+</div>
+                <div class="stat-label">Happy Couples</div>
               </div>
             </div>
           </div>
         </div>
         <div class="col-lg-6">
-          <div class="about-hero-image">
-            <div class="image-container">
-              <div class="floating-element element-1">💕</div>
-              <div class="floating-element element-2">🎊</div>
-              <div class="floating-element element-3">💍</div>
-              <div class="floating-element element-4">🌸</div>
-              <div class="main-circle">
-                <i class="bi bi-heart-fill"></i>
+          <div class="hero-visual">
+            <div class="floating-element">
+              <div class="text-center">
+                <i class="bi bi-heart-fill text-rose fs-2 mb-2"></i>
+                <h6 class="mb-0">Love Stories</h6>
+                <small class="text-muted">Beautifully told</small>
               </div>
+            </div>
+            <div class="floating-element">
+              <div class="text-center">
+                <i class="bi bi-magic text-cyan fs-2 mb-2"></i>
+                <h6 class="mb-0">AI Magic</h6>
+                <small class="text-muted">Instant transforms</small>
+              </div>
+            </div>
+            <div class="floating-element">
+              <div class="text-center">
+                <i class="bi bi-share text-rose fs-2 mb-2"></i>
+                <h6 class="mb-0">Easy Sharing</h6>
+                <small class="text-muted">With loved ones</small>
+              </div>
+            </div>
+            <div class="hero-main-image">
+              <i class="bi bi-heart-fill fs-1"></i>
             </div>
           </div>
         </div>
@@ -59,15 +67,16 @@
   </section>
 
   <!-- Mission Section -->
-  <section class="mission-section py-5">
+  <section class="py-6">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto text-center">
-          <h2 class="section-title text-dark">Our Mission</h2>
-          <p class="lead mb-4">
+          <div class="section-divider"></div>
+          <h2 class="section-title">Our Mission</h2>
+          <p class="section-subtitle">
             To eliminate the guesswork from wedding planning by giving couples the power to visualize their dream wedding before their special day arrives.
           </p>
-          <p class="text-muted">
+          <p class="text-muted fs-5">
             We understand that your wedding day is one of the most important days of your life. That's why we've created tools that help you see, share, and celebrate your vision with confidence.
           </p>
         </div>
@@ -76,45 +85,62 @@
   </section>
 
   <!-- Story Section -->
-  <section class="story-section py-5 bg-light">
+  <section class="py-6 bg-light">
     <div class="container">
       <div class="row align-items-center">
         <div class="col-lg-6 mb-4">
-          <h2 class="section-title text-dark">Our Story</h2>
+          <div class="section-divider"></div>
+          <h2 class="section-title">Our Story</h2>
           <div class="story-content">
-            <p class="mb-4">
+            <p class="mb-4 fs-5">
               DreamWedAI started when our founder was helping a friend plan their wedding. After visiting dozens of venues, they realized that couples were making one of their biggest decisions based on empty rooms and their imagination.
             </p>
-            <p class="mb-4">
+            <p class="mb-4 fs-5">
               "What if we could show them exactly how their venue would look decorated?" That question sparked the creation of DreamWedAI - a platform that transforms any space into a wedding celebration.
             </p>
-            <p class="mb-4">
+            <p class="mb-4 fs-5">
               Today, we're proud to help couples around the world visualize their perfect wedding day, share their vision with loved ones, and celebrate with confidence.
             </p>
           </div>
         </div>
         <div class="col-lg-6">
-          <div class="story-visual">
-            <div class="timeline">
-              <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                  <h5>The Problem</h5>
-                  <p>Couples struggling to visualize their wedding venues</p>
+          <div class="card border-0 shadow-lg">
+            <div class="card-body p-4">
+              <div class="timeline">
+                <div class="d-flex mb-4">
+                  <div class="flex-shrink-0 me-3">
+                    <div class="feature-icon bg-gradient-rose">
+                      <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 class="mb-2">The Problem</h5>
+                    <p class="text-muted">Couples struggling to visualize their wedding venues</p>
+                  </div>
                 </div>
-              </div>
-              <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                  <h5>The Solution</h5>
-                  <p>Advanced AI visualization technology made simple</p>
+                
+                <div class="d-flex mb-4">
+                  <div class="flex-shrink-0 me-3">
+                    <div class="feature-icon bg-gradient-cyan">
+                      <i class="bi bi-lightbulb"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 class="mb-2">The Solution</h5>
+                    <p class="text-muted">Advanced AI visualization technology made simple</p>
+                  </div>
                 </div>
-              </div>
-              <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                  <h5>The Result</h5>
-                  <p>Thousands of confident, happy couples</p>
+                
+                <div class="d-flex">
+                  <div class="flex-shrink-0 me-3">
+                    <div class="feature-icon bg-gradient-rose">
+                      <i class="bi bi-heart-fill"></i>
+                    </div>
+                  </div>
+                  <div>
+                    <h5 class="mb-2">The Result</h5>
+                    <p class="text-muted">Thousands of confident, happy couples</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -125,19 +151,20 @@
   </section>
 
   <!-- Values Section -->
-  <section class="values-section py-5">
+  <section class="py-6">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="section-title text-dark">Our Values</h2>
-          <p class="section-subtitle text-muted">The principles that guide everything we do</p>
+          <div class="section-divider"></div>
+          <h2 class="section-title">Our Values</h2>
+          <p class="section-subtitle">The principles that guide everything we do</p>
         </div>
       </div>
       
       <div class="row g-4">
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon">
               <i class="bi bi-people-fill"></i>
             </div>
             <h4 class="mb-3">Inclusivity</h4>
@@ -146,8 +173,8 @@
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon">
               <i class="bi bi-star-fill"></i>
             </div>
             <h4 class="mb-3">Excellence</h4>
@@ -156,8 +183,8 @@
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon">
               <i class="bi bi-compass"></i>
             </div>
             <h4 class="mb-3">Innovation</h4>
@@ -166,8 +193,8 @@
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon bg-gradient-rose">
               <i class="bi bi-heart-fill"></i>
             </div>
             <h4 class="mb-3">Love First</h4>
@@ -176,8 +203,8 @@
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon">
               <i class="bi bi-lightning-charge"></i>
             </div>
             <h4 class="mb-3">Simplicity</h4>
@@ -186,8 +213,8 @@
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="value-card h-100">
-            <div class="value-icon">
+          <div class="feature-card">
+            <div class="feature-icon">
               <i class="bi bi-shield-check"></i>
             </div>
             <h4 class="mb-3">Privacy</h4>
@@ -199,83 +226,100 @@
   </section>
 
   <!-- How We Help Section -->
-  <section class="help-section py-5 bg-light">
+  <section class="py-6 bg-light">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="section-title text-dark">How We Help</h2>
-          <p class="section-subtitle text-muted">More than just visualization - we're your wedding planning partner</p>
+          <div class="section-divider"></div>
+          <h2 class="section-title">How We Help</h2>
+          <p class="section-subtitle">More than just visualization - we're your wedding planning partner</p>
         </div>
       </div>
       
       <div class="row g-4">
         <div class="col-lg-6">
-          <div class="help-card">
-            <div class="help-icon">
-              <i class="bi bi-magic"></i>
-            </div>
-            <div class="help-content">
-              <h4 class="mb-3">Reduce Uncertainty</h4>
-              <p class="text-muted mb-3">No more wondering "what if" - see exactly how your venue will look with your chosen decorations, colors, and style.</p>
-              <ul class="help-list">
-                <li>Instant venue transformations</li>
-                <li>Multiple style options</li>
-                <li>Realistic visualization</li>
-                <li>Save and compare options</li>
+          <div class="card border-0 shadow-lg h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start mb-3">
+                <div class="feature-icon me-3">
+                  <i class="bi bi-magic"></i>
+                </div>
+                <div>
+                  <h4 class="mb-3">Reduce Uncertainty</h4>
+                  <p class="text-muted mb-3">No more wondering "what if" - see exactly how your venue will look with your chosen decorations, colors, and style.</p>
+                </div>
+              </div>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Instant venue transformations</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Multiple style options</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Realistic visualization</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Save and compare options</li>
               </ul>
             </div>
           </div>
         </div>
         
         <div class="col-lg-6">
-          <div class="help-card">
-            <div class="help-icon">
-              <i class="bi bi-share-fill"></i>
-            </div>
-            <div class="help-content">
-              <h4 class="mb-3">Share Your Vision</h4>
-              <p class="text-muted mb-3">Create a beautiful wedding page that brings your family and friends into your planning journey.</p>
-              <ul class="help-list">
-                <li>Custom wedding pages</li>
-                <li>Share your love story</li>
-                <li>Link to registries</li>
-                <li>Showcase transformations</li>
+          <div class="card border-0 shadow-lg h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start mb-3">
+                <div class="feature-icon me-3">
+                  <i class="bi bi-share-fill"></i>
+                </div>
+                <div>
+                  <h4 class="mb-3">Share Your Vision</h4>
+                  <p class="text-muted mb-3">Create a beautiful wedding page that brings your family and friends into your planning journey.</p>
+                </div>
+              </div>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Custom wedding pages</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Share your love story</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Link to registries</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Showcase transformations</li>
               </ul>
             </div>
           </div>
         </div>
         
         <div class="col-lg-6">
-          <div class="help-card">
-            <div class="help-icon">
-              <i class="bi bi-palette-fill"></i>
-            </div>
-            <div class="help-content">
-              <h4 class="mb-3">Inspire Decisions</h4>
-              <p class="text-muted mb-3">Discover new styles and ideas you might not have considered for your special day.</p>
-              <ul class="help-list">
-                <li>50+ wedding styles</li>
-                <li>Seasonal adaptations</li>
-                <li>Color scheme options</li>
-                <li>Guest count optimization</li>
+          <div class="card border-0 shadow-lg h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start mb-3">
+                <div class="feature-icon bg-gradient-cyan me-3">
+                  <i class="bi bi-palette-fill"></i>
+                </div>
+                <div>
+                  <h4 class="mb-3">Inspire Decisions</h4>
+                  <p class="text-muted mb-3">Discover new styles and ideas you might not have considered for your special day.</p>
+                </div>
+              </div>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>50+ wedding styles</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Seasonal adaptations</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Color scheme options</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Guest count optimization</li>
               </ul>
             </div>
           </div>
         </div>
         
         <div class="col-lg-6">
-          <div class="help-card">
-            <div class="help-icon">
-              <i class="bi bi-phone-fill"></i>
-            </div>
-            <div class="help-content">
-              <h4 class="mb-3">Plan on the Go</h4>
-              <p class="text-muted mb-3">Take photos during venue visits and see transformations instantly, right from your phone.</p>
-              <ul class="help-list">
-                <li>Mobile-friendly interface</li>
-                <li>Instant processing</li>
-                <li>Share with your partner</li>
-                <li>Save to collections</li>
+          <div class="card border-0 shadow-lg h-100">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-start mb-3">
+                <div class="feature-icon bg-gradient-rose me-3">
+                  <i class="bi bi-phone-fill"></i>
+                </div>
+                <div>
+                  <h4 class="mb-3">Plan on the Go</h4>
+                  <p class="text-muted mb-3">Take photos during venue visits and see transformations instantly, right from your phone.</p>
+                </div>
+              </div>
+              <ul class="list-unstyled">
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Mobile-friendly interface</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Instant processing</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Share with your partner</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Save to collections</li>
               </ul>
             </div>
           </div>
@@ -285,62 +329,75 @@
   </section>
 
   <!-- Team Section -->
-  <section class="team-section py-5">
+  <section class="py-6">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
-          <h2 class="section-title text-dark">Meet Our Team</h2>
-          <p class="section-subtitle text-muted">Passionate people dedicated to making your wedding dreams come true</p>
+          <div class="section-divider"></div>
+          <h2 class="section-title">Meet Our Team</h2>
+          <p class="section-subtitle">Passionate people dedicated to making your wedding dreams come true</p>
         </div>
       </div>
       
       <div class="row g-4 justify-content-center">
         <div class="col-lg-4 col-md-6">
-          <div class="team-card">
-            <div class="team-avatar">
-              <i class="bi bi-person-circle"></i>
-            </div>
-            <div class="team-info">
+          <div class="card border-0 shadow-lg text-center">
+            <div class="card-body p-4">
+              <div class="feature-icon mx-auto mb-3">
+                <i class="bi bi-person-circle"></i>
+              </div>
               <h4 class="mb-2">Sarah Johnson</h4>
-              <p class="text-primary mb-2">Founder & CEO</p>
+              <p class="text-rose fw-semibold mb-2">Founder & CEO</p>
               <p class="text-muted mb-3">Former wedding planner who understands the struggles couples face when visualizing their dream day.</p>
-              <div class="team-social">
-                <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
-                <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-linkedin"></i>
+                </a>
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-twitter"></i>
+                </a>
               </div>
             </div>
           </div>
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="team-card">
-            <div class="team-avatar">
-              <i class="bi bi-person-circle"></i>
-            </div>
-            <div class="team-info">
+          <div class="card border-0 shadow-lg text-center">
+            <div class="card-body p-4">
+              <div class="feature-icon mx-auto mb-3">
+                <i class="bi bi-person-circle"></i>
+              </div>
               <h4 class="mb-2">Michael Chen</h4>
-              <p class="text-primary mb-2">Head of Technology</p>
+              <p class="text-cyan fw-semibold mb-2">Head of Technology</p>
               <p class="text-muted mb-3">AI expert passionate about making complex visualization tools simple and accessible for everyone.</p>
-              <div class="team-social">
-                <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
-                <a href="#" class="social-link"><i class="bi bi-github"></i></a>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-linkedin"></i>
+                </a>
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-github"></i>
+                </a>
               </div>
             </div>
           </div>
         </div>
         
         <div class="col-lg-4 col-md-6">
-          <div class="team-card">
-            <div class="team-avatar">
-              <i class="bi bi-person-circle"></i>
-            </div>
-            <div class="team-info">
+          <div class="card border-0 shadow-lg text-center">
+            <div class="card-body p-4">
+              <div class="feature-icon mx-auto mb-3">
+                <i class="bi bi-person-circle"></i>
+              </div>
               <h4 class="mb-2">Emily Rodriguez</h4>
-              <p class="text-primary mb-2">Head of Design</p>
+              <p class="text-rose fw-semibold mb-2">Head of Design</p>
               <p class="text-muted mb-3">Creative director ensuring every transformation is beautiful and every experience is delightful.</p>
-              <div class="team-social">
-                <a href="#" class="social-link"><i class="bi bi-linkedin"></i></a>
-                <a href="#" class="social-link"><i class="bi bi-instagram"></i></a>
+              <div class="d-flex justify-content-center gap-2">
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-linkedin"></i>
+                </a>
+                <a href="#" class="btn btn-outline-primary btn-sm">
+                  <i class="bi bi-instagram"></i>
+                </a>
               </div>
             </div>
           </div>
@@ -350,49 +407,50 @@
   </section>
 
   <!-- Contact Section -->
-  <section class="contact-section py-5 bg-light">
+  <section class="final-cta">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto text-center">
-          <h2 class="section-title text-dark">Get In Touch</h2>
-          <p class="section-subtitle text-muted">
+          <div class="section-divider bg-white opacity-50"></div>
+          <h2 class="section-title">Get In Touch</h2>
+          <p class="section-subtitle">
             Have questions? Want to share your wedding story? We'd love to hear from you!
           </p>
           
           <div class="row g-4 mb-5">
             <div class="col-md-4">
-              <div class="contact-item">
-                <div class="contact-icon">
+              <div class="text-center">
+                <div class="feature-icon mx-auto mb-3 bg-gradient-cyan">
                   <i class="bi bi-envelope-fill"></i>
                 </div>
                 <h5>Email Us</h5>
-                <p class="text-muted">hello@dreamwedai.com</p>
+                <p class="opacity-75">hello@dreamwedai.com</p>
               </div>
             </div>
             
             <div class="col-md-4">
-              <div class="contact-item">
-                <div class="contact-icon">
+              <div class="text-center">
+                <div class="feature-icon mx-auto mb-3 bg-gradient-rose">
                   <i class="bi bi-chat-heart-fill"></i>
                 </div>
                 <h5>Live Chat</h5>
-                <p class="text-muted">Available 9 AM - 6 PM EST</p>
+                <p class="opacity-75">Available 9 AM - 6 PM EST</p>
               </div>
             </div>
             
             <div class="col-md-4">
-              <div class="contact-item">
-                <div class="contact-icon">
+              <div class="text-center">
+                <div class="feature-icon mx-auto mb-3 bg-gradient-cyan">
                   <i class="bi bi-instagram"></i>
                 </div>
                 <h5>Follow Us</h5>
-                <p class="text-muted">@dreamwedai</p>
+                <p class="opacity-75">@dreamwedai</p>
               </div>
             </div>
           </div>
           
-          <div class="contact-cta">
-            <a href="mailto:hello@dreamwedai.com" class="hero-cta-primary me-3">
+          <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="mailto:hello@dreamwedai.com" class="hero-cta-primary">
               <i class="bi bi-envelope-fill"></i> Contact Us
             </a>
             {% if not user.is_authenticated %}

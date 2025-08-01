@@ -1,4 +1,3 @@
-<!-- saas_base/templates/image_processing/favorites_list.html - COMPLETE -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -30,7 +29,7 @@
     <!-- Favorites Grid -->
     <div class="row">
       {% for favorite in page_obj %}
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 favorite-item" data-favorite-id="{{ favorite.id }}">
           <div class="card h-100">
             <div class="position-relative">
               <!-- Image Display -->
@@ -165,54 +164,4 @@
     </div>
   {% endif %}
 </div>
-
-<script>
-// Auto-refresh functionality if needed
-document.addEventListener('DOMContentLoaded', function() {
-    // The favorite heart functionality is handled by the component
-    console.log('Favorites page loaded with', document.querySelectorAll('.favorite-heart-btn').length, 'favorite buttons');
-    
-    // Optional: Check for removed favorites and refresh page if needed
-    const favoriteButtons = document.querySelectorAll('.favorite-heart-btn');
-    
-    // Listen for when a favorite is removed
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.favorite-heart-btn')) {
-            const button = e.target.closest('.favorite-heart-btn');
-            const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
-            
-            if (isCurrentlyFavorited) {
-                // This will be unfavorited, so we might want to remove it from the page
-                // The component will handle the API call, but we can listen for the result
-                setTimeout(() => {
-                    // Check if the button still shows as favorited after the API call
-                    if (button.dataset.isFavorited === 'false') {
-                        // Remove the card with animation
-                        const card = button.closest('.col-lg-3, .col-md-4, .col-sm-6');
-                        if (card) {
-                            card.style.transition = 'all 0.3s ease';
-                            card.style.opacity = '0';
-                            card.style.transform = 'scale(0.95)';
-                            
-                            setTimeout(() => {
-                                card.remove();
-                                
-                                // Check if there are no more favorites
-                                const remainingCards = document.querySelectorAll('.col-lg-3, .col-md-4, .col-sm-6');
-                                if (remainingCards.length === 0) {
-                                    // Reload page to show empty state
-                                    setTimeout(() => window.location.reload(), 500);
-                                }
-                            }, 300);
-                        }
-                    }
-                }, 1000); // Wait for the API call to complete
-            }
-        }
-    });
-});
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

@@ -1,8 +1,755 @@
 /**
  * ============================================
- * DREAMWEDAI COMPLETE JAVASCRIPT
+ * DREAMWEDAI COMPLETE JAVASCRIPT - UPDATED
  * ============================================
  */
+
+/**
+ * Working Studio Manager - Fixes upload functionality and adds camera support
+ */
+class WorkingStudioManager {
+    constructor() {
+        this.selectedImageId = null;
+        this.isUploading = false;
+        this.isDragging = false;
+        this.init();
+    }
+
+    init() {
+        console.log('Initializing Working Studio Manager...');
+        this.setupFileUpload();
+        this.setupImageSelection();
+        this.setupProcessingForms();
+        this.setupSmartSuggestions();
+        this.setupCameraCapture();
+        console.log('Studio Manager initialized successfully');
+    }
+
+    // ============================================
+    // FILE UPLOAD FUNCTIONALITY - FIXED
+    // ============================================
+    
+    setupFileUpload() {
+        console.log('Setting up file upload...');
+        
+        const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const dropZone = document.getElementById('dropZone');
+        
+        if (!fileInput || !uploadBtn || !dropZone) {
+            console.error('Required upload elements not found');
+            return;
+        }
+        
+        // Upload button click - FIXED
+        uploadBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Upload button clicked');
+            if (!this.isUploading) {
+                fileInput.click();
+            }
+        });
+        
+        // Camera button click - NEW FEATURE
+        if (cameraBtn && cameraInput) {
+            cameraBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Camera button clicked');
+                if (!this.isUploading) {
+                    cameraInput.click();
+                }
+            });
+        }
+        
+        // Drop zone click - FIXED
+        dropZone.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Drop zone clicked');
+            if (!this.isUploading) {
+                fileInput.click();
+            }
+        });
+        
+        // File input change handlers - FIXED
+        fileInput.addEventListener('change', (e) => {
+            console.log('File input changed', e.target.files.length);
+            if (e.target.files.length > 0 && !this.isUploading) {
+                this.handleFileUpload(e.target.files[0], 'file');
+            }
+        });
+        
+        if (cameraInput) {
+            cameraInput.addEventListener('change', (e) => {
+                console.log('Camera input changed', e.target.files.length);
+                if (e.target.files.length > 0 && !this.isUploading) {
+                    this.handleFileUpload(e.target.files[0], 'camera');
+                }
+            });
+        }
+        
+        // Drag and drop handlers - FIXED
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!this.isDragging) {
+                this.isDragging = true;
+                dropZone.classList.add('dragover');
+                console.log('Drag over detected');
+            }
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Only remove drag state if actually leaving the drop zone
+            if (!dropZone.contains(e.relatedTarget)) {
+                this.isDragging = false;
+                dropZone.classList.remove('dragover');
+                console.log('Drag leave detected');
+            }
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.isDragging = false;
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            console.log('Files dropped:', files.length);
+            if (files.length > 0 && !this.isUploading) {
+                this.handleFileUpload(files[0], 'drop');
+            }
+        });
+    }
+
+    // ============================================
+    // CAMERA CAPTURE FUNCTIONALITY - NEW
+    // ============================================
+    
+    setupCameraCapture() {
+        console.log('Setting up camera capture...');
+        
+        // Check if camera capture is supported
+        const cameraBtn = document.getElementById('cameraBtn');
+        const cameraInput = document.getElementById('cameraInput');
+        
+        if (!cameraBtn || !cameraInput) {
+            console.log('Camera elements not found');
+            return;
+        }
+        
+        // Check if device supports camera capture
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.log('Camera not supported on this device');
+            cameraBtn.style.display = 'none';
+            return;
+        }
+        
+        // Add tooltip for camera button
+        cameraBtn.title = 'Take a photo with your device camera';
+        
+        console.log('Camera capture ready');
+    }
+
+    // ============================================
+    // IMAGE SELECTION FUNCTIONALITY - FIXED
+    // ============================================
+    
+    setupImageSelection() {
+        console.log('Setting up image selection...');
+        
+        // Setup existing thumbnails - FIXED
+        document.querySelectorAll('.clickable-thumbnail').forEach(thumbnail => {
+            this.attachThumbnailHandler(thumbnail);
+        });
+        
+        console.log('Image selection setup complete');
+    }
+    
+    attachThumbnailHandler(thumbnail) {
+        // Remove any existing handlers to prevent duplicates
+        thumbnail.removeEventListener('click', this.thumbnailClickHandler);
+        
+        // Create bound handler
+        this.thumbnailClickHandler = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Thumbnail clicked:', thumbnail.dataset.imageName);
+            this.selectImageFromThumbnail(thumbnail);
+        };
+        
+        // Attach handler
+        thumbnail.addEventListener('click', this.thumbnailClickHandler);
+        
+        // Add hover effects
+        thumbnail.addEventListener('mouseenter', () => {
+            if (!thumbnail.classList.contains('selected')) {
+                thumbnail.style.transform = 'translateY(-2px) scale(1.02)';
+            }
+        });
+        
+        thumbnail.addEventListener('mouseleave', () => {
+            if (!thumbnail.classList.contains('selected')) {
+                thumbnail.style.transform = '';
+            }
+        });
+    }
+
+    selectImageFromThumbnail(thumbnail) {
+        console.log('Selecting image from thumbnail');
+        
+        // Remove selected class from all thumbnails
+        document.querySelectorAll('.clickable-thumbnail').forEach(t => {
+            t.classList.remove('selected');
+            t.style.transform = '';
+        });
+        
+        // Add selected class with visual feedback
+        thumbnail.classList.add('selected');
+        thumbnail.style.transform = 'translateY(-2px) scale(1.02)';
+        
+        // Extract data
+        const imageId = thumbnail.dataset.imageId;
+        const imageUrl = thumbnail.dataset.imageUrl;
+        const imageName = thumbnail.dataset.imageName;
+        const imageWidth = thumbnail.dataset.imageWidth;
+        const imageHeight = thumbnail.dataset.imageHeight;
+        const fileSize = thumbnail.dataset.fileSize;
+        
+        console.log('Selected image:', { imageId, imageName, imageWidth, imageHeight });
+        
+        // Show image preview
+        this.showImagePreview(imageUrl, imageName, imageWidth, imageHeight, fileSize);
+        this.selectedImageId = imageId;
+        this.updateTransformButton(true);
+        
+        // Show selection toast
+        this.showToast(`Selected "${imageName}" for transformation`, 'success');
+    }
+
+    // ============================================
+    // FILE UPLOAD HANDLING - FIXED
+    // ============================================
+    
+    async handleFileUpload(file, source = 'file') {
+        console.log(`Handling ${source} upload:`, file.name, file.type, file.size);
+        
+        if (!file.type.startsWith('image/')) {
+            this.showToast('Please select an image file', 'error');
+            return;
+        }
+        
+        if (file.size > 10 * 1024 * 1024) {
+            this.showToast('File too large (max 10MB)', 'error');
+            return;
+        }
+        
+        this.isUploading = true;
+        this.showUploadProgress(source);
+        
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('csrfmiddlewaretoken', this.getCSRFToken());
+            
+            console.log('Uploading to /studio/upload/...');
+            
+            const response = await fetch('/studio/upload/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            console.log('Upload response status:', response.status);
+            const data = await response.json();
+            console.log('Upload response data:', data);
+            
+            if (data.success) {
+                this.handleUploadSuccess(data, source);
+                this.showToast(`${source === 'camera' ? 'Photo captured' : 'Image uploaded'} successfully!`, 'success');
+            } else {
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            this.showToast(error.message || 'Upload failed', 'error');
+        } finally {
+            this.isUploading = false;
+            // Reset file inputs
+            document.getElementById('fileInput').value = '';
+            const cameraInput = document.getElementById('cameraInput');
+            if (cameraInput) cameraInput.value = '';
+        }
+    }
+
+    handleUploadSuccess(data, source) {
+        console.log('Upload successful:', data);
+        
+        // Add to recent images at the top
+        this.addImageToRecent(data);
+        
+        // Auto-select the uploaded image
+        this.selectImage(data.image_id, data);
+        
+        // Show success animation
+        this.showSuccessAnimation(source);
+    }
+
+    addImageToRecent(data) {
+        console.log('Adding image to recent:', data.image_name);
+        
+        const container = document.getElementById('recentImagesContainer');
+        if (!container) return;
+        
+        const newThumbnail = this.createThumbnailElement(data);
+        container.insertBefore(newThumbnail, container.firstChild);
+        
+        // Keep only first 3 thumbnails
+        const thumbnails = container.querySelectorAll('.col-4');
+        if (thumbnails.length > 3) {
+            thumbnails[3].remove();
+        }
+        
+        // Add slide-in animation
+        newThumbnail.style.opacity = '0';
+        newThumbnail.style.transform = 'translateX(-20px)';
+        setTimeout(() => {
+            newThumbnail.style.transition = 'all 0.3s ease';
+            newThumbnail.style.opacity = '1';
+            newThumbnail.style.transform = 'translateX(0)';
+        }, 100);
+    }
+
+    createThumbnailElement(data) {
+        const div = document.createElement('div');
+        div.className = 'col-4';
+        
+        div.innerHTML = `
+            <div class="clickable-thumbnail border rounded overflow-hidden" 
+                 data-image-id="${data.image_id}"
+                 data-image-url="${data.image_url}"
+                 data-thumbnail-url="${data.thumbnail_url}"
+                 data-image-name="${data.image_name}"
+                 data-image-width="${data.width || ''}"
+                 data-image-height="${data.height || ''}"
+                 data-file-size="${data.file_size || ''}"
+                 style="cursor: pointer; aspect-ratio: 1; height: 60px;"
+                 title="Click to select ${data.image_name}">
+                <img src="${data.thumbnail_url}" 
+                     class="w-100 h-100 object-fit-cover" 
+                     alt="${data.image_name}">
+            </div>
+        `;
+        
+        // Attach click handler to new thumbnail
+        const thumbnail = div.querySelector('.clickable-thumbnail');
+        this.attachThumbnailHandler(thumbnail);
+        
+        return div;
+    }
+
+    selectImage(imageId, data) {
+        console.log('Selecting image:', imageId, data.image_name);
+        this.selectedImageId = imageId;
+        this.showImagePreview(data.image_url, data.image_name, data.width, data.height, data.file_size);
+        this.updateTransformButton(true);
+    }
+
+    // ============================================
+    // UI STATE MANAGEMENT - FIXED
+    // ============================================
+    
+    showUploadProgress(source = 'file') {
+        console.log('Showing upload progress for:', source);
+        this.hideAllStates();
+        
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressText = document.getElementById('uploadProgressText');
+        const progressSubtext = document.getElementById('uploadProgressSubtext');
+        
+        if (uploadProgress) {
+            if (source === 'camera') {
+                if (progressText) progressText.textContent = 'Processing your photo...';
+                if (progressSubtext) progressSubtext.textContent = 'Preparing your captured image';
+            } else {
+                if (progressText) progressText.textContent = 'Uploading your photo...';
+                if (progressSubtext) progressSubtext.textContent = 'Processing your venue image';
+            }
+            
+            uploadProgress.classList.remove('d-none');
+            uploadProgress.classList.add('d-flex');
+        }
+    }
+
+    showImagePreview(imageUrl, imageName, width, height, fileSize) {
+        console.log('Showing image preview:', imageName);
+        this.hideAllStates();
+        
+        const imagePreview = document.getElementById('imagePreview');
+        const selectedImage = document.getElementById('selectedImage');
+        const selectedImageName = document.getElementById('selectedImageName');
+        const selectedImageDetails = document.getElementById('selectedImageDetails');
+        
+        if (imagePreview && selectedImage) {
+            selectedImage.src = imageUrl;
+            
+            if (selectedImageName) {
+                selectedImageName.textContent = imageName;
+            }
+            
+            if (selectedImageDetails) {
+                let details = 'Ready for transformation';
+                if (width && height) {
+                    details = `${width}x${height}`;
+                    if (fileSize) {
+                        const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
+                        details += ` • ${sizeMB}MB`;
+                    }
+                }
+                selectedImageDetails.textContent = details;
+            }
+            
+            imagePreview.classList.remove('d-none');
+            imagePreview.classList.add('d-flex');
+            
+            // Add smooth load transition
+            selectedImage.onload = () => {
+                selectedImage.style.opacity = '0';
+                selectedImage.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    selectedImage.style.transition = 'all 0.3s ease';
+                    selectedImage.style.opacity = '1';
+                    selectedImage.style.transform = 'scale(1)';
+                }, 50);
+            };
+        }
+    }
+
+    showUploadArea() {
+        console.log('Showing upload area');
+        this.hideAllStates();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.classList.remove('d-none');
+            uploadArea.classList.add('d-flex');
+        }
+    }
+
+    hideAllStates() {
+        const states = ['uploadArea', 'uploadProgress', 'imagePreview'];
+        states.forEach(stateId => {
+            const element = document.getElementById(stateId);
+            if (element) {
+                element.classList.add('d-none');
+                element.classList.remove('d-flex');
+            }
+        });
+    }
+
+    // ============================================
+    // PROCESSING FUNCTIONALITY - FIXED
+    // ============================================
+    
+    setupProcessingForms() {
+        console.log('Setting up processing forms...');
+        
+        const transformForm = document.getElementById('transformForm');
+        
+        if (!transformForm) {
+            console.error('Transform form not found');
+            return;
+        }
+        
+        transformForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            console.log('Transform form submitted');
+            this.processImage();
+        });
+        
+        // Form field changes
+        ['wedding-theme', 'space-type'].forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('change', () => {
+                    console.log(`${id} changed to:`, field.value);
+                    this.updateTransformButton();
+                    this.showSmartSuggestions();
+                });
+            }
+        });
+        
+        // Color scheme change handler
+        const colorScheme = document.getElementById('color-scheme');
+        if (colorScheme) {
+            colorScheme.addEventListener('change', () => {
+                this.toggleCustomColors();
+            });
+        }
+    }
+
+    updateTransformButton(hasImage = null) {
+        const transformBtn = document.getElementById('transformBtn');
+        if (!transformBtn) return;
+        
+        const hasSelectedImage = hasImage !== null ? hasImage : !!this.selectedImageId;
+        const hasTheme = document.getElementById('wedding-theme')?.value;
+        const hasSpace = document.getElementById('space-type')?.value;
+        
+        const canTransform = hasSelectedImage && hasTheme && hasSpace;
+        
+        transformBtn.disabled = !canTransform;
+        
+        if (canTransform) {
+            transformBtn.classList.remove('btn-secondary');
+            transformBtn.classList.add('btn-primary');
+            transformBtn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform Space</span>';
+        } else {
+            transformBtn.classList.add('btn-secondary');
+            transformBtn.classList.remove('btn-primary');
+            transformBtn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>';
+        }
+    }
+
+    async processImage() {
+        console.log('Processing image...');
+        
+        if (!this.selectedImageId) {
+            this.showToast('Please select an image first', 'error');
+            return;
+        }
+        
+        const theme = document.getElementById('wedding-theme')?.value;
+        const space = document.getElementById('space-type')?.value;
+        
+        if (!theme || !space) {
+            this.showToast('Please select both wedding style and space type', 'error');
+            return;
+        }
+        
+        this.showProcessingStatus();
+        
+        const formData = this.getFormData();
+        console.log('Processing with data:', formData);
+        
+        try {
+            const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(formData)
+            });
+            
+            console.log('Process response status:', response.status);
+            const result = await response.json();
+            console.log('Process response data:', result);
+            
+            if (result.success) {
+                this.showToast('✨ Transformation started! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = result.redirect_url;
+                }, 2000);
+            } else {
+                throw new Error(result.error || 'Processing failed');
+            }
+        } catch (error) {
+            console.error('Processing error:', error);
+            this.showToast('Error: ' + error.message, 'error');
+            this.hideProcessingStatus();
+        }
+    }
+
+    getFormData() {
+        return {
+            wedding_theme: document.getElementById('wedding-theme')?.value || '',
+            space_type: document.getElementById('space-type')?.value || '',
+            guest_count: document.getElementById('guest-count')?.value || '',
+            budget_level: document.getElementById('budget-level')?.value || '',
+            season: document.getElementById('season')?.value || '',
+            time_of_day: document.getElementById('time-of-day')?.value || '',
+            color_scheme: document.getElementById('color-scheme')?.value || '',
+            custom_colors: document.getElementById('custom-colors')?.value || '',
+            additional_details: document.getElementById('additional-details')?.value || ''
+        };
+    }
+
+    // ============================================
+    // SMART SUGGESTIONS - ENHANCED
+    // ============================================
+    
+    setupSmartSuggestions() {
+        console.log('Setting up smart suggestions...');
+    }
+
+    showSmartSuggestions() {
+        const theme = document.getElementById('wedding-theme')?.value;
+        const space = document.getElementById('space-type')?.value;
+        const suggestionsDiv = document.getElementById('smartSuggestions');
+        const suggestionText = document.getElementById('suggestionText');
+        
+        if (!theme || !space || !suggestionsDiv || !suggestionText) return;
+        
+        const suggestions = this.getSuggestions(theme, space);
+        console.log('Smart suggestions:', { theme, space, suggestions });
+        
+        if (suggestions) {
+            suggestionText.textContent = suggestions;
+            suggestionsDiv.classList.remove('d-none');
+        } else {
+            suggestionsDiv.classList.add('d-none');
+        }
+    }
+
+    getSuggestions(theme, space) {
+        const combinationSuggestions = {
+            'rustic_wedding_ceremony': 'Intimate outdoor ceremony, natural lighting, wildflower decorations',
+            'rustic_dining_area': 'Farm table setup, mason jar centerpieces, string lighting',
+            'modern_dining_area': 'Clean lines, minimalist centerpieces, geometric lighting',
+            'modern_dance_floor': 'LED lighting, contemporary furniture, sleek sound system',
+            'vintage_lounge_area': 'Antique furniture, romantic lighting, lace details',
+            'bohemian_cocktail_hour': 'Eclectic seating, colorful textiles, natural elements',
+            'classic_wedding_ceremony': 'Traditional setup, elegant flowers, formal seating',
+            'garden_cocktail_hour': 'Natural greenery, outdoor bar, garden lighting',
+            'beach_wedding_ceremony': 'Seaside altar, flowing fabrics, sunset timing',
+            'industrial_dance_floor': 'Urban venue, exposed elements, dramatic lighting'
+        };
+        
+        const key = `${theme}_${space}`;
+        return combinationSuggestions[key] || null;
+    }
+
+    toggleCustomColors() {
+        const colorScheme = document.getElementById('color-scheme')?.value;
+        const customColorsContainer = document.getElementById('custom-colors-container');
+        
+        if (customColorsContainer) {
+            if (colorScheme === 'custom') {
+                customColorsContainer.classList.remove('d-none');
+            } else {
+                customColorsContainer.classList.add('d-none');
+            }
+        }
+    }
+
+    // ============================================
+    // PROCESSING STATUS MANAGEMENT
+    // ============================================
+    
+    showProcessingStatus() {
+        console.log('Showing processing status');
+        const statusDiv = document.getElementById('processingStatus');
+        const transformBtn = document.getElementById('transformBtn');
+        
+        if (statusDiv) {
+            statusDiv.classList.remove('d-none');
+            statusDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        if (transformBtn) {
+            transformBtn.disabled = true;
+            transformBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Creating Magic...</span>';
+        }
+    }
+
+    hideProcessingStatus() {
+        console.log('Hiding processing status');
+        const statusDiv = document.getElementById('processingStatus');
+        const transformBtn = document.getElementById('transformBtn');
+        
+        if (statusDiv) {
+            statusDiv.classList.add('d-none');
+        }
+        
+        if (transformBtn) {
+            transformBtn.disabled = false;
+            this.updateTransformButton();
+        }
+    }
+
+    // ============================================
+    // SUCCESS ANIMATIONS
+    // ============================================
+    
+    showSuccessAnimation(source = 'file') {
+        console.log('Showing success animation for:', source);
+        
+        const uploadBtn = document.getElementById('uploadBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        
+        if (source === 'camera' && cameraBtn) {
+            cameraBtn.style.background = '#28a745';
+            cameraBtn.innerHTML = '<i class="bi bi-check-circle"></i>';
+            
+            setTimeout(() => {
+                cameraBtn.style.background = '';
+                cameraBtn.innerHTML = '<i class="bi bi-camera-fill"></i>';
+            }, 2000);
+        } else if (uploadBtn) {
+            uploadBtn.style.background = '#28a745';
+            uploadBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Uploaded!';
+            
+            setTimeout(() => {
+                uploadBtn.style.background = '';
+                uploadBtn.innerHTML = '<i class="bi bi-camera me-1"></i> Upload Photo';
+            }, 2000);
+        }
+    }
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+    
+    showToast(message, type = 'info') {
+        console.log('Showing toast:', message, type);
+        
+        // Remove existing toasts
+        document.querySelectorAll('.studio-toast').forEach(toast => toast.remove());
+        
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed shadow-lg studio-toast`;
+        toast.style.cssText = `
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 350px;
+            margin: 0;
+            border-radius: 10px;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                <div class="flex-grow-1">${message}</div>
+                <button type="button" class="btn-close btn-close-sm ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 5000);
+    }
+
+    getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+               document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    }
+}
 
 /**
  * Wedding Form Manager
@@ -337,6 +1084,20 @@ class HomepageManager {
                         transform: scale(4);
                         opacity: 0;
                     }
+                }
+                
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+                
+                .object-fit-cover {
+                    object-fit: cover;
                 }
             `;
             document.head.appendChild(style);
@@ -921,7 +1682,7 @@ class FormEnhancements {
         }
     }
 
-    setupInputEnhancements() {
+    setupInputEnhanceme   nts() {
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('focus', () => {
                 input.parentNode.classList.add('focused');
@@ -1001,407 +1762,6 @@ class FormEnhancements {
                 toast.remove();
             }
         }, 3000);
-    }
-}
-
-/**
- * Studio Manager
- * Handles image processing and studio functionality
- */
-class StudioManager {
-    constructor() {
-        this.init();
-    }
-
-    init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupFileUpload();
-            this.setupImageSelection();
-            this.setupProcessingForms();
-            this.setupStatusChecking();
-        });
-    }
-
-    setupFileUpload() {
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const dropZone = document.getElementById('dropZone');
-        
-        if (!fileInput || !uploadBtn || !dropZone) return;
-        
-        uploadBtn.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('click', () => fileInput.click());
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-        
-        dropZone.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                this.handleFileUpload(files[0]);
-            }
-        });
-        
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                this.handleFileUpload(e.target.files[0]);
-            }
-        });
-    }
-
-    async handleFileUpload(file) {
-        if (!file.type.startsWith('image/')) {
-            this.showToast('Please select an image file', 'error');
-            return;
-        }
-        
-        if (file.size > 10 * 1024 * 1024) {
-            this.showToast('File too large (max 10MB)', 'error');
-            return;
-        }
-        
-        this.showUploadProgress();
-        
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('csrfmiddlewaretoken', this.getCSRFToken());
-            
-            const response = await fetch('/studio/upload/', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                this.handleUploadSuccess(data);
-            } else {
-                throw new Error(data.error || 'Upload failed');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            this.showToast(error.message || 'Upload failed', 'error');
-            this.showUploadArea();
-        }
-    }
-
-    handleUploadSuccess(data) {
-        this.addImageToRecent(data);
-        this.selectImage(data.image_id, data);
-        this.showToast('Image uploaded successfully!', 'success');
-    }
-
-    addImageToRecent(data) {
-        const container = document.getElementById('recentImagesContainer');
-        if (!container) return;
-        
-        const newThumbnail = this.createThumbnailElement(data);
-        container.insertBefore(newThumbnail, container.firstChild);
-        
-        const thumbnails = container.querySelectorAll('.col-4');
-        if (thumbnails.length > 3) {
-            thumbnails[3].remove();
-        }
-    }
-
-    createThumbnailElement(data) {
-        const div = document.createElement('div');
-        div.className = 'col-4';
-        div.innerHTML = `
-            <div class="venue-thumbnail" 
-                 data-image-id="${data.image_id}"
-                 data-image-url="${data.image_url}"
-                 data-thumbnail-url="${data.thumbnail_url}"
-                 data-image-name="${data.image_name}">
-                <img src="${data.thumbnail_url}" 
-                     class="card-img-top" 
-                     style="height: 80px; object-fit: cover; border-radius: 0.25rem;" 
-                     alt="${data.image_name}">
-            </div>
-        `;
-        
-        div.querySelector('.venue-thumbnail').addEventListener('click', () => {
-            this.selectImageFromThumbnail(div.querySelector('.venue-thumbnail'));
-        });
-        
-        return div;
-    }
-
-    setupImageSelection() {
-        document.querySelectorAll('.venue-thumbnail').forEach(thumbnail => {
-            thumbnail.addEventListener('click', () => {
-                this.selectImageFromThumbnail(thumbnail);
-            });
-        });
-    }
-
-    selectImageFromThumbnail(thumbnail) {
-        document.querySelectorAll('.venue-thumbnail').forEach(t => {
-            t.classList.remove('selected');
-        });
-        
-        thumbnail.classList.add('selected');
-        
-        const imageId = thumbnail.dataset.imageId;
-        const imageUrl = thumbnail.dataset.imageUrl;
-        const imageName = thumbnail.dataset.imageName;
-        
-        this.showImagePreview(imageUrl, imageName);
-        this.updateTransformButton(true);
-        this.selectedImageId = imageId;
-    }
-
-    selectImage(imageId, data) {
-        this.selectedImageId = imageId;
-        this.showImagePreview(data.image_url, data.image_name);
-        this.updateTransformButton(true);
-    }
-
-    showUploadProgress() {
-        const uploadArea = document.getElementById('uploadArea');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const imagePreview = document.getElementById('imagePreview');
-        
-        if (uploadArea) uploadArea.classList.add('d-none');
-        if (imagePreview) imagePreview.classList.add('d-none');
-        if (uploadProgress) {
-            uploadProgress.classList.remove('d-none');
-            uploadProgress.classList.add('d-flex');
-        }
-    }
-
-    showImagePreview(imageUrl, imageName) {
-        const uploadArea = document.getElementById('uploadArea');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const imagePreview = document.getElementById('imagePreview');
-        const selectedImage = document.getElementById('selectedImage');
-        const selectedImageName = document.getElementById('selectedImageName');
-        
-        if (uploadArea) uploadArea.classList.add('d-none');
-        if (uploadProgress) {
-            uploadProgress.classList.add('d-none');
-            uploadProgress.classList.remove('d-flex');
-        }
-        if (imagePreview) {
-            imagePreview.classList.remove('d-none');
-            imagePreview.classList.add('d-flex');
-        }
-        
-        if (selectedImage) selectedImage.src = imageUrl;
-        if (selectedImageName) selectedImageName.textContent = imageName;
-    }
-
-    showUploadArea() {
-        const uploadArea = document.getElementById('uploadArea');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const imagePreview = document.getElementById('imagePreview');
-        
-        if (imagePreview) imagePreview.classList.add('d-none');
-        if (uploadProgress) {
-            uploadProgress.classList.add('d-none');
-            uploadProgress.classList.remove('d-flex');
-        }
-        if (uploadArea) uploadArea.classList.remove('d-none');
-    }
-
-    setupProcessingForms() {
-        const transformBtn = document.getElementById('transformBtn');
-        if (!transformBtn) return;
-        
-        transformBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.processImage();
-        });
-        
-        ['wedding-theme', 'space-type'].forEach(id => {
-            const field = document.getElementById(id);
-            if (field) {
-                field.addEventListener('change', () => {
-                    this.updateTransformButton();
-                    this.showSmartSuggestions();
-                });
-            }
-        });
-    }
-
-    updateTransformButton(hasImage = null) {
-        const transformBtn = document.getElementById('transformBtn');
-        if (!transformBtn) return;
-        
-        const hasSelectedImage = hasImage !== null ? hasImage : !!this.selectedImageId;
-        const hasTheme = document.getElementById('wedding-theme')?.value;
-        const hasSpace = document.getElementById('space-type')?.value;
-        
-        transformBtn.disabled = !(hasSelectedImage && hasTheme && hasSpace);
-    }
-
-    showSmartSuggestions() {
-        const theme = document.getElementById('wedding-theme')?.value;
-        const space = document.getElementById('space-type')?.value;
-        const suggestionsDiv = document.getElementById('smartSuggestions');
-        
-        if (!theme || !space || !suggestionsDiv) return;
-        
-        const suggestions = this.getSuggestions(theme, space);
-        if (suggestions) {
-            document.getElementById('suggestionText').textContent = suggestions;
-            suggestionsDiv.style.display = 'block';
-        } else {
-            suggestionsDiv.style.display = 'none';
-        }
-    }
-
-    getSuggestions(theme, space) {
-        const suggestionMap = {
-            'rustic_reception_area': 'Medium guest count, moderate budget, fall season, earth tones',
-            'rustic_barn': 'Intimate to medium guests, string lights, warm colors',
-            'modern_ballroom': 'Large guest count, luxury budget, evening time, monochrome colors',
-            'garden_wedding_ceremony': 'Any size, spring/summer, afternoon, natural colors',
-            'beach_wedding_ceremony': 'Medium guests, summer, sunset time, coastal colors',
-            'vintage_reception_area': 'Medium guests, moderate to luxury budget, pastels',
-            'classic_ballroom': 'Large to grand, luxury budget, evening, neutral palette'
-        };
-        
-        return suggestionMap[`${theme}_${space}`];
-    }
-
-    async processImage() {
-        if (!this.selectedImageId) {
-            this.showToast('Please select an image first', 'error');
-            return;
-        }
-        
-        const theme = document.getElementById('wedding-theme')?.value;
-        const space = document.getElementById('space-type')?.value;
-        
-        if (!theme || !space) {
-            this.showToast('Please select both wedding style and space type', 'error');
-            return;
-        }
-        
-        this.showProcessingStatus();
-        
-        const data = {
-            wedding_theme: theme,
-            space_type: space,
-            guest_count: document.getElementById('guest-count')?.value || '',
-            budget_level: document.getElementById('budget-level')?.value || '',
-            season: document.getElementById('season')?.value || '',
-            time_of_day: document.getElementById('time-of-day')?.value || '',
-            color_scheme: document.getElementById('color-scheme')?.value || '',
-            custom_colors: document.getElementById('custom-colors')?.value || '',
-            additional_details: document.getElementById('additional-details')?.value || ''
-        };
-        
-        try {
-            const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCSRFToken()
-                },
-                body: JSON.stringify(data)
-            });
-            
-            const result = await response.json();
-            if (result.success) {
-                this.showToast('✨ Transformation started! Redirecting...', 'success');
-                setTimeout(() => {
-                    window.location.href = result.redirect_url;
-                }, 2000);
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (error) {
-            console.error('Processing error:', error);
-            this.showToast('Error: ' + error.message, 'error');
-            this.hideProcessingStatus();
-        }
-    }
-
-    showProcessingStatus() {
-        const statusDiv = document.getElementById('processingStatus');
-        const transformBtn = document.getElementById('transformBtn');
-        
-        if (statusDiv) statusDiv.style.display = 'block';
-        if (transformBtn) {
-            transformBtn.disabled = true;
-            transformBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Magic...';
-        }
-    }
-
-    hideProcessingStatus() {
-        const statusDiv = document.getElementById('processingStatus');
-        const transformBtn = document.getElementById('transformBtn');
-        
-        if (statusDiv) statusDiv.style.display = 'none';
-        if (transformBtn) {
-            transformBtn.disabled = false;
-            transformBtn.innerHTML = '<i class="bi bi-magic"></i> <span class="fs-5">Transform Space</span>';
-            this.updateTransformButton();
-        }
-    }
-
-    setupStatusChecking() {
-        const processingJobs = document.querySelectorAll('.processing-status');
-        if (processingJobs.length > 0) {
-            this.checkJobStatuses();
-            setInterval(() => this.checkJobStatuses(), 30000);
-        }
-    }
-
-    async checkJobStatuses() {
-        const processingJobs = document.querySelectorAll('[data-job-id]');
-        
-        for (const jobElement of processingJobs) {
-            const jobId = jobElement.dataset.jobId;
-            if (jobId) {
-                try {
-                    const response = await fetch(`/studio/job/${jobId}/status/`);
-                    const data = await response.json();
-                    
-                    if (data.status === 'completed' || data.status === 'failed') {
-                        window.location.reload();
-                        break;
-                    }
-                } catch (error) {
-                    console.error('Error checking job status:', error);
-                }
-            }
-        }
-    }
-
-    getCSRFToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-               document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-    }
-
-    showToast(message, type) {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        setTimeout(() => {
-            if (toast.parentElement) {
-                toast.remove();
-            }
-        }, 5000);
     }
 }
 
@@ -1689,14 +2049,15 @@ function handleDeleteClick(e) {
 }
 
 /**
- * Main Initialization
+ * Main Initialization - UPDATED WITH STUDIO PRIORITY
  */
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Project.js initializing...');
+    
     // Initialize all managers
     window.weddingFormManager = new WeddingFormManager();
     window.homepageManager = new HomepageManager();
     window.formEnhancements = new FormEnhancements();
-    window.studioManager = new StudioManager();
     window.dashboardManager = new DashboardManager();
     
     // Initialize newsletter
@@ -1706,4 +2067,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('social-formset') || document.getElementById('weddinglink-formset')) {
         setupWeddingFormManagement();
     }
+    
+    // PRIORITY: Initialize Studio Manager if on studio page
+    if (document.getElementById('uploadBtn') || document.getElementById('fileInput') || document.getElementById('dropZone')) {
+        console.log('Studio elements detected - initializing Working Studio Manager...');
+        window.studioManager = new WorkingStudioManager();
+        console.log('Working Studio Manager initialized');
+    }
+    
+    console.log('Project.js initialization complete');
 });
+
+// Make Working Studio Manager available globally
+window.WorkingStudioManager = WorkingStudioManager;
+
+

@@ -1,4 +1,3 @@
-<!-- saas_base/templates/image_processing/image_gallery.html - SIMPLIFIED WITHOUT TEMPORARY LOGIC -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -149,9 +148,11 @@
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item text-danger" 
+                      <a class="dropdown-item text-danger gallery-delete-btn" 
                          href="#" 
-                         onclick="confirmDelete('{{ image.object.pk }}', '{{ image.title }}', 'transformation')">
+                         data-image-id="{{ image.object.pk }}"
+                         data-image-name="{{ image.title }}"
+                         data-image-type="transformation">
                         <i class="bi bi-trash"></i> Delete
                       </a>
                     </li>
@@ -239,120 +240,4 @@
     </div>
   </div>
 </div>
-
-<script>
-let deleteImageId = null;
-let deleteImageType = null;
-
-function confirmDelete(imageId, imageName, imageType) {
-    deleteImageId = imageId;
-    deleteImageType = imageType;
-    document.getElementById('deleteImageName').textContent = imageName;
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
-}
-
-document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-    if (deleteImageId && deleteImageType) {
-        const btn = this;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
-        
-        let deleteUrl;
-        if (deleteImageType === 'transformation') {
-            deleteUrl = `/studio/processed/${deleteImageId}/delete/`;
-        } else {
-            // Add original image delete URL if needed
-            deleteUrl = `/studio/image/${deleteImageId}/delete/`;
-        }
-        
-        fetch(deleteUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                showToast(data.message || 'Error deleting image', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Network error', 'error');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = 'Delete';
-        });
-    }
-});
-
-// Add to collection functionality
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.add-to-collection').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const processedImageId = this.dataset.processedImageId;
-            const userImageId = this.dataset.userImageId;
-            
-            const formData = new FormData();
-            if (processedImageId) {
-                formData.append('processed_image_id', processedImageId);
-            } else if (userImageId) {
-                formData.append('user_image_id', userImageId);
-            }
-            formData.append('use_default', 'true');
-            
-            fetch('{% url "image_processing:add_to_collection" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                } else {
-                    showToast(data.message || 'Failed to add to collection', 'warning');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Network error', 'error');
-            });
-        });
-    });
-});
-
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 3000);
-}
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

@@ -1,4 +1,3 @@
-<!-- saas_base/templates/image_processing/processed_image_detail.html - SIMPLIFIED WITHOUT TEMPORARY LOGIC -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -119,7 +118,8 @@
             </a>
             
             <!-- Share -->
-            <button class="btn btn-outline-info" onclick="shareImage()">
+            <button class="btn btn-outline-info share-image-btn" 
+                    data-image-url="{{ processed_image.processed_image.url }}">
               <i class="bi bi-share"></i> Share
             </button>
             
@@ -149,7 +149,9 @@
             
             <!-- Delete Button -->
             <hr>
-            <button class="btn btn-outline-danger" onclick="confirmDelete()">
+            <button class="btn btn-outline-danger processed-image-delete-btn" 
+                    data-image-id="{{ processed_image.pk }}"
+                    data-image-url="{{ processed_image.processed_image.url }}">
               <i class="bi bi-trash"></i> Delete Image
             </button>
           </div>
@@ -218,7 +220,7 @@
         <p>Are you sure you want to delete this wedding transformation?</p>
         <p class="text-danger"><small>This action cannot be undone.</small></p>
         <div class="text-center">
-          <img src="{{ processed_image.processed_image.url }}" 
+          <img id="deletePreviewImage" 
                class="img-fluid rounded" 
                style="max-height: 200px;" 
                alt="Transformation to delete">
@@ -233,122 +235,4 @@
     </div>
   </div>
 </div>
-
-<script>
-// Add to collection functionality
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.add-to-collection').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const processedImageId = this.dataset.processedImageId;
-            const collectionType = this.dataset.collectionType;
-            
-            const formData = new FormData();
-            formData.append('processed_image_id', processedImageId);
-            if (collectionType === 'default') {
-                formData.append('use_default', 'true');
-            }
-            
-            fetch('{% url "image_processing:add_to_collection" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                } else {
-                    showToast(data.message || 'Failed to add to collection', 'warning');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Network error', 'error');
-            });
-        });
-    });
-    
-    // Delete confirmation
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
-        deleteImage();
-    });
-});
-
-function confirmDelete() {
-    new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
-}
-
-function deleteImage() {
-    const btn = document.getElementById('confirmDeleteBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
-    
-    fetch('{% url "image_processing:delete_processed_image" processed_image.pk %}', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'success');
-            bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
-            setTimeout(() => {
-                window.location.href = data.redirect_url;
-            }, 1000);
-        } else {
-            showToast(data.message, 'error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-trash"></i> Delete Transformation';
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Error deleting transformation', 'error');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-trash"></i> Delete Transformation';
-    });
-}
-
-function shareImage() {
-    // Copy image URL to clipboard
-    const imageUrl = '{{ processed_image.processed_image.url }}';
-    const fullUrl = window.location.origin + imageUrl;
-    
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showToast('Image URL copied to clipboard!', 'success');
-    }).catch(() => {
-        // Fallback for older browsers
-        prompt('Copy this URL:', fullUrl);
-    });
-}
-
-function showToast(message, type) {
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) {
-            toast.remove();
-        }
-    }, 3000);
-}
-</script>
-
-<!-- Bootstrap Icons -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 {% endblock %}

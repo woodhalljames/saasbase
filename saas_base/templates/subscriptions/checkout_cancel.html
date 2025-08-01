@@ -1,16 +1,32 @@
-<!-- saas_base/templates/subscriptions/checkout_cancel.html -->
 {% extends "base.html" %}
 
-{% block title %}Checkout Canceled{% endblock %}
+{% block title %}Checkout Canceled - DreamWedAI{% endblock %}
 
 {% block content %}
-<div class="container py-5 text-center">
-  <h1 class="mb-4">Checkout Canceled</h1>
-  <p class="lead">Your subscription checkout was canceled.</p>
-  <p>No charges were made to your account.</p>
-  <div class="mt-4">
-    <a href="{% url 'subscriptions:checkout' %}" class="btn btn-primary">Try Again</a>
-    <a href="{% url 'home' %}" class="btn btn-outline-primary">Back to Home</a>
+<div class="container py-6">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card border-0 shadow-lg text-center">
+        <div class="card-body p-5">
+          <div class="feature-icon mx-auto mb-4 bg-gradient-rose">
+            <i class="bi bi-x-circle"></i>
+          </div>
+          
+          <h1 class="h2 mb-4 text-dark">Checkout Canceled</h1>
+          <p class="lead text-muted mb-4">Your subscription checkout was canceled.</p>
+          <p class="text-muted mb-4">No charges were made to your account. You can try again anytime!</p>
+          
+          <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a href="{% url 'subscriptions:pricing' %}" class="btn btn-gradient-rose">
+              <i class="bi bi-arrow-clockwise me-2"></i>Try Again
+            </a>
+            <a href="{% url 'home' %}" class="btn btn-outline-primary">
+              <i class="bi bi-house me-2"></i>Back to Home
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

@@ -4,211 +4,66 @@
 {% block title %}💍 Wedding Venue Visualizer{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-3" style="max-width: 1400px;">
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12 text-center">
-      <h1 class="display-5">Wedding Venue Visualizer</h1>
-      <p class="lead">Transform any space into your perfect wedding celebration</p>
+      <h1 class="h2 mb-2">Wedding Venue Visualizer</h1>
+      <p class="text-muted mb-0">Transform any space into your perfect wedding celebration</p>
     </div>
   </div>
 
-  <!-- Main Layout -->
-  <div class="row">
-    <!-- Right Sidebar: Controls -->
-    <div class="col-md-4 col-lg-3 order-md-2 mb-4">
-      
-      <!-- Recent Uploads -->
-      <div class="card mb-3">
-        <div class="card-header">
-          <h6 class="mb-0">📸 Recent Uploads</h6>
+  <!-- Main Layout - Reorganized -->
+  <div class="row g-4">
+    
+    <!-- Left: Transform Controls -->
+    <div class="col-xl-3 col-lg-4 col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header py-2 bg-primary text-white">
+          <h6 class="mb-0 fw-bold">🎨 Customize Your Vision</h6>
         </div>
-        <div class="card-body">
-          {% if recent_images %}
-            <div class="row g-2" id="recentImagesContainer">
-              {% for image in recent_images|slice:":3" %}
-                <div class="col-4">
-                  <div class="card venue-thumbnail" 
-                       data-image-id="{{ image.id }}"
-                       data-image-url="{{ image.image.url }}"
-                       data-thumbnail-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
-                       data-image-name="{{ image.original_filename }}"
-                       data-image-size="{{ image.file_size }}"
-                       data-image-dimensions="{{ image.width }}x{{ image.height }}">
-                    <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
-                         class="card-img-top venue-thumbnail-img" 
-                         alt="{{ image.original_filename }}">
-                  </div>
-                </div>
-              {% endfor %}
-            </div>
-            {% if recent_images|length > 3 %}
-              <div class="text-center mt-2">
-                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-secondary">
-                  View All ({{ recent_images|length }})
-                </a>
-              </div>
-            {% endif %}
-          {% else %}
-            <div class="text-center py-3">
-              <i class="bi bi-images text-muted studio-empty-icon"></i>
-              <p class="text-muted mt-2 mb-0">No uploads yet</p>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Main Transform Controls -->
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">🎨 Customize Your Vision</h5>
-        </div>
-        <div class="card-body p-4">
+        <div class="card-body p-3">
           <form id="transformForm">
             {% csrf_token %}
             
-            <!-- Essential Options -->
-            <div class="mb-4">
-              <label for="wedding-theme" class="form-label fw-bold">Wedding Style</label>
-              <select class="form-select form-select-lg" id="wedding-theme" name="wedding_theme" required>
+            <div class="mb-3">
+              <label for="wedding-theme" class="form-label fw-bold small">Wedding Style</label>
+              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
                 <option value="">Choose your style...</option>
                 {% for value, label in wedding_themes %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
-              <small class="text-muted">The overall aesthetic and mood</small>
             </div>
             
-            <div class="mb-4">
-              <label for="space-type" class="form-label fw-bold">Space Purpose</label>
-              <select class="form-select form-select-lg" id="space-type" name="space_type" required>
+            <div class="mb-3">
+              <label for="space-type" class="form-label fw-bold small">Space Purpose</label>
+              <select class="form-select" id="space-type" name="space_type" required>
                 <option value="">What will this space be?</option>
                 {% for value, label in space_types %}
                   <option value="{{ value }}">{{ label }}</option>
                 {% endfor %}
               </select>
-              <small class="text-muted">How you intend to use this space</small>
             </div>
             
-            <!-- Smart Suggestions (shown when core options selected) -->
-            <div id="smartSuggestions" class="mb-4 studio-smart-suggestions">
-              <div class="alert alert-info border-0 studio-suggestion-alert">
-                <div class="d-flex align-items-center">
-                  <i class="bi bi-lightbulb text-info me-2"></i>
+            <div id="smartSuggestions" class="mb-3 d-none">
+              <div class="alert alert-info border-0 py-2 px-3 small">
+                <div class="d-flex align-items-start">
+                  <i class="bi bi-lightbulb text-info me-2 mt-1"></i>
                   <div>
-                    <small class="fw-bold">Suggested for this combination:</small>
-                    <div id="suggestionText" class="small mt-1"></div>
+                    <div class="fw-bold">Suggested:</div>
+                    <div id="suggestionText" class="mt-1"></div>
                   </div>
                 </div>
               </div>
             </div>
             
-            <!-- More Options Toggle -->
-            <div class="mb-3">
-              <button type="button" class="btn btn-outline-secondary btn-sm w-100" 
-                      data-bs-toggle="collapse" data-bs-target="#advancedOptions">
-                <i class="bi bi-sliders"></i> More Options <small class="text-muted">(optional)</small>
-              </button>
-            </div>
-            
-            <!-- Advanced Options -->
-            <div class="collapse" id="advancedOptions">
-              <div class="border rounded p-3 mb-4 studio-advanced-options">
-                
-                <!-- Most Important Secondary Options -->
-                <div class="row mb-3">
-                  <div class="col-6">
-                    <label for="guest-count" class="form-label small">Guest Count</label>
-                    <select class="form-select form-select-sm" id="guest-count" name="guest_count">
-                      <option value="">Any size</option>
-                      {% for value, label in guest_count_choices %}
-                        {% if value %}
-                          <option value="{{ value }}">{{ label|truncatechars:20 }}</option>
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                  <div class="col-6">
-                    <label for="budget-level" class="form-label small">Budget Level</label>
-                    <select class="form-select form-select-sm" id="budget-level" name="budget_level">
-                      <option value="">Any budget</option>
-                      {% for value, label in budget_choices %}
-                        {% if value %}
-                          <option value="{{ value }}">{{ label|truncatechars:20 }}</option>
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-                
-                <!-- Color and Atmosphere -->
-                <div class="mb-3">
-                  <label for="color-scheme" class="form-label small">Color Palette</label>
-                  <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
-                    <option value="">Theme default</option>
-                    {% for value, label in color_choices %}
-                      {% if value %}
-                        <option value="{{ value }}">{{ label }}</option>
-                      {% endif %}
-                    {% endfor %}
-                  </select>
-                </div>
-                
-                <!-- Custom Colors (conditional) -->
-                <div class="mb-3 studio-custom-colors" id="custom-colors-container">
-                  <label for="custom-colors" class="form-label small">Your Colors</label>
-                  <input type="text" class="form-control form-control-sm" id="custom-colors" name="custom_colors" 
-                         placeholder="e.g., blush pink, sage green, gold accents">
-                  <div class="form-text">Describe your specific color palette</div>
-                </div>
-                
-                <!-- Contextual Options (shown based on theme/space selection) -->
-                <div id="contextualOptions">
-                  <!-- Season (shown for garden/outdoor themes) -->
-                  <div class="mb-3 studio-contextual-option" id="season-option">
-                    <label for="season" class="form-label small">Season</label>
-                    <select class="form-select form-select-sm" id="season" name="season">
-                      <option value="">Any season</option>
-                      {% for value, label in season_choices %}
-                        {% if value %}
-                          <option value="{{ value }}">{{ label }}</option>
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                  
-                  <!-- Time of Day (shown for ceremony/outdoor) -->
-                  <div class="mb-3 studio-contextual-option" id="time-option">
-                    <label for="time-of-day" class="form-label small">Time of Day</label>
-                    <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
-                      <option value="">Any time</option>
-                      {% for value, label in time_choices %}
-                        {% if value %}
-                          <option value="{{ value }}">{{ label }}</option>
-                        {% endif %}
-                      {% endfor %}
-                    </select>
-                  </div>
-                </div>
-                
-                <!-- Special Details -->
-                <div class="mb-3">
-                  <label for="additional-details" class="form-label small">Special Touches</label>
-                  <textarea class="form-control form-control-sm" id="additional-details" name="additional_details" 
-                            rows="2" placeholder="Any specific elements you want to include?"></textarea>
-                  <div class="form-text">e.g., "string lights", "vintage chandelier", "long farm tables"</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Generate Button -->
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary btn-lg py-3" id="transformBtn" disabled>
-                <i class="bi bi-magic"></i> <span class="fs-5">Transform Space</span>
+              <button type="submit" class="btn btn-secondary py-2" id="transformBtn" disabled>
+                <i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>
               </button>
             </div>
             
-            <!-- Usage Info -->
             {% if usage_data %}
             <div class="text-center mt-2">
               <small class="text-muted">
@@ -221,68 +76,65 @@
       </div>
     </div>
 
-    <!-- Left: Main Image Upload/Preview Area -->
-    <div class="col-md-8 col-lg-9 order-md-1 mb-4">
-      <div class="card h-100">
-        <div class="card-body position-relative d-flex flex-column studio-main-area">
-          
-          <!-- Upload Button - Top Left Corner -->
-          <div class="position-absolute top-0 start-0 m-3 studio-upload-btn-container">
-            <button type="button" class="btn btn-primary" id="uploadBtn">
-              <i class="bi bi-camera"></i> Upload Photo
-            </button>
-            <!-- Hidden file input -->
-            <input type="file" id="fileInput" accept="image/*" style="display: none;">
-          </div>
+    <!-- Center: Main Upload Area -->
+    <div class="col-xl-9 col-lg-8 col-md-7">
+      <div class="card shadow-sm" style="min-height: 500px;">
+        <div class="card-body d-flex align-items-center justify-content-center p-4">
           
           <!-- Upload Area (default state) -->
-          <div id="uploadArea" class="flex-grow-1 d-flex align-items-center justify-content-center">
-            <div class="text-center upload-area" id="dropZone">
-              <div>
-                <i class="bi bi-cloud-upload text-primary mb-3 studio-upload-icon"></i>
-                <h4 class="mt-3">Upload Your Venue Photo</h4>
-                <p class="text-muted mb-4">Drop your image here or click "Upload Photo" above</p>
-                <p class="text-muted"><small>JPG, PNG, WebP • Max 10MB</small></p>
-                
-                <!-- Example Images -->
-                <div class="mt-4">
-                  <small class="text-muted d-block mb-2">Works great with:</small>
-                  <div class="d-flex justify-content-center gap-2 flex-wrap">
-                    <span class="badge bg-light text-dark">Empty rooms</span>
-                    <span class="badge bg-light text-dark">Outdoor spaces</span>
-                    <span class="badge bg-light text-dark">Event halls</span>
-                    <span class="badge bg-light text-dark">Backyards</span>
-                  </div>
-                </div>
+          <div id="uploadArea" class="text-center w-100">
+            <div class="upload-zone p-4" id="dropZone">
+              
+              <!-- Upload Buttons -->
+              <div class="mb-4">
+                <button type="button" class="btn btn-primary btn-lg upload-btn" id="uploadBtn">
+                  <i class="bi bi-cloud-upload me-2"></i> Upload Photo
+                </button>
+                <!-- Camera button - only show on mobile -->
+                <button type="button" class="btn btn-outline-primary btn-lg ms-3 d-block d-md-none camera-btn" id="cameraBtn">
+                  <i class="bi bi-camera me-2"></i> Take Photo
+                </button>
+              </div>
+              
+              <!-- Hidden file inputs -->
+              <input type="file" id="fileInput" accept="image/*" class="d-none">
+              <input type="file" id="cameraInput" accept="image/*" capture="environment" class="d-none">
+              
+              <i class="bi bi-cloud-upload text-primary mb-3" style="font-size: 4rem;"></i>
+              <h4 class="mb-3">Upload Your Venue Photo</h4>
+              <p class="text-muted mb-3">Drop your image here, click "Upload Photo" above<span class="d-block d-md-none">, or take a photo with your camera</span></p>
+              <p class="text-muted small mb-4">JPG, PNG, WebP • Max 10MB</p>
+              
+              <div class="d-flex justify-content-center gap-1 flex-wrap">
+                <span class="badge bg-light text-dark">Empty rooms</span>
+                <span class="badge bg-light text-dark">Outdoor spaces</span>
+                <span class="badge bg-light text-dark">Event halls</span>
+                <span class="badge bg-light text-dark">Backyards</span>
               </div>
             </div>
           </div>
 
           <!-- Upload Progress -->
-          <div id="uploadProgress" class="flex-grow-1 d-none align-items-center justify-content-center">
-            <div class="text-center">
-              <div class="spinner-border text-primary mb-3 studio-spinner" role="status">
-                <span class="visually-hidden">Uploading...</span>
-              </div>
-              <h5>Uploading your photo...</h5>
-              <p class="text-muted">Processing your venue image</p>
-              <div class="progress mt-3 studio-upload-progress">
-                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                     role="progressbar" style="width: 100%"></div>
-              </div>
+          <div id="uploadProgress" class="text-center w-100 d-none">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+              <span class="visually-hidden">Uploading...</span>
+            </div>
+            <h5 class="mb-2" id="uploadProgressText">Uploading your photo...</h5>
+            <p class="text-muted" id="uploadProgressSubtext">Processing your venue image</p>
+            <div class="progress mx-auto" style="width: 300px; height: 8px;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
             </div>
           </div>
 
           <!-- Selected Image Preview -->
-          <div id="imagePreview" class="flex-grow-1 d-none align-items-center justify-content-center">
-            <div class="text-center w-100 h-100 position-relative">
-              <img id="selectedImage" 
-                   class="img-fluid rounded shadow studio-selected-image" 
-                   alt="Selected Venue">
-              <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 bg-white bg-opacity-90 rounded px-3 py-2">
-                <h6 id="selectedImageName" class="mb-1">Selected Image</h6>
-                <small class="text-muted" id="selectedImageDetails">Image details</small>
-              </div>
+          <div id="imagePreview" class="text-center w-100 d-none">
+            <img id="selectedImage" 
+                 class="img-fluid rounded shadow mb-3" 
+                 style="max-height: 400px; max-width: 100%; object-fit: contain;"
+                 alt="Selected Venue">
+            <div class="bg-light rounded px-3 py-2 d-inline-block">
+              <h6 id="selectedImageName" class="mb-1 fw-bold">Selected Image</h6>
+              <small class="text-muted" id="selectedImageDetails">Ready for transformation</small>
             </div>
           </div>
         </div>
@@ -291,62 +143,757 @@
   </div>
 
   <!-- Processing Status -->
-  <div id="processingStatus" class="row mt-4 studio-processing-status">
+  <div id="processingStatus" class="row mt-4 d-none">
     <div class="col-12">
-      <div class="card border-warning">
-        <div class="card-body">
-          <div class="d-flex align-items-center">
-            <div class="spinner-border text-warning me-3" role="status">
-              <span class="visually-hidden">Processing...</span>
-            </div>
-            <div>
-              <h5 class="mb-1">Creating Your Wedding Vision...</h5>
-              <p class="mb-0 text-muted">Using AI to transform your space - this may take 1-2 minutes</p>
-            </div>
+      <div class="alert alert-warning border-0 py-3">
+        <div class="d-flex align-items-center">
+          <div class="spinner-border spinner-border-sm text-warning me-3" role="status"></div>
+          <div>
+            <div class="fw-bold">Creating Your Wedding Vision...</div>
+            <div class="small text-muted">Using AI to transform your space - this may take 1-2 minutes</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Recent Transformations -->
-  {% if recent_jobs %}
+  <!-- Bottom: Recent Activity - Moved to bottom as requested -->
   <div class="row mt-5">
     <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transformations</h5>
-          <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+      <div class="card shadow-sm">
+        <div class="card-header py-2 bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">📸 Recent Activity</h6>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="activityFilter" id="showImages" checked>
+              <label class="btn btn-outline-primary btn-sm py-1 px-2" for="showImages">Images</label>
+              
+              <input type="radio" class="btn-check" name="activityFilter" id="showTransforms">
+              <label class="btn btn-outline-primary btn-sm py-1 px-2" for="showTransforms">Results</label>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="list-group list-group-flush">
-            {% for job in recent_jobs %}
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                  <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                       class="rounded me-3 studio-recent-thumb" alt="Venue">
-                  <div>
-                    <strong>{{ job.user_image.original_filename }}</strong>
-                    {% if job.wedding_theme and job.space_type %}
-                      <small class="text-muted d-block">
-                        {{ job.get_wedding_theme_display }} • {{ job.get_space_type_display }}
-                      </small>
-                    {% endif %}
+        <div class="card-body p-3">
+          
+          <!-- Recent Images Tab -->
+          <div id="recentImagesTab">
+            {% if recent_images %}
+              <div class="row g-2" id="recentImagesContainer">
+                {% for image in recent_images|slice:":6" %}
+                  <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                    <div class="venue-thumbnail border rounded overflow-hidden" 
+                         data-image-id="{{ image.id }}"
+                         data-image-url="{{ image.image.url }}"
+                         data-thumbnail-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
+                         data-image-name="{{ image.original_filename }}"
+                         data-image-width="{{ image.width }}"
+                         data-image-height="{{ image.height }}"
+                         data-file-size="{{ image.file_size }}"
+                         style="cursor: pointer; aspect-ratio: 1; height: 100px;"
+                         title="Click to select {{ image.original_filename }}">
+                      <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                           class="w-100 h-100 object-fit-cover" 
+                           alt="{{ image.original_filename }}">
+                    </div>
                   </div>
-                </div>
-                <div class="text-end">
-                  <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %}">
-                    {{ job.get_status_display }}
-                  </span>
-                  <small class="text-muted d-block">{{ job.created_at|timesince }} ago</small>
-                </div>
+                {% endfor %}
               </div>
-            {% endfor %}
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-muted">Click any image to select it</small>
+                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-primary">
+                  View All Images
+                </a>
+              </div>
+            {% else %}
+              <div class="text-center py-4">
+                <i class="bi bi-images text-muted fs-4"></i>
+                <p class="text-muted mb-0 mt-2">No uploads yet</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Recent Transformations Tab -->
+          <div id="recentTransformsTab" class="d-none">
+            {% if recent_jobs %}
+              <div class="row g-3">
+                {% for job in recent_jobs|slice:":6" %}
+                  <div class="col-md-6 col-lg-4">
+                    <div class="d-flex align-items-center p-3 rounded border">
+                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                           class="rounded me-3" 
+                           style="width: 50px; height: 40px; object-fit: cover;" 
+                           alt="Venue">
+                      <div class="flex-grow-1 min-w-0">
+                        <div class="fw-bold small text-truncate">{{ job.user_image.original_filename }}</div>
+                        <div class="d-flex align-items-center justify-content-between mt-1">
+                          <small class="text-muted">{{ job.created_at|timesince }} ago</small>
+                          <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %} small">
+                            {{ job.get_status_display }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              <div class="text-center mt-3">
+                <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">
+                  View All Results
+                </a>
+              </div>
+            {% else %}
+              <div class="text-center py-4">
+                <i class="bi bi-magic text-muted fs-4"></i>
+                <p class="text-muted mb-0 mt-2">No transformations yet</p>
+              </div>
+            {% endif %}
           </div>
         </div>
       </div>
     </div>
   </div>
-  {% endif %}
+  
+  <!-- Bottom spacing to prevent footer overlap -->
+  <div style="height: 100px;"></div>
 </div>
+
+<style>
+/* Studio-specific styles */
+.upload-zone {
+  border: 2px dashed #dee2e6;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: rgba(248, 249, 250, 0.5);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: #00F5FF;
+  background-color: rgba(0, 245, 255, 0.05);
+  transform: scale(1.01);
+}
+
+.upload-zone.dragover {
+  border-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.05);
+}
+
+.venue-thumbnail {
+  transition: all 0.2s ease;
+  border: 2px solid transparent !important;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.venue-thumbnail:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: #00F5FF !important;
+}
+
+.venue-thumbnail.selected {
+  border-color: #00F5FF !important;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 245, 255, 0.3);
+}
+
+.venue-thumbnail.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #00F5FF;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Tab switching styles */
+.btn-check:checked + .btn-outline-primary {
+  color: white;
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .upload-btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .camera-btn {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+  
+  .upload-zone {
+    min-height: 300px;
+    padding: 2rem 1rem !important;
+  }
+  
+  .upload-zone i {
+    font-size: 3rem !important;
+  }
+  
+  .venue-thumbnail {
+    height: 90px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .venue-thumbnail {
+    height: 80px !important;
+  }
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}
+</style>
+
+<script>
+// Debug logging
+console.log('🚀 Studio script loading...');
+
+// Wait for DOM to be fully ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📱 DOM Content Loaded');
+    initializeStudio();
+});
+
+function initializeStudio() {
+    console.log('🎬 Initializing Studio...');
+    
+    // Studio Manager Class
+    class StudioManager {
+        constructor() {
+            this.selectedImageId = null;
+            this.isUploading = false;
+            this.init();
+        }
+
+        init() {
+            console.log('⚙️ Setting up Studio Manager...');
+            this.setupUploadButtons();
+            this.setupFileInputs();
+            this.setupDropZone();
+            this.setupThumbnails();
+            this.setupForm();
+            this.setupTabs();
+            console.log('✅ Studio Manager ready!');
+        }
+
+        setupUploadButtons() {
+            console.log('🔘 Setting up upload buttons...');
+            
+            const uploadBtn = document.getElementById('uploadBtn');
+            const cameraBtn = document.getElementById('cameraBtn');
+            const fileInput = document.getElementById('fileInput');
+            const cameraInput = document.getElementById('cameraInput');
+
+            // Upload button - always opens file picker
+            if (uploadBtn && fileInput) {
+                uploadBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📤 Upload button clicked - opening file picker');
+                    if (!this.isUploading) {
+                        fileInput.click();
+                    }
+                });
+                console.log('✅ Upload button connected to file picker');
+            }
+
+            // Camera button - only on mobile, opens camera
+            if (cameraBtn && cameraInput) {
+                // Check if we're on mobile and camera is supported
+                const isMobile = window.innerWidth <= 768;
+                const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
+                
+                if (isMobile && hasCamera) {
+                    cameraBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('📷 Camera button clicked - opening camera');
+                        if (!this.isUploading) {
+                            // This should open the camera, not file picker
+                            cameraInput.click();
+                        }
+                    });
+                    console.log('✅ Camera button connected');
+                } else {
+                    console.log('📷 Camera button hidden - not mobile or no camera support');
+                }
+            }
+        }
+
+        setupFileInputs() {
+            console.log('📁 Setting up file inputs...');
+            
+            const fileInput = document.getElementById('fileInput');
+            const cameraInput = document.getElementById('cameraInput');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    console.log('📤 File input changed:', e.target.files.length);
+                    if (e.target.files.length > 0) {
+                        this.handleFileUpload(e.target.files[0], 'file');
+                    }
+                });
+                console.log('✅ File input connected');
+            }
+
+            if (cameraInput) {
+                cameraInput.addEventListener('change', (e) => {
+                    console.log('📷 Camera input changed:', e.target.files.length);
+                    if (e.target.files.length > 0) {
+                        this.handleFileUpload(e.target.files[0], 'camera');
+                    }
+                });
+                console.log('✅ Camera input connected');
+            }
+        }
+
+        setupDropZone() {
+            console.log('🎯 Setting up drop zone...');
+            
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            if (dropZone && fileInput) {
+                // Click on drop zone (but not on buttons)
+                dropZone.addEventListener('click', (e) => {
+                    if (!e.target.closest('button') && !e.target.closest('input')) {
+                        e.preventDefault();
+                        console.log('🎯 Drop zone clicked - opening file picker');
+                        if (!this.isUploading) {
+                            fileInput.click();
+                        }
+                    }
+                });
+
+                // Drag and drop
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
+
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    if (!dropZone.contains(e.relatedTarget)) {
+                        dropZone.classList.remove('dragover');
+                    }
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    console.log('🎯 Files dropped:', files.length);
+                    if (files.length > 0 && !this.isUploading) {
+                        this.handleFileUpload(files[0], 'drop');
+                    }
+                });
+
+                console.log('✅ Drop zone connected');
+            }
+        }
+
+        setupThumbnails() {
+            console.log('🖼️ Setting up thumbnails...');
+            
+            const thumbnails = document.querySelectorAll('.venue-thumbnail');
+            console.log(`Found ${thumbnails.length} thumbnails`);
+            
+            thumbnails.forEach((thumb) => {
+                thumb.addEventListener('click', () => {
+                    console.log('🖼️ Thumbnail clicked');
+                    this.selectThumbnail(thumb);
+                });
+            });
+            
+            console.log('✅ Thumbnails connected');
+        }
+
+        setupForm() {
+            console.log('📝 Setting up form...');
+            
+            const form = document.getElementById('transformForm');
+            const themeSelect = document.getElementById('wedding-theme');
+            const spaceSelect = document.getElementById('space-type');
+
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    console.log('📝 Form submitted');
+                    this.processImage();
+                });
+            }
+
+            if (themeSelect) {
+                themeSelect.addEventListener('change', () => {
+                    console.log('🎨 Theme changed:', themeSelect.value);
+                    this.updateTransformButton();
+                    this.showSuggestions();
+                });
+            }
+
+            if (spaceSelect) {
+                spaceSelect.addEventListener('change', () => {
+                    console.log('🏠 Space changed:', spaceSelect.value);
+                    this.updateTransformButton();
+                    this.showSuggestions();
+                });
+            }
+
+            console.log('✅ Form connected');
+        }
+
+        setupTabs() {
+            console.log('📑 Setting up tabs...');
+            
+            const showImages = document.getElementById('showImages');
+            const showTransforms = document.getElementById('showTransforms');
+            const imagesTab = document.getElementById('recentImagesTab');
+            const transformsTab = document.getElementById('recentTransformsTab');
+
+            if (showImages && showTransforms && imagesTab && transformsTab) {
+                showImages.addEventListener('change', () => {
+                    if (showImages.checked) {
+                        imagesTab.classList.remove('d-none');
+                        transformsTab.classList.add('d-none');
+                    }
+                });
+
+                showTransforms.addEventListener('change', () => {
+                    if (showTransforms.checked) {
+                        imagesTab.classList.add('d-none');
+                        transformsTab.classList.remove('d-none');
+                    }
+                });
+
+                console.log('✅ Tabs connected');
+            }
+        }
+
+        async handleFileUpload(file, source) {
+            console.log(`📤 Uploading ${file.name} from ${source}`);
+
+            if (!file.type.startsWith('image/')) {
+                this.showAlert('Please select an image file', 'danger');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                this.showAlert('File too large (max 10MB)', 'danger');
+                return;
+            }
+
+            this.isUploading = true;
+            this.showUploadProgress(source);
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('csrfmiddlewaretoken', this.getCSRF());
+
+                console.log('🌐 Sending upload request to /studio/upload/...');
+
+                const response = await fetch('/studio/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                console.log(`📡 Response status: ${response.status}`);
+                
+                const data = await response.json();
+                console.log('📡 Response data:', data);
+
+                if (data.success) {
+                    console.log('✅ Upload successful!');
+                    this.handleUploadSuccess(data, source);
+                    this.showAlert(`${source === 'camera' ? 'Photo captured' : 'Image uploaded'} successfully!`, 'success');
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('❌ Upload error:', error);
+                this.showAlert('Upload failed: ' + error.message, 'danger');
+                this.showUploadArea();
+            } finally {
+                this.isUploading = false;
+                // Reset inputs
+                document.getElementById('fileInput').value = '';
+                const cameraInput = document.getElementById('cameraInput');
+                if (cameraInput) cameraInput.value = '';
+            }
+        }
+
+        handleUploadSuccess(data, source) {
+            console.log('🎉 Handling upload success...');
+            
+            // Add to recent images
+            this.addToRecentImages(data);
+            
+            // Auto-select the image
+            this.selectedImageId = data.image_id;
+            this.showImagePreview(data.image_url, data.image_name, data.width, data.height, data.file_size);
+            this.updateTransformButton();
+        }
+
+        addToRecentImages(data) {
+            const container = document.getElementById('recentImagesContainer');
+            if (!container) return;
+
+            console.log('➕ Adding to recent images...');
+
+            const div = document.createElement('div');
+            div.className = 'col-6 col-sm-4 col-md-3 col-lg-2';
+            div.innerHTML = `
+                <div class="venue-thumbnail border rounded overflow-hidden" 
+                     data-image-id="${data.image_id}"
+                     data-image-url="${data.image_url}"
+                     data-image-name="${data.image_name}"
+                     style="cursor: pointer; aspect-ratio: 1; height: 100px;">
+                    <img src="${data.thumbnail_url || data.image_url}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         alt="${data.image_name}">
+                </div>
+            `;
+
+            // Add click handler
+            const thumbnail = div.querySelector('.venue-thumbnail');
+            thumbnail.addEventListener('click', () => this.selectThumbnail(thumbnail));
+
+            // Insert at beginning
+            container.insertBefore(div, container.firstChild);
+
+            // Keep only 6 thumbnails
+            const thumbs = container.querySelectorAll('.col-6, .col-sm-4, .col-md-3, .col-lg-2');
+            if (thumbs.length > 6) {
+                thumbs[6].remove();
+            }
+        }
+
+        selectThumbnail(thumbnail) {
+            console.log('🖼️ Selecting thumbnail...');
+            
+            // Remove selected from all
+            document.querySelectorAll('.venue-thumbnail').forEach(t => {
+                t.classList.remove('selected');
+            });
+            
+            // Add selected to clicked
+            thumbnail.classList.add('selected');
+            
+            // Get data
+            const imageId = thumbnail.dataset.imageId;
+            const imageUrl = thumbnail.dataset.imageUrl;
+            const imageName = thumbnail.dataset.imageName;
+            
+            this.selectedImageId = imageId;
+            this.showImagePreview(imageUrl, imageName);
+            this.updateTransformButton();
+            
+            this.showAlert(`Selected "${imageName}" for transformation`, 'success');
+        }
+
+        showUploadProgress(source) {
+            console.log('⏳ Showing upload progress...');
+            this.hideAllStates();
+            document.getElementById('uploadProgress').classList.remove('d-none');
+            
+            if (source === 'camera') {
+                document.getElementById('uploadProgressText').textContent = 'Processing your photo...';
+                document.getElementById('uploadProgressSubtext').textContent = 'Preparing your captured image';
+            }
+        }
+
+        showImagePreview(imageUrl, imageName, width, height, fileSize) {
+            console.log('🖼️ Showing image preview...');
+            this.hideAllStates();
+            
+            const preview = document.getElementById('imagePreview');
+            const img = document.getElementById('selectedImage');
+            const name = document.getElementById('selectedImageName');
+            const details = document.getElementById('selectedImageDetails');
+            
+            img.src = imageUrl;
+            name.textContent = imageName;
+            
+            let detailText = 'Ready for transformation';
+            if (width && height) {
+                detailText = `${width}x${height}`;
+                if (fileSize) {
+                    const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
+                    detailText += ` • ${sizeMB}MB`;
+                }
+            }
+            details.textContent = detailText;
+            
+            preview.classList.remove('d-none');
+        }
+
+        showUploadArea() {
+            console.log('📤 Showing upload area...');
+            this.hideAllStates();
+            document.getElementById('uploadArea').classList.remove('d-none');
+        }
+
+        hideAllStates() {
+            ['uploadArea', 'uploadProgress', 'imagePreview'].forEach(id => {
+                document.getElementById(id).classList.add('d-none');
+            });
+        }
+
+        updateTransformButton() {
+            const btn = document.getElementById('transformBtn');
+            const hasImage = !!this.selectedImageId;
+            const hasTheme = document.getElementById('wedding-theme')?.value;
+            const hasSpace = document.getElementById('space-type')?.value;
+            
+            const canTransform = hasImage && hasTheme && hasSpace;
+            
+            btn.disabled = !canTransform;
+            
+            if (canTransform) {
+                btn.className = 'btn btn-primary py-2';
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform Space</span>';
+            } else {
+                btn.className = 'btn btn-secondary py-2';
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>';
+            }
+        }
+
+        showSuggestions() {
+            const theme = document.getElementById('wedding-theme')?.value;
+            const space = document.getElementById('space-type')?.value;
+            const suggestions = document.getElementById('smartSuggestions');
+            const text = document.getElementById('suggestionText');
+            
+            if (!theme || !space) {
+                suggestions.classList.add('d-none');
+                return;
+            }
+            
+            const suggestionMap = {
+                'rustic_wedding_ceremony': 'Intimate outdoor ceremony, natural lighting, wildflower decorations',
+                'rustic_dining_area': 'Farm table setup, mason jar centerpieces, string lighting',
+                'modern_dining_area': 'Clean lines, minimalist centerpieces, geometric lighting',
+                'vintage_lounge_area': 'Antique furniture, romantic lighting, lace details'
+            };
+            
+            const key = `${theme}_${space}`;
+            const suggestion = suggestionMap[key];
+            
+            if (suggestion) {
+                text.textContent = suggestion;
+                suggestions.classList.remove('d-none');
+            } else {
+                suggestions.classList.add('d-none');
+            }
+        }
+
+        async processImage() {
+            if (!this.selectedImageId) {
+                this.showAlert('Please select an image first', 'danger');
+                return;
+            }
+
+            const theme = document.getElementById('wedding-theme')?.value;
+            const space = document.getElementById('space-type')?.value;
+
+            if (!theme || !space) {
+                this.showAlert('Please select both wedding style and space type', 'danger');
+                return;
+            }
+
+            document.getElementById('processingStatus').classList.remove('d-none');
+            
+            const btn = document.getElementById('transformBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Creating Magic...</span>';
+
+            try {
+                const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRF(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        wedding_theme: theme,
+                        space_type: space
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showAlert('✨ Transformation started! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = result.redirect_url;
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Processing failed');
+                }
+            } catch (error) {
+                console.error('❌ Processing error:', error);
+                this.showAlert('Error: ' + error.message, 'danger');
+                document.getElementById('processingStatus').classList.add('d-none');
+                this.updateTransformButton();
+            }
+        }
+
+        showAlert(message, type) {
+            // Remove existing alerts
+            document.querySelectorAll('.studio-alert').forEach(alert => alert.remove());
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show position-fixed studio-alert`;
+            alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentElement) alert.remove();
+            }, 5000);
+        }
+
+        getCSRF() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                   document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        }
+    }
+
+    // Initialize Studio Manager
+    try {
+        window.studioManager = new StudioManager();
+        console.log('🎉 Studio initialized successfully!');
+    } catch (error) {
+        console.error('💥 Failed to initialize studio:', error);
+    }
+}
+</script>
 {% endblock %}

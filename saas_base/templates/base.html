@@ -8,15 +8,36 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      DreamWedAI
+      DreamWedAI - Transform Your Wedding Vision with AI
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="DreamWedAI - Transform any venue into your dream wedding with AI" />
+        content="{% block meta_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages to share with friends and family.{% endblock %}" />
   <meta name="author"
         content="Cactus Cat LLC" />
+  
+  <!-- Favicons -->
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicons/apple-touch-icon.png' %}" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ request.build_absolute_uri }}" />
+  <meta property="og:title" content="{% block og_title %}DreamWedAI - Transform Your Wedding Vision with AI{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages.{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
+  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Transform Your Wedding Vision with AI{% endblock %}" />
+  <meta property="twitter:description" content="{% block twitter_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages.{% endblock %}" />
+  <meta property="twitter:image" content="{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
+  
+  <!-- CSRF Token for AJAX requests -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  
   {% block css %}
   <!-- Latest compiled and minified Bootstrap CSS -->
   <link rel="stylesheet"
@@ -24,32 +45,43 @@
         integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
         crossorigin="anonymous"
         referrerpolicy="no-referrer" />
+  
   <!-- Bootstrap Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <!-- Your stuff: Third-party CSS libraries go here -->
-  <!-- This file stores project-specific CSS -->
-  <link href="{% static 'css/project.css' %}" rel="stylesheet" />
-{% endblock css %}
-<!-- Le javascript
-    ================================================== -->
-{# Placed at the top of the document so pages load faster with defer #}
-{% block javascript %}
-
-<!-- Bootstrap JS -->
-<script defer
-        src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
-        integrity="sha512-i9cEfJwUwViEPFKdC1enz4ZRGBj8YQo6QByFTF92YXHi7waCqyexvRD75S5NVTsSiTv7rKWqG9Y5eFxmRsOn0A=="
+  <link rel="stylesheet" 
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
         crossorigin="anonymous"
-        referrerpolicy="no-referrer"></script>
-<!-- Your stuff: Third-party javascript libraries go here -->
+        referrerpolicy="no-referrer" />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Project Styles -->
+  <link href="{% static 'css/project.css' %}" rel="stylesheet" />
+  {% endblock css %}
 
-<!-- place project specific Javascript in this file -->
+  <!-- Le javascript
+      ================================================== -->
+  {# Placed at the top of the document so pages load faster with defer #}
+  {% block javascript %}
+  <!-- Bootstrap JS -->
+  <script defer
+          src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js"
+          integrity="sha512-i9cEfJwUwViEPFKdC1enz4ZRGBj8YQo6QByFTF92YXHi7waCqyexvRD75S5NVTsSiTv7rKWqG9Y5eFxmRsOn0A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+
+  <!-- Project JavaScript -->
   <script defer src="{% static 'js/project.js' %}"></script>
-
-{% endblock javascript %}
+  {% endblock javascript %}
 </head>
+
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
   {% block body %}
+  <!-- Skip to main content for accessibility -->
+  <a class="visually-hidden-focusable" href="#main-content">Skip to main content</a>
+  
   <!-- Modern Navigation -->
   <nav class="navbar navbar-expand-md navbar-dark bg-navy shadow-sm">
     <div class="container-fluid">
@@ -62,6 +94,7 @@
               aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
+      
       <a class="navbar-brand fw-bold text-gradient-nav" href="{% url 'home' %}">
         <i class="bi bi-heart-fill me-2"></i>DreamWedAI
       </a>
@@ -72,84 +105,125 @@
           <ul class="navbar-nav me-auto">
             <!-- Studio Dropdown (Authenticated Only) -->
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle text-white-nav" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <a class="nav-link dropdown-toggle text-white-nav" 
+                 href="#" 
+                 id="studioDropdown" 
+                 role="button" 
+                 data-bs-toggle="dropdown" 
+                 aria-expanded="false">
                 <i class="bi bi-magic me-1"></i>Studio
               </a>
               <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="studioDropdown">
-                <li><a class="dropdown-item" href="{% url 'image_processing:wedding_studio' %}">
-                  <i class="bi bi-camera text-cyan me-2"></i> Upload & Transform
-                </a></li>
-                <li><a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-                  <i class="bi bi-magic text-cyan me-2"></i> My Transformations
-                </a></li>
-                <li><a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
-                  <i class="bi bi-heart text-rose me-2"></i> Favorites
-                </a></li>
-                <li><a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
-                  <i class="bi bi-collection text-cyan me-2"></i> Collections
-                </a></li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'image_processing:wedding_studio' %}">
+                    <i class="bi bi-camera text-cyan me-2"></i> Upload & Transform
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
+                    <i class="bi bi-magic text-cyan me-2"></i> My Transformations
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
+                    <i class="bi bi-heart text-rose me-2"></i> Favorites
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
+                    <i class="bi bi-collection text-cyan me-2"></i> Collections
+                  </a>
+                </li>
               </ul>
             </li>
             
-            <!-- Discover Weddings -->
-            <li class="nav-item">
-              <a class="nav-link text-white-nav" href="{% url 'wedding_shopping:public_couples_list' %}">
-                <i class="bi bi-globe2 me-2 text-rose"></i>Discover Weddings
+            <!-- Wedding Pages -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle text-white-nav" 
+                 href="#" 
+                 id="weddingDropdown" 
+                 role="button" 
+                 data-bs-toggle="dropdown" 
+                 aria-expanded="false">
+                <i class="bi bi-heart me-1"></i>My Wedding
               </a>
+              <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="weddingDropdown">
+                <li>
+                  <a class="dropdown-item" href="{% url 'wedding_shopping:dashboard' %}">
+                    <i class="bi bi-speedometer2 text-rose me-2"></i> Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'wedding_shopping:couple_create' %}">
+                    <i class="bi bi-plus-circle text-cyan me-2"></i> Manage Wedding Page
+                  </a>
+                </li>
+              </ul>
             </li>
           </ul>
           
           <ul class="navbar-nav ms-auto">
             <!-- Usage Indicator -->
             <li class="navbar-text me-3">
-              <span class="badge bg-gradient-rose">
+              <span class="badge bg-gradient-rose" id="usage-badge">
                 <i class="bi bi-lightning-fill me-1"></i>
                 <span id="usage-indicator">Loading...</span> remaining
               </span>
             </li>
             
-            <!-- My Profile -->
-            <li class="nav-item">
-              <a class="nav-link text-white-nav" href="{% url 'users:detail' request.user.username %}">
-                <i class="bi bi-person-circle me-1"></i> My Profile
+            <!-- User Dropdown -->
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle text-white-nav" 
+                 href="#" 
+                 id="userDropdown" 
+                 role="button" 
+                 data-bs-toggle="dropdown" 
+                 aria-expanded="false">
+                <i class="bi bi-person-circle me-1"></i>
+                {{ request.user.get_display_name|default:request.user.username }}
               </a>
-            </li>
-            
-            <!-- Sign Out -->
-            <li class="nav-item">
-              <a class="nav-link text-white-nav" href="{% url 'account_logout' %}">
-                <i class="bi bi-box-arrow-right me-1"></i> Sign Out
-              </a>
+              <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userDropdown">
+                <li>
+                  <a class="dropdown-item" href="{% url 'users:detail' request.user.username %}">
+                    <i class="bi bi-person text-cyan me-2"></i> My Profile
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'account_logout' %}">
+                    <i class="bi bi-box-arrow-right text-muted me-2"></i> Sign Out
+                  </a>
+                </li>
+              </ul>
             </li>
           </ul>
         {% else %}
           <!-- Guest User Navigation -->
           <ul class="navbar-nav me-auto">
-            <!-- Discover Weddings -->
             <li class="nav-item">
               <a class="nav-link text-white-nav" href="{% url 'wedding_shopping:public_couples_list' %}">
-                <i class="bi bi-globe2 me-2 text-rose"></i>Discover Weddings
+                <i class="bi bi-globe2 me-1 text-rose"></i>Discover Weddings
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link text-white-nav" href="{% url 'subscriptions:pricing' %}">
-                <i class="bi bi-tag me-1"></i> Pricing
+                <i class="bi bi-tag me-1"></i>Pricing
               </a>
             </li>
+            
           </ul>
           
           <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="btn btn-gradient-rose ms-2 px-3 py-2" href="{% url 'account_signup' %}">
-                 Get Started
-              </a>
-            </li>
             <li class="nav-item">
               <a class="nav-link text-white-nav" href="{% url 'account_login' %}">
                 <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
               </a>
             </li>
-            
+            <li class="nav-item">
+              <a class="btn btn-gradient-rose ms-2 px-3 py-2" href="{% url 'account_signup' %}">
+                <i class="bi bi-heart-fill me-1"></i> Get Started
+              </a>
+            </li>
           </ul>
         {% endif %}
       </div>
@@ -161,33 +235,83 @@
   <script>
   document.addEventListener('DOMContentLoaded', function() {
       // Load usage data for the indicator
-      fetch('/studio/')  
+      const indicator = document.getElementById('usage-indicator');
+      const badge = document.getElementById('usage-badge');
+      
+      if (indicator) {
+          // Try to get usage data from API first
+          fetch('/api/usage-data/', {
+              credentials: 'same-origin',
+              headers: {
+                  'X-CSRFToken': document.querySelector('[name=csrf-token]').content
+              }
+          })
           .then(response => {
               if (response.ok) {
-                  // If the user can access the studio dashboard, show usage
-                  const indicator = document.getElementById('usage-indicator');
-                  if (indicator) {
-                      indicator.innerHTML = '{{ request.user.subscription.get_usage_data.remaining|default:"0" }}';
+                  return response.json();
+              }
+              throw new Error('Failed to load usage data');
+          })
+          .then(data => {
+              if (data.remaining !== undefined) {
+                  indicator.textContent = data.remaining;
+                  
+                  // Update badge color based on remaining usage
+                  if (data.remaining <= 0) {
+                      badge.className = 'badge bg-danger';
+                  } else if (data.remaining <= 5) {
+                      badge.className = 'badge bg-warning';
+                  } else {
+                      badge.className = 'badge bg-gradient-rose';
                   }
               }
           })
           .catch(() => {
-              // Hide indicator if there's an error
-              const indicator = document.getElementById('usage-indicator');
-              if (indicator) {
-                  indicator.style.display = 'none';
-              }
+              // Fallback - try alternative endpoint or hide indicator
+              fetch('/studio/', {
+                  credentials: 'same-origin'
+              })
+              .then(response => {
+                  if (response.ok) {
+                      // Show fallback usage from template context
+                      indicator.textContent = '{{ request.user.subscription.get_usage_data.remaining|default:"0" }}';
+                  } else {
+                      // Hide usage badge if user can't access studio
+                      badge.style.display = 'none';
+                  }
+              })
+              .catch(() => {
+                  // Final fallback - show template value or hide
+                  const fallbackUsage = '{{ request.user.subscription.get_usage_data.remaining|default:"" }}';
+                  if (fallbackUsage) {
+                      indicator.textContent = fallbackUsage;
+                  } else {
+                      badge.style.display = 'none';
+                  }
+              });
           });
+      }
   });
   </script>
   {% endif %}
 
   <!-- Messages -->
   {% if messages %}
-    <div class="alert-container">
+    <div class="alert-container" role="alert" aria-live="polite">
       {% for message in messages %}
-        <div class="alert alert-dismissible {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-          {{ message }}
+        <div class="alert alert-dismissible fade show {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+          <div class="d-flex align-items-center">
+            {% if message.tags == 'success' %}
+              <i class="bi bi-check-circle-fill me-2"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {% elif message.tags == 'warning' %}
+              <i class="bi bi-exclamation-circle-fill me-2"></i>  
+            {% else %}
+              <i class="bi bi-info-circle-fill me-2"></i>
+            {% endif %}
+            <div>{{ message }}</div>
+          </div>
           <button type="button"
                   class="btn-close"
                   data-bs-dismiss="alert"
@@ -198,13 +322,26 @@
   {% endif %}
 
   <!-- Main Content -->
-  {% block main %}
-    {% block content %}
-      <div class="container">
-        <p>Use this document as a way to quick start any new project.</p>
-      </div>
-    {% endblock content %}
-  {% endblock main %}
+  <main id="main-content">
+    {% block main %}
+      {% block content %}
+        <div class="container py-5">
+          <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+              <div class="feature-icon mx-auto mb-4 bg-gradient-rose">
+                <i class="bi bi-heart-fill"></i>
+              </div>
+              <h1 class="display-4 mb-4">Welcome to DreamWedAI</h1>
+              
+              <a href="{% url 'account_signup' %}" class="btn btn-gradient-rose">
+                <i class="bi bi-rocket-takeoff me-2"></i>Get Started
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endblock content %}
+    {% endblock main %}
+  </main>
 
   <!-- Modern Footer -->
   <footer class="footer-modern bg-navy border-top border-light-subtle pt-5 pb-4">
@@ -212,11 +349,11 @@
       <div class="row">
         <!-- Brand Column -->
         <div class="col-lg-3 col-md-6 mb-4">
-          <a class="navbar-brand fw-bold text-gradient-nav text-decoration-none" href="{% url 'home' %}">
+          <a class="navbar-brand fw-bold text-gradient-nav text-decoration-none d-block mb-3" href="{% url 'home' %}">
             <i class="bi bi-heart-fill me-2"></i>DreamWedAI
           </a>
-          <p class="text-white-75 small mt-3">
-            Transform your wedding photos with AI and create beautiful wedding websites to share with friends and family.
+          <p class="text-white-75 small">
+            Dream your wedding before the big day.
           </p>
           <!-- Social Media Links -->
           <div class="mt-4">
@@ -270,16 +407,14 @@
           <h6 class="fw-bold text-white mb-3">Company</h6>
           <ul class="list-unstyled">
             <li class="mb-2">
-              <a href="{% url 'about' %}" class="text-white-75 text-decoration-none footer-link">About Us</a>
-            </li>
-            <!---li class="mb-2">
-              <a href="#" class="text-white-75 text-decoration-none footer-link">Blog</a>
+              <a href="{% url 'about' %}" class="text-white-75 text-decoration-none footer-link">
+                <i class="bi bi-info-circle me-2"></i>About Us
+              </a>
             </li>
             <li class="mb-2">
-              <a href="#" class="text-white-75 text-decoration-none footer-link">Careers</a>
-            </li---Add these two features later-->
-            <li class="mb-2">
-              <a href="#" class="text-white-75 text-decoration-none footer-link">Contact Us</a>
+              <a href="#" class="text-white-75 text-decoration-none footer-link">
+                <i class="bi bi-envelope me-2"></i>Contact Us
+              </a>
             </li>
           </ul>
         </div>
@@ -302,42 +437,40 @@
 
         <!-- Newsletter Column -->
         <div class="col-lg-3 col-md-12 mb-4">
-  <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
-  <p class="text-white-75 small mb-3">Get the latest wedding AI tips and features delivered to your inbox.</p>
-  
-  <!-- Newsletter Form -->
-  <form class="newsletter-form" id="newsletter-form">
-    {% csrf_token %}
-    <div class="input-group mb-3">
-      <input type="email" 
-             class="form-control bg-transparent border-light-subtle text-white newsletter-email-input" 
-             placeholder="Enter your email" 
-             aria-label="Email address" 
-             id="newsletter-email"
-             name="email"
-             required
-             style="backdrop-filter: blur(10px);">
-      <button class="btn btn-gradient-rose" type="submit" id="newsletter-submit-btn">
-        <i class="bi bi-envelope-fill" id="newsletter-icon"></i>
-        <span class="spinner-border spinner-border-sm d-none" id="newsletter-spinner" role="status" aria-hidden="true"></span>
-      </button>
-    </div>
-    
-    <!-- Messages Area -->
-    <div id="newsletter-messages" class="mb-2"></div>
-    
-    <small class="text-white-50 d-block">We respect your privacy. Unsubscribe anytime.</small>
-  </form>
-  </div>
-
-
+          <h6 class="fw-bold text-white mb-3">Stay Updated</h6>
+          <p class="text-white-75 small mb-3">Get the latest wedding design & technology tips delivered to your inbox.</p>
+          
+          <!-- Newsletter Form -->
+          <form class="newsletter-form" id="newsletter-form">
+            {% csrf_token %}
+            <div class="input-group mb-3">
+              <input type="email" 
+                     class="form-control newsletter-email-input" 
+                     placeholder="Enter your email" 
+                     aria-label="Email address" 
+                     id="newsletter-email"
+                     name="email"
+                     required>
+              <button class="btn btn-gradient-rose" type="submit" id="newsletter-submit-btn">
+                <i class="bi bi-envelope-fill" id="newsletter-icon"></i>
+                <span class="spinner-border spinner-border-sm d-none" id="newsletter-spinner" role="status" aria-hidden="true"></span>
+              </button>
+            </div>
+            
+            <!-- Messages Area -->
+            <div id="newsletter-messages" class="mb-2"></div>
+            
+            <small class="text-white-50 d-block">We respect your privacy. Unsubscribe anytime.</small>
+          </form>
+        </div>
+      </div>
 
       <!-- Footer Bottom -->
       <hr class="border-light-subtle my-4">
       <div class="row align-items-center">
         <div class="col-md-6">
           <p class="text-white-50 small mb-0">
-            © 2025 Cactus Cat LLC. All rights reserved.
+            © {% now "Y" %} Cactus Cat LLC. All rights reserved.
           </p>
         </div>
         <div class="col-md-6 text-md-end">
@@ -350,9 +483,97 @@
   </footer>
 
   {% endblock body %}
-  <!-- /container -->
+  
   {% block modal %}
   {% endblock modal %}
   
+  <!-- Back to top button -->
+  <button type="button" 
+          class="btn btn-gradient-rose position-fixed bottom-0 end-0 m-3 rounded-circle d-none" 
+          id="back-to-top" 
+          style="width: 50px; height: 50px; z-index: 1000;"
+          title="Back to top">
+    <i class="bi bi-arrow-up"></i>
+  </button>
+
+  <!-- JavaScript for enhanced functionality -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Back to top functionality
+      const backToTop = document.getElementById('back-to-top');
+      if (backToTop) {
+          window.addEventListener('scroll', function() {
+              if (window.pageYOffset > 300) {
+                  backToTop.classList.remove('d-none');
+              } else {
+                  backToTop.classList.add('d-none');
+              }
+          });
+          
+          backToTop.addEventListener('click', function() {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+      }
+
+      // Newsletter form handling
+      const newsletterForm = document.getElementById('newsletter-form');
+      if (newsletterForm) {
+          newsletterForm.addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const submitBtn = document.getElementById('newsletter-submit-btn');
+              const icon = document.getElementById('newsletter-icon');
+              const spinner = document.getElementById('newsletter-spinner');
+              const messages = document.getElementById('newsletter-messages');
+              const email = document.getElementById('newsletter-email').value;
+              
+              // Show loading state
+              submitBtn.disabled = true;
+              icon.classList.add('d-none');
+              spinner.classList.remove('d-none');
+              
+              // Simulate newsletter signup (replace with actual endpoint)
+              fetch('/api/newsletter-signup/', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                  },
+                  body: JSON.stringify({ email: email })
+              })
+              .then(response => response.json())
+              .then(data => {
+                  // Show success message
+                  messages.innerHTML = '<div class="alert alert-success alert-sm">Thanks for subscribing!</div>';
+                  newsletterForm.reset();
+              })
+              .catch(error => {
+                  // Show error message
+                  messages.innerHTML = '<div class="alert alert-danger alert-sm">Something went wrong. Please try again.</div>';
+              })
+              .finally(() => {
+                  // Reset button state
+                  submitBtn.disabled = false;
+                  icon.classList.remove('d-none');
+                  spinner.classList.add('d-none');
+                  
+                  // Clear messages after 5 seconds
+                  setTimeout(() => {
+                      messages.innerHTML = '';
+                  }, 5000);
+              });
+          });
+      }
+
+      // Auto-dismiss alerts after 5 seconds
+      const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+      alerts.forEach(alert => {
+          setTimeout(() => {
+              const bsAlert = new bootstrap.Alert(alert);
+              bsAlert.close();
+          }, 5000);
+      });
+  });
+  </script>
 </body>
 </html>

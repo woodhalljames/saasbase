@@ -1,4 +1,6 @@
 <!-- saas_base/templates/image_processing/components/favorite_heart.html -->
+<!-- Save this file to: saas_base/templates/image_processing/components/favorite_heart.html -->
+
 {% load static %}
 
 <button type="button" 
@@ -8,3 +10,230 @@
         title="{% if processed_image.is_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}">
   <i class="bi bi-heart{% if processed_image.is_favorited %}-fill{% endif %}"></i>
 </button>
+
+<!-- Only include the script and styles once per page -->
+{% if not favorite_heart_loaded %}
+<script>
+// Initialize favorite heart functionality
+if (typeof window.favoriteHeartInitialized === 'undefined') {
+    window.favoriteHeartInitialized = true;
+    
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.favorite-heart-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.closest('.favorite-heart-btn');
+            const processedImageId = button.dataset.processedImageId;
+            const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
+            
+            // Disable button during request
+            button.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('processed_image_id', processedImageId);
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                            document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            
+            fetch('{% url "image_processing:toggle_favorite" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button appearance
+                    const icon = button.querySelector('i');
+                    const newIsFavorited = data.is_favorited;
+                    
+                    if (newIsFavorited) {
+                        icon.className = 'bi bi-heart-fill';
+                        button.classList.remove('not-favorited');
+                        button.classList.add('favorited');
+                        button.title = 'Remove from favorites';
+                    } else {
+                        icon.className = 'bi bi-heart';
+                        button.classList.remove('favorited');
+                        button.classList.add('not-favorited');
+                        button.title = 'Add to favorites';
+                    }
+                    
+                    // Update data attribute
+                    button.dataset.isFavorited = newIsFavorited.toString();
+                    
+                    // Show toast notification
+                    showFavoriteToast(data.message, 'success');
+                } else {
+                    showFavoriteToast(data.error || 'Error updating favorite', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFavoriteToast('Network error', 'error');
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        }
+    });
+    
+    // Toast notification function
+    function showFavoriteToast(message, type) {
+        // Remove any existing toasts
+        const existingToasts = document.querySelectorAll('.favorite-toast');
+        existingToasts.forEach(toast => toast.remove());
+        
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed favorite-toast`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: slideInRight 0.3s ease;';
+        toast.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi bi-heart${type === 'success' ? '-fill' : ''} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 3000);
+    }
+}
+</script>
+
+<style>
+.favorite-heart-btn {
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: #dc3545;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.favorite-heart-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #c82333;
+}
+
+.favorite-heart-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+/* Not favorited state - red background with empty heart */
+.favorite-heart-btn.not-favorited {
+    background-color: #dc3545;
+}
+
+.favorite-heart-btn.not-favorited i {
+    color: white;
+    font-size: 16px;
+}
+
+/* Favorited state - red background with filled heart */
+.favorite-heart-btn.favorited {
+    background-color: #dc3545;
+}
+
+.favorite-heart-btn.favorited i {
+    color: white;
+    font-size: 16px;
+    animation: heartPulse 0.3s ease;
+}
+
+.favorite-heart-btn:disabled {
+    opacity: 0.6;
+    transform: none !important;
+    cursor: not-allowed;
+}
+
+.favorite-heart-btn:disabled:hover {
+    transform: none !important;
+    background-color: #dc3545;
+}
+
+/* Heart pulse animation when favorited */
+@keyframes heartPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Optional: Add a subtle glow effect for favorited items */
+.favorite-heart-btn.favorited::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ff6b6b, #ff8e8e, #ff6b6b);
+    border-radius: 50%;
+    z-index: -1;
+    opacity: 0.7;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+</style>
+
+{% load static %}
+<!-- Mark that favorite heart has been loaded -->
+<script>window.favorite_heart_loaded = true;</script>
+{% endif %}
