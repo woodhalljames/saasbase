@@ -1,5 +1,8 @@
-/* These styles are generated from project.scss. */
+/* ============================================
+   DREAMWEDAI COMPLETE STYLESHEET
+   ============================================ */
 
+/* Alert Styles */
 .alert-debug {
   color: black;
   background-color: white;
@@ -13,10 +16,9 @@
 }
 
 /* ============================================
-   MODERN WEDDING THEME STYLES - Complete Version
+   CSS VARIABLES & BASE STYLES
    ============================================ */
 
-/* Modern Color Palette Variables */
 :root {
   --primary-navy: #0D1B2A;
   --electric-rose: #FF6B9D;
@@ -32,13 +34,16 @@
   --card-shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* ============================================
-   ENHANCED TYPOGRAPHY & BASE STYLES
-   ============================================ */
-
+/* Base Typography */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 /* Enhanced Typography */
@@ -72,10 +77,9 @@ body {
 }
 
 /* ============================================
-   MODERN NAVIGATION & BASE STYLES
+   NAVIGATION
    ============================================ */
 
-/* Navigation Styles */
 .bg-navy {
   background: var(--primary-navy) !important;
 }
@@ -98,22 +102,23 @@ body {
   transform: translateY(-1px);
 }
 
-.text-cyan {
-  color: var(--bright-cyan) !important;
+.navbar-dark .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
 }
 
-.text-rose {
-  color: var(--electric-rose) !important;
+.navbar-dark .navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
 }
 
-.text-white-75 {
-  color: rgba(255, 255, 255, 0.75) !important;
-}
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
 
-.text-white-50 {
-  color: rgba(255, 255, 255, 0.5) !important;
-}
-
+.text-cyan { color: var(--bright-cyan) !important; }
+.text-rose { color: var(--electric-rose) !important; }
+.text-white-75 { color: rgba(255, 255, 255, 0.75) !important; }
+.text-white-50 { color: rgba(255, 255, 255, 0.5) !important; }
 .text-gradient {
   background: var(--accent-gradient);
   -webkit-background-clip: text;
@@ -121,11 +126,17 @@ body {
   background-clip: text;
 }
 
+.bg-gradient-rose { background: var(--gradient-rose) !important; color: white; }
+.bg-gradient-cyan { background: var(--gradient-cyan) !important; color: white; }
+.border-light-subtle { border-color: rgba(255, 255, 255, 0.1) !important; }
+.min-vh-50 { min-height: 50vh; }
+.min-vh-75 { min-height: 75vh; }
+
 /* ============================================
    MODERN BUTTON SYSTEM
    ============================================ */
 
-/* Primary CTA Buttons */
+/* Hero CTA Buttons */
 .hero-cta-primary {
   background: var(--gradient-rose);
   border: none;
@@ -170,7 +181,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* Button Gradients */
+/* Gradient Buttons */
 .btn-gradient-rose {
   background: var(--gradient-rose);
   border: none;
@@ -203,7 +214,7 @@ body {
   color: white;
 }
 
-/* Enhanced standard buttons */
+/* Enhanced Standard Buttons */
 .btn-primary {
   background: var(--gradient-rose);
   border: none;
@@ -296,8 +307,8 @@ body {
 }
 
 .card-header.bg-warning {
-  background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%) !important;
-  color: var(--primary-navy);
+  background: var(--gradient-rose) !important;
+  color: white;
   border-bottom: none;
 }
 
@@ -349,863 +360,10 @@ body {
 }
 
 /* ============================================
-   DASHBOARD & USER INTERFACE STYLES
-   ============================================ */
-
-/* Dashboard Cards */
-.dashboard-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--card-shadow-hover);
-}
-
-/* Profile Cards */
-.profile-card {
-  background: var(--light-gray);
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.profile-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-shadow);
-}
-
-/* Progress Bars */
-.progress {
-  border-radius: 10px;
-  background-color: #e9ecef;
-  height: 8px;
-}
-
-.progress-bar {
-  border-radius: 10px;
-}
-
-.progress-bar.bg-primary {
-  background: var(--gradient-rose) !important;
-}
-
-.progress-bar.bg-success {
-  background: var(--gradient-cyan) !important;
-}
-
-/* Status Badges */
-.badge {
-  font-weight: 600;
-  border-radius: 15px;
-  padding: 0.5rem 0.75rem;
-}
-
-.badge.bg-gradient-rose {
-  background: var(--gradient-rose) !important;
-  color: white;
-}
-
-.badge.bg-gradient-cyan {
-  background: var(--gradient-cyan) !important;
-  color: white;
-}
-
-/* ============================================
-   FORM ENHANCEMENTS
-   ============================================ */
-
-.form-control {
-  border-radius: 15px;
-  border: 2px solid #e9ecef;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-control:focus {
-  border-color: var(--bright-cyan);
-  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
-}
-
-.form-select {
-  border-radius: 15px;
-  border: 2px solid #e9ecef;
-  padding: 0.75rem 1rem;
-  transition: all 0.3s ease;
-}
-
-.form-select:focus {
-  border-color: var(--bright-cyan);
-  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
-}
-
-.form-label {
-  font-weight: 600;
-  color: var(--primary-navy);
-  margin-bottom: 0.5rem;
-}
-
-/* Form Validation */
-.form-control.is-invalid {
-  border-color: #dc3545;
-}
-
-.invalid-feedback {
-  color: #dc3545;
-  font-weight: 500;
-}
-
-/* Floating Label Effects */
-.form-floating {
-  position: relative;
-}
-
-.form-floating.focused .form-label {
-  color: var(--bright-cyan);
-  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-}
-
-/* ============================================
-   WEDDING-SPECIFIC COMPONENTS
-   ============================================ */
-
-/* Wedding Cards */
-.wedding-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
-  position: relative;
-}
-
-.wedding-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-}
-
-.wedding-card-image {
-  position: relative;
-  height: 250px;
-  overflow: hidden;
-}
-
-.wedding-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.wedding-card:hover .wedding-card-image img {
-  transform: scale(1.05);
-}
-
-.card-img-placeholder {
-  width: 100%;
-  height: 100%;
-  background: var(--gradient-rose);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 3rem;
-}
-
-/* Wedding Status Indicators */
-.wedding-date-badge {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--primary-navy);
-  padding: 0.5rem 1rem;
-  border-radius: 15px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  backdrop-filter: blur(10px);
-}
-
-.wedding-status-indicator {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-}
-
-.wedding-status-indicator span {
-  padding: 0.4rem 0.8rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-upcoming {
-  background: var(--gradient-cyan);
-  color: white;
-}
-
-.status-today {
-  background: var(--gradient-rose);
-  color: white;
-  animation: pulse 2s infinite;
-}
-
-.status-married {
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--primary-navy);
-}
-
-/* Wedding Page Buttons */
-.btn-wedding-visit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  background: var(--gradient-rose);
-  color: white;
-  padding: 1rem;
-  border-radius: 15px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
-}
-
-.btn-wedding-visit:hover {
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(255, 107, 157, 0.4);
-}
-
-/* ============================================
-   COLLECTION & GALLERY STYLES
-   ============================================ */
-
-/* Collection Cards */
-.collection-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s ease;
-  height: 100%;
-}
-
-.collection-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-shadow-hover);
-}
-
-.collection-thumbnail {
-  height: 200px;
-  overflow: hidden;
-  position: relative;
-}
-
-.collection-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.collection-card:hover .collection-thumbnail img {
-  transform: scale(1.05);
-}
-
-/* Favorite Heart Component */
-.favorite-heart-btn {
-  transition: all 0.2s ease;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background-color: var(--electric-rose);
-  color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  position: relative;
-  overflow: hidden;
-}
-
-.favorite-heart-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.favorite-heart-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
-}
-
-.favorite-heart-btn.favorited i {
-  animation: heartPulse 0.3s ease;
-}
-
-@keyframes heartPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-/* ============================================
-   STUDIO & PROCESSING STYLES
-   ============================================ */
-
-/* Upload Area */
-.upload-area {
-  border: 2px dashed #dee2e6;
-  border-radius: 20px;
-  padding: 3rem;
-  text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.upload-area:hover,
-.upload-area.dragover {
-  border-color: var(--bright-cyan);
-  background-color: rgba(0, 245, 255, 0.05);
-}
-
-.upload-area.dragover {
-  transform: scale(1.02);
-}
-
-/* Studio Thumbnails */
-.venue-thumbnail {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.venue-thumbnail:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.venue-thumbnail.selected {
-  border-color: var(--bright-cyan);
-  border-width: 3px;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
-}
-
-/* Processing Status */
-.processing-status {
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
-  border-radius: 20px;
-  padding: 2rem;
-}
-
-.processing-complete {
-  background: rgba(25, 135, 84, 0.1);
-  border: 1px solid rgba(25, 135, 84, 0.3);
-}
-
-.processing-failed {
-  background: rgba(220, 53, 69, 0.1);
-  border: 1, solid rgba(220, 53, 69, 0.3);
-}
-
-/* ============================================
-   PRICING & SUBSCRIPTION STYLES
-   ============================================ */
-
-/* Pricing Cards */
-.pricing-card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: var(--card-shadow);
-  transition: all 0.3s ease;
-  position: relative;
-  height: 100%;
-}
-
-.pricing-card.featured {
-  border: 3px solid var(--electric-rose);
-  transform: scale(1.05);
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.2);
-}
-
-.pricing-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--card-shadow-hover);
-}
-
-.pricing-card.featured:hover {
-  transform: scale(1.05) translateY(-5px);
-}
-
-.pricing-badge {
-  position: absolute;
-  top: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--gradient-rose);
-  color: white;
-  padding: 0.5rem 1.5rem;
-  border-radius: 25px;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-/* ============================================
-   WEDDING DETAIL PAGE STYLES
+   HOMEPAGE SPECIFIC STYLES
    ============================================ */
 
 /* Hero Section */
-.wedding-hero-section {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-}
-
-.wedding-hero-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-}
-
-.hero-background-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hero-background-placeholder {
-  width: 100%;
-  height: 100%;
-  background: var(--gradient-rose);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 8rem;
-}
-
-.wedding-hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.8) 100%);
-  z-index: 2;
-  display: flex;
-  align-items: flex-end;
-  padding: 2rem 0;
-}
-
-.hero-title {
-  font-size: 3.5rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  color: white;
-}
-
-.hero-venue {
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.9;
-  color: white;
-}
-
-.hero-date {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: var(--bright-cyan);
-}
-
-/* Countdown Cards */
-.countdown-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
-
-.countdown-upcoming {
-  border-left: 4px solid var(--bright-cyan);
-}
-
-.countdown-today {
-  border-left: 4px solid var(--electric-rose);
-  animation: pulse 2s infinite;
-}
-
-.countdown-married {
-  border-left: 4px solid var(--primary-navy);
-}
-
-.countdown-number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--primary-navy);
-  margin-bottom: 0.5rem;
-}
-
-.countdown-label {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--primary-navy);
-  margin-bottom: 0.5rem;
-}
-
-.countdown-sublabel {
-  color: var(--medium-gray);
-}
-
-.countdown-icon {
-  font-size: 1.5rem;
-  color: var(--electric-rose);
-}
-
-/* ============================================
-   REGISTRY & SOCIAL STYLES
-   ============================================ */
-
-/* Registry Table */
-.registry-table-card {
-  background: white;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-  border: 1px solid #e9ecef;
-}
-
-.registry-table {
-  width: 100%;
-  margin: 0;
-}
-
-.registry-table thead th {
-  background: var(--light-gray);
-  color: var(--primary-navy);
-  font-weight: 700;
-  padding: 1.5rem 2rem;
-  border: none;
-  font-size: 1rem;
-}
-
-.registry-table tbody td {
-  padding: 2rem;
-  border-top: 1px solid #e9ecef;
-  vertical-align: middle;
-}
-
-.registry-row {
-  transition: all 0.3s ease;
-  border-left: 4px solid transparent;
-}
-
-.registry-row:hover {
-  background: var(--light-gray);
-  transform: translateX(4px);
-}
-
-.registry-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  border: 2px solid;
-  transition: transform 0.3s ease;
-}
-
-.registry-row:hover .registry-icon {
-  transform: scale(1.1);
-}
-
-.registry-shop-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 15px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.registry-shop-btn:hover {
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-/* Social Links */
-.social-link-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  padding: 2rem 1rem;
-  border-radius: 20px;
-  text-decoration: none;
-  color: var(--primary-navy);
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  border: 2px solid transparent;
-  position: relative;
-  overflow: hidden;
-  min-height: 120px;
-}
-
-.social-link-card:hover {
-  color: white;
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-}
-
-.social-icon {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  transition: all 0.3s ease;
-}
-
-.social-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-align: center;
-  transition: color 0.3s ease;
-}
-
-.social-hover-effect {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
-.social-link-card:hover .social-hover-effect {
-  opacity: 1;
-}
-
-.social-link-card:hover .social-icon {
-  color: white !important;
-  transform: scale(1.1);
-}
-
-/* ============================================
-   FOOTER STYLES
-   ============================================ */
-
-.footer-modern {
-  background: var(--primary-navy) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.footer-link {
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-}
-
-.footer-link:hover {
-  color: var(--bright-cyan) !important;
-  transform: translateX(3px);
-}
-
-.social-link {
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  font-size: 1.2rem;
-}
-
-.social-link:hover {
-  background: rgba(255, 107, 157, 0.2);
-  color: var(--electric-rose) !important;
-  transform: translateY(-2px);
-}
-
-/* Newsletter Form OG colors. */
-.newsletter-form .form-control {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  border-radius: 15px;
-}
-
-.newsletter-form .form-control::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.newsletter-form .form-control:focus {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: var(--bright-cyan) !important;
-  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25) !important;
-  color: white !important;
-}
-
-
-/* Newsletter Form needing sync to look like OG. */
-.newsletter-form .form-control {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    transition: all 0.3s ease;
-}
-
-.newsletter-form .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
-}
-
-.newsletter-form .form-control:focus {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: var(--bright-cyan) !important;
-    box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25) !important;
-    color: white !important;
-}
-
-.newsletter-form .form-control:disabled {
-    background: rgba(255, 255, 255, 0.05) !important;
-    opacity: 0.6;
-}
-
-.newsletter-form .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.newsletter-form .alert-sm {
-    font-size: 0.8rem;
-    border: none;
-    border-radius: 8px;
-    margin-bottom: 0;
-}
-
-.newsletter-form .alert-success {
-    background-color: rgba(40, 167, 69, 0.9);
-    color: white;
-}
-
-.newsletter-form .alert-danger {
-    background-color: rgba(220, 53, 69, 0.9);
-    color: white;
-}
-
-/* Pulse animation for success state */
-@keyframes newsletter-success-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-}
-
-.newsletter-form .alert-success {
-    animation: newsletter-success-pulse 1s;
-}
-/* ============================================
-   DROPDOWN & MODAL STYLES
-   ============================================ */
-
-.dropdown-menu-dark {
-  background: rgba(13, 27, 42, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 1rem 0;
-}
-
-.dropdown-menu-dark .dropdown-item {
-  color: rgba(255, 255, 255, 0.9);
-  padding: 0.75rem 1.5rem;
-  transition: all 0.3s ease;
-  border-radius: 0;
-}
-
-.dropdown-menu-dark .dropdown-item:hover {
-  background: rgba(255, 107, 157, 0.1);
-  color: white;
-  transform: translateX(5px);
-}
-
-.dropdown-menu {
-  border-radius: 15px;
-  border: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-
-.dropdown-item {
-  transition: all 0.3s ease;
-}
-
-.dropdown-item:hover {
-  background: var(--light-gray);
-  transform: translateX(3px);
-}
-
-/* Modal Enhancements */
-.modal-content {
-  border-radius: 20px;
-  border: none;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-  border-bottom: 1px solid #e9ecef;
-  padding: 1.5rem;
-}
-
-.modal-title {
-  font-weight: 700;
-  color: var(--primary-navy);
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  border-top: 1px solid #e9ecef;
-  padding: 1.5rem;
-}
-
-/* ============================================
-   HERO SECTIONS
-   ============================================ */
-
 .hero-section {
   background: var(--dark-gradient);
   position: relative;
@@ -1236,29 +394,27 @@ body {
   z-index: 2;
 }
 
-.discover-hero-section {
-  background: var(--dark-gradient);
-  padding: 4rem 0;
-  position: relative;
-  color: var(--white);
-  overflow: hidden;
+.hero-stats {
+  margin-top: 3rem;
 }
 
-.discover-hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,107,157,0.1)"/><circle cx="80" cy="40" r="1" fill="rgba(0,245,255,0.1)"/><circle cx="40" cy="80" r="1.5" fill="rgba(255,107,157,0.1)"/></svg>');
-  animation: sparkle 20s linear infinite;
-  z-index: 1;
+.stat-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--bright-cyan);
+  margin-bottom: 0.5rem;
 }
 
-.discover-hero-content {
-  position: relative;
-  z-index: 2;
+.stat-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 /* Hero Visual Elements */
@@ -1329,498 +485,426 @@ body {
   50% { transform: scale(1.05); }
 }
 
-/* ============================================
-   UTILITY CLASSES & ANIMATIONS
-   ============================================ */
-
-/* Responsive Utilities */
-.min-vh-50 {
-  min-height: 50vh;
+/* AI Visualization Demo Section */
+.ai-visualization {
+  padding: 6rem 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-.min-vh-75 {
-  min-height: 75vh;
-}
-
-/* Border Utilities */
-.border-light-subtle {
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Background Utilities */
-.bg-gradient-rose {
-  background: var(--gradient-rose) !important;
-  color: white;
-}
-
-.bg-gradient-cyan {
-  background: var(--gradient-cyan) !important;
-  color: white;
-}
-
-/* Enhanced Animations */
-.fade-in-up {
-  opacity: 0;
-  transform: translateY(30px);
-  animation: fadeInUp 0.6s ease forwards;
-}
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-
-/* Interactive Elements */
-.interactive-demo {
+.before-after-container {
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: var(--card-shadow);
   cursor: pointer;
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
-.interactive-demo:hover {
-  transform: scale(1.02);
+.before-after-container:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
 }
 
-/* Loading States */
-.loading-shimmer {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
+.before-after-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: center;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* Rotating Animation */
-.rotating {
-  animation: rotate 1s linear infinite;
-}
-
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Heartbeat Animation */
-@keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  14% { transform: scale(1.1); }
-  28% { transform: scale(1); }
-  42% { transform: scale(1.1); }
-  70% { transform: scale(1); }
-}
-
-/* Toast Notifications */
-.toast-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: white;
+.before-image, .after-image {
+  position: relative;
+  height: 300px;
   border-radius: 15px;
-  padding: 1rem 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
-  transform: translateX(100%);
-  opacity: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4rem;
+  color: white;
+  background-size: cover;
+  background-position: center;
+}
+
+.before-image {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+}
+
+.before-image::before {
+  content: '🏢';
+  font-size: 4rem;
+}
+
+.after-image {
+  background: var(--gradient-rose);
+}
+
+.after-image::before {
+  content: '💒';
+  font-size: 4rem;
+}
+
+.image-label {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.transform-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: var(--gradient-rose);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  z-index: 10;
   transition: all 0.3s ease;
+  box-shadow: 0 5px 20px rgba(255, 107, 157, 0.3);
+}
+
+.before-after-container:hover .transform-arrow {
+  transform: translate(-50%, -50%) scale(1.1);
+  box-shadow: 0 8px 30px rgba(255, 107, 157, 0.4);
+}
+
+/* Studio Showcase Section */
+.studio-showcase {
+  padding: 6rem 0;
+  background: white;
+}
+
+.theme-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.theme-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.theme-card:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.theme-preview {
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-preview.rustic {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+}
+
+.theme-preview.modern {
+  background: linear-gradient(135deg, #2C3E50 0%, #34495E 100%);
+}
+
+.theme-preview.garden {
+  background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
+}
+
+.theme-preview.elegant {
+  background: linear-gradient(135deg, #8E44AD 0%, #9B59B6 100%);
+}
+
+.theme-card-content {
+  padding: 1.5rem;
+}
+
+.theme-tag {
+  background: var(--gradient-rose);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.theme-card h4 {
+  color: var(--primary-navy);
+  font-weight: 700;
+  margin-top: 1rem;
+}
+
+/* Wedding Pages Section */
+.wedding-pages {
+  padding: 6rem 0;
+  background: var(--light-gray);
+}
+
+.free-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--gradient-cyan);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0, 245, 255, 0.3);
+}
+
+/* Business Tools Section */
+.business-tools {
+  padding: 6rem 0;
+  background: white;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.tool-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow);
+}
+
+.tool-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--gradient-cyan);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.tool-card:hover .tool-icon {
+  transform: scale(1.1);
+}
+
+.tool-card h4 {
+  color: var(--primary-navy);
+  font-weight: 700;
+}
+
+/* How It Works Section */
+.how-it-works-section {
+  padding: 6rem 0;
+  background: var(--light-gray);
+}
+
+.step-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  position: relative;
+  height: 100%;
+}
+
+.step-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.step-number {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-rose);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.step-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--gradient-cyan);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem auto 1.5rem;
+  font-size: 2rem;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.step-card:hover .step-icon {
+  transform: scale(1.1);
+}
+
+.step-card h4 {
+  color: var(--primary-navy);
+  font-weight: 700;
+}
+
+/* Testimonials Section */
+.testimonials-section {
+  padding: 6rem 0;
+  background: white;
+}
+
+.testimonial-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  height: 100%;
   border-left: 4px solid var(--electric-rose);
 }
 
-.toast-notification.success {
-  border-left-color: #28a745;
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
 }
 
-.toast-notification.show {
-  transform: translateX(0);
-  opacity: 1;
-}
-
-.toast-content {
-  display: flex;
-  align-items: center;
-  color: var(--primary-navy);
-  font-weight: 600;
-}
-
-.toast-content i {
-  color: #28a745;
+.stars {
+  color: #ffc107;
   font-size: 1.1rem;
 }
 
-/* Slide animations for toasts */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.testimonial-content p {
+  font-style: italic;
+  color: var(--medium-gray);
+  line-height: 1.6;
 }
 
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+.testimonial-author {
+  display: flex;
+  align-items: center;
+}
+
+.author-info strong {
+  color: var(--primary-navy);
+  font-weight: 700;
+}
+
+.author-info .text-muted {
+  font-size: 0.9rem;
+}
+
+/* Final CTA Section */
+.final-cta {
+  padding: 6rem 0;
+  background: var(--dark-gradient);
+  color: white;
+  text-align: center;
+}
+
+.final-cta .section-title {
+  color: white;
+}
+
+.final-cta .section-subtitle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.final-cta .opacity-75 {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 /* ============================================
-   NAVBAR IMPROVEMENTS
+   FORM ENHANCEMENTS
    ============================================ */
 
-.navbar-dark .navbar-toggler {
-  border-color: rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-}
-
-.navbar-dark .navbar-toggler:focus {
-  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
-}
-
-/* Alert Positioning */
-.alert-container {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 1055;
-  min-width: 300px;
-}
-
-.alert-container .alert {
-  animation: slideInRight 0.3s ease;
-  margin-bottom: 0.5rem;
+.form-control {
   border-radius: 15px;
-  border: none;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
 
-/* Alert positioning for other pages */
-.alert-container:not(.homepage .alert-container) {
-  margin: 1rem auto;
-  max-width: 1200px;
-  padding: 0 15px;
-  position: relative;
-  top: auto;
-  right: auto;
-}
-
-/* ============================================
-   MOBILE RESPONSIVE ENHANCEMENTS
-   ============================================ */
-
-@media (max-width: 768px) {
-  .hero-section {
-    padding: 3rem 0;
-  }
-  
-  .hero-title {
-    font-size: 2.5rem;
-  }
-  
-  .section-title {
-    font-size: 2rem;
-  }
-  
-  .hero-visual {
-    height: 300px;
-    margin-top: 2rem;
-  }
-  
-  .hero-main-image {
-    width: 200px;
-    height: 200px;
-  }
-  
-  .floating-element {
-    display: none;
-  }
-  
-  .hero-stats {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .discover-hero-section {
-    padding: 3rem 0;
-  }
-  
-  .wedding-hero-section {
-    min-height: 70vh;
-  }
-  
-  .hero-cta-primary,
-  .hero-cta-secondary {
-    display: block;
-    width: 100%;
-    margin-bottom: 1rem;
-    text-align: center;
-  }
-  
-  .wedding-card-content {
-    padding: 1.5rem;
-  }
-  
-  .venue-image-container {
-    height: 250px;
-  }
-  
-  .wedding-stats {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .hero-stats .stat-item {
-    text-align: center;
-  }
-  
-  .filter-badge {
-    font-size: 0.8rem;
-    padding: 0.4rem 0.8rem;
-  }
-  
-  .toast-notification {
-    right: 10px;
-    left: 10px;
-    min-width: auto;
-  }
-  
-  .countdown-card {
-    margin-top: 2rem;
-  }
-  
-  .venue-details {
-    padding: 2rem;
-  }
-  
-  .story-card {
-    padding: 2rem;
-  }
-  
-  .story-text {
-    padding-right: 0;
-  }
-  
-  .story-icon {
-    position: static;
-    margin: 0 auto 2rem;
-  }
-  
-  .create-cta-section {
-    padding: 3rem 2rem;
-  }
-  
-  .cta-title {
-    font-size: 1.5rem;
-  }
-  
-  .social-link-card {
-    min-height: 100px;
-    padding: 1.5rem 0.5rem;
-  }
-  
-  .social-icon {
-    font-size: 1.5rem;
-  }
-}
-
-/* Extra small screens */
-@media (max-width: 576px) {
-  .container-fluid {
-    padding-left: 15px;
-    padding-right: 15px;
-  }
-  
-  .hero-title {
-    font-size: 2rem;
-  }
-  
-  .section-title {
-    font-size: 1.75rem;
-  }
-  
-  .card-body {
-    padding: 1rem !important;
-  }
-  
-  .btn {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  .btn-sm {
-    min-height: 36px;
-    min-width: 36px;
-  }
-  
-  .wedding-card-image {
-    height: 200px;
-  }
-  
-  .form-control,
-  .form-select {
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
-}
-
-/* Landscape mobile phones */
-@media (max-width: 768px) and (orientation: landscape) {
-  .hero-section {
-    min-height: 70vh;
-  }
-  
-  .discover-hero-section {
-    padding: 2rem 0;
-  }
-  
-  .wedding-hero-section {
-    min-height: 60vh;
-  }
-}
-
-/* ============================================
-   HOMEPAGE OVERFLOW FIX
-   ============================================ */
-
-.homepage {
-  overflow-x: hidden;
-}
-
-/* ============================================
-   ACCESSIBILITY IMPROVEMENTS
-   ============================================ */
-
-/* Focus states */
-.btn:focus,
-.form-control:focus,
-.form-select:focus {
-  outline: none;
+.form-control:focus {
+  border-color: var(--bright-cyan);
   box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
 }
 
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .card {
-    border: 2px solid var(--primary-navy);
-  }
-  
-  .btn-outline-primary {
-    border-width: 2px;
-  }
+.form-select {
+  border-radius: 15px;
+  border: 2px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
 }
 
-/* Motion reduction support */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+.form-select:focus {
+  border-color: var(--bright-cyan);
+  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
 }
 
-/* ============================================
-   PRINT STYLES
-   ============================================ */
-
-@media print {
-  .navbar,
-  .footer-modern,
-  .btn,
-  .alert-container {
-    display: none !important;
-  }
-  
-  .card {
-    box-shadow: none;
-    border: 1px solid #000;
-  }
-  
-  .hero-section {
-    background: white;
-    color: black;
-  }
+.form-label {
+  font-weight: 600;
+  color: var(--primary-navy);
+  margin-bottom: 0.5rem;
 }
 
-/* ============================================
-   DARK MODE SUPPORT (Future Enhancement)
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --light-gray: #2d3748;
-    --white: #1a202c;
-    --primary-navy: #1a202c;
-    --medium-gray: #a0aec0;
-  }
-  
-  body {
-    background-color: var(--primary-navy);
-    color: #e2e8f0;
-  }
-  
-  .card {
-    background-color: #2d3748;
-    color: #e2e8f0;
-  }
+.form-control.is-invalid {
+  border-color: #dc3545;
 }
 
-/* ============================================
-   IMAGE OPTIMIZATION
-   ============================================ */
-
-img {
-  max-width: 100%;
-  height: auto;
+.invalid-feedback {
+  color: #dc3545;
+  font-weight: 500;
 }
 
-.img-responsive {
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
+.form-text {
+  color: var(--medium-gray) !important;
+  font-size: 0.875rem;
 }
 
-.img-thumbnail {
-  border: 2px solid #dee2e6;
-  border-radius: 10px;
-}
-
-/* ============================================
-   LOADING STATES
-   ============================================ */
-
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ============================================
-   FORM ENHANCEMENTS - CONTINUED
-   ============================================ */
-
-/* Social/Registry Form Styling */
-.social-form, .registry-form {
+/* Form Containers */
+.social-form, .wedding-link-form {
   background-color: var(--light-gray);
   transition: all 0.2s ease;
   border-radius: 15px;
@@ -1828,158 +912,93 @@ img {
   border: 2px solid transparent;
 }
 
-.social-form:hover, .registry-form:hover {
-  background-color: #e9ecef;
+.social-form:hover, .wedding-link-form:hover {
   border-color: var(--bright-cyan);
+  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .social-form.marked-for-deletion,
-.registry-form.marked-for-deletion {
+.wedding-link-form.marked-for-deletion {
   opacity: 0.5;
   background-color: #ffebee;
   border-color: #dc3545;
 }
 
+/* Delete Buttons */
+.delete-form-btn {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  min-width: 38px;
+  min-height: 38px;
+}
+
+.delete-form-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 /* URL Preview Field */
 #url-preview {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  background-color: var(--light-gray);
+  background-color: #f8f9fa;
   border: 2px solid #e9ecef;
   border-radius: 10px;
   padding: 0.75rem;
   font-size: 0.9rem;
   color: var(--primary-navy);
-}
-
-/* Branding Detection Indicators */
-.branding-indicator {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 10px;
-  font-size: 0.9rem;
-}
-
-.branding-indicator.alert-success {
-  background-color: rgba(40, 167, 69, 0.1);
-  border-color: rgba(40, 167, 69, 0.2);
-  color: #155724;
-}
-
-.branding-indicator.alert-warning {
-  background-color: rgba(255, 193, 7, 0.1);
-  border-color: rgba(255, 193, 7, 0.2);
-  color: #856404;
-}
-
-.branding-indicator.alert-danger {
-  background-color: rgba(220, 53, 69, 0.1);
-  border-color: rgba(220, 53, 69, 0.2);
-  color: #721c24;
+  font-weight: 500;
 }
 
 /* ============================================
-   FINAL RESPONSIVE ADJUSTMENTS
+   WEDDING COMPONENTS
    ============================================ */
 
-/* Ensure all cards have consistent height in grids */
-.row .col-lg-3 .card,
-.row .col-lg-4 .card,
-.row .col-md-4 .card,
-.row .col-md-6 .card {
+/* Wedding Cards */
+.wedding-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+  position: relative;
+}
+
+.wedding-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+}
+
+.wedding-card-image {
+  position: relative;
+  height: 250px;
+  overflow: hidden;
+}
+
+.wedding-card-image img {
+  width: 100%;
   height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.wedding-card:hover .wedding-card-image img {
+  transform: scale(1.05);
+}
+
+.card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--gradient-rose);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
 }
 
-.card-body {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.card-footer {
-  margin-top: auto;
-}
-
-/* Improve button consistency */
-.btn-group .btn,
-.btn-group-sm .btn {
-  border-radius: 0;
-}
-
-.btn-group .btn:first-child {
-  border-top-left-radius: 15px;
-  border-bottom-left-radius: 15px;
-}
-
-.btn-group .btn:last-child {
-  border-top-right-radius: 15px;
-  border-bottom-right-radius: 15px;
-}
-
-/* Enhanced focus indicators for accessibility */
-a:focus,
-button:focus,
-input:focus,
-select:focus,
-textarea:focus {
-  outline: 2px solid var(--bright-cyan);
-  outline-offset: 2px;
-}
-
-/* Ensure text remains readable on gradient backgrounds */
-.bg-gradient-rose,
-.bg-gradient-cyan,
-.btn-gradient-rose,
-.btn-gradient-cyan {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* Final polish for the overall experience */
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Ensure images don't break layout */
-img {
-  max-width: 100%;
-  height: auto;
-  vertical-align: middle;
-}
-
-/* Improve table styling */
-.table {
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-.table th,
-.table td {
-  border-top: none;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.table thead th {
-  border-bottom: 2px solid #e9ecef;
-  background-color: var(--light-gray);
-}
-
-
-/* Additional CSS for Enhanced Wedding Links - Add to project.css */
-
-/* ============================================
-   ENHANCED WEDDING LINK CARDS
-   ============================================ */
-
+/* Wedding Link Cards */
 .wedding-link-card {
   background: white;
   border-radius: 20px;
@@ -2079,58 +1098,29 @@ img {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-/* Link type specific styling */
-.rsvp-card {
-  border-left: 4px solid #28a745;
-}
+/* Link Type Specific Styling */
+.rsvp-card { border-left: 4px solid #28a745; }
+.livestream-card { border-left: 4px solid #dc3545; }
+.photo-card { border-left: 4px solid #6f42c1; }
+.other-card { border-left: 4px solid #6c757d; }
 
-.livestream-card {
-  border-left: 4px solid #dc3545;
-}
-
-.photo-card {
-  border-left: 4px solid #6f42c1;
-}
-
-.other-card {
-  border-left: 4px solid #6c757d;
-}
-
-/* ============================================
-   ENHANCED SOCIAL MEDIA SECTIONS
-   ============================================ */
-
-.partner-social-section {
-  position: relative;
-}
-
-.partner-social-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--primary-navy);
-  margin-bottom: 1.5rem;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.partner-social-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 3px;
-  background: var(--gradient-rose);
-  border-radius: 2px;
-}
-
-/* Enhanced social link cards */
+/* Social Link Cards */
 .social-link-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 2rem 1rem;
+  border-radius: 20px;
+  text-decoration: none;
+  color: var(--primary-navy);
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  border: 2px solid transparent;
   position: relative;
   overflow: hidden;
+  min-height: 120px;
 }
 
 .social-link-card::before {
@@ -2149,44 +1139,457 @@ img {
   transform: scaleX(1);
 }
 
+.social-link-card:hover {
+  color: white;
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.social-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.social-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.social-hover-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.social-link-card:hover .social-hover-effect {
+  opacity: 1;
+}
+
+.social-link-card:hover .social-icon {
+  color: white !important;
+  transform: scale(1.1);
+}
+
 /* ============================================
-   FORM ENHANCEMENTS
+   STUDIO & PROCESSING STYLES
    ============================================ */
 
-.wedding-link-form, .social-form {
-  background-color: var(--light-gray);
-  transition: all 0.2s ease;
-  border-radius: 15px;
-  padding: 1.5rem;
-  border: 2px solid transparent;
+/* Upload Area */
+.upload-area {
+  border: 2px dashed #dee2e6;
+  border-radius: 20px;
+  padding: 3rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.wedding-link-form:hover, .social-form:hover {
-  background-color: #e9ecef;
+.upload-area:hover,
+.upload-area.dragover {
   border-color: var(--bright-cyan);
+  background-color: rgba(0, 245, 255, 0.05);
 }
 
-.wedding-link-form.marked-for-deletion,
-.social-form.marked-for-deletion {
-  opacity: 0.5;
-  background-color: #ffebee;
-  border-color: #dc3545;
+.upload-area.dragover {
+  transform: scale(1.02);
 }
 
-/* Link type styling in forms */
-.form-select[name*="link_type"] {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+/* Studio Thumbnails */
+.venue-thumbnail {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.form-select[name*="owner"] {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23FF6B9D' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+.venue-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.venue-thumbnail.selected {
+  border-color: var(--bright-cyan);
+  border-width: 3px;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+}
+
+/* Processing Status */
+.processing-status {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 20px;
+  padding: 2rem;
+}
+
+.processing-complete {
+  background: rgba(25, 135, 84, 0.1);
+  border: 1px solid rgba(25, 135, 84, 0.3);
+}
+
+.processing-failed {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
 /* ============================================
-   MOBILE ENHANCEMENTS
+   PROGRESS BARS & BADGES
+   ============================================ */
+
+.progress {
+  border-radius: 10px;
+  background-color: #e9ecef;
+  height: 8px;
+}
+
+.progress-bar {
+  border-radius: 10px;
+}
+
+.progress-bar.bg-primary {
+  background: var(--gradient-rose) !important;
+}
+
+.progress-bar.bg-success {
+  background: var(--gradient-cyan) !important;
+}
+
+.badge {
+  font-weight: 600;
+  border-radius: 15px;
+  padding: 0.5rem 0.75rem;
+}
+
+.badge.bg-gradient-rose {
+  background: var(--gradient-rose) !important;
+  color: white;
+}
+
+.badge.bg-gradient-cyan {
+  background: var(--gradient-cyan) !important;
+  color: white;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+.footer-modern {
+  background: var(--primary-navy) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.footer-link {
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-link:hover {
+  color: var(--bright-cyan) !important;
+  transform: translateX(3px);
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  font-size: 1.2rem;
+}
+
+.social-link:hover {
+  background: rgba(255, 107, 157, 0.2);
+  color: var(--electric-rose) !important;
+  transform: translateY(-2px);
+}
+
+/* Newsletter Form */
+.newsletter-form .form-control {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+.newsletter-form .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.newsletter-form .form-control:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--bright-cyan) !important;
+  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25) !important;
+  color: white !important;
+}
+
+.newsletter-form .form-control:disabled {
+  background: rgba(255, 255, 255, 0.05) !important;
+  opacity: 0.6;
+}
+
+.newsletter-form .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.newsletter-form .alert-sm {
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+.newsletter-form .alert-success {
+  background-color: rgba(40, 167, 69, 0.9);
+  color: white;
+  animation: newsletter-success-pulse 1s;
+}
+
+.newsletter-form .alert-danger {
+  background-color: rgba(220, 53, 69, 0.9);
+  color: white;
+}
+
+@keyframes newsletter-success-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+/* ============================================
+   DROPDOWNS & MODALS
+   ============================================ */
+
+.dropdown-menu-dark {
+  background: rgba(13, 27, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 1rem 0;
+}
+
+.dropdown-menu-dark .dropdown-item {
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+  border-radius: 0;
+}
+
+.dropdown-menu-dark .dropdown-item:hover {
+  background: rgba(255, 107, 157, 0.1);
+  color: white;
+  transform: translateX(5px);
+}
+
+.dropdown-menu {
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item {
+  transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--light-gray);
+  transform: translateX(3px);
+}
+
+.modal-content {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid #e9ecef;
+  padding: 1.5rem;
+}
+
+.modal-title {
+  font-weight: 700;
+  color: var(--primary-navy);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  padding: 1.5rem;
+}
+
+/* ============================================
+   ANIMATIONS & INTERACTIONS
+   ============================================ */
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+
+.rotating {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   ALERT POSITIONING
+   ============================================ */
+
+.alert-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1055;
+  min-width: 300px;
+}
+
+.alert-container .alert {
+  animation: slideInRight 0.3s ease;
+  margin-bottom: 0.5rem;
+  border-radius: 15px;
+  border: none;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
    ============================================ */
 
 @media (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 0;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .hero-visual {
+    height: 300px;
+    margin-top: 2rem;
+  }
+  
+  .hero-main-image {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .floating-element {
+    display: none;
+  }
+  
+  .hero-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .before-after-images {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .before-image, .after-image {
+    height: 200px;
+  }
+  
+  .transform-arrow {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  
+  .theme-gallery {
+    grid-template-columns: 1fr;
+  }
+  
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+  }
+  
+  .hero-cta-primary,
+  .hero-cta-secondary {
+    text-align: center;
+  }
+  
   .wedding-link-header {
     padding: 1rem;
     flex-direction: column;
@@ -2208,10 +1611,6 @@ img {
     padding: 1rem;
   }
   
-  .partner-social-title {
-    font-size: 1.1rem;
-  }
-  
   .social-link-card {
     min-height: 90px;
     padding: 1rem 0.5rem;
@@ -2220,19 +1619,108 @@ img {
   .social-icon {
     font-size: 1.25rem;
   }
+  
+  .social-form, .wedding-link-form {
+    padding: 1rem;
+  }
+  
+  .card-header {
+    padding: 1rem;
+  }
+  
+  .delete-form-btn {
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  
+  .toast-notification {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+  
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .btn-sm {
+    min-height: 36px;
+    min-width: 36px;
+  }
+  
+  .wedding-card-image {
+    height: 200px;
+  }
+  
+  .form-control,
+  .form-select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero-section {
+    min-height: 70vh;
+  }
 }
 
 /* ============================================
-   ACCESSIBILITY ENHANCEMENTS
+   ACCESSIBILITY
    ============================================ */
 
-.wedding-link-btn:focus,
-.social-link-card:focus {
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
+}
+
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
   outline: 2px solid var(--bright-cyan);
   outline-offset: 2px;
 }
 
+@media (prefers-contrast: high) {
+  .card {
+    border: 2px solid var(--primary-navy);
+  }
+  
+  .btn-outline-primary {
+    border-width: 2px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
   .wedding-link-card,
   .wedding-link-icon,
   .social-link-card {
@@ -2245,6 +1733,23 @@ img {
    ============================================ */
 
 @media print {
+  .navbar,
+  .footer-modern,
+  .btn,
+  .alert-container {
+    display: none !important;
+  }
+  
+  .card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+  
+  .hero-section {
+    background: white;
+    color: black;
+  }
+  
   .wedding-link-card,
   .social-link-card {
     box-shadow: none;
@@ -2255,4 +1760,83 @@ img {
   .social-hover-effect {
     display: none;
   }
+}
+
+/* ============================================
+   HOMEPAGE OVERFLOW FIX
+   ============================================ */
+
+.homepage {
+  overflow-x: hidden;
+}
+
+/* Ensure all cards have consistent height in grids */
+.row .col-lg-3 .card,
+.row .col-lg-4 .card,
+.row .col-md-4 .card,
+.row .col-md-6 .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-footer {
+  margin-top: auto;
+}
+
+/* Improve button consistency */
+.btn-group .btn,
+.btn-group-sm .btn {
+  border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+}
+
+.btn-group .btn:last-child {
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
+/* Ensure text remains readable on gradient backgrounds */
+.bg-gradient-rose,
+.bg-gradient-cyan,
+.btn-gradient-rose,
+.btn-gradient-cyan {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Final polish for the overall experience */
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table th,
+.table td {
+  border-top: none;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.table thead th {
+  border-bottom: 2px solid #e9ecef;
+  background-color: var(--light-gray);
 }

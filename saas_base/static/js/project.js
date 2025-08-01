@@ -1,3 +1,13 @@
+/**
+ * ============================================
+ * DREAMWEDAI COMPLETE JAVASCRIPT
+ * ============================================
+ */
+
+/**
+ * Wedding Form Manager
+ * Handles dynamic formsets and branding detection
+ */
 class WeddingFormManager {
     constructor() {
         this.apiBaseUrl = '/wedding/api/';
@@ -13,31 +23,18 @@ class WeddingFormManager {
         });
     }
 
-    /**
-     * Initialize dynamic formset management for social media and wedding link forms
-     */
     initializeDynamicFormsets() {
         this.setupDynamicFormset('social', 'Social Media Link');
         this.setupDynamicFormset('weddinglink', 'Wedding Link');
-        this.setupDynamicFormset('registry', 'Wedding Registry'); // Backwards compatibility
+        this.setupDynamicFormset('registry', 'Wedding Registry');
     }
-    /**
-     * Setup dynamic formset functionality for a specific formset type
-     * @param {string} formsetType - The type of formset (social or registry)
-     * @param {string} displayName - Human-readable name for the formset
-     */
+
     setupDynamicFormset(formsetType, displayName) {
         const formsetContainer = document.getElementById(`${formsetType}-formset`);
         if (!formsetContainer) return;
-
-        // Setup delete buttons for existing forms
         this.setupDeleteButtons(formsetType);
     }
 
-    /**
-     * Setup delete buttons for existing forms
-     * @param {string} formsetType - The type of formset
-     */
     setupDeleteButtons(formsetType) {
         const forms = document.querySelectorAll(`[id^="${formsetType}-form-"]:not(#${formsetType}-empty-form)`);
         forms.forEach(form => {
@@ -48,12 +45,6 @@ class WeddingFormManager {
         });
     }
 
-    /**
-     * Create a delete button for a form
-     * @param {HTMLElement} formElement - The form element
-     * @param {string} formsetType - The type of formset
-     * @returns {HTMLElement} The created delete button
-     */
     createDeleteButton(formElement, formsetType) {
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
@@ -63,30 +54,19 @@ class WeddingFormManager {
         return deleteButton;
     }
 
-    /**
-     * Remove a form from the formset
-     * @param {HTMLElement} formElement - The form element to remove
-     * @param {string} formsetType - The type of formset
-     */
     removeFormsetForm(formElement, formsetType) {
         const deleteInput = formElement.querySelector(`input[name*="DELETE"]`);
         const idInput = formElement.querySelector(`input[name*="id"]`);
 
         if (deleteInput && idInput && idInput.value) {
-            // Mark existing object for deletion
             deleteInput.checked = true;
             formElement.style.display = 'none';
         } else {
-            // Remove new form completely
             formElement.remove();
             this.reindexFormset(formsetType);
         }
     }
 
-    /**
-     * Reindex formset after removal
-     * @param {string} formsetType - The type of formset
-     */
     reindexFormset(formsetType) {
         const forms = document.querySelectorAll(`[id^="${formsetType}-form-"]:not(#${formsetType}-empty-form)`);
         const totalFormsInput = document.querySelector(`input[name="${formsetType}-TOTAL_FORMS"]`);
@@ -102,11 +82,6 @@ class WeddingFormManager {
         totalFormsInput.value = visibleIndex;
     }
 
-    /**
-     * Update form element indices
-     * @param {HTMLElement} form - The form element
-     * @param {number} index - New index for the form
-     */
     updateFormIndices(form, index) {
         const elements = form.querySelectorAll('input, select, textarea, label');
         elements.forEach(element => {
@@ -124,20 +99,12 @@ class WeddingFormManager {
         });
     }
 
-    /**
-     * Setup branding detection for URL fields
-     */
     setupBrandingDetection() {
-        // Setup for existing forms
         document.querySelectorAll('.url-field').forEach(urlField => {
             this.setupBrandingForField(urlField);
         });
     }
 
-    /**
-     * Setup branding detection for a specific URL field
-     * @param {HTMLElement} urlField - The URL input field
-     */
     setupBrandingForField(urlField) {
         urlField.addEventListener('blur', async () => {
             const url = urlField.value.trim();
@@ -151,30 +118,22 @@ class WeddingFormManager {
         });
 
         urlField.addEventListener('input', () => {
-            // Clear previous branding indicators on input
             this.clearBrandingIndicator(urlField);
         });
     }
 
-    /**
-     * Simple branding detection and application
-     * @param {HTMLElement} urlField - The URL input field
-     * @param {string} formsetType - Type of formset (social or registry)
-     */
     async detectAndApplyBranding(urlField, formsetType) {
         const url = urlField.value.trim();
         const form = urlField.closest('.social-form, .registry-form');
         
         if (!url || !form) return;
 
-        // Check cache first
         const cacheKey = `${formsetType}-${url}`;
         if (this.brandingCache.has(cacheKey)) {
             this.applyBrandingData(form, this.brandingCache.get(cacheKey), formsetType);
             return;
         }
 
-        // Show loading indicator
         this.showBrandingLoading(urlField);
 
         try {
@@ -182,13 +141,8 @@ class WeddingFormManager {
             const data = await response.json();
             
             if (response.ok && data.success && data.branding.detected) {
-                // Cache the result
                 this.brandingCache.set(cacheKey, data.branding);
-                
-                // Apply branding
                 this.applyBrandingData(form, data.branding, formsetType);
-                
-                // Show success indicator
                 this.showBrandingIndicator(urlField, data.branding, 'success');
             } else {
                 this.showBrandingIndicator(urlField, { name: 'Unknown', type: 'other' }, 'warning');
@@ -199,17 +153,9 @@ class WeddingFormManager {
         }
     }
 
-    /**
-     * Apply detected branding data to form
-     * @param {HTMLElement} form - The form element
-     * @param {Object} brandingData - Branding information from API
-     * @param {string} formsetType - Type of formset
-     */
     applyBrandingData(form, brandingData, formsetType) {
         if (formsetType === 'social') {
             const displayNameField = form.querySelector('input[name*="display_name"]');
-            
-            // Auto-fill display name if available and field is empty
             if (displayNameField && !displayNameField.value && brandingData.suggestions?.display_name) {
                 displayNameField.value = brandingData.suggestions.display_name;
             }
@@ -217,24 +163,16 @@ class WeddingFormManager {
             const registryNameField = form.querySelector('input[name*="registry_name"]');
             const descriptionField = form.querySelector('textarea[name*="description"]');
             
-            // Auto-fill registry name if available and field is empty
             if (registryNameField && !registryNameField.value && brandingData.suggestions?.display_name) {
                 registryNameField.value = brandingData.suggestions.display_name;
             }
             
-            // Auto-fill description if available and field is empty
             if (descriptionField && !descriptionField.value && brandingData.description) {
                 descriptionField.value = brandingData.description;
             }
         }
     }
 
-    /**
-     * Show branding detection indicator
-     * @param {HTMLElement} urlField - The URL field
-     * @param {Object} brandingData - Branding data
-     * @param {string} type - Type of indicator (success, warning, error)
-     */
     showBrandingIndicator(urlField, brandingData, type) {
         this.clearBrandingIndicator(urlField);
         
@@ -258,7 +196,6 @@ class WeddingFormManager {
         indicator.innerHTML = content;
         urlField.parentNode.appendChild(indicator);
         
-        // Auto-hide after 5 seconds
         setTimeout(() => {
             if (indicator.parentNode) {
                 indicator.remove();
@@ -266,10 +203,6 @@ class WeddingFormManager {
         }, 5000);
     }
 
-    /**
-     * Show loading indicator for branding detection
-     * @param {HTMLElement} urlField - The URL field
-     */
     showBrandingLoading(urlField) {
         this.clearBrandingIndicator(urlField);
         
@@ -280,10 +213,6 @@ class WeddingFormManager {
         urlField.parentNode.appendChild(indicator);
     }
 
-    /**
-     * Clear branding indicator
-     * @param {HTMLElement} urlField - The URL field
-     */
     clearBrandingIndicator(urlField) {
         const existing = urlField.parentNode.querySelector('.branding-indicator');
         if (existing) {
@@ -291,9 +220,6 @@ class WeddingFormManager {
         }
     }
 
-    /**
-     * Setup URL preview functionality for wedding page URL
-     */
     setupUrlPreview() {
         const previewField = document.getElementById('url-preview');
         if (!previewField) return;
@@ -322,7 +248,6 @@ class WeddingFormManager {
             }
         };
 
-        // Attach listeners to name and date fields
         ['partner_1_name', 'partner_2_name'].forEach(fieldName => {
             const field = document.getElementById(`id_${fieldName}`);
             if (field) {
@@ -335,15 +260,9 @@ class WeddingFormManager {
             dateField.addEventListener('change', updatePreview);
         }
 
-        // Initial update
         updatePreview();
     }
 
-    /**
-     * Show alert message
-     * @param {string} message - Alert message
-     * @param {string} type - Alert type (success, warning, danger, info)
-     */
     showAlert(message, type = 'info') {
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show`;
@@ -352,11 +271,9 @@ class WeddingFormManager {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         
-        // Insert at top of page
         const container = document.querySelector('.container') || document.body;
         container.insertBefore(alert, container.firstChild);
         
-        // Auto-hide after 5 seconds
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.remove();
@@ -366,8 +283,8 @@ class WeddingFormManager {
 }
 
 /**
- * Modern Homepage Enhancement Manager
- * Handles scroll animations, interactive elements, and enhanced UX
+ * Enhanced Homepage Manager
+ * Handles all homepage interactions and animations
  */
 class HomepageManager {
     constructor() {
@@ -380,17 +297,121 @@ class HomepageManager {
     init() {
         document.addEventListener('DOMContentLoaded', () => {
             this.setupScrollAnimations();
-            this.setupInteractiveElements();
-            this.setupSmoothScrolling();
+            this.setupInteractiveDemo();
             this.setupCountUpAnimations();
+            this.setupThemeCardInteractions();
+            this.setupSmoothScrolling();
             this.setupParallaxEffects();
-            this.setupDemoInteractions();
+            this.setupHoverEffects();
+            this.addAnimationStyles();
         });
     }
 
-    /**
-     * Setup scroll-triggered animations using Intersection Observer
-     */
+    addAnimationStyles() {
+        if (!document.getElementById('homepage-animations')) {
+            const style = document.createElement('style');
+            style.id = 'homepage-animations';
+            style.textContent = `
+                .animate-in {
+                    opacity: 1 !important;
+                    transform: translateY(0) !important;
+                }
+                
+                @keyframes sparkleFloat {
+                    0% { 
+                        opacity: 0; 
+                        transform: translateY(0) scale(0.5); 
+                    }
+                    50% { 
+                        opacity: 1; 
+                        transform: translateY(-20px) scale(1); 
+                    }
+                    100% { 
+                        opacity: 0; 
+                        transform: translateY(-40px) scale(0.5); 
+                    }
+                }
+                
+                @keyframes ripple {
+                    to {
+                        transform: scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    setupInteractiveDemo() {
+        const demoContainer = document.querySelector('.before-after-container');
+        if (!demoContainer) return;
+
+        let isTransformed = false;
+        
+        demoContainer.addEventListener('click', () => {
+            const arrow = demoContainer.querySelector('.transform-arrow');
+            const beforeImg = demoContainer.querySelector('.before-image');
+            const afterImg = demoContainer.querySelector('.after-image');
+            
+            if (!isTransformed) {
+                this.performTransformation(arrow, beforeImg, afterImg);
+                isTransformed = true;
+            } else {
+                this.resetTransformation(arrow, beforeImg, afterImg);
+                isTransformed = false;
+            }
+        });
+
+        demoContainer.style.cursor = 'pointer';
+        demoContainer.title = 'Click to see AI transformation magic!';
+    }
+
+    performTransformation(arrow, beforeImg, afterImg) {
+        arrow.innerHTML = '<i class="bi bi-hourglass-split rotating"></i>';
+        arrow.style.background = 'var(--gradient-cyan)';
+        
+        beforeImg.style.filter = 'brightness(0.7) saturate(0.8)';
+        afterImg.style.filter = 'brightness(1.2) saturate(1.3)';
+        
+        setTimeout(() => {
+            arrow.innerHTML = '<i class="bi bi-check-circle"></i>';
+            arrow.style.background = '#28a745';
+            this.addSparkleEffect(beforeImg.parentElement);
+        }, 1500);
+    }
+
+    resetTransformation(arrow, beforeImg, afterImg) {
+        arrow.innerHTML = '<i class="bi bi-arrow-right"></i>';
+        arrow.style.background = 'var(--gradient-rose)';
+        beforeImg.style.filter = '';
+        afterImg.style.filter = '';
+    }
+
+    addSparkleEffect(container) {
+        for (let i = 0; i < 6; i++) {
+            setTimeout(() => {
+                const sparkle = document.createElement('div');
+                sparkle.innerHTML = '✨';
+                sparkle.style.position = 'absolute';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.fontSize = '1.5rem';
+                sparkle.style.animation = 'sparkleFloat 2s ease-out forwards';
+                sparkle.style.pointerEvents = 'none';
+                sparkle.style.zIndex = '20';
+                
+                container.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    if (sparkle.parentNode) {
+                        sparkle.parentNode.removeChild(sparkle);
+                    }
+                }, 2000);
+            }, i * 300);
+        }
+    }
+
     setupScrollAnimations() {
         const observerOptions = {
             threshold: 0.1,
@@ -400,92 +421,30 @@ class HomepageManager {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.classList.add('fade-in-up');
+                    entry.target.classList.add('animate-in');
                     observer.unobserve(entry.target);
                 }
             });
         }, observerOptions);
 
-        // Observe elements for animation
         const animateElements = document.querySelectorAll(
-            '.feature-card, .theme-card, .tool-card, .testimonial-card, .step-card'
+            '.theme-card, .tool-card, .testimonial-card, .step-card, .section-title, .section-subtitle'
         );
         
         animateElements.forEach((el, index) => {
-            el.classList.add(`stagger-${(index % 4) + 1}`);
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease';
+            el.style.transitionDelay = `${(index % 3) * 0.1}s`;
             observer.observe(el);
         });
     }
 
-    /**
-     * Setup interactive demo elements
-     */
-    setupDemoInteractions() {
-        const beforeAfterContainer = document.querySelector('.before-after-container');
-        if (beforeAfterContainer) {
-            let isTransformed = false;
-            
-            beforeAfterContainer.addEventListener('click', () => {
-                const arrow = beforeAfterContainer.querySelector('.transform-arrow');
-                const beforeImg = beforeAfterContainer.querySelector('.before-image');
-                const afterImg = beforeAfterContainer.querySelector('.after-image');
-                
-                if (!isTransformed) {
-                    // Add transformation effect
-                    beforeAfterContainer.style.filter = 'brightness(1.1) saturate(1.2)';
-                    arrow.innerHTML = '<i class="bi bi-check-circle"></i>';
-                    arrow.style.background = 'linear-gradient(135deg, #00F5FF 0%, #0099CC 100%)';
-                    
-                    // Show loading state briefly
-                    arrow.innerHTML = '<i class="bi bi-hourglass-split rotating"></i>';
-                    setTimeout(() => {
-                        arrow.innerHTML = '<i class="bi bi-check-circle"></i>';
-                    }, 1500);
-                    
-                    isTransformed = true;
-                } else {
-                    // Reset
-                    beforeAfterContainer.style.filter = '';
-                    arrow.innerHTML = '<i class="bi bi-arrow-right"></i>';
-                    arrow.style.background = 'var(--gradient-rose)';
-                    isTransformed = false;
-                }
-            });
-
-            // Add cursor pointer
-            beforeAfterContainer.style.cursor = 'pointer';
-            
-            // Add tooltip
-            beforeAfterContainer.title = 'Click to see AI transformation in action!';
-        }
-    }
-
-    /**
-     * Setup smooth scrolling for anchor links
-     */
-    setupSmoothScrolling() {
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    }
-
-    /**
-     * Setup count-up animations for statistics
-     */
     setupCountUpAnimations() {
         const statNumbers = document.querySelectorAll('.stat-number');
         
         const countUp = (element, target) => {
-            const increment = target / 60; // 60 frames for 1 second
+            const increment = target / 60;
             let current = 0;
             
             const timer = setInterval(() => {
@@ -496,7 +455,7 @@ class HomepageManager {
                 } else {
                     element.textContent = this.formatStatNumber(Math.floor(current));
                 }
-            }, 16); // ~60fps
+            }, 16);
         };
 
         const observer = new IntersectionObserver((entries) => {
@@ -518,125 +477,163 @@ class HomepageManager {
         statNumbers.forEach(stat => observer.observe(stat));
     }
 
-    /**
-     * Format stat numbers with appropriate suffixes
-     */
     formatStatNumber(num) {
         if (num >= 1000) {
-            return Math.floor(num / 1000) + 'K+';
+            return Math.floor(num / 1000) + 'k+';
         }
         return num + '+';
     }
 
-    /**
-     * Setup subtle parallax effects
-     */
+    setupThemeCardInteractions() {
+        document.querySelectorAll('.theme-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-15px) scale(1.02)';
+                
+                const preview = card.querySelector('.theme-preview');
+                if (preview) {
+                    preview.style.boxShadow = '0 0 30px rgba(255, 255, 255, 0.3)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0) scale(1)';
+                
+                const preview = card.querySelector('.theme-preview');
+                if (preview) {
+                    preview.style.boxShadow = '';
+                }
+            });
+
+            card.addEventListener('click', (e) => {
+                this.createRippleEffect(e, card);
+            });
+        });
+    }
+
+    createRippleEffect(e, element) {
+        const ripple = document.createElement('span');
+        const rect = element.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.style.position = 'absolute';
+        ripple.style.borderRadius = '50%';
+        ripple.style.background = 'rgba(255, 255, 255, 0.3)';
+        ripple.style.transform = 'scale(0)';
+        ripple.style.animation = 'ripple 0.6s linear';
+        ripple.style.pointerEvents = 'none';
+        
+        element.style.position = 'relative';
+        element.style.overflow = 'hidden';
+        element.appendChild(ripple);
+        
+        setTimeout(() => {
+            if (ripple.parentNode) {
+                ripple.parentNode.removeChild(ripple);
+            }
+        }, 600);
+    }
+
+    setupSmoothScrolling() {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    }
+
     setupParallaxEffects() {
         const parallaxElements = document.querySelectorAll('.floating-element');
+        
+        if (parallaxElements.length === 0) return;
         
         window.addEventListener('scroll', () => {
             const scrollTop = window.pageYOffset;
             
             parallaxElements.forEach((element, index) => {
-                const speed = 0.5 + (index * 0.1);
+                const speed = 0.3 + (index * 0.1);
                 const yPos = -(scrollTop * speed);
                 element.style.transform = `translateY(${yPos}px)`;
             });
         });
     }
 
-    /**
-     * Setup interactive elements with enhanced feedback
-     */
-    setupInteractiveElements() {
-        // Enhanced button interactions
+    setupHoverEffects() {
         document.querySelectorAll('.hero-cta-primary, .hero-cta-secondary').forEach(btn => {
             btn.addEventListener('mouseenter', () => {
-                btn.style.transform = 'translateY(-2px) scale(1.02)';
+                btn.style.transform = 'translateY(-3px) scale(1.05)';
             });
             
             btn.addEventListener('mouseleave', () => {
                 btn.style.transform = 'translateY(0) scale(1)';
             });
-        });
 
-        // Theme card interactions
-        document.querySelectorAll('.theme-card').forEach(card => {
-            card.addEventListener('mouseenter', () => {
-                card.style.transform = 'translateY(-10px) scale(1.02)';
-            });
-            
-            card.addEventListener('mouseleave', () => {
-                card.style.transform = 'translateY(0) scale(1)';
-            });
-        });
-
-        // Add click effects to interactive elements
-        document.querySelectorAll('.tool-card, .feature-card').forEach(card => {
-            card.addEventListener('click', () => {
-                card.style.transform = 'translateY(-5px) scale(0.98)';
+            btn.addEventListener('click', (e) => {
+                btn.style.transform = 'translateY(0) scale(0.95)';
                 setTimeout(() => {
-                    card.style.transform = 'translateY(-5px) scale(1)';
+                    btn.style.transform = 'translateY(-3px) scale(1.05)';
                 }, 150);
             });
         });
-    }
 
-    /**
-     * Add loading states for CTA buttons
-     */
-    addLoadingState(button, loadingText = 'Loading...') {
-        const originalText = button.innerHTML;
-        button.innerHTML = `<i class="bi bi-hourglass-split rotating me-2"></i>${loadingText}`;
-        button.disabled = true;
-        
-        // Simulate loading (remove in production)
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }, 2000);
-    }
-
-    /**
-     * Show notification toast
-     */
-    showNotification(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type} position-fixed`;
-        toast.style.top = '20px';
-        toast.style.right = '20px';
-        toast.style.zIndex = '9999';
-        toast.style.minWidth = '300px';
-        toast.innerHTML = `
-            <div class="d-flex align-items-center">
-                <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-                ${message}
-            </div>
-        `;
-        
-        document.body.appendChild(toast);
-        
-        // Animate in
-        setTimeout(() => {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateX(0)';
-        }, 10);
-        
-        // Auto remove
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
+        document.querySelectorAll('.tool-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const icon = card.querySelector('.tool-icon');
+                if (icon) {
+                    icon.style.transform = 'scale(1.2) rotate(5deg)';
                 }
-            }, 300);
-        }, 4000);
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                const icon = card.querySelector('.tool-icon');
+                if (icon) {
+                    icon.style.transform = 'scale(1) rotate(0deg)';
+                }
+            });
+        });
+
+        document.querySelectorAll('.step-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const number = card.querySelector('.step-number');
+                const icon = card.querySelector('.step-icon');
+                
+                if (number) {
+                    number.style.transform = 'translateX(-50%) scale(1.2)';
+                }
+                if (icon) {
+                    icon.style.transform = 'scale(1.1) rotate(5deg)';
+                }
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                const number = card.querySelector('.step-number');
+                const icon = card.querySelector('.step-icon');
+                
+                if (number) {
+                    number.style.transform = 'translateX(-50%) scale(1)';
+                }
+                if (icon) {
+                    icon.style.transform = 'scale(1) rotate(0deg)';
+                }
+            });
+        });
     }
 }
 
 /**
- * Enhanced Form Interactions
+ * Form Enhancements
+ * General form functionality and enhancements
  */
 class FormEnhancements {
     constructor() {
@@ -649,10 +646,233 @@ class FormEnhancements {
             this.setupInputEnhancements();
             this.setupImagePreview();
             this.setupDeleteConfirmations();
-            this.setupCollectionActions();
-            this.setupFavoriteHearts();
             this.setupFormsetManagement();
         });
+    }
+
+    setupFormsetManagement() {
+        let socialFormCount = this.getFormsetCount('social');
+        let weddingLinkFormCount = this.getFormsetCount('weddinglink');
+
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#add-social-btn')) {
+                e.preventDefault();
+                this.addFormToFormset('social', socialFormCount++);
+                this.updateTotalForms('social', socialFormCount);
+            }
+            
+            if (e.target.matches('#add-wedding-link-btn')) {
+                e.preventDefault();
+                this.addFormToFormset('weddinglink', weddingLinkFormCount++);
+                this.updateTotalForms('weddinglink', weddingLinkFormCount);
+            }
+            
+            if (e.target.matches('.delete-form-btn')) {
+                e.preventDefault();
+                this.handleFormDelete(e.target);
+            }
+        });
+
+        ['id_partner_1_name', 'id_partner_2_name', 'id_wedding_date'].forEach(id => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.addEventListener('input', this.updateUrlPreview);
+                field.addEventListener('change', this.updateUrlPreview);
+            }
+        });
+    }
+
+    getFormsetCount(prefix) {
+        const totalFormsInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+        return totalFormsInput ? parseInt(totalFormsInput.value) : 0;
+    }
+
+    updateTotalForms(prefix, count) {
+        const totalFormsInput = document.querySelector(`input[name="${prefix}-TOTAL_FORMS"]`);
+        if (totalFormsInput) {
+            totalFormsInput.value = count;
+        }
+    }
+
+    addFormToFormset(formsetType, formIndex) {
+        const formsetDiv = document.getElementById(`${formsetType}-formset`);
+        if (!formsetDiv) return;
+
+        const newForm = document.createElement('div');
+        newForm.className = `${formsetType === 'social' ? 'social' : 'wedding-link'}-form border rounded p-3 mb-3`;
+        newForm.setAttribute('data-form-index', formIndex);
+        
+        if (formsetType === 'social') {
+            newForm.innerHTML = this.getSocialFormHTML(formIndex);
+        } else {
+            newForm.innerHTML = this.getWeddingLinkFormHTML(formIndex);
+        }
+        
+        formsetDiv.appendChild(newForm);
+        
+        // Setup delete button
+        const deleteBtn = newForm.querySelector('.delete-form-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleFormDelete(e.target);
+            });
+        }
+        
+        // Setup link type change handler for wedding links
+        if (formsetType === 'weddinglink') {
+            const linkTypeSelect = newForm.querySelector('select[name*="link_type"]');
+            if (linkTypeSelect && window.updateLinkPlaceholders) {
+                linkTypeSelect.addEventListener('change', function() {
+                    window.updateLinkPlaceholders(this);
+                });
+                window.updateLinkPlaceholders(linkTypeSelect);
+            }
+        }
+        
+        // Animate in
+        newForm.style.opacity = '0';
+        newForm.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+            newForm.style.transition = 'all 0.3s ease';
+            newForm.style.opacity = '1';
+            newForm.style.transform = 'translateY(0)';
+        }, 10);
+    }
+
+    getSocialFormHTML(index) {
+        return `
+            <div class="row">
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Belongs To</label>
+                    <select name="social-${index}-owner" class="form-select">
+                        <option value="partner_1">Partner 1</option>
+                        <option value="partner_2">Partner 2</option>
+                        <option value="shared" selected>Both/Shared</option>
+                    </select>
+                    <div class="form-text">Who does this social media account belong to?</div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">Social Media URL</label>
+                    <input type="url" name="social-${index}-url" class="form-control url-field" 
+                           placeholder="https://instagram.com/yourusername">
+                    <div class="form-text">We'll automatically detect the platform</div>
+                </div>
+                <div class="col-lg-4 mb-2">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" name="social-${index}-display_name" class="form-control" 
+                           placeholder="@yourusername or Your Page Name">
+                    <div class="form-text">How this link should appear on your wedding page</div>
+                </div>
+                <div class="col-lg-1 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="social">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <input type="hidden" name="social-${index}-DELETE" value="">
+            <input type="hidden" name="social-${index}-id" value="">
+        `;
+    }
+
+    getWeddingLinkFormHTML(index) {
+        return `
+            <div class="row">
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Link Type</label>
+                    <select name="weddinglink-${index}-link_type" class="form-select" onchange="updateLinkPlaceholders(this)">
+                        <option value="registry">Wedding Registry</option>
+                        <option value="rsvp">RSVP Site</option>
+                        <option value="livestream">Live Stream</option>
+                        <option value="photos">Wedding Photos</option>
+                        <option value="website">Wedding Website</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-lg-5 mb-2">
+                    <label class="form-label">URL</label>
+                    <input type="url" name="weddinglink-${index}-url" class="form-control url-field" 
+                           placeholder="https://example.com/your-link">
+                    <div class="form-text">We'll automatically detect the service from your URL</div>
+                </div>
+                <div class="col-lg-3 mb-2">
+                    <label class="form-label">Title <span class="text-danger">*</span></label>
+                    <input type="text" name="weddinglink-${index}-title" class="form-control" 
+                           placeholder="Link Title" required>
+                    <div class="form-text">A friendly name for this link</div>
+                </div>
+                <div class="col-lg-1 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn" data-form-type="wedding-link">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 mb-2">
+                    <label class="form-label">Description</label>
+                    <textarea name="weddinglink-${index}-description" class="form-control" rows="2" 
+                              placeholder="Additional details about this link (optional)"></textarea>
+                    <div class="form-text">Additional details about this link (optional)</div>
+                </div>
+            </div>
+            <input type="hidden" name="weddinglink-${index}-DELETE" value="">
+            <input type="hidden" name="weddinglink-${index}-id" value="">
+        `;
+    }
+
+    handleFormDelete(button) {
+        const form = button.closest('.social-form, .wedding-link-form');
+        const deleteInput = form.querySelector('input[name$="-DELETE"]');
+        
+        if (deleteInput) {
+            if (deleteInput.value === 'on') {
+                deleteInput.value = '';
+                form.classList.remove('marked-for-deletion');
+                form.style.opacity = '';
+                button.innerHTML = '<i class="bi bi-trash"></i>';
+                button.classList.remove('btn-outline-success');
+                button.classList.add('btn-outline-danger');
+            } else {
+                deleteInput.value = 'on';
+                form.classList.add('marked-for-deletion');
+                form.style.opacity = '0.5';
+                button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
+                button.classList.remove('btn-outline-danger');
+                button.classList.add('btn-outline-success');
+            }
+        } else {
+            form.remove();
+        }
+    }
+
+    updateUrlPreview() {
+        const previewField = document.getElementById('url-preview');
+        if (!previewField) return;
+
+        const name1 = document.getElementById('id_partner_1_name')?.value || '';
+        const name2 = document.getElementById('id_partner_2_name')?.value || '';
+        const date = document.getElementById('id_wedding_date')?.value || '';
+        
+        if (name1 && name2) {
+            const clean1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+            const clean2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+            
+            let dateStr = 'tbd';
+            if (date) {
+                const dateParts = date.split('-');
+                if (dateParts.length === 3) {
+                    const month = dateParts[1].padStart(2, '0');
+                    const day = dateParts[2].padStart(2, '0');
+                    const year = dateParts[0].slice(-2);
+                    dateStr = month + day + year;
+                }
+            }
+            
+            const slug = clean1 + clean2 + dateStr;
+            previewField.value = `yoursite.com/wedding/${slug}/`;
+        } else {
+            previewField.value = 'yoursite.com/wedding/[your-custom-url]/';
+        }
     }
 
     setupFormValidation() {
@@ -702,7 +922,6 @@ class FormEnhancements {
     }
 
     setupInputEnhancements() {
-        // Add floating label effect
         document.querySelectorAll('.form-control').forEach(input => {
             input.addEventListener('focus', () => {
                 input.parentNode.classList.add('focused');
@@ -714,7 +933,6 @@ class FormEnhancements {
                 }
             });
             
-            // Check initial state
             if (input.value) {
                 input.parentNode.classList.add('focused');
             }
@@ -728,7 +946,6 @@ class FormEnhancements {
                 if (file && file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
-                        // Find existing preview or create new one
                         let preview = input.parentNode.querySelector('.image-preview');
                         if (!preview) {
                             preview = document.createElement('div');
@@ -762,286 +979,6 @@ class FormEnhancements {
         });
     }
 
-    setupCollectionActions() {
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.add-to-collection')) {
-                e.preventDefault();
-                const button = e.target;
-                const imageId = button.dataset.imageId;
-                const imageType = button.dataset.imageType || 'processed';
-                
-                this.addToCollection(imageId, imageType);
-            }
-        });
-    }
-
-    async addToCollection(imageId, imageType) {
-        try {
-            const formData = new FormData();
-            formData.append(`${imageType}_image_id`, imageId);
-            formData.append('use_default', 'true');
-            
-            const response = await fetch('/studio/collections/add/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': this.getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                this.showToast(data.message, 'success');
-            } else {
-                this.showToast(data.message || 'Failed to add to collection', 'warning');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            this.showToast('Network error', 'error');
-        }
-    }
-
-    setupFavoriteHearts() {
-        // Favorite heart functionality is already in the CSS/HTML component
-        // This ensures it works properly with dynamic content
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.favorite-heart-btn')) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const button = e.target.closest('.favorite-heart-btn');
-                const processedImageId = button.dataset.processedImageId;
-                const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
-                
-                this.toggleFavorite(processedImageId, button);
-            }
-        });
-    }
-
-    async toggleFavorite(processedImageId, button) {
-        button.disabled = true;
-        
-        try {
-            const formData = new FormData();
-            formData.append('processed_image_id', processedImageId);
-            
-            const response = await fetch('/studio/favorites/toggle/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': this.getCSRFToken(),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                const icon = button.querySelector('i');
-                if (data.is_favorited) {
-                    icon.className = 'bi bi-heart-fill';
-                    button.classList.add('favorited');
-                    button.classList.remove('not-favorited');
-                    button.title = 'Remove from favorites';
-                } else {
-                    icon.className = 'bi bi-heart';
-                    button.classList.remove('favorited');
-                    button.classList.add('not-favorited');
-                    button.title = 'Add to favorites';
-                }
-                button.dataset.isFavorited = data.is_favorited.toString();
-                this.showToast(data.message, 'success');
-            } else {
-                this.showToast(data.error || 'Error updating favorite', 'error');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            this.showToast('Network error', 'error');
-        } finally {
-            button.disabled = false;
-        }
-    }
-
-    setupFormsetManagement() {
-        // Global form counters
-        let socialFormCount = 0;
-        let registryFormCount = 0;
-
-        // Initialize counters if management forms exist
-        const socialTotalForms = document.getElementById('id_social-TOTAL_FORMS');
-        const registryTotalForms = document.getElementById('id_registry-TOTAL_FORMS');
-        
-        if (socialTotalForms) {
-            socialFormCount = parseInt(socialTotalForms.value);
-        }
-        if (registryTotalForms) {
-            registryFormCount = parseInt(registryTotalForms.value);
-        }
-
-        // Add form handlers
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('#add-social-btn')) {
-                e.preventDefault();
-                this.addFormToFormset('social', socialFormCount++);
-                if (socialTotalForms) socialTotalForms.value = socialFormCount;
-            }
-            
-            if (e.target.matches('#add-registry-btn')) {
-                e.preventDefault();
-                this.addFormToFormset('registry', registryFormCount++);
-                if (registryTotalForms) registryTotalForms.value = registryFormCount;
-            }
-            
-            if (e.target.matches('.delete-form-btn')) {
-                e.preventDefault();
-                this.handleFormDelete(e.target);
-            }
-        });
-
-        // URL preview update
-        ['id_partner_1_name', 'id_partner_2_name', 'id_wedding_date'].forEach(id => {
-            const field = document.getElementById(id);
-            if (field) {
-                field.addEventListener('input', this.updateUrlPreview);
-                field.addEventListener('change', this.updateUrlPreview);
-            }
-        });
-    }
-
-    addFormToFormset(formsetType, formIndex) {
-        const formsetDiv = document.getElementById(`${formsetType}-formset`);
-        if (!formsetDiv) return;
-
-        const newForm = document.createElement('div');
-        newForm.className = `${formsetType}-form border rounded p-3 mb-3`;
-        newForm.setAttribute('data-form-index', formIndex);
-        
-        if (formsetType === 'social') {
-            newForm.innerHTML = this.getSocialFormHTML(formIndex);
-        } else {
-            newForm.innerHTML = this.getRegistryFormHTML(formIndex);
-        }
-        
-        formsetDiv.appendChild(newForm);
-    }
-
-    getSocialFormHTML(index) {
-        return `
-            <div class="row">
-                <div class="col-lg-5 mb-2">
-                    <label class="form-label">Social Media URL</label>
-                    <input type="url" name="social-${index}-url" class="form-control url-field" 
-                           placeholder="https://instagram.com/yourusername">
-                    <div class="form-text">We'll automatically detect the platform</div>
-                </div>
-                <div class="col-lg-5 mb-2">
-                    <label class="form-label">Display Name</label>
-                    <input type="text" name="social-${index}-display_name" class="form-control" 
-                           placeholder="@yourusername">
-                    <div class="form-text">How this appears on your page</div>
-                </div>
-                <div class="col-lg-2 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    }
-
-    getRegistryFormHTML(index) {
-        return `
-            <div class="row">
-                <div class="col-lg-4 mb-2">
-                    <label class="form-label">Registry URL</label>
-                    <input type="url" name="registry-${index}-url" class="form-control url-field" 
-                           placeholder="https://amazon.com/wedding/registry">
-                    <div class="form-text">We'll detect the store automatically</div>
-                </div>
-                <div class="col-lg-4 mb-2">
-                    <label class="form-label">Registry Name <span class="text-danger">*</span></label>
-                    <input type="text" name="registry-${index}-registry_name" class="form-control" 
-                           placeholder="Our Home Registry" required>
-                </div>
-                <div class="col-lg-4 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 mb-2">
-                    <label class="form-label">Description</label>
-                    <textarea name="registry-${index}-description" class="form-control" rows="2" 
-                              placeholder="Kitchen appliances, home decor..."></textarea>
-                </div>
-            </div>
-        `;
-    }
-
-    handleFormDelete(button) {
-        const form = button.closest('.social-form, .registry-form');
-        const deleteInput = form.querySelector('input[name$="-DELETE"]');
-        
-        if (deleteInput) {
-            // Mark for deletion
-            deleteInput.checked = true;
-            form.classList.add('marked-for-deletion');
-            button.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>';
-            button.classList.remove('btn-outline-danger');
-            button.classList.add('btn-outline-success');
-            button.onclick = () => this.restoreForm(button);
-        } else {
-            // Remove new form
-            form.remove();
-        }
-    }
-
-    restoreForm(button) {
-        const form = button.closest('.social-form, .registry-form');
-        const deleteInput = form.querySelector('input[name$="-DELETE"]');
-        
-        if (deleteInput) {
-            deleteInput.checked = false;
-            form.classList.remove('marked-for-deletion');
-            button.innerHTML = '<i class="bi bi-trash"></i>';
-            button.classList.remove('btn-outline-success'); 
-            button.classList.add('btn-outline-danger');
-            button.onclick = () => this.handleFormDelete(button);
-        }
-    }
-
-    updateUrlPreview() {
-        const previewField = document.getElementById('url-preview');
-        if (!previewField) return;
-
-        const name1 = document.getElementById('id_partner_1_name')?.value || '';
-        const name2 = document.getElementById('id_partner_2_name')?.value || '';
-        const date = document.getElementById('id_wedding_date')?.value || '';
-        
-        if (name1 && name2) {
-            const clean1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-            const clean2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-            
-            let dateStr = 'tbd';
-            if (date) {
-                // Parse date manually to avoid timezone issues
-                const dateParts = date.split('-');
-                if (dateParts.length === 3) {
-                    const month = dateParts[1].padStart(2, '0');
-                    const day = dateParts[2].padStart(2, '0');
-                    const year = dateParts[0].slice(-2);
-                    dateStr = month + day + year;
-                }
-            }
-            
-            const slug = clean1 + clean2 + dateStr;
-            previewField.value = `yoursite.com/wedding/${slug}/`;
-        } else {
-            previewField.value = 'yoursite.com/wedding/[your-custom-url]/';
-        }
-    }
-
     getCSRFToken() {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
                          document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
@@ -1068,7 +1005,8 @@ class FormEnhancements {
 }
 
 /**
- * Studio & Image Processing Manager
+ * Studio Manager
+ * Handles image processing and studio functionality
  */
 class StudioManager {
     constructor() {
@@ -1170,7 +1108,6 @@ class StudioManager {
         const newThumbnail = this.createThumbnailElement(data);
         container.insertBefore(newThumbnail, container.firstChild);
         
-        // Remove excess thumbnails
         const thumbnails = container.querySelectorAll('.col-4');
         if (thumbnails.length > 3) {
             thumbnails[3].remove();
@@ -1209,7 +1146,6 @@ class StudioManager {
     }
 
     selectImageFromThumbnail(thumbnail) {
-        // Clear previous selections
         document.querySelectorAll('.venue-thumbnail').forEach(t => {
             t.classList.remove('selected');
         });
@@ -1220,11 +1156,8 @@ class StudioManager {
         const imageUrl = thumbnail.dataset.imageUrl;
         const imageName = thumbnail.dataset.imageName;
         
-        // Update preview
         this.showImagePreview(imageUrl, imageName);
         this.updateTransformButton(true);
-        
-        // Store selected image ID
         this.selectedImageId = imageId;
     }
 
@@ -1290,7 +1223,6 @@ class StudioManager {
             this.processImage();
         });
         
-        // Setup form change listeners
         ['wedding-theme', 'space-type'].forEach(id => {
             const field = document.getElementById(id);
             if (field) {
@@ -1421,11 +1353,10 @@ class StudioManager {
     }
 
     setupStatusChecking() {
-        // Auto-refresh processing jobs
         const processingJobs = document.querySelectorAll('.processing-status');
         if (processingJobs.length > 0) {
             this.checkJobStatuses();
-            setInterval(() => this.checkJobStatuses(), 30000); // Check every 30 seconds
+            setInterval(() => this.checkJobStatuses(), 30000);
         }
     }
 
@@ -1440,7 +1371,6 @@ class StudioManager {
                     const data = await response.json();
                     
                     if (data.status === 'completed' || data.status === 'failed') {
-                        // Reload page to show updated status
                         window.location.reload();
                         break;
                     }
@@ -1477,6 +1407,7 @@ class StudioManager {
 
 /**
  * Dashboard Manager
+ * Handles dashboard functionality
  */
 class DashboardManager {
     constructor() {
@@ -1492,7 +1423,6 @@ class DashboardManager {
     }
 
     setupUsageDisplay() {
-        // Update usage indicators with smooth animations
         const progressBars = document.querySelectorAll('.progress-bar');
         progressBars.forEach(bar => {
             const width = bar.style.width;
@@ -1504,7 +1434,6 @@ class DashboardManager {
     }
 
     setupQuickActions() {
-        // Add hover effects to quick action buttons
         document.querySelectorAll('.btn-outline-primary, .btn-outline-secondary, .btn-outline-danger').forEach(btn => {
             btn.addEventListener('mouseenter', () => {
                 btn.style.transform = 'translateY(-2px)';
@@ -1517,60 +1446,19 @@ class DashboardManager {
     }
 
     setupSubscriptionManagement() {
-        // Handle subscription upgrade prompts
         const upgradeButtons = document.querySelectorAll('[href*="pricing"]');
         upgradeButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // Could add analytics tracking here
                 console.log('User clicked upgrade button');
             });
         });
     }
 }
 
-// Global functions for compatibility with existing form HTML
-window.detectBrandingFromUrl = function(urlField) {
-    if (window.weddingFormManager) {
-        const form = urlField.closest('.social-form, .registry-form');
-        if (form) {
-            const formsetType = form.classList.contains('social-form') ? 'social' : 'registry';
-            window.weddingFormManager.detectAndApplyBranding(urlField, formsetType);
-        }
-    }
-};
-
-// Global confirmation function
-window.confirmDelete = function(id, name, type = 'item') {
-    return confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`);
-};
-
-// Global toast function
-window.showToast = function(message, type = 'info') {
-    if (window.formEnhancements) {
-        window.formEnhancements.showToast(message, type);
-    } else {
-        // Fallback toast
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed top-0 end-0 m-3`;
-        toast.style.zIndex = '9999';
-        toast.innerHTML = `${message} <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-};
-
-// Initialize all managers
-document.addEventListener('DOMContentLoaded', function() {
-    window.weddingFormManager = new WeddingFormManager();
-    window.homepageManager = new HomepageManager();
-    window.formEnhancements = new FormEnhancements();
-    window.studioManager = new StudioManager();
-    window.dashboardManager = new DashboardManager();
-});
-
-
-
-document.addEventListener('DOMContentLoaded', function() {
+/**
+ * Newsletter Functionality
+ */
+function initializeNewsletter() {
     const newsletterForm = document.getElementById('newsletter-form');
     const emailInput = document.getElementById('newsletter-email');
     const submitBtn = document.getElementById('newsletter-submit-btn');
@@ -1578,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const spinner = document.getElementById('newsletter-spinner');
     const messagesDiv = document.getElementById('newsletter-messages');
     
-    if (!newsletterForm) return; // Exit if form not found
+    if (!newsletterForm) return;
     
     newsletterForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -1589,20 +1477,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Validate email format
         if (!isValidEmail(email)) {
             showMessage('Please enter a valid email address.', 'error');
             return;
         }
         
-        // Show loading state
         setLoadingState(true);
         clearMessages();
         
-        // Get CSRF token
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        // Submit via AJAX
         fetch('/newsletter/signup/', {
             method: 'POST',
             headers: {
@@ -1620,13 +1504,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 showMessage(data.message, 'success');
-                emailInput.value = ''; // Clear the form
+                emailInput.value = '';
                 
-                // Disable form temporarily
                 emailInput.disabled = true;
                 submitBtn.disabled = true;
                 
-                // Re-enable after 5 seconds
                 setTimeout(() => {
                     emailInput.disabled = false;
                     submitBtn.disabled = false;
@@ -1667,7 +1549,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Auto-hide success messages after 4 seconds
         if (type === 'success') {
             setTimeout(() => {
                 clearMessages();
@@ -1684,11 +1565,145 @@ document.addEventListener('DOMContentLoaded', function() {
         return emailRegex.test(email);
     }
     
-    // Clear messages when user starts typing again
     emailInput.addEventListener('input', function() {
         if (messagesDiv.innerHTML) {
             setTimeout(clearMessages, 500);
         }
     });
-});
+}
 
+/**
+ * Global Utility Functions
+ */
+window.updateLinkPlaceholders = function(selectElement) {
+    const linkType = selectElement.value;
+    const form = selectElement.closest('.wedding-link-form');
+    const urlField = form.querySelector('input[name*="url"]');
+    const titleField = form.querySelector('input[name*="title"]');
+    const descriptionField = form.querySelector('textarea[name*="description"]');
+    
+    const placeholders = {
+        'registry': {
+            url: 'https://amazon.com/wedding/your-registry',
+            title: 'Our Home Registry',
+            description: 'Kitchen appliances, home decor, and everyday essentials'
+        },
+        'rsvp': {
+            url: 'https://rsvpify.com/your-event',
+            title: 'RSVP for Our Wedding', 
+            description: 'Please let us know if you can attend'
+        },
+        'livestream': {
+            url: 'https://zoom.us/j/your-meeting-id',
+            title: 'Wedding Ceremony Live Stream',
+            description: 'Watch our ceremony live online'
+        },
+        'photos': {
+            url: 'https://photos.google.com/share/your-album',
+            title: 'Wedding Photo Gallery',
+            description: 'View and download our wedding photos'
+        },
+        'website': {
+            url: 'https://ourweddingwebsite.com',
+            title: 'Our Wedding Website',
+            description: 'More details about our special day'
+        },
+        'other': {
+            url: 'https://example.com',
+            title: 'Custom Link',
+            description: 'Additional wedding information'
+        }
+    };
+    
+    const config = placeholders[linkType] || placeholders['other'];
+    if (urlField) urlField.placeholder = config.url;
+    if (titleField) titleField.placeholder = config.title;
+    if (descriptionField) descriptionField.placeholder = config.description;
+};
+
+window.confirmDelete = function(id, name, type = 'item') {
+    return confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`);
+};
+
+window.showToast = function(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = `${message} <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+};
+
+/**
+ * Enhanced Wedding Form Management Setup
+ */
+function setupWeddingFormManagement() {
+    console.log('Setting up wedding form management...');
+    
+    document.querySelectorAll('.delete-form-btn').forEach(btn => {
+        if (!btn.hasAttribute('data-setup')) {
+            btn.setAttribute('data-setup', 'true');
+            btn.addEventListener('click', handleDeleteClick);
+        }
+    });
+    
+    const addSocialBtn = document.getElementById('add-social-btn');
+    const addWeddingLinkBtn = document.getElementById('add-wedding-link-btn');
+    
+    if (addSocialBtn && !addSocialBtn.hasAttribute('data-setup')) {
+        addSocialBtn.setAttribute('data-setup', 'true');
+        addSocialBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.formEnhancements) {
+                const currentCount = window.formEnhancements.getFormsetCount('social');
+                window.formEnhancements.addFormToFormset('social', currentCount);
+                window.formEnhancements.updateTotalForms('social', currentCount + 1);
+            }
+        });
+    }
+    
+    if (addWeddingLinkBtn && !addWeddingLinkBtn.hasAttribute('data-setup')) {
+        addWeddingLinkBtn.setAttribute('data-setup', 'true');
+        addWeddingLinkBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (window.formEnhancements) {
+                const currentCount = window.formEnhancements.getFormsetCount('weddinglink');
+                window.formEnhancements.addFormToFormset('weddinglink', currentCount);
+                window.formEnhancements.updateTotalForms('weddinglink', currentCount + 1);
+            }
+        });
+    }
+    
+    document.querySelectorAll('select[name*="link_type"]').forEach(select => {
+        if (window.updateLinkPlaceholders) {
+            window.updateLinkPlaceholders(select);
+        }
+    });
+}
+
+function handleDeleteClick(e) {
+    e.preventDefault();
+    if (window.formEnhancements) {
+        window.formEnhancements.handleFormDelete(e.target);
+    }
+}
+
+/**
+ * Main Initialization
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all managers
+    window.weddingFormManager = new WeddingFormManager();
+    window.homepageManager = new HomepageManager();
+    window.formEnhancements = new FormEnhancements();
+    window.studioManager = new StudioManager();
+    window.dashboardManager = new DashboardManager();
+    
+    // Initialize newsletter
+    initializeNewsletter();
+    
+    // Enhanced form setup for wedding management page
+    if (document.getElementById('social-formset') || document.getElementById('weddinglink-formset')) {
+        setupWeddingFormManagement();
+    }
+});

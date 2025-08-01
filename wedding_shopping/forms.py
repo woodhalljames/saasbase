@@ -223,12 +223,11 @@ class WeddingLinkForm(forms.ModelForm):
         return title.strip()
 
 
-# Create formsets for the new models
 SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=3,  # Start with 3 empty forms (one for each owner type)
+    extra=1,  # Reduced from 3 to 2 starting forms
     can_delete=True,
     min_num=0,
     max_num=12,  # Allow more social media links
@@ -241,10 +240,10 @@ WeddingLinkFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     WeddingLink, 
     form=WeddingLinkForm,
-    extra=2,  # Start with 2 empty forms
+    extra=1,  # Keep at 2 starting forms
     can_delete=True,
     min_num=0,
-    max_num=10,  # Allow up to 10 wedding links
+    max_num=20,  # Allow up to 20 wedding links
     validate_min=False,
     validate_max=True,
     can_order=False
