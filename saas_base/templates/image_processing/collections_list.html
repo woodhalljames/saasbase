@@ -1,255 +1,325 @@
-{% extends "base.html" %}
-{% load static %}
+<!-- Collection Management Modals -->
+<!-- Add these modals to collections_list.html after the create collection modal -->
 
-{% block title %}My Collections{% endblock %}
-
-{% block content %}
-{% csrf_token %}
-<div class="container py-4">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-md-6">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
-          <li class="breadcrumb-item active">Collections</li>
-        </ol>
-      </nav>
-      <h1>💍 My Collections</h1>
-      <p class="text-muted">Organize your wedding inspiration and transformations</p>
-    </div>
-    <div class="col-md-6 text-end">
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
-        <i class="bi bi-plus-circle"></i> New Collection
-      </button>
-    </div>
-  </div>
-
-  <!-- Default Collection (if exists) -->
-  {% if default_collection %}
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card border-success">
-        <div class="card-header bg-light">
-          <h5 class="mb-0">
-            <i class="bi bi-collection-fill text-success"></i> 
-            {{ default_collection.name }}
-            <span class="badge bg-success ms-2">Default</span>
-          </h5>
-        </div>
-        <div class="card-body">
-          <div class="row align-items-center">
-            <div class="col-md-2">
-              {% if default_collection.thumbnail %}
-                <img src="{{ default_collection.thumbnail.url }}" 
-                     class="img-fluid rounded" 
-                     style="height: 80px; width: 100%; object-fit: cover;"
-                     alt="{{ default_collection.name }}">
-              {% else %}
-                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
-                  <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
-                </div>
-              {% endif %}
-            </div>
-            <div class="col-md-7">
-              <p class="mb-1">{{ default_collection.description }}</p>
-              <small class="text-muted">
-                <i class="bi bi-images"></i> {{ default_collection.item_count }} item{{ default_collection.item_count|pluralize }} • 
-                <i class="bi bi-calendar"></i> Updated {{ default_collection.updated_at|timesince }} ago
-              </small>
-            </div>
-            <div class="col-md-3 text-end">
-              <a href="{% url 'image_processing:collection_detail' default_collection.id %}" 
-                 class="btn btn-success">
-                <i class="bi bi-eye"></i> View Collection
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Quick Access - Recent Favorites -->
-  {% if recent_favorites %}
-  <div class="row mb-5">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="bi bi-heart-fill text-danger"></i> Recent Favorites</h5>
-          <a href="{% url 'image_processing:favorites_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            {% for favorite in recent_favorites %}
-              <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                <div class="card">
-                  <img src="{{ favorite.image_url }}" 
-                       class="card-img-top" 
-                       style="height: 120px; object-fit: cover;"
-                       alt="Favorite">
-                  <div class="card-body p-2">
-                    <small class="text-muted d-block text-truncate">
-                      {% if favorite.processed_image %}
-                        Wedding Transformation
-                      {% else %}
-                        {{ favorite.user_image.original_filename }}
-                      {% endif %}
-                    </small>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- Custom Collections -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h4>My Custom Collections</h4>
-    </div>
-  </div>
-
-  {% if collections %}
-    <div class="row">
-      {% for collection in collections %}
-        <div class="col-lg-4 col-md-6 mb-4">
-          <div class="card h-100">
-            <div class="collection-thumbnail" style="height: 200px; overflow: hidden;">
-              {% if collection.thumbnail %}
-                <img src="{{ collection.thumbnail.url }}" 
-                     class="card-img-top" 
-                     style="height: 100%; object-fit: cover;"
-                     alt="{{ collection.name }}">
-              {% else %}
-                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
-                  <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
-                </div>
-              {% endif %}
-              
-              <!-- Collection overlay -->
-              <div class="position-absolute top-0 end-0 p-2">
-                <span class="badge bg-dark bg-opacity-75">
-                  {{ collection.item_count }} item{{ collection.item_count|pluralize }}
-                </span>
-              </div>
-              
-              {% if collection.is_public %}
-                <div class="position-absolute top-0 start-0 p-2">
-                  <span class="badge bg-info">
-                    <i class="bi bi-globe"></i> Public
-                  </span>
-                </div>
-              {% endif %}
-            </div>
-            
-            <div class="card-body">
-              <h6 class="card-title">{{ collection.name }}</h6>
-              {% if collection.description %}
-                <p class="card-text text-muted small">{{ collection.description|truncatewords:15 }}</p>
-              {% endif %}
-              <small class="text-muted">
-                <i class="bi bi-calendar"></i> Updated {{ collection.updated_at|timesince }} ago
-              </small>
-            </div>
-            
-            <div class="card-footer bg-transparent">
-              <div class="btn-group w-100" role="group">
-                <a href="{% url 'image_processing:collection_detail' collection.id %}" 
-                   class="btn btn-outline-primary">
-                  <i class="bi bi-eye"></i> View
-                </a>
-                <button class="btn btn-outline-secondary dropdown-toggle" 
-                        type="button" 
-                        data-bs-toggle="dropdown">
-                  <i class="bi bi-three-dots"></i>
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item edit-collection-btn" 
-                         href="#" 
-                         data-collection-id="{{ collection.id }}"
-                         data-collection-name="{{ collection.name }}"
-                         data-collection-description="{{ collection.description }}"
-                         data-collection-public="{{ collection.is_public|yesno:'true,false' }}">
-                    <i class="bi bi-pencil"></i> Edit
-                  </a></li>
-                  {% if collection.is_public %}
-                    <li><a class="dropdown-item share-collection-btn" 
-                           href="#" 
-                           data-collection-id="{{ collection.id }}">
-                      <i class="bi bi-share"></i> Share
-                    </a></li>
-                  {% endif %}
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item text-danger delete-collection-btn" 
-                         href="#" 
-                         data-collection-id="{{ collection.id }}"
-                         data-collection-name="{{ collection.name }}">
-                    <i class="bi bi-trash"></i> Delete
-                  </a></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <!-- Empty state for custom collections -->
-    <div class="row">
-      <div class="col-12">
-        <div class="text-center py-4 bg-light rounded">
-          <i class="bi bi-collection text-muted" style="font-size: 3rem;"></i>
-          <h5 class="mt-3 text-muted">No Custom Collections Yet</h5>
-          <p class="text-muted">Create collections to organize your wedding transformations by theme, venue, or style</p>
-          <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
-            <i class="bi bi-plus-circle"></i> Create Your First Collection
-          </button>
-        </div>
-      </div>
-    </div>
-  {% endif %}
-</div>
-
-<!-- Create Collection Modal -->
-<div class="modal fade" id="createCollectionModal" tabindex="-1">
+<!-- Edit Collection Modal -->
+<div class="modal fade" id="editCollectionModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Create New Collection</h5>
+        <h5 class="modal-title">Edit Collection</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post" action="{% url 'image_processing:create_collection' %}">
+      <form id="editCollectionForm" method="post">
         {% csrf_token %}
         <div class="modal-body">
           <div class="mb-3">
-            <label for="collectionName" class="form-label">Collection Name</label>
-            <input type="text" class="form-control" id="collectionName" name="name" required maxlength="100" 
-                   placeholder="e.g., Rustic Barn Ideas, Garden Party Inspiration">
+            <label for="editCollectionName" class="form-label">Collection Name</label>
+            <input type="text" class="form-control" id="editCollectionName" name="name" required maxlength="100">
           </div>
           <div class="mb-3">
-            <label for="collectionDescription" class="form-label">Description (Optional)</label>
-            <textarea class="form-control" id="collectionDescription" name="description" rows="3" 
-                      placeholder="Describe what this collection is for..."></textarea>
+            <label for="editCollectionDescription" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="editCollectionDescription" name="description" rows="3"></textarea>
           </div>
           <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="isPublic" name="is_public">
-            <label class="form-check-label" for="isPublic">
+            <input class="form-check-input" type="checkbox" id="editIsPublic" name="is_public">
+            <label class="form-check-label" for="editIsPublic">
               Make this collection public (can be shared)
             </label>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create Collection</button>
+          <button type="submit" class="btn btn-primary">Update Collection</button>
         </div>
       </form>
     </div>
   </div>
 </div>
-{% endblock %}
+
+<!-- Delete Collection Modal -->
+<div class="modal fade" id="deleteCollectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete Collection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the collection <strong id="deleteCollectionName"></strong>?</p>
+        <p class="text-danger"><small>This action cannot be undone. All items in this collection will be removed from the collection (but the original images will not be deleted).</small></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteCollectionBtn">Delete Collection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Share Collection Modal -->
+<div class="modal fade" id="shareCollectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Share Collection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Share this collection with others:</p>
+        <div class="input-group">
+          <input type="text" class="form-control" id="shareCollectionUrl" readonly>
+          <button class="btn btn-outline-secondary" type="button" id="copyShareUrl">
+            <i class="bi bi-clipboard"></i> Copy
+          </button>
+        </div>
+        <small class="text-muted">Anyone with this link can view your public collection.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Collection Management JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Setting up collection management...');
+    
+    // Edit Collection
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-collection-btn')) {
+            e.preventDefault();
+            handleEditCollection(e.target);
+        }
+    });
+    
+    // Delete Collection
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-collection-btn')) {
+            e.preventDefault();
+            handleDeleteCollection(e.target);
+        }
+    });
+    
+    // Share Collection
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('share-collection-btn')) {
+            e.preventDefault();
+            handleShareCollection(e.target);
+        }
+    });
+    
+    // Edit Collection Form Submit
+    const editForm = document.getElementById('editCollectionForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitEditCollection();
+        });
+    }
+    
+    // Copy Share URL
+    const copyBtn = document.getElementById('copyShareUrl');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', function() {
+            const urlInput = document.getElementById('shareCollectionUrl');
+            urlInput.select();
+            document.execCommand('copy');
+            
+            // Show feedback
+            const originalText = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+            copyBtn.classList.add('btn-success');
+            copyBtn.classList.remove('btn-outline-secondary');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalText;
+                copyBtn.classList.remove('btn-success');
+                copyBtn.classList.add('btn-outline-secondary');
+            }, 2000);
+        });
+    }
+});
+
+let currentCollectionId = null;
+
+function handleEditCollection(button) {
+    console.log('✏️ Edit collection clicked');
+    
+    const collectionId = button.dataset.collectionId;
+    const collectionName = button.dataset.collectionName;
+    const collectionDescription = button.dataset.collectionDescription;
+    const isPublic = button.dataset.collectionPublic === 'true';
+    
+    currentCollectionId = collectionId;
+    
+    // Fill form
+    document.getElementById('editCollectionName').value = collectionName;
+    document.getElementById('editCollectionDescription').value = collectionDescription || '';
+    document.getElementById('editIsPublic').checked = isPublic;
+    
+    // Update form action
+    const form = document.getElementById('editCollectionForm');
+    form.action = `/studio/collections/${collectionId}/edit/`;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editCollectionModal'));
+    modal.show();
+}
+
+function handleDeleteCollection(button) {
+    console.log('🗑️ Delete collection clicked');
+    
+    const collectionId = button.dataset.collectionId;
+    const collectionName = button.dataset.collectionName;
+    
+    currentCollectionId = collectionId;
+    
+    // Update modal content
+    document.getElementById('deleteCollectionName').textContent = collectionName;
+    
+    // Set up confirm button
+    const confirmBtn = document.getElementById('confirmDeleteCollectionBtn');
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.addEventListener('click', function() {
+        executeDeleteCollection(collectionId);
+    });
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteCollectionModal'));
+    modal.show();
+}
+
+function handleShareCollection(button) {
+    console.log('📤 Share collection clicked');
+    
+    const collectionId = button.dataset.collectionId;
+    
+    // Generate share URL (you may want to implement a proper sharing system)
+    const shareUrl = `${window.location.origin}/studio/collections/${collectionId}/`;
+    document.getElementById('shareCollectionUrl').value = shareUrl;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('shareCollectionModal'));
+    modal.show();
+}
+
+async function submitEditCollection() {
+    console.log('💾 Submitting collection edit...');
+    
+    if (!currentCollectionId) return;
+    
+    const form = document.getElementById('editCollectionForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch(`/studio/collections/${currentCollectionId}/edit/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editCollectionModal'));
+            modal.hide();
+            
+            showToast(data.message, 'success');
+            
+            // Refresh the page to show updated collection
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            throw new Error(data.error || 'Error updating collection');
+        }
+    } catch (error) {
+        console.error('❌ Edit collection error:', error);
+        showToast('Error updating collection: ' + error.message, 'error');
+    }
+}
+
+async function executeDeleteCollection(collectionId) {
+    console.log(`🗑️ Executing collection delete ${collectionId}...`);
+    
+    try {
+        const response = await fetch(`/studio/collections/${collectionId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCollectionModal'));
+            modal.hide();
+            
+            showToast(data.message, 'success');
+            
+            // Redirect or refresh
+            if (data.redirect_url) {
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+            } else {
+                location.reload();
+            }
+        } else {
+            throw new Error(data.error || 'Delete failed');
+        }
+    } catch (error) {
+        console.error('❌ Delete collection error:', error);
+        showToast('Error deleting collection: ' + error.message, 'error');
+    }
+}
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+           document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+}
+
+function showToast(message, type = 'info') {
+    // Remove any existing toasts
+    const existingToasts = document.querySelectorAll('.custom-toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed custom-toast`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px; animation: slideInRight 0.3s ease;';
+    
+    const icon = type === 'success' ? 'check-circle-fill' : 
+                 type === 'error' ? 'exclamation-triangle-fill' : 
+                 'info-circle-fill';
+    
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${icon} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
+}
+</script>

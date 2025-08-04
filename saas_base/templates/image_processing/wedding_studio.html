@@ -13,7 +13,7 @@
     </div>
   </div>
 
-  <!-- Main Layout - Reorganized -->
+  <!-- Main Layout -->
   <div class="row g-4">
     
     <!-- Left: Transform Controls -->
@@ -26,8 +26,9 @@
           <form id="transformForm">
             {% csrf_token %}
             
+            <!-- Required Fields -->
             <div class="mb-3">
-              <label for="wedding-theme" class="form-label fw-bold small">Wedding Style</label>
+              <label for="wedding-theme" class="form-label fw-bold small">Wedding Style <span class="text-danger">*</span></label>
               <select class="form-select" id="wedding-theme" name="wedding_theme" required>
                 <option value="">Choose your style...</option>
                 {% for value, label in wedding_themes %}
@@ -37,7 +38,7 @@
             </div>
             
             <div class="mb-3">
-              <label for="space-type" class="form-label fw-bold small">Space Purpose</label>
+              <label for="space-type" class="form-label fw-bold small">Space Purpose <span class="text-danger">*</span></label>
               <select class="form-select" id="space-type" name="space_type" required>
                 <option value="">What will this space be?</option>
                 {% for value, label in space_types %}
@@ -46,6 +47,7 @@
               </select>
             </div>
             
+            <!-- Smart Suggestions -->
             <div id="smartSuggestions" class="mb-3 d-none">
               <div class="alert alert-info border-0 py-2 px-3 small">
                 <div class="d-flex align-items-start">
@@ -54,6 +56,83 @@
                     <div class="fw-bold">Suggested:</div>
                     <div id="suggestionText" class="mt-1"></div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Details Section -->
+            <div class="border-top pt-3 mt-3">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="mb-0 text-muted">Optional Details</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleOptional">
+                  <i class="bi bi-chevron-down" id="toggleIcon"></i>
+                </button>
+              </div>
+              
+              <div id="optionalFields" class="d-none">
+                <!-- Guest Count -->
+                <div class="mb-3">
+                  <label for="guest-count" class="form-label small">Guest Count</label>
+                  <select class="form-select form-select-sm" id="guest-count" name="guest_count">
+                    {% for value, label in guest_count_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Budget Level -->
+                <div class="mb-3">
+                  <label for="budget-level" class="form-label small">Budget Level</label>
+                  <select class="form-select form-select-sm" id="budget-level" name="budget_level">
+                    {% for value, label in budget_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Season -->
+                <div class="mb-3" id="seasonField">
+                  <label for="season" class="form-label small">Season</label>
+                  <select class="form-select form-select-sm" id="season" name="season">
+                    {% for value, label in season_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Time of Day -->
+                <div class="mb-3" id="timeField">
+                  <label for="time-of-day" class="form-label small">Time of Day</label>
+                  <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
+                    {% for value, label in time_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Color Scheme -->
+                <div class="mb-3">
+                  <label for="color-scheme" class="form-label small">Color Scheme</label>
+                  <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
+                    {% for value, label in color_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <!-- Custom Colors -->
+                <div class="mb-3" id="customColorField" style="display: none;">
+                  <label for="custom-colors" class="form-label small">Custom Colors</label>
+                  <input type="text" class="form-control form-control-sm" id="custom-colors" name="custom_colors" 
+                         placeholder="e.g., blush pink, sage green, gold accents">
+                  <div class="form-text">Describe your color palette</div>
+                </div>
+
+                <!-- Additional Details -->
+                <div class="mb-3">
+                  <label for="additional-details" class="form-label small">Additional Details</label>
+                  <textarea class="form-control form-control-sm" id="additional-details" name="additional_details" 
+                            rows="2" placeholder="Any specific elements you want to include?"></textarea>
                 </div>
               </div>
             </div>
@@ -157,7 +236,7 @@
     </div>
   </div>
 
-  <!-- Bottom: Recent Activity - Moved to bottom as requested -->
+  <!-- Bottom: Recent Activity -->
   <div class="row mt-5">
     <div class="col-12">
       <div class="card shadow-sm">
@@ -366,7 +445,7 @@
 
 <script>
 // Debug logging
-console.log('🚀 Studio script loading...');
+console.log('🚀 Enhanced Studio script loading...');
 
 // Wait for DOM to be fully ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -375,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeStudio() {
-    console.log('🎬 Initializing Studio...');
+    console.log('🎬 Initializing Enhanced Studio...');
     
     // Studio Manager Class
     class StudioManager {
@@ -386,14 +465,90 @@ function initializeStudio() {
         }
 
         init() {
-            console.log('⚙️ Setting up Studio Manager...');
+            console.log('⚙️ Setting up Enhanced Studio Manager...');
             this.setupUploadButtons();
             this.setupFileInputs();
             this.setupDropZone();
             this.setupThumbnails();
             this.setupForm();
             this.setupTabs();
-            console.log('✅ Studio Manager ready!');
+            this.setupOptionalFields();
+            console.log('✅ Enhanced Studio Manager ready!');
+        }
+
+        setupOptionalFields() {
+            console.log('🔧 Setting up optional fields...');
+            
+            const toggleBtn = document.getElementById('toggleOptional');
+            const optionalFields = document.getElementById('optionalFields');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const colorScheme = document.getElementById('color-scheme');
+            const customColorField = document.getElementById('customColorField');
+            const themeSelect = document.getElementById('wedding-theme');
+            const spaceSelect = document.getElementById('space-type');
+
+            // Toggle optional fields
+            if (toggleBtn && optionalFields && toggleIcon) {
+                toggleBtn.addEventListener('click', () => {
+                    const isHidden = optionalFields.classList.contains('d-none');
+                    if (isHidden) {
+                        optionalFields.classList.remove('d-none');
+                        toggleIcon.className = 'bi bi-chevron-up';
+                    } else {
+                        optionalFields.classList.add('d-none');
+                        toggleIcon.className = 'bi bi-chevron-down';
+                    }
+                });
+            }
+
+            // Show/hide custom colors field
+            if (colorScheme && customColorField) {
+                colorScheme.addEventListener('change', () => {
+                    if (colorScheme.value === 'custom') {
+                        customColorField.style.display = 'block';
+                    } else {
+                        customColorField.style.display = 'none';
+                    }
+                });
+            }
+
+            // Show/hide contextual fields based on theme/space
+            if (themeSelect && spaceSelect) {
+                const updateContextualFields = () => {
+                    const theme = themeSelect.value;
+                    const space = spaceSelect.value;
+                    const seasonField = document.getElementById('seasonField');
+                    const timeField = document.getElementById('timeField');
+
+                    // Show season for outdoor themes
+                    const outdoorThemes = ['garden', 'beach', 'rustic', 'bohemian'];
+                    const outdoorSpaces = ['garden', 'rooftop', 'beach', 'vineyard'];
+                    
+                    if (seasonField) {
+                        if (outdoorThemes.includes(theme) || outdoorSpaces.includes(space)) {
+                            seasonField.style.display = 'block';
+                        } else {
+                            seasonField.style.display = 'none';
+                        }
+                    }
+
+                    // Show time for ceremonies and outdoor spaces
+                    const ceremonySpaces = ['wedding_ceremony', 'garden', 'beach', 'rooftop'];
+                    
+                    if (timeField) {
+                        if (ceremonySpaces.includes(space) || outdoorThemes.includes(theme)) {
+                            timeField.style.display = 'block';
+                        } else {
+                            timeField.style.display = 'none';
+                        }
+                    }
+                };
+
+                themeSelect.addEventListener('change', updateContextualFields);
+                spaceSelect.addEventListener('change', updateContextualFields);
+            }
+
+            console.log('✅ Optional fields setup complete');
         }
 
         setupUploadButtons() {
@@ -419,24 +574,15 @@ function initializeStudio() {
 
             // Camera button - only on mobile, opens camera
             if (cameraBtn && cameraInput) {
-                // Check if we're on mobile and camera is supported
-                const isMobile = window.innerWidth <= 768;
-                const hasCamera = navigator.mediaDevices && navigator.mediaDevices.getUserMedia;
-                
-                if (isMobile && hasCamera) {
-                    cameraBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('📷 Camera button clicked - opening camera');
-                        if (!this.isUploading) {
-                            // This should open the camera, not file picker
-                            cameraInput.click();
-                        }
-                    });
-                    console.log('✅ Camera button connected');
-                } else {
-                    console.log('📷 Camera button hidden - not mobile or no camera support');
-                }
+                cameraBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('📷 Camera button clicked - opening camera');
+                    if (!this.isUploading) {
+                        cameraInput.click();
+                    }
+                });
+                console.log('✅ Camera button connected');
             }
         }
 
@@ -796,7 +942,9 @@ function initializeStudio() {
                 'rustic_wedding_ceremony': 'Intimate outdoor ceremony, natural lighting, wildflower decorations',
                 'rustic_dining_area': 'Farm table setup, mason jar centerpieces, string lighting',
                 'modern_dining_area': 'Clean lines, minimalist centerpieces, geometric lighting',
-                'vintage_lounge_area': 'Antique furniture, romantic lighting, lace details'
+                'vintage_lounge_area': 'Antique furniture, romantic lighting, lace details',
+                'beach_wedding_ceremony': 'Sunset ceremony, flowing fabrics, natural coastal elements',
+                'garden_wedding_ceremony': 'Natural garden setting, floral arches, romantic ambiance'
             };
             
             const key = `${theme}_${space}`;
@@ -810,16 +958,30 @@ function initializeStudio() {
             }
         }
 
+        getFormData() {
+            const form = document.getElementById('transformForm');
+            const formData = new FormData(form);
+            const data = {};
+            
+            // Get all form values
+            for (let [key, value] of formData.entries()) {
+                if (value && value.trim() !== '') {
+                    data[key] = value.trim();
+                }
+            }
+            
+            return data;
+        }
+
         async processImage() {
             if (!this.selectedImageId) {
                 this.showAlert('Please select an image first', 'danger');
                 return;
             }
 
-            const theme = document.getElementById('wedding-theme')?.value;
-            const space = document.getElementById('space-type')?.value;
-
-            if (!theme || !space) {
+            const formData = this.getFormData();
+            
+            if (!formData.wedding_theme || !formData.space_type) {
                 this.showAlert('Please select both wedding style and space type', 'danger');
                 return;
             }
@@ -838,10 +1000,7 @@ function initializeStudio() {
                         'X-CSRFToken': this.getCSRF(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: JSON.stringify({
-                        wedding_theme: theme,
-                        space_type: space
-                    })
+                    body: JSON.stringify(formData)
                 });
 
                 const result = await response.json();
@@ -890,9 +1049,9 @@ function initializeStudio() {
     // Initialize Studio Manager
     try {
         window.studioManager = new StudioManager();
-        console.log('🎉 Studio initialized successfully!');
+        console.log('🎉 Enhanced Studio initialized successfully!');
     } catch (error) {
-        console.error('💥 Failed to initialize studio:', error);
+        console.error('💥 Failed to initialize enhanced studio:', error);
     }
 }
 </script>

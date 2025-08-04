@@ -13,17 +13,63 @@
       <p class="text-muted">{{ total_images }} image{{ total_images|pluralize }} • {{ uploaded_count }} original{{ uploaded_count|pluralize }}, {{ transformation_count }} transformation{{ transformation_count|pluralize }}</p>
     </div>
     <div class="col-md-6 text-end">
-      <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary me-2">
-        <i class="bi bi-cloud-upload"></i> Upload Image
-      </a>
+      <div class="btn-group" role="group">
+        <a href="{% url 'image_processing:favorites_list' %}" class="btn btn-outline-danger">
+          <i class="bi bi-heart-fill"></i> Favorites
+        </a>
+        <a href="{% url 'image_processing:collections_list' %}" class="btn btn-outline-primary">
+          <i class="bi bi-collection"></i> Collections
+        </a>
+        <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
+          <i class="bi bi-cloud-upload"></i> Upload Image
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter/Sort Options -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-light">
+        <div class="card-body py-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="imageFilter" id="showAll" checked>
+              <label class="btn btn-outline-primary" for="showAll">All Images</label>
+              
+              <input type="radio" class="btn-check" name="imageFilter" id="showOriginals">
+              <label class="btn btn-outline-primary" for="showOriginals">Originals Only</label>
+              
+              <input type="radio" class="btn-check" name="imageFilter" id="showTransformations">
+              <label class="btn btn-outline-primary" for="showTransformations">Transformations Only</label>
+            </div>
+            
+            <div class="btn-group btn-group-sm" role="group">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-sort-down"></i> Sort
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item sort-option" href="#" data-sort="newest">Newest First</a></li>
+                <li><a class="dropdown-item sort-option" href="#" data-sort="oldest">Oldest First</a></li>
+                <li><a class="dropdown-item sort-option" href="#" data-sort="name">Name A-Z</a></li>
+                <li><a class="dropdown-item sort-option" href="#" data-sort="size">File Size</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   {% if page_obj %}
     <!-- Image Grid -->
-    <div class="row">
+    <div class="row" id="imageGrid">
       {% for image in page_obj %}
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 image-item" 
+             data-type="{{ image.type }}" 
+             data-date="{{ image.date|date:'Y-m-d' }}" 
+             data-name="{{ image.title|lower }}"
+             data-size="{% if image.type == 'original' %}{{ image.object.file_size }}{% else %}{{ image.object.file_size }}{% endif %}">
           <div class="card h-100">
             <div class="position-relative">
               {% if image.type == 'original' %}
@@ -57,6 +103,89 @@
                   {% include 'image_processing/components/favorite_heart.html' with processed_image=image.object %}
                 </div>
               {% endif %}
+
+              <!-- Quick Actions Overlay -->
+              <div class="position-absolute bottom-0 end-0 p-2">
+                <div class="btn-group-vertical">
+                  {% if image.type == 'original' %}
+                    <!-- Original Image Actions -->
+                    <button class="btn btn-sm btn-light dropdown-toggle shadow-sm" 
+                            type="button" 
+                            data-bs-toggle="dropdown">
+                      <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.object.pk }}">
+                          <i class="bi bi-magic text-primary"></i> Transform
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ image.object.image.url }}" target="_blank">
+                          <i class="bi bi-arrows-fullscreen text-info"></i> View Full Size
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ image.object.image.url }}" download="{{ image.object.original_filename }}">
+                          <i class="bi bi-download text-success"></i> Download
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <a class="dropdown-item add-to-collection-btn" 
+                           href="#" 
+                           data-user-image-id="{{ image.object.id }}"
+                           onclick="event.preventDefault(); addToDefaultCollection('user', '{{ image.object.id }}');">
+                          <i class="bi bi-collection text-success"></i> Save to Collection
+                        </a>
+                      </li>
+                    </ul>
+                  {% else %}
+                    <!-- Transformation Actions -->
+                    <button class="btn btn-sm btn-light dropdown-toggle shadow-sm" 
+                            type="button" 
+                            data-bs-toggle="dropdown">
+                      <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="{% url 'image_processing:processed_image_detail' image.object.pk %}">
+                          <i class="bi bi-eye text-success"></i> View Details
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ image.object.processed_image.url }}" target="_blank">
+                          <i class="bi bi-arrows-fullscreen text-info"></i> View Full Size
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ image.object.processed_image.url }}" download>
+                          <i class="bi bi-download text-success"></i> Download
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li>
+                        <a class="dropdown-item add-to-collection-btn" 
+                           href="#" 
+                           data-processed-image-id="{{ image.object.id }}"
+                           onclick="event.preventDefault(); addToDefaultCollection('processed', '{{ image.object.id }}');">
+                          <i class="bi bi-collection text-success"></i> Save to Collection
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item text-danger gallery-delete-btn" 
+                           href="#" 
+                           data-image-id="{{ image.object.pk }}"
+                           data-image-name="{{ image.title }}"
+                           data-image-type="transformation"
+                           onclick="event.preventDefault(); confirmDeleteGallery('{{ image.object.pk }}', '{{ image.title }}', 'transformation', '{{ image.object.processed_image.url }}');">
+                          <i class="bi bi-trash"></i> Delete
+                        </a>
+                      </li>
+                    </ul>
+                  {% endif %}
+                </div>
+              </div>
             </div>
             
             <div class="card-body d-flex flex-column">
@@ -88,6 +217,31 @@
                   </a>
                 </div>
               {% else %}
+                <!-- Wedding transformation info -->
+                {% with job=image.object.processing_job %}
+                  {% if job.wedding_theme and job.space_type %}
+                    <div class="mb-2">
+                      <span class="badge bg-primary me-1 small">{{ job.get_wedding_theme_display|truncatewords:2 }}</span>
+                      <span class="badge bg-secondary small">{{ job.get_space_type_display|truncatewords:2 }}</span>
+                    </div>
+                  {% endif %}
+                  
+                  <!-- Advanced parameters (if used) -->
+                  {% if job.guest_count or job.budget_level or job.season %}
+                    <div class="mb-2">
+                      {% if job.guest_count %}
+                        <span class="badge bg-light text-dark small">{{ job.get_guest_count_display }}</span>
+                      {% endif %}
+                      {% if job.budget_level %}
+                        <span class="badge bg-info small">{{ job.get_budget_level_display }}</span>
+                      {% endif %}
+                      {% if job.season %}
+                        <span class="badge bg-warning text-dark small">{{ job.get_season_display }}</span>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+                
                 <small class="text-muted mb-2">
                   <i class="bi bi-calendar"></i> Created {{ image.object.created_at|date:"M d, Y" }}<br>
                   <i class="bi bi-magic"></i> Wedding Transformation<br>
@@ -100,65 +254,6 @@
                   </a>
                 </div>
               {% endif %}
-            </div>
-            
-            <!-- Dropdown menu -->
-            <div class="card-footer bg-transparent border-0 pt-0">
-              <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
-                  <i class="bi bi-three-dots"></i> More Options
-                </button>
-                <ul class="dropdown-menu">
-                  {% if image.type == 'original' %}
-                    <li>
-                      <a class="dropdown-item" href="{{ image.object.image.url }}" target="_blank">
-                        <i class="bi bi-eye"></i> View Full Size
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="{{ image.object.image.url }}" download="{{ image.object.original_filename }}">
-                        <i class="bi bi-download"></i> Download
-                      </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                      <a class="dropdown-item add-to-collection" 
-                         href="#" 
-                         data-user-image-id="{{ image.object.id }}">
-                        <i class="bi bi-collection"></i> Add to Collection
-                      </a>
-                    </li>
-                  {% else %}
-                    <li>
-                      <a class="dropdown-item" href="{{ image.object.processed_image.url }}" target="_blank">
-                        <i class="bi bi-eye"></i> View Full Size
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item" href="{{ image.object.processed_image.url }}" download>
-                        <i class="bi bi-download"></i> Download
-                      </a>
-                    </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                      <a class="dropdown-item add-to-collection" 
-                         href="#" 
-                         data-processed-image-id="{{ image.object.id }}">
-                        <i class="bi bi-collection"></i> Add to Collection
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item text-danger gallery-delete-btn" 
-                         href="#" 
-                         data-image-id="{{ image.object.pk }}"
-                         data-image-name="{{ image.title }}"
-                         data-image-type="transformation">
-                        <i class="bi bi-trash"></i> Delete
-                      </a>
-                    </li>
-                  {% endif %}
-                </ul>
-              </div>
             </div>
           </div>
         </div>
@@ -232,6 +327,12 @@
       <div class="modal-body">
         <p>Are you sure you want to delete <strong id="deleteImageName"></strong>?</p>
         <p class="text-danger"><small>This action cannot be undone.</small></p>
+        <div class="text-center">
+          <img id="deletePreviewImage" 
+               class="img-fluid rounded" 
+               style="max-height: 200px;" 
+               alt="Image to delete">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -240,4 +341,203 @@
     </div>
   </div>
 </div>
+
+<!-- Collection Success Toast -->
+<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+  <div class="toast-header">
+    <i class="bi bi-collection text-success me-2"></i>
+    <strong class="me-auto">Collection</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+  </div>
+  <div class="toast-body" id="collectionToastBody">
+    Image added to collection!
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const filterButtons = document.querySelectorAll('input[name="imageFilter"]');
+    const imageItems = document.querySelectorAll('.image-item');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('change', function() {
+            const filterType = this.id;
+            
+            imageItems.forEach(item => {
+                const itemType = item.dataset.type;
+                
+                if (filterType === 'showAll') {
+                    item.style.display = 'block';
+                } else if (filterType === 'showOriginals' && itemType === 'original') {
+                    item.style.display = 'block';
+                } else if (filterType === 'showTransformations' && itemType === 'transformation') {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Sort functionality
+    const sortOptions = document.querySelectorAll('.sort-option');
+    
+    sortOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sortType = this.dataset.sort;
+            sortImages(sortType);
+        });
+    });
+});
+
+function sortImages(sortType) {
+    const container = document.getElementById('imageGrid');
+    const items = Array.from(container.querySelectorAll('.image-item'));
+    
+    items.sort((a, b) => {
+        switch(sortType) {
+            case 'newest':
+                return new Date(b.dataset.date) - new Date(a.dataset.date);
+            case 'oldest':
+                return new Date(a.dataset.date) - new Date(b.dataset.date);
+            case 'name':
+                return a.dataset.name.localeCompare(b.dataset.name);
+            case 'size':
+                return parseInt(b.dataset.size) - parseInt(a.dataset.size);
+            default:
+                return 0;
+        }
+    });
+    
+    // Re-append sorted items
+    items.forEach(item => container.appendChild(item));
+}
+
+// Collection helper functions
+async function addToDefaultCollection(imageType, imageId) {
+    const formData = new FormData();
+    formData.append('use_default', 'true');
+    
+    if (imageType === 'user') {
+        formData.append('user_image_id', imageId);
+    } else {
+        formData.append('processed_image_id', imageId);
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    try {
+        const response = await fetch('/studio/collections/add/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showCollectionToast(result.message, 'success');
+        } else {
+            showCollectionToast(result.message || 'Failed to add to collection', 'warning');
+        }
+    } catch (error) {
+        console.error('Collection error:', error);
+        showCollectionToast('Network error', 'error');
+    }
+}
+
+function showCollectionToast(message, type) {
+    const toastEl = document.getElementById('collectionToast');
+    const toastBody = document.getElementById('collectionToastBody');
+    
+    toastBody.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+// Delete functionality
+function confirmDeleteGallery(imageId, imageName, imageType, imageUrl) {
+    const modal = document.getElementById('deleteModal');
+    const nameEl = document.getElementById('deleteImageName');
+    const previewImg = document.getElementById('deletePreviewImage');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    nameEl.textContent = imageName;
+    previewImg.src = imageUrl || '';
+    
+    confirmBtn.onclick = function() {
+        if (imageType === 'transformation') {
+            deleteProcessedImage(imageId);
+        } else {
+            // Add original image deletion if needed
+            showAlert('Original image deletion not implemented', 'warning');
+        }
+    };
+    
+    new bootstrap.Modal(modal).show();
+}
+
+async function deleteProcessedImage(imageId) {
+    try {
+        const response = await fetch(`/studio/processed/${imageId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                              document.querySelector('meta[name=csrf-token]')?.getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+            
+            // Show success message
+            showAlert(result.message, 'success');
+            
+            // Remove the item from the grid
+            const imageItem = document.querySelector(`[data-image-id="${imageId}"]`).closest('.image-item');
+            if (imageItem) {
+                imageItem.remove();
+            }
+            
+            // Update counts (simple approach - reload page for accuracy)
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showAlert(result.message || 'Failed to delete image', 'danger');
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        showAlert('Network error occurred', 'danger');
+    }
+}
+
+function showAlert(message, type) {
+    // Remove existing alerts
+    document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed temp-alert`;
+    alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentElement) alert.remove();
+    }, 5000);
+}
+</script>
 {% endblock %}

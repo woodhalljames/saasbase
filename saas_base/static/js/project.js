@@ -2082,3 +2082,599 @@ document.addEventListener('DOMContentLoaded', function() {
 window.WorkingStudioManager = WorkingStudioManager;
 
 
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 Initializing Favorites & Collections...');
+    
+    // Favorites functionality
+    initializeFavorites();
+    
+    // Collections functionality  
+    initializeCollections();
+    
+    // Delete functionality
+    initializeDeleteButtons();
+    
+    // Image gallery functionality
+    initializeImageGallery();
+    
+    console.log('✅ Favorites & Collections initialized');
+});
+
+function initializeFavorites() {
+    console.log('❤️ Setting up favorites...');
+    
+    // Handle favorite heart clicks (using event delegation)
+    document.addEventListener('click', function(e) {
+        const favoriteBtn = e.target.closest('.favorite-heart-btn');
+        if (favoriteBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFavorite(favoriteBtn);
+        }
+    });
+}
+
+function initializeCollections() {
+    console.log('📚 Setting up collections...');
+    
+    // Handle add to collection clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('add-to-collection')) {
+            e.preventDefault();
+            handleAddToCollection(e.target);
+        }
+    });
+    
+    // Handle remove from collection clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-from-collection-btn')) {
+            e.preventDefault();
+            handleRemoveFromCollection(e.target.closest('.remove-from-collection-btn'));
+        }
+    });
+}
+
+function initializeDeleteButtons() {
+    console.log('🗑️ Setting up delete buttons...');
+    
+    // Gallery delete buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('gallery-delete-btn')) {
+            e.preventDefault();
+            handleGalleryDelete(e.target);
+        }
+    });
+    
+    // Processed image delete buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('processed-image-delete-btn')) {
+            e.preventDefault();
+            handleProcessedImageDelete(e.target);
+        }
+    });
+}
+
+function initializeImageGallery() {
+    console.log('🖼️ Setting up image gallery...');
+    
+    // Status checking for processing jobs
+    const statusButtons = document.querySelectorAll('.check-status-btn');
+    statusButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            checkJobStatus(this.dataset.jobId);
+        });
+    });
+    
+    // Auto-refresh processing jobs every 30 seconds
+    const processingJobs = document.querySelectorAll('[data-job-id] .processing-status');
+    if (processingJobs.length > 0) {
+        setInterval(checkAllProcessingJobs, 30000);
+    }
+}
+
+async function toggleFavorite(button) {
+    console.log('❤️ Toggling favorite...');
+    
+    const processedImageId = button.dataset.processedImageId;
+    const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
+    
+    // Disable button during request
+    button.disabled = true;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    
+    try {
+        const formData = new FormData();
+        formData.append('processed_image_id', processedImageId);
+        
+        const response = await fetch('/studio/favorite/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update button appearance
+            const icon = button.querySelector('i');
+            const newIsFavorited = data.is_favorited;
+            
+            if (newIsFavorited) {
+                icon.className = 'bi bi-heart-fill';
+                button.classList.remove('not-favorited');
+                button.classList.add('favorited');
+                button.title = 'Remove from favorites';
+            } else {
+                icon.className = 'bi bi-heart';
+                button.classList.remove('favorited');
+                button.classList.add('not-favorited');
+                button.title = 'Add to favorites';
+            }
+            
+            // Update data attribute
+            button.dataset.isFavorited = newIsFavorited.toString();
+            
+            // Show success message
+            showToast(data.message, 'success');
+            
+            // If we're on the favorites page and item was unfavorited, remove it
+            if (!newIsFavorited && window.location.pathname.includes('/favorites/')) {
+                const favoriteItem = button.closest('.favorite-item');
+                if (favoriteItem) {
+                    favoriteItem.style.animation = 'fadeOutUp 0.3s ease';
+                    setTimeout(() => favoriteItem.remove(), 300);
+                }
+            }
+        } else {
+            throw new Error(data.error || 'Error updating favorite');
+        }
+    } catch (error) {
+        console.error('❌ Favorite error:', error);
+        showToast('Error updating favorite: ' + error.message, 'error');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    }
+}
+
+async function handleAddToCollection(element) {
+    console.log('📚 Adding to collection...');
+    
+    const processedImageId = element.dataset.processedImageId;
+    const userImageId = element.dataset.userImageId;
+    const collectionType = element.dataset.collectionType;
+    const collectionId = element.dataset.collectionId;
+    
+    try {
+        const formData = new FormData();
+        
+        if (processedImageId) {
+            formData.append('processed_image_id', processedImageId);
+        }
+        if (userImageId) {
+            formData.append('user_image_id', userImageId);
+        }
+        if (collectionType === 'default') {
+            formData.append('use_default', 'true');
+        } else if (collectionId) {
+            formData.append('collection_id', collectionId);
+        }
+        
+        const response = await fetch('/studio/collections/add/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message || 'Error adding to collection', 'warning');
+        }
+    } catch (error) {
+        console.error('❌ Collection error:', error);
+        showToast('Network error adding to collection', 'error');
+    }
+}
+
+async function handleRemoveFromCollection(button) {
+    console.log('📚 Removing from collection...');
+    
+    const itemId = button.dataset.itemId;
+    const collectionId = button.dataset.collectionId;
+    
+    if (!confirm('Remove this item from the collection?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/studio/collections/${collectionId}/remove/${itemId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Remove the item from the UI
+            const item = button.closest('.col-lg-3, .col-md-4, .col-sm-6');
+            if (item) {
+                item.style.animation = 'fadeOutUp 0.3s ease';
+                setTimeout(() => item.remove(), 300);
+            }
+            showToast('Item removed from collection', 'success');
+        } else {
+            throw new Error(data.error || 'Error removing item');
+        }
+    } catch (error) {
+        console.error('❌ Remove error:', error);
+        showToast('Error removing item: ' + error.message, 'error');
+    }
+}
+
+function handleGalleryDelete(button) {
+    console.log('🗑️ Gallery delete clicked...');
+    
+    const imageId = button.dataset.imageId;
+    const imageName = button.dataset.imageName;
+    const imageType = button.dataset.imageType;
+    
+    // Update modal content
+    const modal = document.getElementById('deleteModal');
+    const nameElement = document.getElementById('deleteImageName');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    if (modal && nameElement && confirmBtn) {
+        nameElement.textContent = imageName;
+        
+        // Remove existing click handlers and add new one
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            executeDelete(imageId, imageType, modal);
+        });
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    }
+}
+
+function handleProcessedImageDelete(button) {
+    console.log('🗑️ Processed image delete clicked...');
+    
+    const imageId = button.dataset.imageId;
+    const imageUrl = button.dataset.imageUrl;
+    
+    // Update modal content
+    const modal = document.getElementById('deleteConfirmModal');
+    const previewImg = document.getElementById('deletePreviewImage');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    
+    if (modal && previewImg && confirmBtn) {
+        previewImg.src = imageUrl;
+        
+        // Remove existing click handlers and add new one
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        newConfirmBtn.addEventListener('click', () => {
+            executeProcessedImageDelete(imageId, modal);
+        });
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    }
+}
+
+async function executeDelete(imageId, imageType, modal) {
+    console.log(`🗑️ Executing delete for ${imageType} image ${imageId}...`);
+    
+    try {
+        let url;
+        if (imageType === 'transformation') {
+            url = `/studio/processed/${imageId}/delete/`;
+        } else {
+            url = `/studio/image/${imageId}/delete/`;
+        }
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Hide modal
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            bootstrapModal.hide();
+            
+            showToast(data.message, 'success');
+            
+            // Redirect or refresh if specified
+            if (data.redirect_url) {
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+            } else {
+                // Remove the item from current page
+                const itemToRemove = document.querySelector(`[data-image-id="${imageId}"]`);
+                if (itemToRemove) {
+                    const cardContainer = itemToRemove.closest('.col-lg-3, .col-md-4, .col-sm-6, .col-12');
+                    if (cardContainer) {
+                        cardContainer.style.animation = 'fadeOutUp 0.3s ease';
+                        setTimeout(() => cardContainer.remove(), 300);
+                    }
+                }
+            }
+        } else {
+            throw new Error(data.message || 'Delete failed');
+        }
+    } catch (error) {
+        console.error('❌ Delete error:', error);
+        showToast('Error deleting image: ' + error.message, 'error');
+    }
+}
+
+async function executeProcessedImageDelete(imageId, modal) {
+    console.log(`🗑️ Executing processed image delete ${imageId}...`);
+    
+    try {
+        const response = await fetch(`/studio/processed/${imageId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Hide modal
+            const bootstrapModal = bootstrap.Modal.getInstance(modal);
+            bootstrapModal.hide();
+            
+            showToast(data.message, 'success');
+            
+            // Redirect
+            if (data.redirect_url) {
+                setTimeout(() => {
+                    window.location.href = data.redirect_url;
+                }, 1500);
+            }
+        } else {
+            throw new Error(data.message || 'Delete failed');
+        }
+    } catch (error) {
+        console.error('❌ Delete error:', error);
+        showToast('Error deleting transformation: ' + error.message, 'error');
+    }
+}
+
+async function checkJobStatus(jobId) {
+    console.log(`📊 Checking status for job ${jobId}...`);
+    
+    try {
+        const response = await fetch(`/studio/job/${jobId}/status/`);
+        const data = await response.json();
+        
+        // Update the UI based on status
+        const jobElement = document.querySelector(`[data-job-id="${jobId}"]`);
+        if (jobElement) {
+            updateJobUI(jobElement, data);
+        }
+        
+        // If completed, reload the page to show results
+        if (data.status === 'completed') {
+            showToast('✨ Transformation completed!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else if (data.status === 'failed') {
+            showToast('❌ Transformation failed: ' + (data.error_message || 'Unknown error'), 'error');
+        }
+    } catch (error) {
+        console.error('❌ Status check error:', error);
+    }
+}
+
+function updateJobUI(jobElement, statusData) {
+    // Update status badge
+    const statusBadge = jobElement.querySelector('.badge');
+    if (statusBadge) {
+        statusBadge.className = `badge fs-6 ${getStatusBadgeClass(statusData.status)}`;
+        statusBadge.innerHTML = `${getStatusIcon(statusData.status)} ${statusData.status.charAt(0).toUpperCase() + statusData.status.slice(1)}`;
+    }
+    
+    // Update processing status area
+    const processingStatus = jobElement.querySelector('.processing-status');
+    if (processingStatus) {
+        if (statusData.status === 'completed') {
+            processingStatus.innerHTML = `
+                <div class="text-center text-success">
+                    <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    <div>Transformation completed!</div>
+                    <button class="btn btn-sm btn-success mt-2" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> View Results
+                    </button>
+                </div>
+            `;
+        } else if (statusData.status === 'failed') {
+            processingStatus.innerHTML = `
+                <div class="text-center text-danger">
+                    <i class="bi bi-x-circle" style="font-size: 2rem;"></i>
+                    <div>Processing failed</div>
+                    <small class="text-muted">${statusData.error_message || 'Unknown error'}</small>
+                </div>
+            `;
+        }
+    }
+}
+
+function checkAllProcessingJobs() {
+    const processingJobs = document.querySelectorAll('[data-job-id] .processing-status');
+    processingJobs.forEach(status => {
+        const jobElement = status.closest('[data-job-id]');
+        if (jobElement) {
+            const jobId = jobElement.dataset.jobId;
+            checkJobStatus(jobId);
+        }
+    });
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'completed': return 'bg-success';
+        case 'failed': return 'bg-danger';
+        case 'processing': return 'bg-warning text-dark';
+        default: return 'bg-secondary';
+    }
+}
+
+function getStatusIcon(status) {
+    switch (status) {
+        case 'completed': return '<i class="bi bi-check-circle"></i>';
+        case 'failed': return '<i class="bi bi-x-circle"></i>';
+        case 'processing': return '<i class="bi bi-hourglass-split"></i>';
+        default: return '<i class="bi bi-clock"></i>';
+    }
+}
+
+function showToast(message, type = 'info') {
+    // Remove any existing toasts
+    const existingToasts = document.querySelectorAll('.custom-toast');
+    existingToasts.forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed custom-toast`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px; animation: slideInRight 0.3s ease;';
+    
+    const icon = type === 'success' ? 'check-circle-fill' : 
+                 type === 'error' ? 'exclamation-triangle-fill' : 
+                 type === 'warning' ? 'exclamation-circle-fill' : 
+                 'info-circle-fill';
+    
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${icon} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 5000);
+}
+
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+           document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes fadeOutUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+    
+    .favorite-heart-btn {
+        transition: all 0.2s ease;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background-color: #dc3545;
+        color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .favorite-heart-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        background-color: #c82333;
+    }
+    
+    .favorite-heart-btn:disabled {
+        opacity: 0.6;
+        transform: none !important;
+        cursor: not-allowed;
+    }
+    
+    .favorite-heart-btn.favorited i {
+        animation: heartPulse 0.3s ease;
+    }
+    
+    @keyframes heartPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+`;
+document.head.appendChild(style);
+
+// Export functions for use in other scripts
+window.toggleFavorite = toggleFavorite;
+window.checkJobStatus = checkJobStatus;
+window.showToast = showToast;
+

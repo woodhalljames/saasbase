@@ -729,7 +729,7 @@ class ProcessingJobEnhanced(models.Model):
     
     # Dynamic parameters
     guest_count = models.CharField(max_length=20, blank=True, help_text="intimate, medium, large, grand")
-    budget_level = models.CharField(max_length=20, blank=True, help_text="budget, moderate, luxury, ultra_luxury")
+    budget_level = models.CharField(max_length=20, blank=True, help_text="budget, moderate, luxury)
     season = models.CharField(max_length=20, blank=True, help_text="spring, summer, fall, winter")
     time_of_day = models.CharField(max_length=20, blank=True, help_text="morning, afternoon, evening, night")
     color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme choice")

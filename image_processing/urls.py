@@ -1,3 +1,5 @@
+# image_processing/urls.py - Updated with collection management routes
+
 from django.urls import path
 from . import views
 
@@ -25,12 +27,20 @@ urlpatterns = [
     path('processed/<int:pk>/', views.processed_image_detail, name='processed_image_detail'),
     path('processed/<int:pk>/delete/', views.delete_processed_image, name='delete_processed_image'),
     
-    # Collections & Favorites
+    # Collections & Favorites - Enhanced
     path('collections/', views.collections_list, name='collections_list'),
     path('collections/create/', views.create_collection, name='create_collection'),
     path('collections/<int:collection_id>/', views.collection_detail, name='collection_detail'),
+    path('collections/<int:collection_id>/edit/', views.edit_collection, name='edit_collection'),
+    path('collections/<int:collection_id>/delete/', views.delete_collection, name='delete_collection'),
+    path('collections/<int:collection_id>/remove/<int:item_id>/', views.remove_from_collection, name='remove_from_collection'),
     path('collections/api/', views.get_user_collections, name='get_user_collections'),
     path('collections/add/', views.add_to_collection, name='add_to_collection'),
+    
+    # Favorites
     path('favorites/', views.favorites_list, name='favorites_list'),
     path('favorite/', views.toggle_favorite, name='toggle_favorite'),
+    
+    # API Endpoints
+    path('api/usage-data/', views.get_usage_data, name='get_usage_data'),
 ]

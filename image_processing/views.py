@@ -1,4 +1,4 @@
-# image_processing/views.py - Simplified without temporary save logic
+# image_processing/views.py - Updated with enhanced form handling
 
 import json
 import logging
@@ -113,8 +113,8 @@ def wedding_studio(request):
 
 @login_required
 @require_http_methods(["POST"])
-def process_wedding_image(request, pk):  # Changed from image_id to pk to match URL
-    """Process wedding venue image with AI transformation"""
+def process_wedding_image(request, pk):
+    """Process wedding venue image with AI transformation - enhanced with all form fields"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
@@ -159,11 +159,13 @@ def process_wedding_image(request, pk):  # Changed from image_id to pk to match 
                 'error': 'Wedding theme and space type are required'
             }, status=400)
         
-        # Create processing job
+        # Create processing job with all form fields
         job_data = {
             'user_image': user_image,
             'wedding_theme': wedding_theme,
             'space_type': space_type,
+            
+            # Optional fields - only save if they have values
             'guest_count': data.get('guest_count', ''),
             'budget_level': data.get('budget_level', ''),
             'season': data.get('season', ''),
@@ -173,10 +175,17 @@ def process_wedding_image(request, pk):  # Changed from image_id to pk to match 
             'additional_details': data.get('additional_details', ''),
         }
         
+        # Clean empty strings to None for database
+        for key, value in job_data.items():
+            if isinstance(value, str) and value.strip() == '':
+                job_data[key] = None
+        
         job = ImageProcessingJob.objects.create(**job_data)
         
         # Queue the processing task
         process_image_async.delay(job.id)
+        
+        logger.info(f"Created processing job {job.id} with enhanced parameters: theme={wedding_theme}, space={space_type}, guest_count={job_data.get('guest_count')}, budget={job_data.get('budget_level')}")
         
         return JsonResponse({
             'success': True,
@@ -234,6 +243,14 @@ def job_status(request, job_id):
         'created_at': job.created_at.isoformat(),
         'wedding_theme': job.wedding_theme,
         'space_type': job.space_type,
+        
+        # Include enhanced parameters in status response
+        'guest_count': job.guest_count,
+        'budget_level': job.budget_level,
+        'season': job.season,
+        'time_of_day': job.time_of_day,
+        'color_scheme': job.color_scheme,
+        'custom_colors': job.custom_colors,
     }
     
     # Add display names
@@ -291,10 +308,13 @@ def image_gallery(request):
     # Original uploaded images
     uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
-    # All processed images
+    # All processed images with favorite status
     all_transformations = ProcessedImage.objects.filter(
         processing_job__user_image__user=request.user
     ).select_related('processing_job__user_image').order_by('-created_at')
+    
+    # Add favorite status to processed images
+    all_transformations = add_favorite_status_to_processed_images(request.user, all_transformations)
     
     # Get usage data
     from usage_limits.usage_tracker import UsageTracker
@@ -356,6 +376,12 @@ def processed_image_detail(request, pk):
         pk=pk, 
         processing_job__user_image__user=request.user
     )
+    
+    # Add favorite status
+    processed_image.is_favorited = Favorite.objects.filter(
+        user=request.user,
+        processed_image=processed_image
+    ).exists()
     
     # Add display names
     job = processed_image.processing_job
@@ -489,6 +515,10 @@ def favorites_list(request):
         'processed_image__processing_job__user_image'
     ).order_by('-created_at')
     
+    # Add favorite status to processed images (they're all favorited here)
+    for favorite in favorites:
+        favorite.processed_image.is_favorited = True
+    
     # Pagination
     paginator = Paginator(favorites, 12)
     page_number = request.GET.get('page')
@@ -500,38 +530,6 @@ def favorites_list(request):
     
     return render(request, 'image_processing/favorites_list.html', context)
 
-
-# Helper function to check if a processed image is favorited
-def get_favorite_status(user, processed_image_id):
-    """Check if a processed image is favorited by the user"""
-    if not user.is_authenticated:
-        return False
-    
-    return Favorite.objects.filter(
-        user=user,
-        processed_image_id=processed_image_id
-    ).exists()
-
-
-# Add this helper function for template context
-def add_favorite_status_to_processed_images(user, processed_images):
-    """Add is_favorited attribute to processed images"""
-    if not user.is_authenticated:
-        for img in processed_images:
-            img.is_favorited = False
-        return processed_images
-    
-    # Get all favorite IDs for this user
-    favorite_ids = set(
-        Favorite.objects.filter(user=user)
-        .values_list('processed_image_id', flat=True)
-    )
-    
-    # Add is_favorited attribute to each image
-    for img in processed_images:
-        img.is_favorited = img.id in favorite_ids
-    
-    return processed_images
 
 @login_required
 @require_POST
@@ -596,6 +594,11 @@ def collection_detail(request, collection_id):
             job = item.processed_image.processing_job
             item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
             item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+            # Add favorite status
+            item.processed_image.is_favorited = Favorite.objects.filter(
+                user=request.user,
+                processed_image=item.processed_image
+            ).exists()
     
     context = {
         'collection': collection,
@@ -723,3 +726,171 @@ def delete_processed_image(request, pk):
     return render(request, 'image_processing/confirm_delete.html', {
         'processed_image': processed_image
     })
+
+
+# Helper function to check if a processed image is favorited
+def get_favorite_status(user, processed_image_id):
+    """Check if a processed image is favorited by the user"""
+    if not user.is_authenticated:
+        return False
+    
+    return Favorite.objects.filter(
+        user=user,
+        processed_image_id=processed_image_id
+    ).exists()
+
+
+# Add this helper function for template context
+def add_favorite_status_to_processed_images(user, processed_images):
+    """Add is_favorited attribute to processed images"""
+    if not user.is_authenticated:
+        for img in processed_images:
+            img.is_favorited = False
+        return processed_images
+    
+    # Get all favorite IDs for this user
+    favorite_ids = set(
+        Favorite.objects.filter(user=user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    # Add is_favorited attribute to each image
+    for img in processed_images:
+        img.is_favorited = img.id in favorite_ids
+    
+    return processed_images
+
+
+# Additional views to add to image_processing/views.py
+
+@login_required
+@require_POST  
+def edit_collection(request, collection_id):
+    """Edit an existing collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    if collection.is_default:
+        messages.error(request, 'Cannot edit the default collection')
+        return redirect('image_processing:collections_list')
+    
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    is_public = request.POST.get('is_public') == 'on'
+    
+    if not name:
+        messages.error(request, 'Collection name is required')
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
+    
+    try:
+        collection.name = name
+        collection.description = description
+        collection.is_public = is_public
+        collection.save()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Collection "{name}" updated successfully!'
+            })
+        
+        messages.success(request, f'Collection "{name}" updated successfully!')
+    except Exception as e:
+        logger.error(f"Error updating collection: {str(e)}")
+        error_msg = 'Error updating collection'
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg})
+        
+        messages.error(request, error_msg)
+    
+    return redirect('image_processing:collection_detail', collection_id=collection_id)
+
+
+@login_required
+@require_POST
+def delete_collection(request, collection_id):
+    """Delete a collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    if collection.is_default:
+        return JsonResponse({
+            'success': False,
+            'error': 'Cannot delete the default collection'
+        })
+    
+    try:
+        collection_name = collection.name
+        collection.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Collection "{collection_name}" deleted successfully',
+                'redirect_url': reverse('image_processing:collections_list')
+            })
+        
+        messages.success(request, f'Collection "{collection_name}" deleted successfully')
+        return redirect('image_processing:collections_list')
+        
+    except Exception as e:
+        logger.error(f"Error deleting collection: {str(e)}")
+        error_msg = 'Error deleting collection'
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg})
+        
+        messages.error(request, error_msg)
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
+
+
+@login_required
+@require_POST
+def remove_from_collection(request, collection_id, item_id):
+    """Remove an item from a collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    collection_item = get_object_or_404(CollectionItem, id=item_id, collection=collection)
+    
+    try:
+        item_title = collection_item.image_title
+        collection_item.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'"{item_title}" removed from collection'
+            })
+        
+        messages.success(request, f'"{item_title}" removed from collection')
+        
+    except Exception as e:
+        logger.error(f"Error removing item from collection: {str(e)}")
+        error_msg = 'Error removing item from collection'
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg})
+        
+        messages.error(request, error_msg)
+    
+    return redirect('image_processing:collection_detail', collection_id=collection_id)
+
+
+@login_required
+def get_usage_data(request):
+    """API endpoint to get user's usage data"""
+    try:
+        from usage_limits.usage_tracker import UsageTracker
+        usage_data = UsageTracker.get_usage_data(request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'remaining': usage_data.get('remaining', 0),
+            'limit': usage_data.get('limit', 0),
+            'used': usage_data.get('used', 0),
+            'reset_date': usage_data.get('reset_date', ''),
+        })
+    except Exception as e:
+        logger.error(f"Error getting usage data: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Unable to load usage data'
+        }, status=500)
