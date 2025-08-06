@@ -47,6 +47,30 @@ STREAMLINED_COLOR_CHOICES = [
     ('custom', 'My Custom Colors'),
 ]
 
+# NEW: Religion/Culture Choices for Culturally-Relevant Elements
+RELIGION_CULTURE_CHOICES = [
+    ('', 'No specific preference'),
+    ('christian', 'Christian'),
+    ('jewish', 'Jewish'),
+    ('hindu', 'Hindu'),
+    ('muslim', 'Muslim'),
+    ('buddhist', 'Buddhist'),
+    ('sikh', 'Sikh'),
+    ('interfaith', 'Interfaith/Mixed'),
+    ('secular', 'Secular/Non-religious'),
+    ('cultural_fusion', 'Cultural Fusion'),
+    ('traditional_american', 'Traditional American'),
+    ('european', 'European Heritage'),
+    ('asian', 'Asian Heritage'),
+    ('latin_american', 'Latin American'),
+    ('african', 'African Heritage'),
+    ('middle_eastern', 'Middle Eastern'),
+    ('mediterranean', 'Mediterranean'),
+    ('scandinavian', 'Scandinavian'),
+    ('celtic', 'Celtic'),
+    ('other', 'Other Culture'),
+]
+
 
 class ImageUploadForm(forms.ModelForm):
     """Simple, effective image upload"""
@@ -82,7 +106,7 @@ class ImageUploadForm(forms.ModelForm):
 
 
 class WeddingTransformForm(forms.Form):
-    """Streamlined wedding transformation form following UX best practices"""
+    """Enhanced wedding transformation form with religion/culture and negative prompt inputs"""
     
     # ESSENTIAL - Always visible, biggest impact
     wedding_theme = forms.ChoiceField(
@@ -119,6 +143,16 @@ class WeddingTransformForm(forms.Form):
         widget=forms.Select(attrs={
             'class': 'form-select form-select-sm',
             'id': 'budget-level',
+        })
+    )
+    
+    # NEW: Religion/Culture Input for Culturally-Relevant Elements
+    religion_culture = forms.ChoiceField(
+        choices=RELIGION_CULTURE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm',
+            'id': 'religion-culture',
         })
     )
     
@@ -171,6 +205,17 @@ class WeddingTransformForm(forms.Form):
         })
     )
     
+    # NEW: User-Defined Negative Prompt (Things to Remove/Avoid)
+    user_negative_prompt = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'id': 'user-negative-prompt',
+            'rows': 2,
+            'placeholder': 'Things to avoid or remove (e.g., dark colors, modern furniture, artificial flowers)'
+        })
+    )
+    
     def clean(self):
         cleaned_data = super().clean()
         color_scheme = cleaned_data.get('color_scheme')
@@ -186,6 +231,7 @@ class WeddingTransformForm(forms.Form):
         """Return which contextual fields should be shown based on theme/space"""
         show_season = False
         show_time = False
+        show_religion = False
         
         # Show season for outdoor/natural themes
         outdoor_themes = ['garden', 'beach', 'rustic', 'bohemian']
@@ -198,10 +244,16 @@ class WeddingTransformForm(forms.Form):
         ceremony_spaces = ['wedding_ceremony', 'garden', 'beach', 'rooftop']
         if space_type in ceremony_spaces or theme in outdoor_themes:
             show_time = True
+            
+        # Show religion for traditional/cultural themes
+        cultural_themes = ['traditional', 'cultural_fusion', 'vintage', 'classic']
+        if theme in cultural_themes or space_type == 'wedding_ceremony':
+            show_religion = True
         
         return {
             'show_season': show_season,
-            'show_time': show_time
+            'show_time': show_time,
+            'show_religion': show_religion
         }
     
     def get_smart_suggestions(self, theme, space_type):
@@ -212,14 +264,16 @@ class WeddingTransformForm(forms.Form):
                 'budget_level': 'moderate',
                 'season': 'fall',
                 'color_scheme': 'earth_tones',
-                'description': 'Medium guest count, moderate budget, fall season, earth tones'
+                'religion_culture': 'christian',
+                'description': 'Medium guest count, moderate budget, fall season, earth tones, traditional Christian elements'
             },
             'modern_ballroom': {
                 'guest_count': 'large',
                 'budget_level': 'luxury',
                 'time_of_day': 'night',
                 'color_scheme': 'monochrome',
-                'description': 'Large guest count, luxury budget, evening time, monochrome colors'
+                'religion_culture': 'secular',
+                'description': 'Large guest count, luxury budget, evening time, monochrome colors, modern secular style'
             },
             'garden_wedding_ceremony': {
                 'guest_count': 'medium',
@@ -227,20 +281,23 @@ class WeddingTransformForm(forms.Form):
                 'season': 'spring',
                 'time_of_day': 'afternoon',
                 'color_scheme': 'pastels',
-                'description': 'Medium size, spring afternoon, pastel colors'
+                'religion_culture': 'interfaith',
+                'description': 'Medium size, spring afternoon, pastel colors, interfaith friendly'
             },
             'beach_wedding_ceremony': {
                 'guest_count': 'medium',
                 'season': 'summer',
                 'time_of_day': 'evening',
                 'color_scheme': 'neutral',
-                'description': 'Summer sunset ceremony, neutral coastal colors'
+                'religion_culture': 'secular',
+                'description': 'Summer sunset ceremony, neutral coastal colors, relaxed secular style'
             },
             'vintage_reception_area': {
                 'guest_count': 'medium',
                 'budget_level': 'moderate',
                 'color_scheme': 'pastels',
-                'description': 'Medium size, moderate budget, soft pastels'
+                'religion_culture': 'traditional_american',
+                'description': 'Medium size, moderate budget, soft pastels, traditional American style'
             },
         }
         
@@ -259,6 +316,9 @@ class QuickPresetForm(forms.Form):
         ('beach_sunset', '🌅 Beach Sunset - Coastal romance'),
         ('vintage_tea_party', '🫖 Vintage Tea Party - Timeless charm'),
         ('glamorous_night', '💎 Glamorous Night - Ultra luxury'),
+        ('hindu_traditional', '🕉️ Hindu Traditional - Sacred celebration'),
+        ('jewish_classical', '✡️ Jewish Classical - Elegant tradition'),
+        ('interfaith_modern', '🤝 Interfaith Modern - Unity celebration'),
     ]
     
     preset = forms.ChoiceField(
@@ -280,7 +340,8 @@ class QuickPresetForm(forms.Form):
                 'budget_level': 'moderate',
                 'season': 'fall',
                 'time_of_day': 'evening',
-                'color_scheme': 'earth_tones'
+                'color_scheme': 'earth_tones',
+                'religion_culture': 'christian'
             },
             'modern_ballroom': {
                 'wedding_theme': 'modern',
@@ -288,7 +349,8 @@ class QuickPresetForm(forms.Form):
                 'guest_count': 'large',
                 'budget_level': 'luxury',
                 'time_of_day': 'night',
-                'color_scheme': 'monochrome'
+                'color_scheme': 'monochrome',
+                'religion_culture': 'secular'
             },
             'garden_ceremony': {
                 'wedding_theme': 'garden',
@@ -297,7 +359,8 @@ class QuickPresetForm(forms.Form):
                 'budget_level': 'moderate',
                 'season': 'spring',
                 'time_of_day': 'afternoon',
-                'color_scheme': 'pastels'
+                'color_scheme': 'pastels',
+                'religion_culture': 'interfaith'
             },
             'beach_sunset': {
                 'wedding_theme': 'beach',
@@ -306,14 +369,16 @@ class QuickPresetForm(forms.Form):
                 'budget_level': 'moderate',
                 'season': 'summer',
                 'time_of_day': 'evening',
-                'color_scheme': 'neutral'
+                'color_scheme': 'neutral',
+                'religion_culture': 'secular'
             },
             'vintage_tea_party': {
                 'wedding_theme': 'vintage',
                 'space_type': 'reception_area',
                 'guest_count': 'intimate',
                 'budget_level': 'moderate',
-                'color_scheme': 'pastels'
+                'color_scheme': 'pastels',
+                'religion_culture': 'traditional_american'
             },
             'glamorous_night': {
                 'wedding_theme': 'glamorous',
@@ -321,15 +386,42 @@ class QuickPresetForm(forms.Form):
                 'guest_count': 'large',
                 'budget_level': 'ultra_luxury',
                 'time_of_day': 'night',
-                'color_scheme': 'jewel_tones'
+                'color_scheme': 'jewel_tones',
+                'religion_culture': 'secular'
+            },
+            'hindu_traditional': {
+                'wedding_theme': 'traditional',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'large',
+                'budget_level': 'luxury',
+                'color_scheme': 'jewel_tones',
+                'religion_culture': 'hindu'
+            },
+            'jewish_classical': {
+                'wedding_theme': 'classic',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'color_scheme': 'neutral',
+                'religion_culture': 'jewish'
+            },
+            'interfaith_modern': {
+                'wedding_theme': 'modern',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'color_scheme': 'neutral',
+                'religion_culture': 'interfaith'
             },
         }
         
         return presets.get(preset_value, {})
 
 
+# Export choices for use in other modules
 GUEST_COUNT_CHOICES = ESSENTIAL_GUEST_COUNT_CHOICES
 BUDGET_CHOICES = ESSENTIAL_BUDGET_CHOICES
 SEASON_CHOICES = CONTEXTUAL_SEASON_CHOICES
 TIME_OF_DAY_CHOICES = CONTEXTUAL_TIME_CHOICES
 COLOR_SCHEME_CHOICES = STREAMLINED_COLOR_CHOICES
+RELIGION_CULTURE_CHOICES = RELIGION_CULTURE_CHOICES

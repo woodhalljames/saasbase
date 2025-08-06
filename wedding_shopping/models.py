@@ -1,4 +1,4 @@
-# wedding_shopping/models.py - Enhanced with partner-specific social media and expanded link types
+# wedding_shopping/models.py - Simplified social media without owner field
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -116,62 +116,41 @@ class CoupleProfile(models.Model):
     def wedding_url_preview(self):
         return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
     
-    # Helper methods for social media organization
-    @property
-    def partner_1_social_links(self):
-        return self.social_links.filter(owner='partner_1')
-    
-    @property
-    def partner_2_social_links(self):
-        return self.social_links.filter(owner='partner_2')
-    
-    @property
-    def shared_social_links(self):
-        return self.social_links.filter(owner='shared')
-    
     # Helper methods for wedding links by category
     @property
     def registry_links(self):
-        return self.wedding_links.filter(link_type='registry')
+        return self.wedding_links.filter(link_type='registry').order_by('id')
     
     @property
     def rsvp_links(self):
-        return self.wedding_links.filter(link_type='rsvp')
+        return self.wedding_links.filter(link_type='rsvp').order_by('id')
     
     @property
     def livestream_links(self):
-        return self.wedding_links.filter(link_type='livestream')
+        return self.wedding_links.filter(link_type='livestream').order_by('id')
     
     @property
     def photo_links(self):
-        return self.wedding_links.filter(link_type='photos')
+        return self.wedding_links.filter(link_type='photos').order_by('id')
     
     @property
     def other_links(self):
-        return self.wedding_links.filter(link_type='other')
+        return self.wedding_links.filter(link_type='other').order_by('id')
 
 
 class SocialMediaLink(models.Model):
-    """Enhanced social media links with partner ownership"""
-    
-    OWNER_CHOICES = [
-        ('partner_1', 'Partner 1'),
-        ('partner_2', 'Partner 2'),  
-        ('shared', 'Both/Shared'),
-    ]
+    """Simplified social media links without owner assignment"""
     
     couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='social_links')
-    owner = models.CharField(max_length=20, choices=OWNER_CHOICES, default='shared')
     url = models.URLField()
     display_name = models.CharField(max_length=100, blank=True, help_text="Display name (e.g., @username)")
     
     class Meta:
         unique_together = ['couple_profile', 'url']
-        ordering = ['owner', 'id']
+        ordering = ['id']  # Order by creation order
     
     def __str__(self):
-        owner_display = dict(self.OWNER_CHOICES).get(self.owner, self.owner)
-        return f"{self.couple_profile} - {owner_display} - {self.display_name or self.url}"
+        return f"{self.couple_profile} - {self.display_name or self.url}"
     
     def _detect_platform_from_url(self):
         """Auto-detect platform from URL"""
@@ -239,14 +218,20 @@ class SocialMediaLink(models.Model):
         return self.display_name or self.url
     
     @property
-    def owner_display_name(self):
-        """Return the display name for the owner"""
-        if self.owner == 'partner_1':
-            return self.couple_profile.partner_1_name
-        elif self.owner == 'partner_2':
-            return self.couple_profile.partner_2_name
-        else:
-            return "Both"
+    def platform_name(self):
+        """Returns formatted platform name"""
+        names = {
+            'instagram': 'Instagram',
+            'facebook': 'Facebook',
+            'twitter': 'X (Twitter)',
+            'tiktok': 'TikTok',
+            'youtube': 'YouTube',
+            'pinterest': 'Pinterest',
+            'linkedin': 'LinkedIn',
+            'website': 'Website',
+            'other': 'Other',
+        }
+        return names.get(self.platform, 'Other')
 
 
 class WeddingLink(models.Model):
@@ -272,7 +257,7 @@ class WeddingLink(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['link_type', 'created_at']
+        ordering = ['id']  # Order by creation order
     
     def __str__(self):
         return f"{self.couple_profile} - {self.get_link_type_display()} - {self.title}"

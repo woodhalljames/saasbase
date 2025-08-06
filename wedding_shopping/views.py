@@ -1,4 +1,4 @@
-# wedding_shopping/views.py - Updated for enhanced social media and wedding links
+# wedding_shopping/views.py - Updated for simplified social media
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -364,20 +364,18 @@ class PublicCoupleDetailView(DetailView):
                 context['wedding_passed'] = True
                 context['days_since_wedding'] = (today - couple.wedding_date).days
         
-        # Get organized social media links
-        context['partner_1_social_links'] = couple.partner_1_social_links.filter(pk__isnull=False)
-        context['partner_2_social_links'] = couple.partner_2_social_links.filter(pk__isnull=False)
-        context['shared_social_links'] = couple.shared_social_links.filter(pk__isnull=False)
+        # Get simplified social media links (no more partner separation)
+        context['social_links'] = couple.social_links.all().order_by('id')
         
         # Get wedding links by category
-        context['registry_links'] = couple.registry_links.filter(pk__isnull=False)
-        context['rsvp_links'] = couple.rsvp_links.filter(pk__isnull=False)
-        context['livestream_links'] = couple.livestream_links.filter(pk__isnull=False)
-        context['photo_links'] = couple.photo_links.filter(pk__isnull=False)
-        context['other_links'] = couple.other_links.filter(pk__isnull=False)
+        context['registry_links'] = couple.registry_links
+        context['rsvp_links'] = couple.rsvp_links
+        context['livestream_links'] = couple.livestream_links
+        context['photo_links'] = couple.photo_links
+        context['other_links'] = couple.other_links
         
         # All wedding links for backwards compatibility
-        context['wedding_links'] = couple.wedding_links.filter(pk__isnull=False)
+        context['wedding_links'] = couple.wedding_links.all().order_by('id')
         
         return context
 
@@ -410,8 +408,7 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
             context['social_formset'] = SocialMediaFormSet(
                 self.request.POST, 
                 instance=self.object if not is_new else None,
-                prefix='social',
-                form_kwargs={'couple_profile': self.object if not is_new else None}
+                prefix='social'
             )
             context['wedding_link_formset'] = WeddingLinkFormSet(
                 self.request.POST, 
@@ -421,8 +418,7 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
         else:
             context['social_formset'] = SocialMediaFormSet(
                 instance=self.object if not is_new else None,
-                prefix='social',
-                form_kwargs={'couple_profile': self.object if not is_new else None}
+                prefix='social'
             )
             context['wedding_link_formset'] = WeddingLinkFormSet(
                 instance=self.object if not is_new else None,

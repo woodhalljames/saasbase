@@ -1,5 +1,257 @@
-<!-- Collection Management Modals -->
-<!-- Add these modals to collections_list.html after the create collection modal -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Collections{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
+          <li class="breadcrumb-item active">Collections</li>
+        </ol>
+      </nav>
+      <h1>💍 My Collections</h1>
+      <p class="text-muted">Organize your wedding inspiration and transformations</p>
+    </div>
+    <div class="col-md-6 text-end">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+        <i class="bi bi-plus-circle"></i> New Collection
+      </button>
+    </div>
+  </div>
+
+  <!-- Default Collection (if exists) -->
+  {% if default_collection %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <i class="bi bi-collection-fill text-success"></i> 
+            {{ default_collection.name }}
+            <span class="badge bg-success ms-2">Default</span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-2">
+              {% if default_collection.thumbnail %}
+                <img src="{{ default_collection.thumbnail.url }}" 
+                     class="img-fluid rounded" 
+                     style="height: 80px; width: 100%; object-fit: cover;"
+                     alt="{{ default_collection.name }}">
+              {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 80px;">
+                  <i class="bi bi-images text-muted" style="font-size: 2rem;"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-7">
+              <p class="mb-1">{{ default_collection.description }}</p>
+              <small class="text-muted">
+                <i class="bi bi-images"></i> {{ default_collection.item_count }} item{{ default_collection.item_count|pluralize }} • 
+                <i class="bi bi-calendar"></i> Updated {{ default_collection.updated_at|timesince }} ago
+              </small>
+            </div>
+            <div class="col-md-3 text-end">
+              <a href="{% url 'image_processing:collection_detail' default_collection.id %}" 
+                 class="btn btn-success">
+                <i class="bi bi-eye"></i> View Collection
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Quick Access - Recent Favorites -->
+  {% if recent_favorites %}
+  <div class="row mb-5">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="bi bi-heart-fill text-danger"></i> Recent Favorites</h5>
+          <a href="{% url 'image_processing:favorites_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for favorite in recent_favorites %}
+              <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
+                <div class="card">
+                  <img src="{{ favorite.image_url }}" 
+                       class="card-img-top" 
+                       style="height: 120px; object-fit: cover;"
+                       alt="Favorite">
+                  <div class="card-body p-2">
+                    <small class="text-muted d-block text-truncate">
+                      {% if favorite.processed_image %}
+                        Wedding Transformation
+                      {% else %}
+                        {{ favorite.user_image.original_filename }}
+                      {% endif %}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Custom Collections -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <h4>My Custom Collections</h4>
+    </div>
+  </div>
+
+  {% if collections %}
+    <div class="row">
+      {% for collection in collections %}
+        <div class="col-lg-4 col-md-6 mb-4">
+          <div class="card h-100 shadow-sm">
+            <div class="collection-thumbnail" style="height: 200px; overflow: hidden;">
+              {% if collection.thumbnail %}
+                <img src="{{ collection.thumbnail.url }}" 
+                     class="card-img-top" 
+                     style="height: 100%; object-fit: cover;"
+                     alt="{{ collection.name }}">
+              {% else %}
+                <div class="d-flex align-items-center justify-content-center h-100 bg-light">
+                  <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
+                </div>
+              {% endif %}
+              
+              <!-- Collection overlay -->
+              <div class="position-absolute top-0 end-0 p-2">
+                <span class="badge bg-dark bg-opacity-75">
+                  {{ collection.item_count }} item{{ collection.item_count|pluralize }}
+                </span>
+              </div>
+              
+              {% if collection.is_public %}
+                <div class="position-absolute top-0 start-0 p-2">
+                  <span class="badge bg-info">
+                    <i class="bi bi-globe"></i> Public
+                  </span>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="card-body">
+              <h6 class="card-title">{{ collection.name }}</h6>
+              {% if collection.description %}
+                <p class="card-text text-muted small">{{ collection.description|truncatewords:15 }}</p>
+              {% endif %}
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i> Updated {{ collection.updated_at|timesince }} ago
+              </small>
+            </div>
+            
+            <div class="card-footer bg-transparent">
+              <div class="btn-group w-100" role="group">
+                <a href="{% url 'image_processing:collection_detail' collection.id %}" 
+                   class="btn btn-outline-primary">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                <button class="btn btn-outline-secondary dropdown-toggle" 
+                        type="button" 
+                        data-bs-toggle="dropdown">
+                  <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item edit-collection-btn" 
+                         href="#" 
+                         data-collection-id="{{ collection.id }}"
+                         data-collection-name="{{ collection.name }}"
+                         data-collection-description="{{ collection.description }}"
+                         data-collection-public="{{ collection.is_public|yesno:'true,false' }}">
+                    <i class="bi bi-pencil"></i> Edit
+                  </a></li>
+                  {% if collection.is_public %}
+                    <li><a class="dropdown-item share-collection-btn" 
+                           href="#" 
+                           data-collection-id="{{ collection.id }}">
+                      <i class="bi bi-share"></i> Share
+                    </a></li>
+                  {% endif %}
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item text-danger delete-collection-btn" 
+                         href="#" 
+                         data-collection-id="{{ collection.id }}"
+                         data-collection-name="{{ collection.name }}">
+                    <i class="bi bi-trash"></i> Delete
+                  </a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty state for custom collections -->
+    <div class="row">
+      <div class="col-12">
+        <div class="text-center py-4 bg-light rounded">
+          <i class="bi bi-collection text-muted" style="font-size: 3rem;"></i>
+          <h5 class="mt-3 text-muted">No Custom Collections Yet</h5>
+          <p class="text-muted">Create collections to organize your wedding transformations by theme, venue, or style</p>
+          <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+            <i class="bi bi-plus-circle"></i> Create Your First Collection
+          </button>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Create Collection Modal -->
+<div class="modal fade" id="createCollectionModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create New Collection</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{% url 'image_processing:create_collection' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="collectionName" class="form-label">Collection Name</label>
+            <input type="text" class="form-control" id="collectionName" name="name" required maxlength="100" 
+                   placeholder="e.g., Rustic Barn Ideas, Garden Party Inspiration">
+          </div>
+          <div class="mb-3">
+            <label for="collectionDescription" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="collectionDescription" name="description" rows="3" 
+                      placeholder="Describe what this collection is for..."></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="isPublic" name="is_public">
+            <label class="form-check-label" for="isPublic">
+              Make this collection public (can be shared)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Collection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <!-- Edit Collection Modal -->
 <div class="modal fade" id="editCollectionModal" tabindex="-1">
@@ -80,6 +332,57 @@
     </div>
   </div>
 </div>
+
+<style>
+/* Additional styling for collections */
+.collection-thumbnail {
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.collection-thumbnail:hover {
+  transform: scale(1.02);
+}
+
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  transform: translateY(-2px);
+}
+
+.badge {
+  font-size: 0.75rem;
+}
+
+.btn-group .dropdown-menu {
+  min-width: 160px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+</style>
 
 <script>
 // Collection Management JavaScript
@@ -198,7 +501,7 @@ function handleShareCollection(button) {
     
     const collectionId = button.dataset.collectionId;
     
-    // Generate share URL (you may want to implement a proper sharing system)
+    // Generate share URL
     const shareUrl = `${window.location.origin}/studio/collections/${collectionId}/`;
     document.getElementById('shareCollectionUrl').value = shareUrl;
     
@@ -323,3 +626,4 @@ function showToast(message, type = 'info') {
     }, 5000);
 }
 </script>
+{% endblock %}

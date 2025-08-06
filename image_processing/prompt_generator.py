@@ -1,20 +1,22 @@
-# image_processing/prompt_generator.py - Space-First Prompt Generation for Superior Wedding Venue Transformations
+# image_processing/prompt_generator.py - Enhanced Space-First Prompt Generation with Religion/Culture and User Negative Prompts
 """
-Completely overhauled prompt generation system prioritizing SPACE FUNCTION first, then theme styling
+Enhanced prompt generation system prioritizing SPACE FUNCTION first, then theme styling
+Now includes religion/culture elements and user-defined negative prompts
 Optimized for Stability AI SD3.5 Large with focus on actual space transformation
-Space-first approach ensures AI understands what type of venue to create before applying decorative themes
 """
 
 class WeddingPromptGenerator:
-    """Generate space-first prompts optimized for SD3.5 Large wedding venue transformations"""
+    """Generate enhanced space-first prompts optimized for SD3.5 Large wedding venue transformations"""
     
     @classmethod
     def generate_space_first_prompt(cls, wedding_theme, space_type, guest_count=None, 
                                    budget_level=None, season=None, time_of_day=None,
-                                   color_scheme=None, custom_colors=None, additional_details=None):
+                                   color_scheme=None, custom_colors=None, 
+                                   religion_culture=None, user_negative_prompt=None,
+                                   additional_details=None):
         """
-        NEW APPROACH: Space function defines the transformation, theme provides styling
-        This ensures the AI actually transforms the space rather than just decorating it
+        ENHANCED APPROACH: Space function defines transformation, theme provides styling, 
+        religion/culture adds appropriate elements, user negative prompt customizes exclusions
         """
         
         space_data = cls.SPACE_DEFINITIONS.get(space_type, cls.SPACE_DEFINITIONS['wedding_ceremony'])
@@ -38,25 +40,28 @@ class WeddingPromptGenerator:
         # 6. THEME STYLING LAYER - Secondary enhancement, not primary focus
         theme_styling = f"Decorative styling: {wedding_theme} wedding theme featuring {theme_data['elements']}."
         
-        # 7. MATERIAL AND COLOR PALETTE - Visual enhancement
+        # 7. RELIGION/CULTURE ELEMENTS - NEW: Add culturally appropriate elements
+        cultural_elements = cls._get_cultural_elements(religion_culture, space_type, wedding_theme)
+        
+        # 8. MATERIAL AND COLOR PALETTE - Visual enhancement
         color_specification = cls._get_color_specification(color_scheme, custom_colors, theme_data)
         
-        # 8. LIGHTING AND ATMOSPHERE - Mood setting
+        # 9. LIGHTING AND ATMOSPHERE - Mood setting
         lighting_atmosphere = f"Lighting: {theme_data['lighting']}. Atmosphere: {theme_data['atmosphere']}."
         
-        # 9. PRODUCTION QUALITY LEVEL - Budget/quality context
+        # 10. PRODUCTION QUALITY LEVEL - Budget/quality context
         production_level = cls._get_production_level(budget_level)
         
-        # 10. SEASONAL/TEMPORAL CONTEXT - When appropriate
+        # 11. SEASONAL/TEMPORAL CONTEXT - When appropriate
         temporal_context = cls._get_temporal_context(season, time_of_day)
         
-        # 11. USER SPECIFICATIONS - Additional details
+        # 12. USER SPECIFICATIONS - Additional details
         user_specifications = f"Additional specifications: {additional_details}." if additional_details else ""
         
-        # 12. TECHNICAL REQUIREMENTS - Final specifications
+        # 13. TECHNICAL REQUIREMENTS - Final specifications
         technical_requirements = "Output requirements: professional wedding setup ready for guests, no people visible, celebration-ready venue, elegant transformation complete."
         
-        # ASSEMBLE SPACE-FIRST PROMPT with proper hierarchy
+        # ASSEMBLE ENHANCED SPACE-FIRST PROMPT with proper hierarchy
         prompt_sections = [
             quality_foundation,
             space_transformation,
@@ -64,6 +69,7 @@ class WeddingPromptGenerator:
             functional_setup,
             capacity_setup,
             theme_styling,
+            cultural_elements,
             color_specification,
             lighting_atmosphere,
             production_level,
@@ -75,8 +81,8 @@ class WeddingPromptGenerator:
         # Clean and join sections
         final_prompt = " ".join([section.strip() for section in prompt_sections if section.strip()])
         
-        # Enhanced negative prompt for SD3.5 Large
-        negative_prompt = cls.generate_enhanced_negative_prompt()
+        # Enhanced negative prompt combining system and user preferences
+        negative_prompt = cls.generate_enhanced_negative_prompt(user_negative_prompt)
         
         return {
             'prompt': final_prompt,
@@ -192,6 +198,88 @@ class WeddingPromptGenerator:
         # Add more themes as needed but focus on the most popular ones for initial implementation
     }
     
+    # NEW: RELIGION/CULTURE ELEMENTS - Add appropriate cultural elements
+    RELIGION_CULTURE_ELEMENTS = {
+        'christian': {
+            'ceremony': 'cross or altar centerpiece, church pew style seating, unity candle display, traditional church flowers, stained glass window effects',
+            'reception': 'blessing table setup, traditional family seating arrangements, elegant formal styling, classic Christian symbolism',
+            'colors': 'pure white, gold accents, deep blue, traditional wedding colors',
+            'atmosphere': 'sacred and reverent with traditional Christian elegance'
+        },
+        'jewish': {
+            'ceremony': 'chuppah wedding canopy, chair arrangements for processional, breaking glass area, traditional Jewish elements',
+            'reception': 'hora dance floor space, traditional Jewish music setup, kosher dining considerations, family honor seating',
+            'colors': 'blue and white, gold accents, traditional Jewish colors',
+            'atmosphere': 'joyful celebration with meaningful Jewish traditions'
+        },
+        'hindu': {
+            'ceremony': 'mandap ceremonial structure, sacred fire altar area, traditional Hindu decorative elements, flower petal arrangements',
+            'reception': 'vibrant colorful decorations, traditional Indian seating areas, rangoli floor patterns, ceremonial elements',
+            'colors': 'vibrant reds, golds, oranges, rich jewel tones, traditional Indian colors',
+            'atmosphere': 'colorful and vibrant celebration with sacred Hindu traditions'
+        },
+        'muslim': {
+            'ceremony': 'nikah ceremony seating, traditional Islamic decorative elements, modest elegant styling, prayer area considerations',
+            'reception': 'separate seating arrangements if traditional, halal dining setup, Islamic geometric patterns, elegant styling',
+            'colors': 'green and gold, white, traditional Islamic colors, modest elegant tones',
+            'atmosphere': 'elegant celebration honoring Islamic traditions'
+        },
+        'buddhist': {
+            'ceremony': 'meditation area setup, Buddhist altar elements, peaceful seating arrangements, lotus flower decorations',
+            'reception': 'mindful dining setup, peaceful ambiance elements, natural decorations, serene atmosphere',
+            'colors': 'saffron, lotus pink, peaceful pastels, natural earth tones',
+            'atmosphere': 'peaceful and mindful celebration with Buddhist serenity'
+        },
+        'sikh': {
+            'ceremony': 'Guru Granth Sahib area, traditional Sikh ceremonial elements, community seating arrangements, Sikh symbols',
+            'reception': 'langar community dining setup, traditional Punjabi decorations, vibrant celebratory elements',
+            'colors': 'saffron, blue, vibrant traditional Punjabi colors',
+            'atmosphere': 'joyful community celebration with Sikh traditions'
+        },
+        'interfaith': {
+            'ceremony': 'inclusive ceremonial elements, universal symbols of love, respectful traditional blending, neutral sacred space',
+            'reception': 'diverse cultural food stations, mixed traditional elements, inclusive decorations, unity themes',
+            'colors': 'neutral elegant tones, universal whites and golds, inclusive color palette',
+            'atmosphere': 'unified celebration honoring multiple traditions with respect and love'
+        },
+        'secular': {
+            'ceremony': 'modern ceremonial arch, contemporary seating, non-religious symbolic elements, personal meaningful decorations',
+            'reception': 'contemporary styling, personal family elements, modern elegant decorations, celebration-focused setup',
+            'colors': 'contemporary color schemes, personal preference colors, modern elegant palette',
+            'atmosphere': 'modern celebration focused on love and commitment without religious elements'
+        },
+        'cultural_fusion': {
+            'ceremony': 'blended cultural decorative elements, mixed traditional symbols, fusion ceremonial setup, cultural unity displays',
+            'reception': 'diverse cultural food stations, mixed traditional decorations, cultural celebration elements, unity themes',
+            'colors': 'blended cultural color palettes, harmonious mixed traditional colors',
+            'atmosphere': 'harmonious fusion celebrating multiple cultural backgrounds'
+        },
+        'traditional_american': {
+            'ceremony': 'classic American wedding elements, traditional white wedding styling, patriotic subtle touches, classic elegance',
+            'reception': 'traditional American reception styling, classic elegant decorations, timeless American wedding elements',
+            'colors': 'classic white, navy blue, gold, traditional American wedding colors',
+            'atmosphere': 'classic American wedding celebration with timeless traditional elegance'
+        },
+        'european': {
+            'ceremony': 'elegant European styling, classical architectural elements, sophisticated traditional decorations, old-world charm',
+            'reception': 'European garden party elements, classical elegance, refined traditional styling, sophisticated atmosphere',
+            'colors': 'classical European colors, sophisticated pastels, elegant traditional palette',
+            'atmosphere': 'sophisticated European elegance with old-world charm'
+        },
+        'asian': {
+            'ceremony': 'Asian-inspired decorative elements, traditional Asian symbols, elegant cultural styling, respectful traditional elements',
+            'reception': 'Asian cultural dining elements, traditional decorations, cultural celebration styling, elegant setup',
+            'colors': 'traditional Asian color schemes, red and gold, cultural color palettes',
+            'atmosphere': 'elegant celebration honoring Asian cultural traditions'
+        },
+        'latin_american': {
+            'ceremony': 'vibrant Latin cultural elements, traditional ceremonial decorations, colorful celebration styling, cultural symbols',
+            'reception': 'fiesta celebration elements, vibrant decorations, Latin music and dance areas, cultural food stations',
+            'colors': 'vibrant Latin colors, bright reds, yellows, oranges, festive palette',
+            'atmosphere': 'vibrant Latin celebration with joyful cultural traditions'
+        }
+    }
+    
     @classmethod
     def _get_capacity_specification(cls, guest_count, space_type):
         """Generate capacity-appropriate specifications for each space type"""
@@ -241,6 +329,33 @@ class WeddingPromptGenerator:
         capacity_spec = space_requirements.get(guest_level, space_requirements.get('medium', 'appropriate seating for wedding guests'))
         
         return f"Capacity requirements: {capacity_spec}."
+    
+    @classmethod
+    def _get_cultural_elements(cls, religion_culture, space_type, wedding_theme):
+        """NEW: Generate religion/culture appropriate elements"""
+        
+        if not religion_culture or religion_culture == '':
+            return ""
+        
+        culture_data = cls.RELIGION_CULTURE_ELEMENTS.get(religion_culture)
+        if not culture_data:
+            return ""
+        
+        # Get appropriate elements based on space type
+        if space_type == 'wedding_ceremony':
+            elements = culture_data.get('ceremony', '')
+        else:
+            elements = culture_data.get('reception', '')
+        
+        # Add cultural atmosphere
+        atmosphere = culture_data.get('atmosphere', '')
+        
+        if elements or atmosphere:
+            cultural_text = f"Cultural elements: {elements}." if elements else ""
+            atmosphere_text = f" Cultural atmosphere: {atmosphere}." if atmosphere else ""
+            return cultural_text + atmosphere_text
+        
+        return ""
     
     @classmethod
     def _get_color_specification(cls, color_scheme, custom_colors, theme_data):
@@ -305,9 +420,11 @@ class WeddingPromptGenerator:
         return " ".join(contexts) + "." if contexts else ""
     
     @classmethod
-    def generate_enhanced_negative_prompt(cls):
-        """Generate comprehensive negative prompt for SD3.5 Large"""
-        negative_elements = [
+    def generate_enhanced_negative_prompt(cls, user_negative_prompt=None):
+        """Generate comprehensive negative prompt for SD3.5 Large combining system and user preferences"""
+        
+        # System negative elements (always included)
+        system_negative_elements = [
             # People and crowds (critical for venue photos)
             "people, faces, crowd, guests, bride, groom, wedding party, humans, person, bodies",
             
@@ -333,7 +450,16 @@ class WeddingPromptGenerator:
             "overexposed, underexposed, bad lighting, harsh shadows, color bleeding, oversaturated"
         ]
         
-        return ", ".join(negative_elements)
+        # Combine system negatives
+        final_negative_elements = system_negative_elements.copy()
+        
+        # Add user-specified negative elements if provided
+        if user_negative_prompt and user_negative_prompt.strip():
+            # Clean and split user negative prompt
+            user_elements = [element.strip() for element in user_negative_prompt.split(',') if element.strip()]
+            final_negative_elements.extend(user_elements)
+        
+        return ", ".join(final_negative_elements)
     
     @classmethod
     def get_space_optimized_parameters(cls, space_type, wedding_theme, guest_count):
@@ -397,6 +523,7 @@ class WeddingPromptGenerator:
                 'budget_level': 'moderate',
                 'time_of_day': 'afternoon',
                 'color_scheme': 'neutral',
+                'religion_culture': 'interfaith',
                 'theme_recommendations': ['classic', 'garden', 'vintage', 'romantic']
             },
             'dining_area': {
@@ -404,6 +531,7 @@ class WeddingPromptGenerator:
                 'budget_level': 'moderate',
                 'time_of_day': 'evening',
                 'color_scheme': 'neutral',
+                'religion_culture': 'secular',
                 'theme_recommendations': ['classic', 'modern', 'vintage', 'elegant']
             },
             'dance_floor': {
@@ -411,6 +539,7 @@ class WeddingPromptGenerator:
                 'budget_level': 'luxury',
                 'time_of_day': 'night',
                 'color_scheme': 'bold_colors',
+                'religion_culture': 'secular',
                 'theme_recommendations': ['modern', 'industrial', 'glamorous', 'party']
             },
             'cocktail_hour': {
@@ -418,6 +547,7 @@ class WeddingPromptGenerator:
                 'budget_level': 'moderate',
                 'time_of_day': 'evening',
                 'color_scheme': 'jewel_tones',
+                'religion_culture': 'secular',
                 'theme_recommendations': ['modern', 'classic', 'sophisticated', 'social']
             },
             'lounge_area': {
@@ -425,6 +555,7 @@ class WeddingPromptGenerator:
                 'budget_level': 'luxury',
                 'time_of_day': 'evening',
                 'color_scheme': 'pastels',
+                'religion_culture': 'secular',
                 'theme_recommendations': ['bohemian', 'vintage', 'comfortable', 'relaxed']
             }
         }

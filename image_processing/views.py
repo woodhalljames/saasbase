@@ -1,4 +1,4 @@
-# image_processing/views.py - Updated with enhanced form handling
+# image_processing/views.py - Enhanced with religion/culture and user negative prompt handling
 
 import json
 import logging
@@ -15,7 +15,10 @@ from .models import (
     UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, Favorite,
     WEDDING_THEMES, SPACE_TYPES
 )
-from .forms import ImageUploadForm, WeddingTransformForm, GUEST_COUNT_CHOICES, BUDGET_CHOICES, SEASON_CHOICES, TIME_OF_DAY_CHOICES, COLOR_SCHEME_CHOICES
+from .forms import (
+    ImageUploadForm, WeddingTransformForm, GUEST_COUNT_CHOICES, BUDGET_CHOICES, 
+    SEASON_CHOICES, TIME_OF_DAY_CHOICES, COLOR_SCHEME_CHOICES, RELIGION_CULTURE_CHOICES
+)
 from .tasks import process_image_async
 
 logger = logging.getLogger(__name__)
@@ -23,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def wedding_studio(request):
-    """Main wedding venue visualization studio with dynamic options"""
+    """Main wedding venue visualization studio with enhanced dynamic options including religion/culture"""
     
     # Handle image upload
     if request.method == 'POST':
@@ -73,7 +76,7 @@ def wedding_studio(request):
             for error in error_messages:
                 messages.error(request, error)
     
-    # GET request - display the studio
+    # GET request - display the enhanced studio
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
     # Get specific image if image_id is provided (for preselection from gallery)
@@ -106,6 +109,7 @@ def wedding_studio(request):
         'season_choices': SEASON_CHOICES,
         'time_choices': TIME_OF_DAY_CHOICES,
         'color_choices': COLOR_SCHEME_CHOICES,
+        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: Religion/culture choices
         'upload_form': ImageUploadForm(),
     }
     
@@ -114,7 +118,7 @@ def wedding_studio(request):
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with AI transformation - enhanced with all form fields"""
+    """Process wedding venue image with AI transformation - enhanced with religion/culture and user negative prompts"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
@@ -159,48 +163,63 @@ def process_wedding_image(request, pk):
                 'error': 'Wedding theme and space type are required'
             }, status=400)
         
-        # Create processing job with all form fields
+        # Create processing job with enhanced form fields including religion/culture and user negative prompt
         job_data = {
             'user_image': user_image,
             'wedding_theme': wedding_theme,
             'space_type': space_type,
             
-            # Optional fields - only save if they have values
+            # Optional fields - keep as empty strings, don't convert to None
             'guest_count': data.get('guest_count', ''),
             'budget_level': data.get('budget_level', ''),
             'season': data.get('season', ''),
             'time_of_day': data.get('time_of_day', ''),
             'color_scheme': data.get('color_scheme', ''),
             'custom_colors': data.get('custom_colors', ''),
-            'additional_details': data.get('additional_details', ''),
+            'religion_culture': data.get('religion_culture', ''),  # NEW: Religion/culture field
         }
         
-        # Clean empty strings to None for database
-        for key, value in job_data.items():
-            if isinstance(value, str) and value.strip() == '':
-                job_data[key] = None
+        # For text fields that can be None, handle separately
+        additional_details = data.get('additional_details', '').strip()
+        user_negative_prompt = data.get('user_negative_prompt', '').strip()
+        
+        # Only set text fields if they have content
+        if additional_details:
+            job_data['additional_details'] = additional_details
+        if user_negative_prompt:
+            job_data['user_negative_prompt'] = user_negative_prompt
         
         job = ImageProcessingJob.objects.create(**job_data)
         
         # Queue the processing task
         process_image_async.delay(job.id)
         
-        logger.info(f"Created processing job {job.id} with enhanced parameters: theme={wedding_theme}, space={space_type}, guest_count={job_data.get('guest_count')}, budget={job_data.get('budget_level')}")
+        # Log enhanced parameters for debugging
+        enhanced_params = {
+            'religion_culture': job_data.get('religion_culture'),
+            'user_negative_prompt': job_data.get('user_negative_prompt'),
+            'guest_count': job_data.get('guest_count'),
+            'budget_level': job_data.get('budget_level')
+        }
+        used_enhanced_params = {k: v for k, v in enhanced_params.items() if v}
+        
+        logger.info(f"Created enhanced processing job {job.id}: theme={wedding_theme}, space={space_type}")
+        if used_enhanced_params:
+            logger.info(f"Enhanced parameters used: {used_enhanced_params}")
         
         return JsonResponse({
             'success': True,
             'job_id': job.id,
             'redirect_url': reverse('image_processing:processing_history'),
-            'message': 'Your wedding transformation has been queued for processing!'
+            'message': 'Your enhanced wedding transformation has been queued for processing!'
         })
         
     except Exception as e:
-        logger.error(f"Error in process_wedding_image: {str(e)}", exc_info=True)
+        logger.error(f"Error in enhanced process_wedding_image: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-
 
 @login_required
 def image_detail(request, pk):
@@ -228,13 +247,14 @@ def image_detail(request, pk):
         'season_choices': SEASON_CHOICES,
         'time_choices': TIME_OF_DAY_CHOICES,
         'color_choices': COLOR_SCHEME_CHOICES,
+        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: Religion/culture choices
     }
     
     return render(request, 'image_processing/image_detail.html', context)
 
 @login_required
 def job_status(request, job_id):
-    """Get status of a processing job with wedding context"""
+    """Get status of a processing job with enhanced wedding context"""
     job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
     
     data = {
@@ -251,6 +271,8 @@ def job_status(request, job_id):
         'time_of_day': job.time_of_day,
         'color_scheme': job.color_scheme,
         'custom_colors': job.custom_colors,
+        'religion_culture': job.religion_culture,  # NEW: Religion/culture in status
+        'user_negative_prompt': job.user_negative_prompt,  # NEW: User negative prompt in status
     }
     
     # Add display names
@@ -258,6 +280,8 @@ def job_status(request, job_id):
         data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
     if job.space_type:
         data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+    if job.religion_culture:
+        data['religion_display'] = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
     
     if job.status == 'completed':
         data['completed_at'] = job.completed_at.isoformat()
@@ -277,17 +301,19 @@ def job_status(request, job_id):
 
 @login_required
 def processing_history(request):
-    """View all wedding processing jobs for the user"""
+    """View all enhanced wedding processing jobs for the user"""
     jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
     ).select_related('user_image').order_by('-created_at')
     
-    # Add display names to jobs
+    # Add display names to jobs including religion/culture
     for job in jobs:
         if job.wedding_theme:
             job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
         if job.space_type:
             job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+        if job.religion_culture:
+            job.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
     
     # Pagination
     from django.core.paginator import Paginator
@@ -304,7 +330,7 @@ def processing_history(request):
 
 @login_required 
 def image_gallery(request):
-    """Display user's uploaded images and processed transformations"""
+    """Display user's uploaded images and processed transformations with enhanced info"""
     # Original uploaded images
     uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
@@ -339,11 +365,18 @@ def image_gallery(request):
         job = transformation.processing_job
         theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
         space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
+        
+        # Add religion info if available
+        title_parts = [theme_display, space_display]
+        if job.religion_culture:
+            religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
+            title_parts.append(f"({religion_display})")
+        
         all_images.append({
             'type': 'transformation',
             'object': transformation,
             'date': transformation.created_at,
-            'title': f"{theme_display} {space_display}",
+            'title': " ".join(title_parts),
             'url': transformation.processed_image.url
         })
     
@@ -363,6 +396,7 @@ def image_gallery(request):
         'usage_data': usage_data,
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
+        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: For filtering
     }
     
     return render(request, 'image_processing/image_gallery.html', context)
@@ -370,7 +404,7 @@ def image_gallery(request):
 
 @login_required
 def processed_image_detail(request, pk):
-    """View details of a processed wedding image"""
+    """View details of a processed wedding image with enhanced information"""
     processed_image = get_object_or_404(
         ProcessedImage, 
         pk=pk, 
@@ -383,15 +417,17 @@ def processed_image_detail(request, pk):
         processed_image=processed_image
     ).exists()
     
-    # Add display names
+    # Add display names including religion/culture
     job = processed_image.processing_job
     theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
     space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
+    religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, None) if job.religion_culture else None
     
     context = {
         'processed_image': processed_image,
         'theme_display': theme_display,
         'space_display': space_display,
+        'religion_display': religion_display,  # NEW: Religion/culture display
     }
     
     return render(request, 'image_processing/processed_image_detail.html', context)
@@ -508,16 +544,21 @@ def toggle_favorite(request):
 
 @login_required
 def favorites_list(request):
-    """Display user's favorite wedding transformations"""
+    """Display user's favorite wedding transformations with enhanced information"""
     from django.core.paginator import Paginator
     
     favorites = Favorite.objects.filter(user=request.user).select_related(
         'processed_image__processing_job__user_image'
     ).order_by('-created_at')
     
-    # Add favorite status to processed images (they're all favorited here)
+    # Add favorite status to processed images (they're all favorited here) and enhanced display info
     for favorite in favorites:
         favorite.processed_image.is_favorited = True
+        
+        # Add enhanced display information
+        job = favorite.processed_image.processing_job
+        if job.religion_culture:
+            favorite.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
     
     # Pagination
     paginator = Paginator(favorites, 12)
@@ -579,7 +620,7 @@ def get_user_collections(request):
 
 @login_required
 def collection_detail(request, collection_id):
-    """Display a specific collection"""
+    """Display a specific collection with enhanced transformation info"""
     collection = get_object_or_404(Collection, id=collection_id, user=request.user)
     
     # Get all items in the collection
@@ -588,12 +629,14 @@ def collection_detail(request, collection_id):
         'processed_image__processing_job'
     ).order_by('order', '-added_at')
     
-    # Add display information to each item
+    # Add display information to each item including religion/culture
     for item in items:
         if item.processed_image:
             job = item.processed_image.processing_job
             item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
             item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+            if job.religion_culture:
+                item.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
             # Add favorite status
             item.processed_image.is_favorited = Favorite.objects.filter(
                 user=request.user,

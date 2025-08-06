@@ -153,8 +153,10 @@ def generate_wedding_prompt(theme, space_type, additional_details=None):
 
 def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count=None, 
                                         budget_level=None, season=None, time_of_day=None,
-                                        color_scheme=None, custom_colors=None, additional_details=None):
-    """Generate comprehensive AI prompt with space-first approach for SD3.5 Large"""
+                                        color_scheme=None, custom_colors=None, 
+                                        religion_culture=None, user_negative_prompt=None,
+                                        additional_details=None):
+    """Generate comprehensive AI prompt with space-first approach for SD3.5 Large including religion/culture and user negative prompts"""
     try:
         from .prompt_generator import WeddingPromptGenerator
         
@@ -167,6 +169,8 @@ def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count
             time_of_day=time_of_day,
             color_scheme=color_scheme,
             custom_colors=custom_colors,
+            religion_culture=religion_culture,
+            user_negative_prompt=user_negative_prompt,
             additional_details=additional_details
         )
     except ImportError as e:
@@ -406,11 +410,18 @@ class ImageProcessingJob(models.Model):
     time_of_day = models.CharField(max_length=20, blank=True, help_text="Time of day")
     color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme")
     custom_colors = models.CharField(max_length=200, blank=True, help_text="Custom colors")
+    
+    # NEW: Religion/Culture for culturally-relevant elements
+    religion_culture = models.CharField(max_length=30, blank=True, help_text="Religion or cultural background for appropriate elements")
+    
     additional_details = models.TextField(blank=True, null=True, help_text="Additional user-specified details")
+    
+    # NEW: User-defined negative prompt (things to avoid/remove)
+    user_negative_prompt = models.TextField(blank=True, null=True, help_text="User-specified things to avoid or remove from the transformation")
     
     # Generated prompts
     generated_prompt = models.TextField(blank=True, null=True, help_text="Generated AI prompt for this job")
-    negative_prompt = models.TextField(blank=True, null=True, help_text="Negative prompt to avoid unwanted elements")
+    negative_prompt = models.TextField(blank=True, null=True, help_text="Final negative prompt combining system and user preferences")
     
     # SD3.5 Large parameters
     cfg_scale = models.FloatField(default=7.0, help_text="How strictly the diffusion process adheres to the prompt text (1.0-20.0)")
@@ -446,6 +457,8 @@ class ImageProcessingJob(models.Model):
                     time_of_day=self.time_of_day,
                     color_scheme=self.color_scheme,
                     custom_colors=self.custom_colors,
+                    religion_culture=self.religion_culture,
+                    user_negative_prompt=self.user_negative_prompt,
                     additional_details=self.additional_details
                 )
                 
@@ -459,10 +472,10 @@ class ImageProcessingJob(models.Model):
                 self.steps = recommended_params.get('steps', self.steps)
                 self.output_format = recommended_params.get('output_format', self.output_format)
                 
-                logger.info(f"Generated space-first prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                logger.info(f"Generated enhanced space-first prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating space-first prompt for job {self.id}: {str(e)}")
+                logger.error(f"Error generating enhanced space-first prompt for job {self.id}: {str(e)}")
                 # Set a basic prompt as fallback
                 theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
                 space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type)
@@ -640,13 +653,14 @@ class PromptTemplate(models.Model):
         ('season_modifier', 'Season Modifier'),
         ('time_modifier', 'Time of Day Modifier'),
         ('color_modifier', 'Color Scheme Modifier'),
+        ('religion_modifier', 'Religion/Culture Modifier'),
         ('base_prompt', 'Base Prompt Template'),
         ('negative_prompt', 'Negative Prompt Template'),
     ]
     
     name = models.CharField(max_length=100, help_text="Descriptive name for this template")
     template_type = models.CharField(max_length=20, choices=TEMPLATE_TYPES)
-    identifier = models.CharField(max_length=50, help_text="Unique identifier (e.g., 'rustic', 'budget', 'spring')")
+    identifier = models.CharField(max_length=50, help_text="Unique identifier (e.g., 'rustic', 'budget', 'spring', 'hindu')")
     
     # Prompt content
     prompt_text = models.TextField(help_text="The actual prompt text. Use {variables} for dynamic content.")
@@ -729,11 +743,12 @@ class ProcessingJobEnhanced(models.Model):
     
     # Dynamic parameters
     guest_count = models.CharField(max_length=20, blank=True, help_text="intimate, medium, large, grand")
-    budget_level = models.CharField(max_length=20, blank=True, help_text="budget, moderate, luxury)
+    budget_level = models.CharField(max_length=20, blank=True, help_text="budget, moderate, luxury")
     season = models.CharField(max_length=20, blank=True, help_text="spring, summer, fall, winter")
     time_of_day = models.CharField(max_length=20, blank=True, help_text="morning, afternoon, evening, night")
     color_scheme = models.CharField(max_length=30, blank=True, help_text="Color scheme choice")
     custom_colors = models.CharField(max_length=200, blank=True, help_text="Custom color specification")
+    religion_culture = models.CharField(max_length=30, blank=True, help_text="Religion or cultural background")
     
     # Generation options
     generate_variations = models.BooleanField(default=False)
@@ -752,7 +767,9 @@ class ProcessingJobEnhanced(models.Model):
             'time_of_day': self.time_of_day,
             'color_scheme': self.color_scheme,
             'custom_colors': self.custom_colors,
+            'religion_culture': self.religion_culture,
             'wedding_theme': self.base_job.wedding_theme,
             'space_type': self.base_job.space_type,
             'additional_details': self.base_job.additional_details,
+            'user_negative_prompt': self.base_job.user_negative_prompt,
         }

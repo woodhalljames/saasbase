@@ -1,4 +1,4 @@
-# wedding_shopping/admin.py
+# wedding_shopping/admin.py - Updated for simplified social media
 from django.contrib import admin
 from .models import CoupleProfile, SocialMediaLink, WeddingLink
 
@@ -7,13 +7,13 @@ class SocialMediaLinkInline(admin.TabularInline):
     """Inline admin for social media links"""
     model = SocialMediaLink
     extra = 1
-    fields = ['owner', 'url', 'display_name']
+    fields = ['url', 'display_name', 'platform_info']
     readonly_fields = ['platform_info']
     
     def platform_info(self, obj):
         """Show detected platform info"""
         if obj.pk:
-            return f"{obj.platform.title()} ({obj.platform_icon})"
+            return f"{obj.platform_name} ({obj.platform_icon})"
         return "Will be detected from URL"
     platform_info.short_description = "Detected Platform"
 
@@ -22,7 +22,7 @@ class WeddingLinkInline(admin.TabularInline):
     """Inline admin for wedding links"""
     model = WeddingLink
     extra = 1
-    fields = ['link_type', 'url', 'title', 'description', 'click_count']
+    fields = ['link_type', 'url', 'title', 'description', 'service_info', 'click_count']
     readonly_fields = ['service_info', 'click_count']
     
     def service_info(self, obj):
@@ -92,12 +92,18 @@ class CoupleProfileAdmin(admin.ModelAdmin):
 @admin.register(SocialMediaLink)
 class SocialMediaLinkAdmin(admin.ModelAdmin):
     """Admin interface for social media links"""
-    list_display = ['couple_profile', 'owner', 'platform', 'display_name', 'url']
-    list_filter = ['owner', 'couple_profile__is_public']
+    list_display = ['couple_profile', 'platform_name', 'display_name', 'url', 'created_at']
+    list_filter = ['couple_profile__is_public']
     search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'display_name', 'url']
-    readonly_fields = ['platform', 'platform_icon', 'platform_color']
+    readonly_fields = ['platform', 'platform_icon', 'platform_color', 'platform_name']
+    ordering = ['couple_profile', 'id']
     
-    fields = ['couple_profile', 'owner', 'url', 'display_name', 'platform', 'platform_icon', 'platform_color']
+    fields = ['couple_profile', 'url', 'display_name', 'platform_name', 'platform_icon', 'platform_color']
+    
+    def created_at(self, obj):
+        """Show creation order"""
+        return f"#{obj.id}"
+    created_at.short_description = "Order"
     
     def get_queryset(self, request):
         """Optimize queries"""
@@ -111,6 +117,7 @@ class WeddingLinkAdmin(admin.ModelAdmin):
     list_filter = ['link_type', 'couple_profile__is_public', 'created_at']
     search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'title', 'url']
     readonly_fields = ['service_type', 'service_icon', 'service_color', 'click_count', 'created_at']
+    ordering = ['couple_profile', 'id']
     
     fields = [
         'couple_profile', 'link_type', 'url', 'title', 'description', 

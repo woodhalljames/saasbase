@@ -115,47 +115,31 @@ class CoupleProfileForm(forms.ModelForm):
 
 
 class SocialMediaLinkForm(forms.ModelForm):
-    """Enhanced form for social media links with owner selection"""
+    """Simplified form for social media links - just URL and display name"""
     
     class Meta:
         model = SocialMediaLink
-        fields = ['owner', 'url', 'display_name']
+        fields = ['url', 'display_name']
         widgets = {
-            'owner': forms.Select(attrs={
-                'class': 'form-select'
-            }),
             'url': forms.URLInput(attrs={
-                'class': 'form-control url-field',
+                'class': 'form-control',
                 'placeholder': 'https://instagram.com/yourusername',
                 'onblur': 'detectBrandingFromUrl(this)'
             }),
             'display_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '@yourusername or Your Page Name'
+                'placeholder': '@yourusername or Handle'
             })
         }
         labels = {
-            'owner': 'Belongs To',
             'url': 'Social Media URL',
-            'display_name': 'Display Name'
+            'display_name': 'Handle/Username'
         }
     
     def __init__(self, *args, **kwargs):
-        # Get couple profile to customize owner field labels
-        couple_profile = kwargs.pop('couple_profile', None)
         super().__init__(*args, **kwargs)
-        
-        # Customize owner field choices with actual partner names
-        if couple_profile:
-            self.fields['owner'].choices = [
-                ('partner_1', couple_profile.partner_1_name),
-                ('partner_2', couple_profile.partner_2_name),
-                ('shared', 'Both/Shared'),
-            ]
-        
-        self.fields['url'].help_text = "We'll automatically detect the platform from your URL"
-        self.fields['display_name'].help_text = "How this link should appear on your wedding page"
-        self.fields['owner'].help_text = "Who does this social media account belong to?"
+        self.fields['url'].help_text = "We'll automatically detect the platform"
+        self.fields['display_name'].help_text = "How this should appear (e.g., @username)"
     
     def clean_url(self):
         url = self.cleaned_data.get('url')
@@ -175,7 +159,7 @@ class WeddingLinkForm(forms.ModelForm):
                 'class': 'form-select'
             }),
             'url': forms.URLInput(attrs={
-                'class': 'form-control url-field',
+                'class': 'form-control',
                 'placeholder': 'https://example.com/your-link',
                 'onblur': 'detectBrandingFromUrl(this)'
             }),
@@ -190,7 +174,7 @@ class WeddingLinkForm(forms.ModelForm):
             })
         }
         labels = {
-            'link_type': 'Link Type',
+            'link_type': 'Type',
             'url': 'URL',
             'title': 'Title',
             'description': 'Description'
@@ -198,9 +182,9 @@ class WeddingLinkForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['url'].help_text = "We'll automatically detect the service from your URL"
+        self.fields['url'].help_text = "We'll automatically detect the service"
         self.fields['title'].help_text = "A friendly name for this link"
-        self.fields['description'].help_text = "Additional details about this link (optional)"
+        self.fields['description'].help_text = "Additional details (optional)"
         
         # Make title required
         self.fields['title'].required = True
@@ -227,10 +211,10 @@ SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=1,  # Reduced from 3 to 2 starting forms
+    extra=2,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
-    max_num=12,  # Allow more social media links
+    max_num=10,  # Allow up to 10 social media links
     validate_min=False,
     validate_max=True,
     can_order=False
@@ -240,7 +224,7 @@ WeddingLinkFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     WeddingLink, 
     form=WeddingLinkForm,
-    extra=1,  # Keep at 2 starting forms
+    extra=2,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
     max_num=20,  # Allow up to 20 wedding links
