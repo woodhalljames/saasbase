@@ -274,7 +274,6 @@
   </script>
   {% endif %}
 
-  <!-- Messages -->
   {% if messages %}
     <div class="alert-container" role="alert" aria-live="polite">
       {% for message in messages %}
@@ -301,7 +300,7 @@
   {% endif %}
 
   <!-- Main Content -->
-  <main id="main-content">
+  <main id="main-content" class="main-content-wrapper">
     {% block main %}
       {% block content %}
         <div class="container py-5">
@@ -466,11 +465,10 @@
   {% block modal %}
   {% endblock modal %}
   
-  <!-- Back to top button -->
   <button type="button" 
-          class="btn btn-gradient-rose position-fixed bottom-0 end-0 m-3 rounded-circle d-none" 
+          class="btn btn-gradient-rose position-fixed end-0 m-3 rounded-circle d-none" 
           id="back-to-top" 
-          style="width: 50px; height: 50px; z-index: 1000;"
+          style="width: 50px; height: 50px; z-index: 1000; bottom: 120px;"
           title="Back to top">
     <i class="bi bi-arrow-up"></i>
   </button>

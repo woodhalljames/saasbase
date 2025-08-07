@@ -1,250 +1,10 @@
-<!-- saas_base/templates/wedding_shopping/manage_couple_site.html -->
 {% extends "base.html" %}
 {% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
-{% block extra_css %}
-<style>
-/* Wedding Management Form Styles */
-
-/* Form Layout */
-.couple-form .card {
-    border: none;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.couple-form .card-header {
-    border-bottom: none;
-    font-weight: 600;
-}
-
-.couple-form .card-body {
-    padding: 2rem;
-}
-
-/* Table Styles for Management */
-.management-table {
-    margin-bottom: 0;
-}
-
-.management-table th {
-    background-color: #f8f9fa;
-    border: none;
-    font-weight: 600;
-    color: #495057;
-    padding: 1rem 0.75rem;
-    font-size: 0.9rem;
-}
-
-.management-table td {
-    padding: 1rem 0.75rem;
-    vertical-align: middle;
-    border-top: 1px solid #e9ecef;
-}
-
-.management-table .form-control, 
-.management-table .form-select {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    transition: border-color 0.3s ease;
-}
-
-.management-table .form-control:focus, 
-.management-table .form-select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-}
-
-.management-table textarea.form-control {
-    resize: vertical;
-    min-height: 60px;
-}
-
-/* Platform Indicator */
-.platform-indicator {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.platform-indicator i {
-    font-size: 1.1rem;
-}
-
-/* Action Buttons */
-.delete-social-btn, 
-.delete-wedding-link-btn {
-    border: 2px solid #dc3545;
-    color: #dc3545;
-    background: white;
-    transition: all 0.3s ease;
-}
-
-.delete-social-btn:hover, 
-.delete-wedding-link-btn:hover {
-    background: #dc3545;
-    color: white;
-    transform: translateY(-1px);
-}
-
-/* Add Button Styles */
-#add-social-btn, 
-#add-wedding-link-btn {
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-#add-social-btn:hover, 
-#add-wedding-link-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-/* Form Row States */
-.social-form-row:hover, 
-.wedding-link-form-row:hover {
-    background-color: #f8f9fa;
-}
-
-.social-form-row[style*="display: none"], 
-.wedding-link-form-row[style*="display: none"] {
-    opacity: 0.5;
-    background-color: #fff2f2;
-}
-
-/* Error States */
-.text-danger.small {
-    font-size: 0.8rem;
-    margin-top: 0.25rem;
-}
-
-.form-control.is-invalid, 
-.form-select.is-invalid {
-    border-color: #dc3545;
-}
-
-/* URL Preview Field */
-#url-preview {
-    background-color: #f8f9fa;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    .couple-form .card-body {
-        padding: 1.5rem;
-    }
-    
-    .management-table {
-        font-size: 0.85rem;
-    }
-    
-    .management-table th, 
-    .management-table td {
-        padding: 0.75rem 0.5rem;
-    }
-    
-    .management-table .form-control, 
-    .management-table .form-select {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.85rem;
-    }
-    
-    /* Stack table columns on mobile */
-    .table-responsive {
-        border: none;
-    }
-}
-
-/* Loading States */
-.form-loading {
-    opacity: 0.7;
-    pointer-events: none;
-}
-
-.form-loading::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255,255,255,0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Success States */
-.form-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-}
-
-/* Card Header Icons */
-.card-header i {
-    margin-right: 0.5rem;
-}
-
-/* Photo Preview Styles */
-.img-thumbnail {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-}
-
-/* Form Text Styles */
-.form-text {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-}
-
-/* Submit Section */
-.card-body.text-center {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    margin-top: 2rem;
-    border-radius: 12px;
-}
-
-.card-body.text-center .btn-primary {
-    background: white;
-    color: #667eea;
-    border: none;
-    font-weight: 600;
-    padding: 0.75rem 2rem;
-    font-size: 1.1rem;
-}
-
-.card-body.text-center .btn-primary:hover {
-    background: #f8f9fa;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.card-body.text-center .btn-outline-secondary {
-    border-color: white;
-    color: white;
-}
-
-.card-body.text-center .btn-outline-secondary:hover {
-    background: white;
-    color: #667eea;
-}
-{% endblock %}
-
 {% block content %}
-<div class="container py-4 couple-form">
+<div class="container py-4">
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12">
@@ -279,7 +39,7 @@
   <form method="post" enctype="multipart/form-data" id="couple-form">
     {% csrf_token %}
 
-    <!-- Wedding Information Section -->
+    <!-- Basic Wedding Information -->
     <div class="card mb-4">
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">
@@ -289,59 +49,48 @@
       <div class="card-body">
         <div class="row">
           <!-- Partner Names -->
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.partner_1_name.id_for_label }}" class="form-label">
               {{ form.partner_1_name.label }} <span class="text-danger">*</span>
             </label>
             {{ form.partner_1_name }}
-            {% if form.partner_1_name.help_text %}
-              <div class="form-text">{{ form.partner_1_name.help_text }}</div>
-            {% endif %}
             {% if form.partner_1_name.errors %}
               <div class="text-danger small">{{ form.partner_1_name.errors.0 }}</div>
             {% endif %}
           </div>
 
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">
               {{ form.partner_2_name.label }} <span class="text-danger">*</span>
             </label>
             {{ form.partner_2_name }}
-            {% if form.partner_2_name.help_text %}
-              <div class="form-text">{{ form.partner_2_name.help_text }}</div>
-            {% endif %}
             {% if form.partner_2_name.errors %}
               <div class="text-danger small">{{ form.partner_2_name.errors.0 }}</div>
             {% endif %}
           </div>
 
           <!-- Wedding Date -->
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.wedding_date.id_for_label }}" class="form-label">
               {{ form.wedding_date.label }} <span class="text-danger">*</span>
             </label>
             {{ form.wedding_date }}
-            {% if form.wedding_date.help_text %}
-              <div class="form-text">{{ form.wedding_date.help_text }}</div>
-            {% endif %}
             {% if form.wedding_date.errors %}
               <div class="text-danger small">{{ form.wedding_date.errors.0 }}</div>
             {% endif %}
           </div>
 
           <!-- URL Preview -->
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.url_preview.id_for_label }}" class="form-label">
               {{ form.url_preview.label }}
             </label>
             {{ form.url_preview }}
-            {% if form.url_preview.help_text %}
-              <div class="form-text">{{ form.url_preview.help_text }}</div>
-            {% endif %}
+            <div class="form-text">This is your custom wedding page URL</div>
           </div>
 
           <!-- Venue Information -->
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.venue_name.id_for_label }}" class="form-label">
               {{ form.venue_name.label }}
             </label>
@@ -351,14 +100,12 @@
             {% endif %}
           </div>
 
-          <div class="col-lg-6 mb-3">
+          <div class="col-md-6 mb-3">
             <label for="{{ form.venue_location.id_for_label }}" class="form-label">
               {{ form.venue_location.label }}
             </label>
             {{ form.venue_location }}
-            {% if form.venue_location.help_text %}
-              <div class="form-text">{{ form.venue_location.help_text }}</div>
-            {% endif %}
+            <div class="form-text">City, State</div>
             {% if form.venue_location.errors %}
               <div class="text-danger small">{{ form.venue_location.errors.0 }}</div>
             {% endif %}
@@ -370,11 +117,48 @@
               {{ form.couple_story.label }} <span class="text-danger">*</span>
             </label>
             {{ form.couple_story }}
-            {% if form.couple_story.help_text %}
-              <div class="form-text">{{ form.couple_story.help_text }}</div>
-            {% endif %}
+            <div class="form-text">Tell your love story - this will be the main content of your wedding page</div>
             {% if form.couple_story.errors %}
               <div class="text-danger small">{{ form.couple_story.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Photos -->
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.couple_photo.id_for_label }}" class="form-label">
+              {{ form.couple_photo.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.couple_photo }}
+            {% if form.instance.couple_photo %}
+              <div class="mt-2">
+                <img src="{{ form.instance.couple_photo.url }}" 
+                     class="img-thumbnail" 
+                     style="width: 100px; height: 100px; object-fit: cover;"
+                     alt="Current couple photo">
+                <small class="text-muted d-block">Current photo</small>
+              </div>
+            {% endif %}
+            {% if form.couple_photo.errors %}
+              <div class="text-danger small">{{ form.couple_photo.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
+              {{ form.venue_photo.label }}
+            </label>
+            {{ form.venue_photo }}
+            {% if form.instance.venue_photo %}
+              <div class="mt-2">
+                <img src="{{ form.instance.venue_photo.url }}" 
+                     class="img-thumbnail" 
+                     style="width: 100px; height: 100px; object-fit: cover;"
+                     alt="Current venue photo">
+                <small class="text-muted d-block">Current photo</small>
+              </div>
+            {% endif %}
+            {% if form.venue_photo.errors %}
+              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
             {% endif %}
           </div>
 
@@ -385,148 +169,76 @@
               <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
                 {{ form.is_public.label }}
               </label>
-              {% if form.is_public.help_text %}
-                <div class="form-text">{{ form.is_public.help_text }}</div>
-              {% endif %}
+              <div class="form-text">Allow others to discover your page publicly</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Photos Section -->
-    <div class="card mb-4">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0">
-          <i class="bi bi-camera"></i> Photos
-        </h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <!-- Couple Photo -->
-          <div class="col-lg-6 mb-3">
-            <label for="{{ form.couple_photo.id_for_label }}" class="form-label">
-              {{ form.couple_photo.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.couple_photo }}
-            
-            {% if form.instance.couple_photo %}
-              <div class="mt-2">
-                <div class="d-flex align-items-center">
-                  <img src="{{ form.instance.couple_photo.url }}" 
-                       class="img-thumbnail me-2" 
-                       style="width: 60px; height: 60px; object-fit: cover;"
-                       alt="Current couple photo">
-                  <small class="text-muted">Current photo</small>
-                </div>
-              </div>
-            {% endif %}
-            
-            {% if form.couple_photo.help_text %}
-              <div class="form-text">{{ form.couple_photo.help_text }}</div>
-            {% endif %}
-            {% if form.couple_photo.errors %}
-              <div class="text-danger small">{{ form.couple_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Venue Photo -->
-          <div class="col-lg-6 mb-3">
-            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
-              {{ form.venue_photo.label }}
-            </label>
-            {{ form.venue_photo }}
-            
-            {% if form.instance.venue_photo %}
-              <div class="mt-2">
-                <div class="d-flex align-items-center">
-                  <img src="{{ form.instance.venue_photo.url }}" 
-                       class="img-thumbnail me-2" 
-                       style="width: 60px; height: 60px; object-fit: cover;"
-                       alt="Current venue photo">
-                  <small class="text-muted">Current photo</small>
-                </div>
-              </div>
-            {% endif %}
-            
-            {% if form.venue_photo.help_text %}
-              <div class="form-text">{{ form.venue_photo.help_text }}</div>
-            {% endif %}
-            {% if form.venue_photo.errors %}
-              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Social Media Links Section -->
+    <!-- Social Media Links -->
     <div class="card mb-4">
       <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
           <i class="bi bi-share"></i> Social Media Links
         </h5>
         <button type="button" class="btn btn-light btn-sm" id="add-social-btn">
-          <i class="bi bi-plus"></i> Add Link
+          <i class="bi bi-plus"></i> Add Social Link
         </button>
       </div>
       <div class="card-body">
-        <div class="table-responsive" id="social-formset">
+        <div id="social-formset">
           {{ social_formset.management_form }}
-          <table class="table table-hover management-table">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 45%;">Social Media URL</th>
-                <th style="width: 35%;">Handle/Username</th>
-               
-                <th style="width: 5%;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="social-table-body">
-              {% for form in social_formset %}
-                <tr class="social-form-row" data-form-index="{{ forloop.counter0 }}">
-                  <td>
+          
+          <div id="social-forms-container">
+            {% for form in social_formset %}
+              <div class="social-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                <div class="row">
+                  <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ form.owner.label }}</label>
+                    {{ form.owner }}
+                    {% if form.owner.errors %}
+                      <div class="text-danger small">{{ form.owner.errors.0 }}</div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ form.url.label }}</label>
                     {{ form.url }}
                     {% if form.url.errors %}
                       <div class="text-danger small">{{ form.url.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ form.display_name.label }}</label>
                     {{ form.display_name }}
                     {% if form.display_name.errors %}
                       <div class="text-danger small">{{ form.display_name.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
-                    <span class="platform-indicator">
-                      <i class="bi bi-link-45deg text-muted"></i>
-                      <small class="text-muted">Auto-detect</small>
-                    </span>
-                  </td>
-                  <td>
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-social-btn" data-form-type="social">
+                  </div>
+                  <div class="col-md-1 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="social">
                       <i class="bi bi-trash"></i>
                     </button>
-                  </td>
-                  
-                  <!-- Hidden fields -->
-                  {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
-                  {% if form.id %}{{ form.id.as_hidden }}{% endif %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                
+                <!-- Hidden fields -->
+                {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+                {% if form.id %}{{ form.id.as_hidden }}{% endif %}
+              </div>
+            {% endfor %}
+          </div>
         </div>
         <small class="text-muted">
           <i class="bi bi-info-circle"></i> 
-          Add your social media profiles.
+          Add social media profiles for each partner or shared accounts
         </small>
       </div>
     </div>
 
-    <!-- Wedding Links Section -->
+    <!-- Wedding Links -->
     <div class="card mb-4">
-      <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
           <i class="bi bi-link-45deg"></i> Wedding Links
         </h5>
@@ -535,72 +247,71 @@
         </button>
       </div>
       <div class="card-body">
-        <div class="table-responsive" id="wedding-link-formset">
+        <div id="wedding-link-formset">
           {{ wedding_link_formset.management_form }}
-          <table class="table table-hover management-table">
-            <thead class="table-light">
-              <tr>
-                <th style="width: 15%;">Type</th>
-                <th style="width: 30%;">URL</th>
-                <th style="width: 20%;">Title</th>
-                <th style="width: 25%;">Description</th>
-                <th style="width: 10%;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="wedding-link-table-body">
-              {% for form in wedding_link_formset %}
-                <tr class="wedding-link-form-row" data-form-index="{{ forloop.counter0 }}">
-                  <td>
+          
+          <div id="wedding-link-forms-container">
+            {% for form in wedding_link_formset %}
+              <div class="wedding-link-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+                <div class="row">
+                  <div class="col-md-3 mb-2">
+                    <label class="form-label">{{ form.link_type.label }}</label>
                     {{ form.link_type }}
                     {% if form.link_type.errors %}
                       <div class="text-danger small">{{ form.link_type.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ form.url.label }}</label>
                     {{ form.url }}
                     {% if form.url.errors %}
                       <div class="text-danger small">{{ form.url.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
+                  </div>
+                  <div class="col-md-4 mb-2">
+                    <label class="form-label">{{ form.title.label }} <span class="text-danger">*</span></label>
                     {{ form.title }}
                     {% if form.title.errors %}
                       <div class="text-danger small">{{ form.title.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
+                  </div>
+                  <div class="col-md-1 mb-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="wedding-link">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="row">
+                  <div class="col-12 mb-2">
+                    <label class="form-label">{{ form.description.label }}</label>
                     {{ form.description }}
                     {% if form.description.errors %}
                       <div class="text-danger small">{{ form.description.errors.0 }}</div>
                     {% endif %}
-                  </td>
-                  <td>
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-wedding-link-btn" data-form-type="wedding-link">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </td>
-                  
-                  <!-- Hidden fields -->
-                  {% if form.DELETE %}{{ form.DELETE.as_hidden }}{% endif %}
-                  {% if form.id %}{{ form.id.as_hidden }}{% endif %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                  </div>
+                </div>
+                
+                <!-- Hidden fields -->
+                {% if form.DELETE %}{{ form.DELETE }}{% endif %}
+                {% if form.id %}{{ form.id.as_hidden }}{% endif %}
+              </div>
+            {% endfor %}
+          </div>
         </div>
         <small class="text-muted">
           <i class="bi bi-info-circle"></i> 
-          Add links to your wedding registries, RSVP pages, live streams, photo galleries, and more!
+          Add links to your wedding registries, RSVP pages, live streams, photo galleries, and more
         </small>
       </div>
     </div>
 
     <!-- Submit Section -->
-    <div class="text-center submit-section">
+    <div class="text-center">
       <button type="submit" class="btn btn-primary btn-lg me-3">
         <i class="bi bi-heart-fill"></i>
-        {% if is_new %}Create Wedding Site{% else %}Update Wedding Site{% endif %}
-      </button><br><br>
+        {% if is_new %}Create Wedding Page{% else %}Update Wedding Page{% endif %}
+      </button>
       <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
         Cancel
       </a>
@@ -608,296 +319,229 @@
   </form>
 </div>
 
-<!-- Enhanced JavaScript for Form Management -->
+<!-- Hidden templates for new forms -->
+<div style="display: none;">
+  <!-- Empty social form template -->
+  <div id="empty-social-form" class="social-form border rounded p-3 mb-3">
+    <div class="row">
+      <div class="col-md-3 mb-2">
+        <label class="form-label">Belongs To</label>
+        <select class="form-select" name="social-__prefix__-owner">
+          <option value="partner_1">{{ form.instance.partner_1_name|default:"Partner 1" }}</option>
+          <option value="partner_2">{{ form.instance.partner_2_name|default:"Partner 2" }}</option>
+          <option value="shared">Both/Shared</option>
+        </select>
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Social Media URL</label>
+        <input type="url" class="form-control" name="social-__prefix__-url" placeholder="https://instagram.com/yourusername">
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Display Name</label>
+        <input type="text" class="form-control" name="social-__prefix__-display_name" placeholder="@yourusername">
+      </div>
+      <div class="col-md-1 mb-2 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="social">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    <input type="hidden" name="social-__prefix__-id">
+    <input type="checkbox" name="social-__prefix__-DELETE" style="display: none;">
+  </div>
+  
+  <!-- Empty wedding link form template -->
+  <div id="empty-wedding-link-form" class="wedding-link-form border rounded p-3 mb-3">
+    <div class="row">
+      <div class="col-md-3 mb-2">
+        <label class="form-label">Link Type</label>
+        <select class="form-select" name="weddinglink-__prefix__-link_type">
+          <option value="registry">Wedding Registry</option>
+          <option value="rsvp">RSVP Site</option>
+          <option value="livestream">Live Stream</option>
+          <option value="photos">Wedding Photos</option>
+          <option value="website">Wedding Website</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">URL</label>
+        <input type="url" class="form-control" name="weddinglink-__prefix__-url" placeholder="https://example.com/your-link">
+      </div>
+      <div class="col-md-4 mb-2">
+        <label class="form-label">Title <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" name="weddinglink-__prefix__-title" placeholder="Link Title" required>
+      </div>
+      <div class="col-md-1 mb-2 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="wedding-link">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12 mb-2">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" name="weddinglink-__prefix__-description" rows="2" placeholder="Description of this link (optional)"></textarea>
+      </div>
+    </div>
+    <input type="hidden" name="weddinglink-__prefix__-id">
+    <input type="checkbox" name="weddinglink-__prefix__-DELETE" style="display: none;">
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize form management
-    initializeFormsets();
-    initializePlaceholders();
-    
-    // Add event listeners for adding new forms
-    document.getElementById('add-social-btn').addEventListener('click', function() {
-        addNewSocialForm();
-    });
-    
-    document.getElementById('add-wedding-link-btn').addEventListener('click', function() {
-        addNewWeddingLinkForm();
-    });
-    
-    // Initialize deletion buttons
-    initializeDeletionButtons();
-});
-
-function initializeFormsets() {
-    // Update form indices for existing forms
-    updateSocialFormIndices();
-    updateWeddingLinkFormIndices();
-}
-
-function initializePlaceholders() {
-    // Initialize URL detection for existing forms
-    document.querySelectorAll('input[name*="url"]').forEach(function(input) {
-        if (input.value) {
-            detectBrandingFromUrl(input);
-        }
-    });
-    
-    // Initialize link type placeholders
-    document.querySelectorAll('select[name*="link_type"]').forEach(updateLinkPlaceholders);
-}
-
-function addNewSocialForm() {
-    const formsetBody = document.getElementById('social-table-body');
-    const totalFormsInput = document.querySelector('input[name="social-TOTAL_FORMS"]');
-    const formIndex = parseInt(totalFormsInput.value);
-    
-    const newRow = document.createElement('tr');
-    newRow.className = 'social-form-row';
-    newRow.setAttribute('data-form-index', formIndex);
-    
-    newRow.innerHTML = `
-        <td>
-            <input type="url" name="social-${formIndex}-url" class="form-control" placeholder="https://instagram.com/yourusername" onblur="detectBrandingFromUrl(this)">
-        </td>
-        <td>
-            <input type="text" name="social-${formIndex}-display_name" class="form-control" placeholder="@yourusername or Handle">
-        </td>
-        <td>
-            <span class="platform-indicator">
-                <i class="bi bi-link-45deg text-muted"></i>
-                <small class="text-muted">Auto-detect</small>
-            </span>
-        </td>
-        <td>
-            <button type="button" class="btn btn-outline-danger btn-sm delete-social-btn">
-                <i class="bi bi-trash"></i>
-            </button>
-        </td>
-        <input type="hidden" name="social-${formIndex}-id" value="">
-        <input type="hidden" name="social-${formIndex}-DELETE" value="">
-    `;
-    
-    formsetBody.appendChild(newRow);
-    totalFormsInput.value = formIndex + 1;
-    
-    // Add delete functionality to new button
-    newRow.querySelector('.delete-social-btn').addEventListener('click', function() {
-        deleteSocialForm(newRow);
-    });
-}
-
-function addNewWeddingLinkForm() {
-    const formsetBody = document.getElementById('wedding-link-table-body');
-    const totalFormsInput = document.querySelector('input[name="weddinglink-TOTAL_FORMS"]');
-    const formIndex = parseInt(totalFormsInput.value);
-    
-    const newRow = document.createElement('tr');
-    newRow.className = 'wedding-link-form-row';
-    newRow.setAttribute('data-form-index', formIndex);
-    
-    newRow.innerHTML = `
-        <td>
-            <select name="weddinglink-${formIndex}-link_type" class="form-select" onchange="updateLinkPlaceholders(this)">
-                <option value="registry">Wedding Registry</option>
-                <option value="rsvp">RSVP Site</option>
-                <option value="livestream">Live Stream</option>
-                <option value="photos">Wedding Photos</option>
-                <option value="website">Wedding Website</option>
-                <option value="other">Other</option>
-            </select>
-        </td>
-        <td>
-            <input type="url" name="weddinglink-${formIndex}-url" class="form-control" placeholder="https://example.com/your-link" onblur="detectBrandingFromUrl(this)">
-        </td>
-        <td>
-            <input type="text" name="weddinglink-${formIndex}-title" class="form-control" placeholder="Link Title" required>
-        </td>
-        <td>
-            <textarea name="weddinglink-${formIndex}-description" class="form-control" rows="2" placeholder="Description (optional)"></textarea>
-        </td>
-        <td>
-            <button type="button" class="btn btn-outline-danger btn-sm delete-wedding-link-btn">
-                <i class="bi bi-trash"></i>
-            </button>
-        </td>
-        <input type="hidden" name="weddinglink-${formIndex}-id" value="">
-        <input type="hidden" name="weddinglink-${formIndex}-DELETE" value="">
-    `;
-    
-    formsetBody.appendChild(newRow);
-    totalFormsInput.value = formIndex + 1;
-    
-    // Add delete functionality to new button
-    newRow.querySelector('.delete-wedding-link-btn').addEventListener('click', function() {
-        deleteWeddingLinkForm(newRow);
-    });
-}
-
-function initializeDeletionButtons() {
-    // Social media deletion
-    document.querySelectorAll('.delete-social-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const row = btn.closest('.social-form-row');
-            deleteSocialForm(row);
-        });
-    });
-    
-    // Wedding link deletion
-    document.querySelectorAll('.delete-wedding-link-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            const row = btn.closest('.wedding-link-form-row');
-            deleteWeddingLinkForm(row);
-        });
-    });
-}
-
-function deleteSocialForm(row) {
-    const deleteInput = row.querySelector('input[name*="DELETE"]');
-    const idInput = row.querySelector('input[name*="id"]');
-    
-    if (idInput && idInput.value) {
-        // Existing form - mark for deletion
-        deleteInput.value = 'on';
-        row.style.display = 'none';
-    } else {
-        // New form - remove completely
-        row.remove();
-        updateSocialFormIndices();
-    }
-}
-
-function deleteWeddingLinkForm(row) {
-    const deleteInput = row.querySelector('input[name*="DELETE"]');
-    const idInput = row.querySelector('input[name*="id"]');
-    
-    if (idInput && idInput.value) {
-        // Existing form - mark for deletion
-        deleteInput.value = 'on';
-        row.style.display = 'none';
-    } else {
-        // New form - remove completely
-        row.remove();
-        updateWeddingLinkFormIndices();
-    }
-}
-
-function updateSocialFormIndices() {
-    const rows = document.querySelectorAll('.social-form-row:not([style*="display: none"])');
-    const totalFormsInput = document.querySelector('input[name="social-TOTAL_FORMS"]');
-    totalFormsInput.value = rows.length;
-}
-
-function updateWeddingLinkFormIndices() {
-    const rows = document.querySelectorAll('.wedding-link-form-row:not([style*="display: none"])');
-    const totalFormsInput = document.querySelector('input[name="weddinglink-TOTAL_FORMS"]');
-    totalFormsInput.value = rows.length;
-}
-
-// Brand detection function
-function detectBrandingFromUrl(input) {
-    const url = input.value;
-    if (!url) return;
-    
-    const row = input.closest('tr');
-    const platformIndicator = row.querySelector('.platform-indicator');
-    
-    // Make API call to detect branding
-    fetch(`/wedding/api/detect-branding/?url=${encodeURIComponent(url)}&type=social`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.branding.detected) {
-                const branding = data.branding;
-                if (platformIndicator) {
-                    platformIndicator.innerHTML = `
-                        <i class="${branding.icon}" style="color: ${branding.color};"></i>
-                        <small>${branding.name}</small>
-                    `;
-                }
-                
-                // Auto-fill display name if empty and we have suggestions
-                const displayNameInput = row.querySelector('input[name*="display_name"]');
-                if (displayNameInput && !displayNameInput.value && branding.suggestions.display_name) {
-                    displayNameInput.placeholder = branding.suggestions.display_name;
-                }
-            }
-        })
-        .catch(error => {
-            console.log('Branding detection failed:', error);
-        });
-}
-
-// Link type placeholder updates
-function updateLinkPlaceholders(selectElement) {
-    const linkType = selectElement.value;
-    const row = selectElement.closest('tr');
-    const urlField = row.querySelector('input[name*="url"]');
-    const titleField = row.querySelector('input[name*="title"]');
-    const descriptionField = row.querySelector('textarea[name*="description"]');
-    
-    const placeholders = {
-        'registry': {
-            url: 'https://amazon.com/wedding/your-registry',
-            title: 'Our Home Registry',
-            description: 'Kitchen appliances, home decor, and everyday essentials'
-        },
-        'rsvp': {
-            url: 'https://rsvpify.com/your-event',
-            title: 'RSVP for Our Wedding', 
-            description: 'Please let us know if you can attend'
-        },
-        'livestream': {
-            url: 'https://zoom.us/j/your-meeting-id',
-            title: 'Wedding Ceremony Live Stream',
-            description: 'Watch our ceremony live online'
-        },
-        'photos': {
-            url: 'https://photos.google.com/share/your-album',
-            title: 'Wedding Photo Gallery',
-            description: 'View and download our wedding photos'
-        },
-        'website': {
-            url: 'https://ourweddingwebsite.com',
-            title: 'Our Wedding Website',
-            description: 'More details about our special day'
-        },
-        'other': {
-            url: 'https://example.com',
-            title: 'Custom Link',
-            description: 'Additional wedding information'
-        }
-    };
-    
-    const config = placeholders[linkType] || placeholders['other'];
-    if (urlField) urlField.placeholder = config.url;
-    if (titleField) titleField.placeholder = config.title;
-    if (descriptionField) descriptionField.placeholder = config.description;
-}
-
-// URL preview update function
-function updateUrlPreview() {
-    const name1 = document.querySelector('input[name="partner_1_name"]').value;
-    const name2 = document.querySelector('input[name="partner_2_name"]').value;
-    const dateInput = document.querySelector('input[name="wedding_date"]');
-    const previewField = document.getElementById('url-preview');
-    
-    if (name1 && name2) {
-        let cleanName1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-        let cleanName2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+    // URL preview functionality
+    function updateUrlPreview() {
+        const name1 = document.getElementById('id_partner_1_name').value || '';
+        const name2 = document.getElementById('id_partner_2_name').value || '';
+        const date = document.getElementById('id_wedding_date').value || '';
+        
+        const cleanName1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+        const cleanName2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
         
         let dateStr = 'tbd';
-        if (dateInput.value) {
-            const date = new Date(dateInput.value);
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = String(date.getFullYear()).slice(-2);
+        if (date) {
+            const dateObj = new Date(date);
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const year = String(dateObj.getFullYear()).slice(-2);
             dateStr = month + day + year;
         }
         
-        const slug = cleanName1 + cleanName2 + dateStr;
-        previewField.value = `yoursite.com/wedding/${slug}/`;
-    } else {
-        previewField.value = 'Your custom URL will appear here...';
+        const preview = document.getElementById('url-preview');
+        if (preview) {
+            if (cleanName1 && cleanName2) {
+                preview.value = `yoursite.com/wedding/${cleanName1}${cleanName2}${dateStr}/`;
+            } else {
+                preview.value = 'Enter names and date to see your custom URL...';
+            }
+        }
     }
-}
+    
+    // Attach event listeners for URL preview
+    ['id_partner_1_name', 'id_partner_2_name', 'id_wedding_date'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('input', updateUrlPreview);
+            element.addEventListener('change', updateUrlPreview);
+        }
+    });
+    
+    // Initialize URL preview
+    updateUrlPreview();
+
+    // Formset management
+    let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
+    let weddingLinkFormCount = parseInt(document.getElementById('id_weddinglink-TOTAL_FORMS').value);
+
+    // Add social media form
+    document.getElementById('add-social-btn').addEventListener('click', function() {
+        const container = document.getElementById('social-forms-container');
+        const template = document.getElementById('empty-social-form');
+        const newForm = template.cloneNode(true);
+        
+        // Update form attributes
+        newForm.id = '';
+        newForm.style.display = 'block';
+        newForm.setAttribute('data-form-index', socialFormCount);
+        
+        // Update input names and IDs
+        const inputs = newForm.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const name = input.getAttribute('name');
+            const id = input.getAttribute('id');
+            if (name) {
+                input.setAttribute('name', name.replace('__prefix__', socialFormCount));
+            }
+            if (id) {
+                input.setAttribute('id', id.replace('__prefix__', socialFormCount));
+            }
+        });
+        
+        // Update labels
+        const labels = newForm.querySelectorAll('label');
+        labels.forEach(label => {
+            const forAttr = label.getAttribute('for');
+            if (forAttr) {
+                label.setAttribute('for', forAttr.replace('__prefix__', socialFormCount));
+            }
+        });
+        
+        container.appendChild(newForm);
+        socialFormCount++;
+        document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
+    });
+
+    // Add wedding link form
+    document.getElementById('add-wedding-link-btn').addEventListener('click', function() {
+        const container = document.getElementById('wedding-link-forms-container');
+        const template = document.getElementById('empty-wedding-link-form');
+        const newForm = template.cloneNode(true);
+        
+        // Update form attributes
+        newForm.id = '';
+        newForm.style.display = 'block';
+        newForm.setAttribute('data-form-index', weddingLinkFormCount);
+        
+        // Update input names and IDs
+        const inputs = newForm.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            const name = input.getAttribute('name');
+            const id = input.getAttribute('id');
+            if (name) {
+                input.setAttribute('name', name.replace('__prefix__', weddingLinkFormCount));
+            }
+            if (id) {
+                input.setAttribute('id', id.replace('__prefix__', weddingLinkFormCount));
+            }
+        });
+        
+        // Update labels
+        const labels = newForm.querySelectorAll('label');
+        labels.forEach(label => {
+            const forAttr = label.getAttribute('for');
+            if (forAttr) {
+                label.setAttribute('for', forAttr.replace('__prefix__', weddingLinkFormCount));
+            }
+        });
+        
+        container.appendChild(newForm);
+        weddingLinkFormCount++;
+        document.getElementById('id_weddinglink-TOTAL_FORMS').value = weddingLinkFormCount;
+    });
+
+    // Delete form functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-form-btn')) {
+            const button = e.target.closest('.delete-form-btn');
+            const form = button.closest('.social-form, .wedding-link-form');
+            const formType = button.getAttribute('data-form-type');
+            
+            // Check if this is an existing form (has an ID)
+            const idInput = form.querySelector('input[name$="-id"]');
+            if (idInput && idInput.value) {
+                // Mark for deletion
+                const deleteInput = form.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = true;
+                }
+                form.style.display = 'none';
+            } else {
+                // Remove from DOM completely
+                form.remove();
+                
+                // Update form count
+                if (formType === 'social') {
+                    socialFormCount--;
+                    document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
+                } else if (formType === 'wedding-link') {
+                    weddingLinkFormCount--;
+                    document.getElementById('id_weddinglink-TOTAL_FORMS').value = weddingLinkFormCount;
+                }
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

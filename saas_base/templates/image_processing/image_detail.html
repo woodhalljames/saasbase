@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ user_image.original_filename }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'image_processing:image_gallery' %}">My Images</a></li>
+          <li class="breadcrumb-item active">{{ user_image.original_filename }}</li>
+        </ol>
+      </nav>
+      <h1>📸 {{ user_image.original_filename }}</h1>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Image -->
+    <div class="col-md-8 mb-4">
+      <div class="card">
+        <div class="card-body text-center">
+          <img src="{{ user_image.image.url }}" 
+               class="img-fluid rounded shadow" 
+               alt="{{ user_image.original_filename }}"
+               style="max-height: 600px;">
+        </div>
+        <div class="card-footer">
+          <div class="row text-center">
+            <div class="col-md-3">
+              <small class="text-muted">
+                <i class="bi bi-arrows-fullscreen"></i><br>
+                {{ user_image.width }}×{{ user_image.height }}
+              </small>
+            </div>
+            <div class="col-md-3">
+              <small class="text-muted">
+                <i class="bi bi-hdd"></i><br>
+                {{ user_image.file_size|filesizeformat }}
+              </small>
+            </div>
+            <div class="col-md-3">
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i><br>
+                {{ user_image.uploaded_at|date:"M d, Y" }}
+              </small>
+            </div>
+            <div class="col-md-3">
+              <small class="text-muted">
+                <i class="bi bi-clock"></i><br>
+                {{ user_image.uploaded_at|time:"g:i A" }}
+              </small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Sidebar -->
+   
+  </div>
+</div>
+
+<script>
+// Simple collection function
+async function addToDefaultCollection(imageType, imageId) {
+    try {
+        const formData = new FormData();
+        formData.append('use_default', 'true');
+        formData.append('user_image_id', imageId);
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                         document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        const response = await fetch('/studio/collections/add/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert(result.message, 'success');
+        } else {
+            showAlert(result.message || 'Failed to add to collection', 'warning');
+        }
+    } catch (error) {
+        showAlert('Network error', 'error');
+    }
+}
+
+function showAlert(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed`;
+    alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    setTimeout(() => {
+        if (alert.parentElement) alert.remove();
+    }, 4000);
+}
+</script>
+{% endblock %}

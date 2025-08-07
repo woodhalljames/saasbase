@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class StabilityAIService:
-    """Service for interacting with Stability AI SD3.5 Large API"""
+    """Service for interacting with Stability AI Stable Image Ultra API"""
     
     def __init__(self):
         self.api_key = getattr(settings, 'STABILITY_API_KEY', None)
@@ -27,20 +27,20 @@ class StabilityAIService:
             "Accept": "application/json"
         }
     
-    def image_to_image_sd35_large(self, 
-                                 image_path: str, 
-                                 prompt: str, 
-                                 negative_prompt: str = None,
-                                 strength: float = 0.35,
-                                 cfg_scale: float = 7.0,
-                                 steps: int = 50,
-                                 seed: int = None,
-                                 output_format: str = "png") -> Dict[str, Any]:
+    def image_to_image_ultra(self, 
+                            image_path: str, 
+                            prompt: str, 
+                            negative_prompt: str = None,
+                            strength: float = 0.4,
+                            cfg_scale: float = 7.0,
+                            steps: int = None,  # Ultra determines optimal steps automatically
+                            seed: int = None,
+                            output_format: str = "png") -> Dict[str, Any]:
         """
-        Perform image-to-image generation using Stability AI SD3.5 Large
+        Perform image-to-image generation using Stability AI Stable Image Ultra
         """
         try:
-            logger.info(f"Starting SD3.5 Large generation with prompt: {prompt[:100]}...")
+            logger.info(f"Starting Stable Image Ultra generation with prompt: {prompt[:100]}...")
             
             # Read and prepare image
             with open(image_path, 'rb') as image_file:
@@ -48,8 +48,13 @@ class StabilityAIService:
                     if img.mode != 'RGB':
                         img = img.convert('RGB')
                     
-                    # For SD3.5 Large, use 1024x1024 as default optimal size
-                    img = img.resize((1024, 1024), Image.Resampling.LANCZOS)
+                    # For Stable Image Ultra, optimize for quality
+                    # Maintain aspect ratio while ensuring good resolution
+                    max_size = 1024
+                    if max(img.size) > max_size:
+                        ratio = max_size / max(img.size)
+                        new_size = tuple(int(dim * ratio) for dim in img.size)
+                        img = img.resize(new_size, Image.Resampling.LANCZOS)
                     
                     # Convert to bytes
                     img_buffer = io.BytesIO()
@@ -57,20 +62,15 @@ class StabilityAIService:
                     img_buffer.seek(0)
                     image_bytes = img_buffer.getvalue()
             
-            # Prepare multipart form data for SD3.5 Large
+            # Prepare multipart form data for Stable Image Ultra
             files = {
                 'image': ('image.png', image_bytes, 'image/png'),
             }
             
-            # SD3.5 Large parameters - supports cfg_scale and steps
-            # Note: aspect_ratio removed to maintain original image dimensions
+            # Stable Image Ultra parameters
             data = {
                 'prompt': prompt,
-                'model': 'sd3.5-large',
-                'mode': 'image-to-image',
                 'strength': str(strength),
-                'cfg_scale': str(cfg_scale),
-                'steps': str(steps),
                 'output_format': output_format,
             }
             
@@ -81,13 +81,24 @@ class StabilityAIService:
             if seed is not None:
                 data["seed"] = str(seed)
             
-            # Make the API request with proper headers
-            url = f"{self.base_url}/v2beta/stable-image/generate/sd3"
+            # Ultra may not use all parameters, add if provided
+            if cfg_scale is not None:
+                data["cfg_scale"] = str(cfg_scale)
             
-            logger.info(f"Making SD3.5 Large API request to {url}")
-            logger.info(f"Parameters: cfg_scale={cfg_scale}, steps={steps}, strength={strength}")
+            if steps is not None:
+                data["steps"] = str(steps)
             
-            # Use the headers method and ensure proper Accept header
+            # Use the Ultra endpoint
+            url = f"{self.base_url}/v2beta/stable-image/generate/ultra"
+            
+            logger.info(f"Making Stable Image Ultra API request to {url}")
+            logger.info(f"Parameters: strength={strength}")
+            if cfg_scale:
+                logger.info(f"CFG Scale: {cfg_scale}")
+            if steps:
+                logger.info(f"Steps: {steps}")
+            
+            # Make the API request
             headers = self._get_headers()
             
             response = requests.post(
@@ -95,14 +106,13 @@ class StabilityAIService:
                 headers=headers,
                 files=files,
                 data=data,
-                timeout=120  # SD3.5 Large may take longer than Turbo
+                timeout=180  # Ultra may take longer but is higher quality
             )
             
-            logger.info(f"SD3.5 Large API response status: {response.status_code}")
-            logger.info(f"SD3.5 Large API response headers: {dict(response.headers)}")
+            logger.info(f"Stable Image Ultra API response status: {response.status_code}")
             
             if response.status_code != 200:
-                error_msg = f"Stability AI SD3.5 Large API error: {response.status_code} - {response.text}"
+                error_msg = f"Stability AI Ultra API error: {response.status_code} - {response.text}"
                 logger.error(error_msg)
                 raise Exception(error_msg)
             
@@ -113,7 +123,7 @@ class StabilityAIService:
                 # JSON response - might be an error or JSON-wrapped image
                 json_response = response.json()
                 if 'errors' in json_response:
-                    error_msg = f"SD3.5 Large API error: {json_response['errors']}"
+                    error_msg = f"Ultra API error: {json_response['errors']}"
                     logger.error(error_msg)
                     raise Exception(error_msg)
                 
@@ -121,13 +131,13 @@ class StabilityAIService:
                 if 'image' in json_response:
                     image_data = base64.b64decode(json_response['image'])
                 else:
-                    logger.error("Unexpected JSON response format")
+                    logger.error("Unexpected JSON response format from Ultra")
                     raise Exception("Unexpected API response format")
             else:
                 # Binary image response
                 image_data = response.content
             
-            # Get seed from response headers if available
+            # Get metadata from response headers
             response_seed = response.headers.get("seed", seed)
             finish_reason = response.headers.get("finish-reason", "SUCCESS")
             
@@ -139,17 +149,17 @@ class StabilityAIService:
                     "finish_reason": finish_reason
                 }],
                 "prompt": prompt,
-                "model": "SD3.5-Large"
+                "model": "Stable-Image-Ultra"
             }
             
         except requests.exceptions.Timeout:
-            logger.error("Stability AI SD3.5 Large API timeout")
+            logger.error("Stability AI Ultra API timeout")
             return {
                 "success": False,
-                "error": "API request timed out - SD3.5 Large may require more processing time"
+                "error": "API request timed out - Ultra model processing time exceeded"
             }
         except Exception as e:
-            logger.error(f"Stability AI SD3.5 Large service error: {str(e)}")
+            logger.error(f"Stability AI Ultra service error: {str(e)}")
             return {
                 "success": False,
                 "error": str(e)
@@ -157,9 +167,9 @@ class StabilityAIService:
     
     def process_wedding_venue(self, image_path: str, processing_job):
         """
-        Process wedding venue using SD3.5 Large
+        Process wedding venue using Stable Image Ultra
         """
-        # Get parameters from the job (SD3.5 Large supports all parameters except aspect_ratio in image-to-image)
+        # Get parameters from the job
         params = {
             'prompt': processing_job.generated_prompt,
             'negative_prompt': processing_job.negative_prompt,
@@ -169,34 +179,33 @@ class StabilityAIService:
             'seed': processing_job.seed,
             'output_format': processing_job.output_format
         }
-        # Note: aspect_ratio removed to maintain original image dimensions
         
-        logger.info(f"Processing wedding venue for job {processing_job.id} with SD3.5 Large")
+        logger.info(f"Processing wedding venue for job {processing_job.id} with Stable Image Ultra")
         logger.info(f"Generated prompt: {params['prompt'][:200]}...")
         logger.info(f"Parameters: cfg_scale={params['cfg_scale']}, steps={params['steps']}, strength={params['strength']}")
         
-        # Use SD3.5 Large
-        result = self.image_to_image_sd35_large(
+        # Use Stable Image Ultra
+        result = self.image_to_image_ultra(
             image_path=image_path,
             **params
         )
         
         if result["success"]:
-            logger.info(f"Successfully processed with SD3.5 Large for job {processing_job.id}")
+            logger.info(f"Successfully processed with Stable Image Ultra for job {processing_job.id}")
         else:
-            logger.error(f"SD3.5 Large failed for job {processing_job.id}: {result.get('error')}")
+            logger.error(f"Stable Image Ultra failed for job {processing_job.id}: {result.get('error')}")
         
         return result
 
 
 class ImageProcessingService:
-    """Service for handling wedding venue processing with SD3.5 Large"""
+    """Service for handling wedding venue processing with Stable Image Ultra"""
     
     def __init__(self):
         self.stability_service = StabilityAIService()
     
     def process_wedding_image(self, processing_job):
-        """Process a wedding venue image with SD3.5 Large - images are permanently saved"""
+        """Process a wedding venue image with Stable Image Ultra - images are permanently saved"""
         from .models import ProcessedImage
         from django.utils import timezone
         
@@ -208,9 +217,9 @@ class ImageProcessingService:
             
             user_image = processing_job.user_image
             
-            logger.info(f"Starting SD3.5 Large processing for job {processing_job.id}")
+            logger.info(f"Starting Stable Image Ultra processing for job {processing_job.id}")
             
-            # Process using SD3.5 Large
+            # Process using Stable Image Ultra
             result = self.stability_service.process_wedding_venue(
                 image_path=user_image.image.path,
                 processing_job=processing_job
@@ -227,7 +236,7 @@ class ImageProcessingService:
                 
                 # Save with descriptive filename
                 theme_space = f"{processing_job.wedding_theme}_{processing_job.space_type}"
-                model_used = result.get("model", "SD3.5-Large")
+                model_used = result.get("model", "Stable-Image-Ultra")
                 timestamp = int(timezone.now().timestamp())
                 filename = f"wedding_{theme_space}_{model_used}_{processing_job.id}_{timestamp}.png"
                 
@@ -245,7 +254,7 @@ class ImageProcessingService:
                 processing_job.completed_at = timezone.now()
                 processing_job.save()
                 
-                logger.info(f"Successfully completed wedding processing job {processing_job.id}")
+                logger.info(f"Successfully completed wedding processing job {processing_job.id} with Ultra")
                 return True
             else:
                 # Processing failed

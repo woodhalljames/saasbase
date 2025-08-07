@@ -179,108 +179,84 @@ def generate_wedding_prompt_with_dynamics(wedding_theme, space_type, guest_count
 
 
 def generate_space_first_fallback_prompt(theme, space_type, additional_details=None, guest_count=None):
-    """Space-first fallback prompt generation focusing on the 5 core wedding spaces"""
+    """Space-first fallback prompt generation optimized for Stable Image Ultra"""
     
-    # SPACE-FIRST APPROACH: Define what the space IS before styling it
+    # Space definitions (more concise for Ultra)
     space_definitions = {
         'wedding_ceremony': {
-            'primary_function': 'wedding ceremony venue with processional aisle and guest seating',
-            'key_elements': 'ceremony altar or arch, guest seating arrangement in rows, processional aisle down the center, unity candle area',
-            'layout': 'guests seated in rows facing ceremony altar, clear center aisle for processional',
-            'functional_requirements': 'space for officiant, couple, and wedding party at altar area',
-            'capacity_guide': 'appropriate seating arrangement for wedding guests'
+            'function': 'wedding ceremony venue with processional aisle and guest seating',
+            'elements': 'ceremony altar or arch, guest seating rows, center processional aisle',
+            'requirements': 'clear sightlines to altar, wedding party space'
         },
         'dance_floor': {
-            'primary_function': 'dedicated dance floor area for wedding reception dancing',
-            'key_elements': 'polished dance floor surface, surrounding lounge seating, DJ or band area, ambient lighting',
-            'layout': 'central dance floor with perimeter seating, music setup area',
-            'functional_requirements': 'proper flooring for dancing, sound system area, comfortable viewing areas',
-            'capacity_guide': 'dance floor sized appropriately for expected number of dancers'
+            'function': 'dance floor for wedding reception entertainment and dancing', 
+            'elements': 'smooth dance floor surface, DJ setup area, perimeter lounge seating, dance lighting',
+            'requirements': 'proper flooring for dancing, sound system positioning, adequate lighting'
         },
         'dining_area': {
-            'primary_function': 'wedding reception dining space with tables and formal meal service',
-            'key_elements': 'dining tables with chairs, table settings, centerpieces, serving areas',
-            'layout': 'round or rectangular dining tables with proper spacing, clear pathways for service',
-            'functional_requirements': 'adequate space between tables, service access, comfortable seating',
-            'capacity_guide': 'dining tables arranged to accommodate all wedding guests'
+            'function': 'dining area for wedding reception meal service',
+            'elements': 'dining tables with seating, table place settings, centerpieces',
+            'requirements': 'proper table spacing, comfortable seating, clear service access'
         },
         'cocktail_hour': {
-            'primary_function': 'cocktail reception area for mingling and appetizers',
-            'key_elements': 'high cocktail tables, bar area, standing space, appetizer stations, lounge seating',
-            'layout': 'mix of standing areas and bar seating, multiple conversation zones',
-            'functional_requirements': 'bar setup, food service areas, comfortable mingling space',
-            'capacity_guide': 'space designed for social interaction and movement'
+            'function': 'cocktail area for guest mingling and appetizers',
+            'elements': 'cocktail tables, bar setup, standing areas, appetizer stations',
+            'requirements': 'bar service area, food stations, mingling space'
         },
         'lounge_area': {
-            'primary_function': 'comfortable seating area for relaxation and conversation',
-            'key_elements': 'comfortable sofas and chairs, coffee tables, ambient lighting, intimate seating groups',
-            'layout': 'grouped seating arrangements, conversation areas, relaxed atmosphere',
-            'functional_requirements': 'comfortable furniture, good conversation lighting, cozy atmosphere',
-            'capacity_guide': 'intimate seating groups for small conversations'
+            'function': 'lounge area for comfortable conversation and relaxation',
+            'elements': 'comfortable sofas and chairs, coffee tables, ambient lighting', 
+            'requirements': 'comfortable furniture, conversation lighting, relaxed atmosphere'
         }
     }
     
-    # Theme styling elements (secondary to space function)
+    # Theme styling (concise for Ultra)
     theme_styling = {
-        'rustic': 'rustic wooden elements, burlap details, mason jar lighting, wildflowers, string lights, barn-style decorations',
-        'modern': 'clean geometric lines, contemporary furniture, minimalist decorations, sleek lighting, modern materials',
-        'vintage': 'antique furniture pieces, vintage lace details, classic roses, ornate chandeliers, romantic vintage elements',
-        'bohemian': 'macrame details, pampas grass, colorful textiles, floor cushions, natural materials, boho decorations',
-        'classic': 'elegant traditional furniture, formal place settings, crystal chandeliers, classic white flowers, timeless details',
-        'garden': 'natural flowers, greenery, botanical elements, garden-style furniture, organic decorations',
-        'beach': 'coastal elements, flowing fabrics, natural wood, seashell details, ocean-inspired colors',
-        'industrial': 'metal fixtures, Edison bulb lighting, concrete elements, urban materials, modern industrial design',
-        # Add more themes as needed
+        'rustic': 'rustic wooden elements, burlap details, mason jar lighting, wildflowers, string lights',
+        'modern': 'sleek geometric furniture, contemporary materials, minimalist decorations, modern lighting',
+        'vintage': 'antique furniture, vintage lace details, classic roses, ornate chandeliers',
+        'bohemian': 'macrame details, pampas grass, colorful textiles, natural materials',
+        'classic': 'elegant formal furniture, crystal chandeliers, white linens, classic flowers',
+        'garden': 'natural flowers, greenery, botanical elements, garden furniture',
+        'beach': 'coastal elements, flowing fabrics, natural wood, seashell details',
+        'industrial': 'metal fixtures, Edison bulb lighting, concrete elements, urban materials',
+        'indian_palace': 'ornate gold furniture, rich silk draping, marigold flowers, intricate carved details',
+        'japanese_zen': 'bamboo screens, cherry blossoms, minimalist wooden furniture, paper lanterns',
+        'moroccan_nights': 'ornate metallic lanterns, rich tapestries, low cushioned seating',
     }
     
     # Get space and theme data
     space_data = space_definitions.get(space_type, space_definitions['wedding_ceremony'])
     theme_elements = theme_styling.get(theme, 'elegant wedding decorations')
     
-    # Guest count specifications
+    # Guest count specifications (concise)
     guest_specs = {
-        'intimate': 'intimate scale for 15-50 guests',
-        'medium': 'medium scale for 75-100 guests', 
-        'large': 'large scale for 150-200 guests',
-        'grand': 'grand scale for 250+ guests'
+        'intimate': '15-50 guests',
+        'medium': '75-100 guests', 
+        'large': '150-200 guests',
+        'grand': '250+ guests'
     }
     
-    # BUILD SPACE-FIRST PROMPT
-    prompt_sections = [
-        # 1. QUALITY FOUNDATION
-        "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality.",
-        
-        # 2. PRIMARY SPACE DEFINITION (MOST IMPORTANT)
-        f"Transform this space into a complete {space_data['primary_function']}.",
-        
-        # 3. SPACE FUNCTION AND LAYOUT
-        f"Space requirements: {space_data['key_elements']}.",
-        f"Layout arrangement: {space_data['layout']}.",
-        
-        # 4. CAPACITY AND SCALE
-        guest_specs.get(guest_count, 'appropriate scale for wedding guests') + ".",
-        
-        # 5. FUNCTIONAL REQUIREMENTS
-        f"Functional setup: {space_data['functional_requirements']}.",
-        
-        # 6. THEME STYLING (Secondary enhancement)
-        f"Decorative style: {theme} wedding theme with {theme_elements}.",
-        
-        # 7. PRODUCTION QUALITY
-        "Production level: professional wedding setup, celebration ready, elegant decorations.",
-        
-        # 8. ADDITIONAL DETAILS
-        additional_details + "." if additional_details else "",
-        
-        # 9. TECHNICAL REQUIREMENTS
-        "Requirements: no people visible, empty and ready for wedding guests, professional photography lighting."
+    guest_spec = guest_specs.get(guest_count, '75-100 guests')
+    
+    # BUILD CONCISE PROMPT for Ultra
+    prompt_parts = [
+        f"Transform this space into {space_data['function']} for {guest_spec}.",
+        f"{space_data['elements']}.",
+        f"{space_data['requirements']}.", 
+        f"{theme} wedding theme featuring {theme_elements}.",
+        f"Output requirements: {theme} wedding setup ready for guests, no people visible, celebration-ready venue."
     ]
     
-    # Assemble prompt
-    main_prompt = " ".join([section for section in prompt_sections if section.strip()])
+    # Add additional details if provided
+    if additional_details:
+        prompt_parts.insert(-1, f"{additional_details}.")
     
-    # Enhanced negative prompt
-    negative_prompt = "people, faces, crowd, guests, bride, groom, wedding party, humans, blurry, low quality, pixelated, distorted, dark, dim, messy, cluttered, text, watermark, signature, cartoon, unrealistic, artificial"
+    # Assemble prompt
+    main_prompt = " ".join(prompt_parts)
+    
+    # Concise negative prompt for Ultra
+    negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy, text, watermark, cartoon, unrealistic"
     
     return {
         'prompt': main_prompt,
@@ -288,10 +264,11 @@ def generate_space_first_fallback_prompt(theme, space_type, additional_details=N
         'recommended_params': {
             'strength': 0.4,
             'cfg_scale': 7.0,
-            'steps': 50,
+            'steps': 40,
             'output_format': 'png',
         }
     }
+
 
 
 def get_wedding_choices():
@@ -485,16 +462,23 @@ class ImageProcessingJob(models.Model):
         super().save(*args, **kwargs)
     
     def get_stability_ai_params(self):
-        """Get all parameters formatted for Stability AI SD3.5 Large API call"""
-        return {
+        """Get all parameters formatted for Stability AI Stable Image Ultra API call"""
+        params = {
             'prompt': self.generated_prompt,
             'negative_prompt': self.negative_prompt,
             'strength': self.strength,
-            'cfg_scale': self.cfg_scale,
-            'steps': self.steps,
-            'seed': self.seed,
             'output_format': self.output_format,
         }
+        
+        # Add optional parameters for Ultra
+        if self.cfg_scale:
+            params['cfg_scale'] = self.cfg_scale
+        if self.steps:
+            params['steps'] = self.steps
+        if self.seed:
+            params['seed'] = self.seed
+            
+        return params
 
 
 class ProcessedImage(models.Model):

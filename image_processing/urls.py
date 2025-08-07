@@ -41,6 +41,7 @@ urlpatterns = [
     path('favorites/', views.favorites_list, name='favorites_list'),
     path('favorite/', views.toggle_favorite, name='toggle_favorite'),
     
+    path('job/<int:job_id>/result/', views.job_result, name='job_result'),
     # API Endpoints
     path('api/usage-data/', views.get_usage_data, name='get_usage_data'),
 ]

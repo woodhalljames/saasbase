@@ -1,563 +1,428 @@
-# image_processing/prompt_generator.py - Enhanced Space-First Prompt Generation with Religion/Culture and User Negative Prompts
+# image_processing/prompt_generator.py - Enhanced Wedding Designer Edition
 """
-Enhanced prompt generation system prioritizing SPACE FUNCTION first, then theme styling
-Now includes religion/culture elements and user-defined negative prompts
-Optimized for Stability AI SD3.5 Large with focus on actual space transformation
+Professional Wedding Designer & Planner Prompt Generation System
+Incorporating 2024-2025 trends, luxury transformation techniques, and cultural fusion elements
+Creates magazine-worthy venue transformations that clients will love
 """
 
 class WeddingPromptGenerator:
-    """Generate enhanced space-first prompts optimized for SD3.5 Large wedding venue transformations"""
+    """Generate stunning, professional-grade prompts optimized for Stable Image Ultra"""
     
     @classmethod
     def generate_space_first_prompt(cls, wedding_theme, space_type, guest_count=None, 
                                    budget_level=None, season=None, time_of_day=None,
-                                   color_scheme=None, custom_colors=None, 
-                                   religion_culture=None, user_negative_prompt=None,
-                                   additional_details=None):
+                                   color_scheme=None, custom_colors=None, additional_details=None):
         """
-        ENHANCED APPROACH: Space function defines transformation, theme provides styling, 
-        religion/culture adds appropriate elements, user negative prompt customizes exclusions
+        Generate luxury venue transformation prompts with professional designer expertise
         """
         
         space_data = cls.SPACE_DEFINITIONS.get(space_type, cls.SPACE_DEFINITIONS['wedding_ceremony'])
-        theme_data = cls.THEME_STYLING.get(wedding_theme, cls.THEME_STYLING['classic'])
+        theme_data = cls.ENHANCED_THEME_STYLING.get(wedding_theme, cls.ENHANCED_THEME_STYLING['classic'])
         
-        # 1. QUALITY FOUNDATION - Critical for SD3.5 Large
-        quality_foundation = "Professional wedding venue photography, photorealistic, ultra-high resolution, masterpiece quality."
+        # 1. SPACE TRANSFORMATION - Clear and direct
+        space_transformation = f"Transform this space into {space_data['function']}"
         
-        # 2. PRIMARY SPACE TRANSFORMATION - Most Important Section
-        space_transformation = f"Transform this space into a complete {space_data['function']}."
+        # 2. CAPACITY AND SCALE - Professional scale planning
+        capacity_spec = cls._get_professional_capacity_spec(guest_count, space_type, space_data)
         
-        # 3. SPACE ARCHITECTURE AND LAYOUT - Defines the physical setup
-        space_architecture = f"Spatial layout: {space_data['layout']}. Key elements: {space_data['elements']}."
+        # 3. VENUE ARCHITECTURE - Key structural elements
+        venue_elements = f"{space_data['elements']}, {space_data['layout_features']}"
         
-        # 4. FUNCTIONAL REQUIREMENTS - What makes this space work
-        functional_setup = f"Functional requirements: {space_data['requirements']}."
+        # 4. LUXURY TRANSFORMATION TECHNIQUES - Professional methods
+        transformation_techniques = cls._get_transformation_techniques(theme_data, space_type)
         
-        # 5. CAPACITY AND SCALE - Size appropriate for space type
-        capacity_setup = cls._get_capacity_specification(guest_count, space_type)
+        # 5. THEME IMMERSION - Complete thematic experience
+        theme_experience = f"{wedding_theme} wedding theme with {theme_data['signature_elements']}"
         
-        # 6. THEME STYLING LAYER - Secondary enhancement, not primary focus
-        theme_styling = f"Decorative styling: {wedding_theme} wedding theme featuring {theme_data['elements']}."
+        # 6. PROFESSIONAL LIGHTING DESIGN - Mood and ambiance
+        lighting_design = f"Professional lighting: {theme_data['lighting_design']}"
         
-        # 7. RELIGION/CULTURE ELEMENTS - NEW: Add culturally appropriate elements
-        cultural_elements = cls._get_cultural_elements(religion_culture, space_type, wedding_theme)
+        # 7. LUXURY MATERIALS & TEXTURES - High-end finishes
+        luxury_finishes = f"Luxury materials: {theme_data['luxury_materials']}"
         
-        # 8. MATERIAL AND COLOR PALETTE - Visual enhancement
-        color_specification = cls._get_color_specification(color_scheme, custom_colors, theme_data)
+        # 8. COLOR MASTERY - Professional color coordination
+        color_palette = cls._get_professional_color_palette(color_scheme, custom_colors, theme_data)
         
-        # 9. LIGHTING AND ATMOSPHERE - Mood setting
-        lighting_atmosphere = f"Lighting: {theme_data['lighting']}. Atmosphere: {theme_data['atmosphere']}."
+        # 9. SEASONAL & CONTEXTUAL ENHANCEMENT - When relevant
+        contextual_elements = cls._get_contextual_enhancements(season, time_of_day, budget_level)
         
-        # 10. PRODUCTION QUALITY LEVEL - Budget/quality context
-        production_level = cls._get_production_level(budget_level)
+        # 10. FINISHING TOUCHES - Professional polish
+        finishing_details = f"Finishing touches: {theme_data['finishing_details']}"
         
-        # 11. SEASONAL/TEMPORAL CONTEXT - When appropriate
-        temporal_context = cls._get_temporal_context(season, time_of_day)
+        # 11. USER PERSONALIZATION - Custom requests
+        personal_touches = f"Custom details: {additional_details}" if additional_details else ""
         
-        # 12. USER SPECIFICATIONS - Additional details
-        user_specifications = f"Additional specifications: {additional_details}." if additional_details else ""
+        # 12. PROFESSIONAL OUTPUT SPEC - Final requirements
+        output_spec = f"Professional result: spectacular {wedding_theme} wedding venue transformation, celebration-ready space, no people visible, magazine-quality setup"
         
-        # 13. TECHNICAL REQUIREMENTS - Final specifications
-        technical_requirements = "Output requirements: professional wedding setup ready for guests, no people visible, celebration-ready venue, elegant transformation complete."
-        
-        # ASSEMBLE ENHANCED SPACE-FIRST PROMPT with proper hierarchy
-        prompt_sections = [
-            quality_foundation,
-            space_transformation,
-            space_architecture,
-            functional_setup,
-            capacity_setup,
-            theme_styling,
-            cultural_elements,
-            color_specification,
-            lighting_atmosphere,
-            production_level,
-            temporal_context,
-            user_specifications,
-            technical_requirements
+        # ASSEMBLE DESIGNER-QUALITY PROMPT
+        prompt_elements = [
+            space_transformation + ".",
+            capacity_spec + ".",
+            venue_elements + ".",
+            transformation_techniques + ".",
+            theme_experience + ".",
+            lighting_design + ".",
+            luxury_finishes + ".",
+            color_palette + ".",
+            contextual_elements,
+            finishing_details + ".",
+            personal_touches,
+            output_spec + "."
         ]
         
-        # Clean and join sections
-        final_prompt = " ".join([section.strip() for section in prompt_sections if section.strip()])
+        # Clean and assemble
+        final_prompt = " ".join([element.strip() for element in prompt_elements if element.strip()])
         
-        # Enhanced negative prompt combining system and user preferences
-        negative_prompt = cls.generate_enhanced_negative_prompt(user_negative_prompt)
+        # Professional negative prompt
+        negative_prompt = cls.generate_professional_negative_prompt()
         
         return {
             'prompt': final_prompt,
             'negative_prompt': negative_prompt,
-            'recommended_params': cls.get_space_optimized_parameters(space_type, wedding_theme, guest_count)
+            'recommended_params': cls.get_ultra_designer_parameters(space_type, wedding_theme, guest_count)
         }
     
-    # SPACE DEFINITIONS - Primary focus on what each space IS and DOES
+    # ENHANCED SPACE DEFINITIONS - Professional venue planning
     SPACE_DEFINITIONS = {
         'wedding_ceremony': {
-            'function': 'wedding ceremony venue with processional aisle and formal guest seating arrangement',
-            'layout': 'guests seated in organized rows facing ceremonial altar area, center processional aisle for wedding party entrance',
-            'elements': 'ceremony altar or decorative arch, guest seating in rows, processional aisle runner, unity ceremony area, officiant space',
-            'requirements': 'clear sightlines to ceremony altar, adequate space for wedding party, acoustic considerations for vows, processional pathway',
-            'scale_factor': 'ceremony_focused'
+            'function': 'an elegant wedding ceremony venue with processional grandeur and intimate guest seating',
+            'elements': 'stunning ceremony altar or floral arch, organized guest seating rows, dramatic center aisle, unity ceremony area, bridal party positioning',
+            'layout_features': 'clear sightlines to ceremonial focal point, processional pathway with petal scatter, professional sound considerations'
         },
         'dance_floor': {
-            'function': 'dedicated dance floor area for wedding reception entertainment and dancing',
-            'layout': 'central polished dance floor with surrounding lounge seating and music performance area',
-            'elements': 'smooth dance floor surface, DJ or band setup area, perimeter lounge seating, dance floor lighting, entertainment space',
-            'requirements': 'proper flooring for dancing, sound system positioning, adequate lighting for dancing, comfortable viewing areas',
-            'scale_factor': 'entertainment_focused'
+            'function': 'a glamorous dance floor entertainment area with luxury lounge seating',
+            'elements': 'polished dance floor surface, professional DJ booth with LED panels, sophisticated perimeter lounge seating, dramatic overhead lighting installations, VIP seating areas',
+            'layout_features': 'central dance space with intimate conversation zones, elevated DJ area, flow between dance and lounge areas'
         },
         'dining_area': {
-            'function': 'formal dining space for wedding reception meal service and guest dining',
-            'layout': 'dining tables arranged with proper spacing for service access and guest comfort',
-            'elements': 'dining tables with chair seating, table place settings, centerpiece displays, service pathways, serving stations',
-            'requirements': 'adequate table spacing for service, comfortable seating arrangements, clear service pathways, proper dining ambiance',
-            'scale_factor': 'dining_focused'
+            'function': 'an exquisite dining space for sophisticated wedding reception service',
+            'elements': 'elegantly appointed dining tables, luxury chair selections, show-stopping centerpieces, refined place settings, butler service stations',
+            'layout_features': 'optimized table spacing for service flow, clear pathways for seamless service, intimate dining clusters'
         },
         'cocktail_hour': {
-            'function': 'cocktail reception area for guest mingling, drinks, and appetizer service',
-            'layout': 'mix of standing cocktail tables, bar areas, and casual seating for social interaction',
-            'elements': 'high cocktail tables, bar setup with seating, standing areas, appetizer stations, conversational seating groups',
-            'requirements': 'bar service areas, food service stations, standing and seating options, social interaction spaces',
-            'scale_factor': 'social_focused'
+            'function': 'a chic cocktail reception area for sophisticated guest mingling',
+            'elements': 'stylish high-top cocktail tables, elegant bar installations, interactive food stations, designer lounge groupings, ambient lighting features',
+            'layout_features': 'multiple conversation zones, strategic bar placement, flow between indoor and outdoor areas'
         },
         'lounge_area': {
-            'function': 'comfortable relaxation space for guest conversation and intimate gatherings',
-            'layout': 'grouped comfortable seating arrangements creating intimate conversation areas',
-            'elements': 'comfortable sofas and armchairs, coffee tables, side tables, ambient lighting, intimate seating clusters',
-            'requirements': 'comfortable seating furniture, conversation-friendly layout, soft ambient lighting, relaxed atmosphere',
-            'scale_factor': 'intimate_focused'
+            'function': 'a luxurious lounge space for intimate conversations and relaxation',
+            'elements': 'plush designer sofas and armchairs, artisan coffee tables, statement lighting fixtures, curated art pieces, intimate seating clusters',
+            'layout_features': 'cozy conversation groupings, soft ambient lighting, private intimate corners'
         }
     }
     
-    # THEME STYLING - Secondary layer that enhances space function
-    THEME_STYLING = {
-        # Classic Popular Themes - Updated for space-first approach
+    # ENHANCED THEME STYLING - Professional designer specifications
+    ENHANCED_THEME_STYLING = {
+        # CLASSIC POPULAR THEMES - Enhanced with 2024-2025 trends
         'rustic': {
-            'elements': 'reclaimed wood furniture, burlap table runners, mason jar lighting, wildflower arrangements, string light canopies, barn-style decorative accents',
-            'lighting': 'warm string lights, mason jar pendant lighting, candles in wooden holders, natural ambient lighting',
-            'colors': 'warm cream, sage green, dusty rose, natural wood tones, burlap brown',
-            'atmosphere': 'cozy farmhouse celebration with rustic charm and natural warmth'
+            'signature_elements': 'reclaimed barn wood installations, cascading wildflower arrangements, vintage mason jar chandeliers, burlap table runners with lace overlays, string light canopies, antique furniture pieces',
+            'lighting_design': 'warm Edison bulb installations, mason jar pendant lighting, flickering candles in wooden lanterns, fairy lights woven through ceiling beams',
+            'luxury_materials': 'weathered wood textures, natural linen fabrics, wrought iron accents, vintage brass fixtures, handcrafted pottery',
+            'finishing_details': 'vintage signage with calligraphy, rustic photo displays, herb-scented table runners, artisanal bread service',
+            'color_palette': 'warm sage green, dusty rose, cream ivory, natural wood tones, burnt orange accents'
         },
         'modern': {
-            'elements': 'sleek geometric furniture, contemporary acrylic chairs, minimalist centerpieces, clean-lined decorative elements, modern lighting fixtures',
-            'lighting': 'contemporary pendant lighting, geometric chandeliers, LED accent lighting, clean architectural lighting',
-            'colors': 'pure white, charcoal grey, black accents, metallic silver, glass elements',
-            'atmosphere': 'sophisticated contemporary elegance with clean modern aesthetic'
+            'signature_elements': 'sleek geometric furniture designs, contemporary acrylic chairs, minimalist floral arrangements, clean-lined architectural elements, LED integration, metallic accents',
+            'lighting_design': 'geometric pendant installations, LED strip lighting, contemporary chandeliers, dramatic uplighting with color-changing capabilities',
+            'luxury_materials': 'polished marble surfaces, brushed metal finishes, crystal glass elements, high-gloss lacquers, contemporary ceramics',
+            'finishing_details': 'digital displays with custom graphics, contemporary art installations, modern sculptural centerpieces, tech-integrated guest experiences',
+            'color_palette': 'pure white, charcoal gray, metallic silver, black accents, crystal clear elements'
         },
         'vintage': {
-            'elements': 'antique furniture pieces, vintage lace details, ornate chandeliers, classic rose arrangements, vintage china settings, period decorative pieces',
-            'lighting': 'vintage crystal chandeliers, antique candelabras, warm Edison bulbs, romantic vintage lighting',
-            'colors': 'blush pink, ivory cream, antique gold, dusty blue, champagne tones',
-            'atmosphere': 'romantic vintage elegance with timeless old-world charm'
+            'signature_elements': 'authentic antique furniture collections, ornate crystal chandeliers, vintage lace table overlays, classic rose garden arrangements, antique china place settings, vintage photo displays',
+            'lighting_design': 'crystal chandelier installations, antique brass candelabras, warm Edison bulbs in vintage fixtures, romantic candlelight clusters',
+            'luxury_materials': 'silk damask fabrics, ornate gold leaf details, vintage crystal glassware, antique silver serving pieces, handcrafted lace elements',
+            'finishing_details': 'vintage postcard displays, antique book centerpieces, heritage family photos, vintage perfume bottle arrangements',
+            'color_palette': 'blush pink, ivory cream, antique gold, dusty blue, champagne tones'
         },
         'bohemian': {
-            'elements': 'macrame wall hangings, pampas grass arrangements, colorful textile runners, floor cushions, hanging plants, natural wood elements',
-            'lighting': 'hanging lanterns, fairy lights, candles in glass vessels, natural ambient lighting',
-            'colors': 'terracotta orange, sage green, mustard yellow, deep burgundy, natural earth tones',
-            'atmosphere': 'free-spirited boho celebration with natural organic elements'
+            'signature_elements': 'macrame wall hangings, oversized pampas grass installations, colorful vintage rugs, floor cushion seating areas, hanging plants in woven baskets, dreamcatcher installations',
+            'lighting_design': 'hanging Moroccan lanterns, fairy lights in glass terrariums, candles in eclectic vintage holders, warm ambient string lights',
+            'luxury_materials': 'handwoven textiles, natural fiber rugs, artisan ceramics, vintage brass accents, exotic wood elements',
+            'finishing_details': 'vintage tapestry backdrops, succulent garden displays, artisan-made table runners, eclectic vintage glassware',
+            'color_palette': 'terracotta orange, sage green, mustard yellow, deep burgundy, natural earth tones'
         },
         'classic': {
-            'elements': 'elegant formal furniture, crystal chandeliers, pristine white linens, classic white flower arrangements, formal place settings, traditional decor',
-            'lighting': 'crystal chandeliers, elegant uplighting, classic candelabras, refined ambient lighting',
-            'colors': 'pure white, ivory, champagne gold, silver accents, classic elegance',
-            'atmosphere': 'timeless traditional elegance with formal sophistication'
-        },
-        'garden': {
-            'elements': 'natural flower arrangements, greenery garlands, botanical centerpieces, garden-style furniture, organic decorative elements',
-            'lighting': 'natural garden lighting, string lights through greenery, garden lanterns, soft natural illumination',
-            'colors': 'natural green, soft white, garden pastels, earth tones, botanical colors',
-            'atmosphere': 'natural garden party celebration with organic beauty and fresh elegance'
-        },
-        'beach': {
-            'elements': 'driftwood decorative pieces, flowing white fabric draping, seashell accents, nautical rope details, coastal furniture, ocean-inspired decor',
-            'lighting': 'natural coastal lighting, tiki torches, hurricane lanterns, soft sunset-inspired lighting',
-            'colors': 'ocean blue, sandy beige, coral pink, seafoam green, natural whites',
-            'atmosphere': 'relaxed coastal celebration with ocean-inspired serenity'
-        },
-        'industrial': {
-            'elements': 'metal and wood furniture combinations, exposed bulb lighting, concrete planters, urban materials, industrial decorative accents',
-            'lighting': 'Edison bulb installations, industrial pendant lights, exposed bulb chandeliers, urban atmospheric lighting',
-            'colors': 'charcoal grey, copper accents, warm metallics, concrete tones, industrial blacks',
-            'atmosphere': 'urban industrial celebration with modern edge and contemporary style'
+            'signature_elements': 'elegant formal furniture, crystal chandelier installations, pristine white linens with gold accents, classic white rose arrangements, formal china place settings, traditional architectural details',
+            'lighting_design': 'grand crystal chandeliers, elegant uplighting, classic candelabra arrangements, refined ambient lighting',
+            'luxury_materials': 'silk tablecloths, crystal stemware, gold-rimmed china, marble accents, polished silver details',
+            'finishing_details': 'formal place cards with calligraphy, elegant menu presentations, classic floral arrangements, refined napkin presentations',
+            'color_palette': 'pure white, ivory, champagne gold, silver accents, classic elegance tones'
         },
         
-        # Cultural Themes
+        # CULTURAL & INTERNATIONAL THEMES - Enhanced with authenticity
+        'indian_palace': {
+            'signature_elements': 'ornate golden mandap structure, rich silk draping in jewel tones, marigold flower cascades, intricate henna-pattern table runners, brass lantern installations, peacock feather accents',
+            'lighting_design': 'ornate brass lanterns with warm LED, golden uplighting, hanging diyas with flickering candles, colorful string lights creating mandala patterns',
+            'luxury_materials': 'rich silk brocades, gold leaf details, ornate brass fixtures, hand-carved wooden elements, jewel-toned fabrics',
+            'finishing_details': 'rangoli floor patterns, traditional copper vessels, marigold petal carpets, ornate elephant figurines, gold-threaded table runners',
+            'color_palette': 'rich gold, deep red, royal purple, saffron orange, emerald green'
+        },
         'japanese_zen': {
-            'elements': 'bamboo decorative screens, cherry blossom arrangements, minimalist wooden furniture, paper lanterns, zen garden elements, sake ceremony table',
-            'lighting': 'soft paper lanterns, bamboo lighting fixtures, candles in stone holders, gentle ambient zen lighting',
-            'colors': 'soft pink cherry blossom, white, natural bamboo, sage green, cream',
-            'atmosphere': 'peaceful zen celebration with minimalist harmony and natural serenity'
+            'signature_elements': 'minimalist bamboo screen installations, cherry blossom branch arrangements, low wooden tables, paper lantern clusters, zen garden elements, flowing water features',
+            'lighting_design': 'soft paper lantern installations, warm bamboo pendant lights, subtle LED strip lighting, candles in stone holders',
+            'luxury_materials': 'natural bamboo textures, handcrafted ceramics, silk screen panels, natural stone elements, woven grass mats',
+            'finishing_details': 'origami crane displays, bonsai tree centerpieces, traditional sake service, bamboo place settings, zen stone arrangements',
+            'color_palette': 'soft pink cherry blossom, natural bamboo, sage green, cream white, charcoal gray'
         },
         'moroccan_nights': {
-            'elements': 'ornate metallic lanterns, rich tapestry draping, low cushioned seating, intricate patterned textiles, Middle Eastern decorative pieces',
-            'lighting': 'ornate Moroccan lanterns, warm golden lighting, exotic pendant lights, Middle Eastern ambiance',
-            'colors': 'rich jewel tones, deep purple, gold, turquoise, burgundy, warm orange',
-            'atmosphere': 'exotic Moroccan celebration with luxurious Middle Eastern mystique'
+            'signature_elements': 'ornate metallic lantern installations, rich tapestry wall hangings, low cushioned seating areas, intricate tile pattern displays, hanging fabric canopies, exotic spice arrangements',
+            'lighting_design': 'ornate Moroccan lanterns casting intricate shadows, warm golden uplighting, candles in colorful glass holders, string lights creating geometric patterns',
+            'luxury_materials': 'rich velvet cushions, ornate metalwork, handwoven rugs, exotic wood carvings, jewel-toned silks',
+            'finishing_details': 'traditional tea service displays, exotic flower arrangements, ornate mirror installations, handcrafted pottery displays',
+            'color_palette': 'deep jewel tones, rich purple, gold, turquoise, burgundy, warm orange'
+        },
+        'french_chateau': {
+            'signature_elements': 'elegant antique furniture, crystal chandelier installations, fine French lace details, lavender and rose arrangements, vintage wine barrel accents, ornate mirror displays',
+            'lighting_design': 'French crystal chandeliers, elegant candelabra arrangements, warm ambient lighting, vintage French pendant lights',
+            'luxury_materials': 'fine French lace, antique gold details, crystal stemware, vintage silver serving pieces, silk damask fabrics',
+            'finishing_details': 'French vintage postcards, antique perfume bottles, lavender bundles, vintage French wine displays, elegant calligraphy signage',
+            'color_palette': 'champagne, soft lavender, antique gold, cream white, dusty rose'
+        },
+        'greek_island': {
+            'signature_elements': 'whitewashed furniture and architectural elements, azure blue fabric accents, olive branch arrangements, Mediterranean pottery displays, nautical rope details, coastal driftwood accents',
+            'lighting_design': 'white lantern installations, natural Mediterranean lighting, string lights mimicking stars, candles in sea glass holders',
+            'luxury_materials': 'natural white linens, azure blue ceramics, olive wood accents, sea glass elements, whitewashed wood textures',
+            'finishing_details': 'olive branch centerpieces, Mediterranean herb displays, nautical rope details, sea shell accents, traditional Greek pottery',
+            'color_palette': 'pure white, azure blue, olive green, sandy beige, natural stone gray'
         },
         
-        # Add more themes as needed but focus on the most popular ones for initial implementation
-    }
-    
-    # NEW: RELIGION/CULTURE ELEMENTS - Add appropriate cultural elements
-    RELIGION_CULTURE_ELEMENTS = {
-        'christian': {
-            'ceremony': 'cross or altar centerpiece, church pew style seating, unity candle display, traditional church flowers, stained glass window effects',
-            'reception': 'blessing table setup, traditional family seating arrangements, elegant formal styling, classic Christian symbolism',
-            'colors': 'pure white, gold accents, deep blue, traditional wedding colors',
-            'atmosphere': 'sacred and reverent with traditional Christian elegance'
+        # TRENDY 2024-2025 THEMES - Current and exciting
+        'luxe_minimalism': {
+            'signature_elements': 'clean geometric furniture, high-quality natural materials, statement sculptural pieces, subtle metallic accents, architectural lighting, premium textile selections',
+            'lighting_design': 'architectural LED installations, geometric pendant lights, subtle uplighting, contemporary chandeliers with clean lines',
+            'luxury_materials': 'premium marble surfaces, brushed gold details, high-thread-count linens, contemporary ceramics, natural stone elements',
+            'finishing_details': 'sculptural centerpieces, contemporary art pieces, premium glassware, minimalist floral arrangements, architectural details',
+            'color_palette': 'warm whites, soft grays, champagne gold, natural stone tones, subtle blush accents'
         },
-        'jewish': {
-            'ceremony': 'chuppah wedding canopy, chair arrangements for processional, breaking glass area, traditional Jewish elements',
-            'reception': 'hora dance floor space, traditional Jewish music setup, kosher dining considerations, family honor seating',
-            'colors': 'blue and white, gold accents, traditional Jewish colors',
-            'atmosphere': 'joyful celebration with meaningful Jewish traditions'
+        'maximalist_glamour': {
+            'signature_elements': 'bold patterned fabrics, mixing metallic finishes, oversized floral installations, dramatic ceiling treatments, eclectic furniture mixing, statement art pieces',
+            'lighting_design': 'dramatic chandelier installations, colorful uplighting, decorative string lights, bold pendant combinations, theatrical spotlighting',
+            'luxury_materials': 'rich velvet fabrics, mixed metallic finishes, ornate glassware, dramatic silk draping, jewel-toned accents',
+            'finishing_details': 'oversized floral arrangements, eclectic vintage collections, bold patterned linens, dramatic ceiling installations, statement candelabras',
+            'color_palette': 'rich jewel tones, mixed metallics, bold florals, dramatic contrasts, vibrant accent colors'
         },
-        'hindu': {
-            'ceremony': 'mandap ceremonial structure, sacred fire altar area, traditional Hindu decorative elements, flower petal arrangements',
-            'reception': 'vibrant colorful decorations, traditional Indian seating areas, rangoli floor patterns, ceremonial elements',
-            'colors': 'vibrant reds, golds, oranges, rich jewel tones, traditional Indian colors',
-            'atmosphere': 'colorful and vibrant celebration with sacred Hindu traditions'
+        'celestial_romance': {
+            'signature_elements': 'starry ceiling installations, crescent moon archways, cosmic-inspired metallic accents, constellation lighting patterns, celestial-themed centerpieces, galaxy fabric draping',
+            'lighting_design': 'star projection systems, LED constellation patterns, moonlight-inspired uplighting, twinkling fairy light installations, cosmic color-changing lights',
+            'luxury_materials': 'metallic star accents, shimmering fabrics, crystal elements, iridescent details, celestial-themed ceramics',
+            'finishing_details': 'constellation maps as table numbers, starry table runners, moon phase displays, cosmic-themed place cards, celestial jewelry accents',
+            'color_palette': 'deep midnight blue, metallic gold, silver stars, cosmic purple, moonlight white'
         },
-        'muslim': {
-            'ceremony': 'nikah ceremony seating, traditional Islamic decorative elements, modest elegant styling, prayer area considerations',
-            'reception': 'separate seating arrangements if traditional, halal dining setup, Islamic geometric patterns, elegant styling',
-            'colors': 'green and gold, white, traditional Islamic colors, modest elegant tones',
-            'atmosphere': 'elegant celebration honoring Islamic traditions'
+        'tropical_modern': {
+            'signature_elements': 'oversized tropical leaf installations, contemporary bamboo furniture, hanging garden displays, modern tiki elements, geometric planters, natural fiber textures',
+            'lighting_design': 'modern tiki torch installations, LED uplighting through palm fronds, contemporary lantern displays, natural bamboo pendant lights',
+            'luxury_materials': 'natural bamboo textures, contemporary ceramics, tropical hardwoods, modern rattan elements, premium natural fibers',
+            'finishing_details': 'oversized tropical leaf displays, modern pineapple accents, geometric planter arrangements, contemporary tiki elements, natural fiber table runners',
+            'color_palette': 'vibrant coral, tropical turquoise, natural bamboo, fresh lime green, sunset orange'
         },
-        'buddhist': {
-            'ceremony': 'meditation area setup, Buddhist altar elements, peaceful seating arrangements, lotus flower decorations',
-            'reception': 'mindful dining setup, peaceful ambiance elements, natural decorations, serene atmosphere',
-            'colors': 'saffron, lotus pink, peaceful pastels, natural earth tones',
-            'atmosphere': 'peaceful and mindful celebration with Buddhist serenity'
-        },
-        'sikh': {
-            'ceremony': 'Guru Granth Sahib area, traditional Sikh ceremonial elements, community seating arrangements, Sikh symbols',
-            'reception': 'langar community dining setup, traditional Punjabi decorations, vibrant celebratory elements',
-            'colors': 'saffron, blue, vibrant traditional Punjabi colors',
-            'atmosphere': 'joyful community celebration with Sikh traditions'
-        },
-        'interfaith': {
-            'ceremony': 'inclusive ceremonial elements, universal symbols of love, respectful traditional blending, neutral sacred space',
-            'reception': 'diverse cultural food stations, mixed traditional elements, inclusive decorations, unity themes',
-            'colors': 'neutral elegant tones, universal whites and golds, inclusive color palette',
-            'atmosphere': 'unified celebration honoring multiple traditions with respect and love'
-        },
-        'secular': {
-            'ceremony': 'modern ceremonial arch, contemporary seating, non-religious symbolic elements, personal meaningful decorations',
-            'reception': 'contemporary styling, personal family elements, modern elegant decorations, celebration-focused setup',
-            'colors': 'contemporary color schemes, personal preference colors, modern elegant palette',
-            'atmosphere': 'modern celebration focused on love and commitment without religious elements'
-        },
-        'cultural_fusion': {
-            'ceremony': 'blended cultural decorative elements, mixed traditional symbols, fusion ceremonial setup, cultural unity displays',
-            'reception': 'diverse cultural food stations, mixed traditional decorations, cultural celebration elements, unity themes',
-            'colors': 'blended cultural color palettes, harmonious mixed traditional colors',
-            'atmosphere': 'harmonious fusion celebrating multiple cultural backgrounds'
-        },
-        'traditional_american': {
-            'ceremony': 'classic American wedding elements, traditional white wedding styling, patriotic subtle touches, classic elegance',
-            'reception': 'traditional American reception styling, classic elegant decorations, timeless American wedding elements',
-            'colors': 'classic white, navy blue, gold, traditional American wedding colors',
-            'atmosphere': 'classic American wedding celebration with timeless traditional elegance'
-        },
-        'european': {
-            'ceremony': 'elegant European styling, classical architectural elements, sophisticated traditional decorations, old-world charm',
-            'reception': 'European garden party elements, classical elegance, refined traditional styling, sophisticated atmosphere',
-            'colors': 'classical European colors, sophisticated pastels, elegant traditional palette',
-            'atmosphere': 'sophisticated European elegance with old-world charm'
-        },
-        'asian': {
-            'ceremony': 'Asian-inspired decorative elements, traditional Asian symbols, elegant cultural styling, respectful traditional elements',
-            'reception': 'Asian cultural dining elements, traditional decorations, cultural celebration styling, elegant setup',
-            'colors': 'traditional Asian color schemes, red and gold, cultural color palettes',
-            'atmosphere': 'elegant celebration honoring Asian cultural traditions'
-        },
-        'latin_american': {
-            'ceremony': 'vibrant Latin cultural elements, traditional ceremonial decorations, colorful celebration styling, cultural symbols',
-            'reception': 'fiesta celebration elements, vibrant decorations, Latin music and dance areas, cultural food stations',
-            'colors': 'vibrant Latin colors, bright reds, yellows, oranges, festive palette',
-            'atmosphere': 'vibrant Latin celebration with joyful cultural traditions'
+        'gothic_romance': {
+            'signature_elements': 'dramatic dark floral arrangements, ornate candelabra installations, rich velvet draping, antique mirror displays, gothic architectural elements, mysterious mood lighting',
+            'lighting_design': 'dramatic candelabra lighting, moody uplighting, flickering candle installations, gothic chandelier displays, mysterious shadow effects',
+            'luxury_materials': 'rich burgundy velvets, ornate dark metals, antique glass elements, dramatic silk draping, vintage lace details',
+            'finishing_details': 'dark floral arrangements, antique book displays, ornate mirror installations, vintage candelabras, mysterious table settings',
+            'color_palette': 'deep burgundy, midnight black, antique gold, dark purple, rich wine tones'
         }
     }
     
     @classmethod
-    def _get_capacity_specification(cls, guest_count, space_type):
-        """Generate capacity-appropriate specifications for each space type"""
+    def _get_professional_capacity_spec(cls, guest_count, space_type, space_data):
+        """Generate professional capacity specifications with luxury details"""
         
-        capacity_specs = {
-            'intimate': {'guests': '15-50', 'scale': 'intimate'},
-            'medium': {'guests': '75-100', 'scale': 'medium'},
-            'large': {'guests': '150-200', 'scale': 'large'},
-            'grand': {'guests': '250+', 'scale': 'grand'}
-        }
-        
-        space_capacity_requirements = {
-            'wedding_ceremony': {
-                'intimate': 'ceremony seating for 15-50 guests in 3-4 rows, intimate ceremony scale',
-                'medium': 'ceremony seating for 75-100 guests in 8-10 rows, balanced ceremony arrangement',
-                'large': 'ceremony seating for 150-200 guests in 12-15 rows, grand ceremony setup',
-                'grand': 'ceremony seating for 250+ guests in 20+ rows, spectacular ceremony arrangement'
+        capacity_luxury_specs = {
+            'intimate': {
+                'guests': '15-50 guests',
+                'luxury_approach': 'intimate luxury experience with personalized attention',
+                'service_style': 'white-glove personalized service'
             },
-            'dining_area': {
-                'intimate': 'dining for 15-50 guests with 2-3 round tables or long farm tables, cozy dining scale',
-                'medium': 'dining for 75-100 guests with 8-10 round tables, comfortable dining arrangement',
-                'large': 'dining for 150-200 guests with 15-20 round tables, elegant dining setup',
-                'grand': 'dining for 250+ guests with 25+ round tables, spectacular dining arrangement'
+            'medium': {
+                'guests': '75-100 guests', 
+                'luxury_approach': 'balanced elegance with sophisticated group dynamics',
+                'service_style': 'premium coordinated service'
             },
-            'dance_floor': {
-                'intimate': 'dance floor for 15-50 guests with cozy perimeter seating, intimate party scale',
-                'medium': 'dance floor for 75-100 guests with adequate perimeter seating, lively party setup',
-                'large': 'dance floor for 150-200 guests with extensive perimeter seating, grand party arrangement',
-                'grand': 'dance floor for 250+ guests with spectacular perimeter seating, massive celebration setup'
+            'large': {
+                'guests': '150-200 guests',
+                'luxury_approach': 'grand celebration with multiple service zones',
+                'service_style': 'orchestrated luxury service team'
             },
-            'cocktail_hour': {
-                'intimate': 'cocktail setup for 15-50 guests with 3-4 cocktail tables, intimate mingling space',
-                'medium': 'cocktail setup for 75-100 guests with 8-10 cocktail tables, social mingling area',
-                'large': 'cocktail setup for 150-200 guests with 15-20 cocktail tables, grand social space',
-                'grand': 'cocktail setup for 250+ guests with 25+ cocktail tables, spectacular social venue'
-            },
-            'lounge_area': {
-                'intimate': 'lounge seating for 15-50 guests with 2-3 seating groups, cozy conversation areas',
-                'medium': 'lounge seating for 75-100 guests with 5-6 seating groups, comfortable social areas',
-                'large': 'lounge seating for 150-200 guests with 8-10 seating groups, extensive relaxation space',
-                'grand': 'lounge seating for 250+ guests with 12+ seating groups, luxurious relaxation venue'
+            'grand': {
+                'guests': '250+ guests',
+                'luxury_approach': 'spectacular celebration with multiple experience areas',
+                'service_style': 'full concierge-level service coordination'
             }
         }
         
-        guest_level = guest_count or 'medium'
-        space_requirements = space_capacity_requirements.get(space_type, {})
-        capacity_spec = space_requirements.get(guest_level, space_requirements.get('medium', 'appropriate seating for wedding guests'))
+        guest_spec = capacity_luxury_specs.get(guest_count, capacity_luxury_specs['medium'])
         
-        return f"Capacity requirements: {capacity_spec}."
-    
-    @classmethod
-    def _get_cultural_elements(cls, religion_culture, space_type, wedding_theme):
-        """NEW: Generate religion/culture appropriate elements"""
-        
-        if not religion_culture or religion_culture == '':
-            return ""
-        
-        culture_data = cls.RELIGION_CULTURE_ELEMENTS.get(religion_culture)
-        if not culture_data:
-            return ""
-        
-        # Get appropriate elements based on space type
-        if space_type == 'wedding_ceremony':
-            elements = culture_data.get('ceremony', '')
-        else:
-            elements = culture_data.get('reception', '')
-        
-        # Add cultural atmosphere
-        atmosphere = culture_data.get('atmosphere', '')
-        
-        if elements or atmosphere:
-            cultural_text = f"Cultural elements: {elements}." if elements else ""
-            atmosphere_text = f" Cultural atmosphere: {atmosphere}." if atmosphere else ""
-            return cultural_text + atmosphere_text
-        
-        return ""
-    
-    @classmethod
-    def _get_color_specification(cls, color_scheme, custom_colors, theme_data):
-        """Generate color palette specification"""
-        
-        color_schemes = {
-            'neutral': 'sophisticated neutral palette with whites, creams, beiges, champagne, and soft taupe tones',
-            'pastels': 'soft romantic pastel palette with blush pink, lavender, baby blue, mint green, and cream',
-            'jewel_tones': 'rich luxurious jewel tones with emerald green, sapphire blue, ruby red, and gold accents',
-            'earth_tones': 'natural earth tone palette with sage green, terracotta, warm browns, and cream',
-            'monochrome': 'elegant sophisticated black and white palette with silver accents',
-            'bold_colors': 'vibrant bold palette with bright fuchsia, orange, turquoise, and lime green'
+        space_capacity_mapping = {
+            'wedding_ceremony': f"ceremony seating for {guest_spec['guests']} with {guest_spec['luxury_approach']}",
+            'dining_area': f"luxury dining for {guest_spec['guests']} with {guest_spec['service_style']}",
+            'dance_floor': f"entertainment space for {guest_spec['guests']} with sophisticated party atmosphere",
+            'cocktail_hour': f"cocktail reception for {guest_spec['guests']} with multiple interaction zones",
+            'lounge_area': f"luxury lounge seating for {guest_spec['guests']} with intimate conversation areas"
         }
         
-        if color_scheme == 'custom' and custom_colors:
-            return f"Color palette: custom colors featuring {custom_colors}."
-        elif color_scheme and color_scheme in color_schemes:
-            return f"Color palette: {color_schemes[color_scheme]}."
-        else:
-            return f"Color palette: {theme_data['colors']}."
+        return space_capacity_mapping.get(space_type, f"luxury setup for {guest_spec['guests']}")
     
     @classmethod
-    def _get_production_level(cls, budget_level):
-        """Generate production quality specification"""
+    def _get_transformation_techniques(cls, theme_data, space_type):
+        """Professional venue transformation techniques from 2024-2025 trends"""
         
-        production_levels = {
-            'budget': 'thoughtful budget-friendly setup with DIY elements, simple elegant arrangements, cost-effective beautiful decorations',
-            'moderate': 'professional quality setup with refined details, well-coordinated arrangements, quality decorations',
-            'luxury': 'luxury high-end setup with premium materials, designer arrangements, sophisticated elegant details',
-            'ultra_luxury': 'ultra-luxury opulent setup with exquisite premium materials, lavish displays, spectacular high-end details'
-        }
-        
-        level = production_levels.get(budget_level, 'professional quality wedding setup with elegant decorations')
-        return f"Production quality: {level}."
-    
-    @classmethod
-    def _get_temporal_context(cls, season, time_of_day):
-        """Generate seasonal and time context"""
-        
-        contexts = []
-        
-        if season:
-            seasonal_elements = {
-                'spring': 'fresh spring flowers, light flowing fabrics, renewal atmosphere',
-                'summer': 'vibrant summer blooms, bright cheerful elements, sunny atmosphere',
-                'fall': 'autumn foliage, warm amber elements, cozy harvest atmosphere',
-                'winter': 'winter elegance with evergreens, rich textures, festive elements'
-            }
-            if season in seasonal_elements:
-                contexts.append(f"Seasonal elements: {seasonal_elements[season]}")
-        
-        if time_of_day:
-            time_elements = {
-                'morning': 'bright morning ambiance, fresh breakfast setup atmosphere',
-                'afternoon': 'natural daylight ambiance, relaxed daytime atmosphere',
-                'evening': 'golden hour lighting, romantic evening atmosphere',
-                'night': 'dramatic evening lighting, elegant nighttime atmosphere'
-            }
-            if time_of_day in time_elements:
-                contexts.append(f"Temporal setting: {time_elements[time_of_day]}")
-        
-        return " ".join(contexts) + "." if contexts else ""
-    
-    @classmethod
-    def generate_enhanced_negative_prompt(cls, user_negative_prompt=None):
-        """Generate comprehensive negative prompt for SD3.5 Large combining system and user preferences"""
-        
-        # System negative elements (always included)
-        system_negative_elements = [
-            # People and crowds (critical for venue photos)
-            "people, faces, crowd, guests, bride, groom, wedding party, humans, person, bodies",
-            
-            # Quality issues specific to SD3.5 Large
-            "blurry, low quality, distorted, pixelated, artifacts, noise, low resolution, jpeg artifacts",
-            
-            # Unwanted content
-            "text, watermark, signature, logo, copyright, writing, signs, labels",
-            
-            # Poor atmosphere
-            "dark, dim, gloomy, messy, cluttered, chaotic, unorganized, dirty, shabby",
-            
-            # Style issues
-            "cartoon, anime, unrealistic, fake, artificial, painting, drawing, sketch",
-            
-            # Composition problems
-            "cropped, cut off, partial, incomplete, tilted, askew, bad proportions",
-            
-            # Unwanted objects
-            "cars, vehicles, modern electronics, phones, computers, inappropriate items",
-            
-            # SD3.5 Large specific negatives
-            "overexposed, underexposed, bad lighting, harsh shadows, color bleeding, oversaturated"
+        # Advanced transformation methods used by top wedding designers
+        transformation_methods = [
+            "dramatic ceiling draping installations",
+            "professional uplighting design",
+            "strategic fabric draping to reshape space",
+            "statement floral installations",
+            "custom furniture positioning",
+            "architectural lighting enhancements"
         ]
         
-        # Combine system negatives
-        final_negative_elements = system_negative_elements.copy()
+        space_specific_techniques = {
+            'wedding_ceremony': "processional aisle transformation with petal scattering, altar backdrop installation, guest seating arrangement optimization",
+            'dance_floor': "elevated DJ platform setup, perimeter lounge area creation, dynamic lighting programming",
+            'dining_area': "table arrangement optimization, centerpiece height variation, service flow enhancement",
+            'cocktail_hour': "multiple conversation zone creation, bar placement strategy, interactive station positioning",
+            'lounge_area': "intimate seating cluster arrangement, ambient lighting zones, cozy corner creation"
+        }
         
-        # Add user-specified negative elements if provided
-        if user_negative_prompt and user_negative_prompt.strip():
-            # Clean and split user negative prompt
-            user_elements = [element.strip() for element in user_negative_prompt.split(',') if element.strip()]
-            final_negative_elements.extend(user_elements)
+        base_techniques = f"Professional transformation: {', '.join(transformation_methods[:3])}"
+        space_techniques = space_specific_techniques.get(space_type, "luxury space optimization")
         
-        return ", ".join(final_negative_elements)
+        return f"{base_techniques}, {space_techniques}"
     
     @classmethod
-    def get_space_optimized_parameters(cls, space_type, wedding_theme, guest_count):
-        """Get SD3.5 Large parameters optimized for space transformation success"""
+    def _get_professional_color_palette(cls, color_scheme, custom_colors, theme_data):
+        """Professional color coordination with 2024-2025 palettes"""
+        
+        if color_scheme == 'custom' and custom_colors:
+            return f"Custom color palette: {custom_colors} with professional coordination"
+        elif color_scheme:
+            professional_palettes = {
+                'neutral': 'sophisticated neutral palette with whites, creams, champagne tones, and warm beiges',
+                'pastels': 'romantic pastel collection with blush pink, soft lavender, mint green, and cream accents',
+                'jewel_tones': 'luxurious jewel palette with emerald green, sapphire blue, ruby red, and gold metallic accents',
+                'earth_tones': 'organic earth palette with sage green, terracotta, warm cognac, and natural cream tones',
+                'monochrome': 'elegant monochromatic scheme with black, white, and sophisticated silver metallic details',
+                'bold_colors': 'vibrant contemporary palette with coral pink, turquoise blue, sunny yellow, and lime green'
+            }
+            return f"Professional colors: {professional_palettes.get(color_scheme, theme_data['color_palette'])}"
+        else:
+            return f"Theme colors: {theme_data['color_palette']}"
+    
+    @classmethod
+    def _get_contextual_enhancements(cls, season, time_of_day, budget_level):
+        """Contextual enhancements based on season, time, and budget"""
+        
+        enhancements = []
+        
+        if season:
+            seasonal_luxury = {
+                'spring': 'fresh spring elements with blooming branches, light flowing fabrics, renewal-inspired arrangements',
+                'summer': 'vibrant summer installations with lush greenery, bright seasonal blooms, open-air elegance',
+                'fall': 'rich autumn elements with seasonal foliage, warm textured fabrics, harvest-inspired displays',
+                'winter': 'sophisticated winter elegance with evergreen installations, rich textures, festive luxury elements'
+            }
+            if season in seasonal_luxury:
+                enhancements.append(seasonal_luxury[season])
+        
+        if time_of_day:
+            timing_elements = {
+                'morning': 'bright morning elegance with fresh breakfast reception atmosphere',
+                'afternoon': 'natural daylight optimization with garden party sophistication',
+                'evening': 'golden hour romance with dramatic sunset-inspired lighting',
+                'night': 'sophisticated evening glamour with dramatic nighttime ambiance'
+            }
+            if time_of_day in timing_elements:
+                enhancements.append(timing_elements[time_of_day])
+        
+        if budget_level:
+            luxury_levels = {
+                'budget': 'thoughtfully curated budget-conscious elegance with high-impact design choices',
+                'moderate': 'professional quality setup with refined details and coordinated elements',
+                'luxury': 'luxury high-end installations with premium materials and designer-level coordination',
+                'ultra_luxury': 'ultra-luxury opulent transformation with exquisite materials and white-glove execution'
+            }
+            if budget_level in luxury_levels:
+                enhancements.append(luxury_levels[budget_level])
+        
+        return " ".join(enhancements) + "." if enhancements else ""
+    
+    @classmethod
+    def generate_professional_negative_prompt(cls):
+        """Professional negative prompt optimized for Stable Image Ultra"""
+        negative_elements = [
+            # People (critical for venue shots)
+            "people, faces, crowd, guests, bride, groom, wedding party, humans, person",
+            
+            # Quality issues
+            "blurry, low quality, distorted, pixelated, artifacts, noise, low resolution",
+            
+            # Unwanted content  
+            "text, watermark, signature, logo, writing, signs",
+            
+            # Poor conditions
+            "dark, dim, gloomy, messy, cluttered, chaotic, dirty, shabby, unorganized",
+            
+            # Style issues
+            "cartoon, anime, unrealistic, fake, painting, sketch, drawing",
+            
+            # Composition problems
+            "cropped, cut off, tilted, bad proportions, awkward angles"
+        ]
+        
+        return ", ".join(negative_elements)
+    
+    @classmethod
+    def get_ultra_designer_parameters(cls, space_type, wedding_theme, guest_count):
+        """Designer-optimized parameters for Stable Image Ultra"""
         
         base_params = {
             'strength': 0.4,
             'cfg_scale': 7.0,
-            'steps': 50,
+            'steps': 40,
             'output_format': 'png',
         }
         
-        # Space-specific optimizations (space function is primary)
+        # Space-specific designer optimizations
         space_optimizations = {
-            'wedding_ceremony': {'strength': 0.35, 'cfg_scale': 6.5},  # Less aggressive for ceremony spaces
-            'dining_area': {'strength': 0.4, 'cfg_scale': 7.0},        # Balanced for dining
-            'dance_floor': {'strength': 0.45, 'cfg_scale': 7.5},       # More transformation for entertainment
-            'cocktail_hour': {'strength': 0.4, 'cfg_scale': 7.0},      # Balanced for social space
-            'lounge_area': {'strength': 0.35, 'cfg_scale': 6.5},       # Gentler for intimate spaces
+            'wedding_ceremony': {'strength': 0.35, 'cfg_scale': 6.5},  # Gentle for sacred space
+            'dining_area': {'strength': 0.4, 'cfg_scale': 7.0},        # Balanced elegance
+            'dance_floor': {'strength': 0.45, 'cfg_scale': 7.5},       # Dynamic transformation
+            'cocktail_hour': {'strength': 0.4, 'cfg_scale': 7.0},      # Social sophistication
+            'lounge_area': {'strength': 0.35, 'cfg_scale': 6.5},       # Intimate luxury
         }
         
-        # Theme-specific fine-tuning (secondary to space)
-        theme_adjustments = {
-            'rustic': {'cfg_scale': -0.5, 'steps': -5},      # Slightly more organic
-            'modern': {'cfg_scale': 0.5, 'steps': 5},        # More precise control
-            'industrial': {'cfg_scale': 1.0, 'steps': 10},   # Highest precision
-            'vintage': {'cfg_scale': 0.5},                   # Good detail control
-            'classic': {'cfg_scale': 0.5},                   # Refined control
+        # Theme-specific designer adjustments
+        theme_optimizations = {
+            'rustic': {'cfg_scale': -0.5},                 # More organic feel
+            'modern': {'cfg_scale': 0.5, 'steps': 5},      # Precise modern lines
+            'luxe_minimalism': {'cfg_scale': 1.0},         # Highest precision
+            'maximalist_glamour': {'cfg_scale': 0.5},      # Controlled complexity
+            'indian_palace': {'cfg_scale': 0.5},           # Rich detail control
+            'celestial_romance': {'cfg_scale': 0.5},       # Magical precision
+            'gothic_romance': {'cfg_scale': 0.5},          # Dramatic mood control
         }
         
-        # Apply space optimizations first (primary)
+        # Apply designer optimizations
         if space_type in space_optimizations:
             base_params.update(space_optimizations[space_type])
         
-        # Apply theme adjustments (secondary)
-        if wedding_theme in theme_adjustments:
-            adj = theme_adjustments[wedding_theme]
+        if wedding_theme in theme_optimizations:
+            adj = theme_optimizations[wedding_theme]
             base_params['cfg_scale'] += adj.get('cfg_scale', 0)
             base_params['steps'] += adj.get('steps', 0)
         
-        # Guest count adjustments (affects transformation intensity)
+        # Guest count refinements
         if guest_count in ['large', 'grand']:
-            base_params['strength'] += 0.05  # More transformation for larger events
+            base_params['strength'] += 0.05  # More transformation for larger scale
         elif guest_count == 'intimate':
-            base_params['strength'] -= 0.05  # Gentler for intimate spaces
+            base_params['strength'] -= 0.05  # Gentler for intimate settings
         
-        # Clamp to valid SD3.5 Large ranges
+        # Ensure valid ranges
         base_params['cfg_scale'] = max(1.0, min(20.0, base_params['cfg_scale']))
-        base_params['steps'] = max(10, min(150, base_params['steps']))
+        base_params['steps'] = max(10, min(50, base_params['steps']))
         base_params['strength'] = max(0.0, min(1.0, base_params['strength']))
         
         return base_params
-    
-    @classmethod
-    def get_space_suggestions(cls, space_type):
-        """Get suggestions optimized for specific space types"""
-        
-        space_suggestions = {
-            'wedding_ceremony': {
-                'guest_count': 'medium',
-                'budget_level': 'moderate',
-                'time_of_day': 'afternoon',
-                'color_scheme': 'neutral',
-                'religion_culture': 'interfaith',
-                'theme_recommendations': ['classic', 'garden', 'vintage', 'romantic']
-            },
-            'dining_area': {
-                'guest_count': 'medium',
-                'budget_level': 'moderate',
-                'time_of_day': 'evening',
-                'color_scheme': 'neutral',
-                'religion_culture': 'secular',
-                'theme_recommendations': ['classic', 'modern', 'vintage', 'elegant']
-            },
-            'dance_floor': {
-                'guest_count': 'large',
-                'budget_level': 'luxury',
-                'time_of_day': 'night',
-                'color_scheme': 'bold_colors',
-                'religion_culture': 'secular',
-                'theme_recommendations': ['modern', 'industrial', 'glamorous', 'party']
-            },
-            'cocktail_hour': {
-                'guest_count': 'medium',
-                'budget_level': 'moderate',
-                'time_of_day': 'evening',
-                'color_scheme': 'jewel_tones',
-                'religion_culture': 'secular',
-                'theme_recommendations': ['modern', 'classic', 'sophisticated', 'social']
-            },
-            'lounge_area': {
-                'guest_count': 'intimate',
-                'budget_level': 'luxury',
-                'time_of_day': 'evening',
-                'color_scheme': 'pastels',
-                'religion_culture': 'secular',
-                'theme_recommendations': ['bohemian', 'vintage', 'comfortable', 'relaxed']
-            }
-        }
-        
-        return space_suggestions.get(space_type, space_suggestions['wedding_ceremony'])

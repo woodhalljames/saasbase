@@ -937,3 +937,55 @@ def get_usage_data(request):
             'success': False,
             'error': 'Unable to load usage data'
         }, status=500)
+    
+
+    # Add this to image_processing/views.py
+
+@login_required
+def job_result(request, job_id):
+    """Get the result of a completed processing job for dynamic loading"""
+    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+    
+    if job.status != 'completed':
+        return JsonResponse({
+            'success': False,
+            'error': 'Job not completed yet'
+        })
+    
+    # Get the processed images
+    processed_images = job.processed_images.all()
+    
+    if not processed_images:
+        return JsonResponse({
+            'success': False,
+            'error': 'No results found'
+        })
+    
+    # Get the first (primary) result
+    processed_image = processed_images.first()
+    
+    # Add favorite status
+    is_favorited = Favorite.objects.filter(
+        user=request.user,
+        processed_image=processed_image
+    ).exists()
+    
+    return JsonResponse({
+        'success': True,
+        'result': {
+            'id': processed_image.id,
+            'image_url': processed_image.processed_image.url,
+            'width': processed_image.width,
+            'height': processed_image.height,
+            'file_size': processed_image.file_size,
+            'created_at': processed_image.created_at.isoformat(),
+            'is_favorited': is_favorited,
+            'job': {
+                'id': job.id,
+                'theme': job.wedding_theme,
+                'space': job.space_type,
+                'theme_display': dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else None,
+                'space_display': dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else None,
+            }
+        }
+    })

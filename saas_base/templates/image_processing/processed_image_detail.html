@@ -75,22 +75,6 @@
 
     <!-- Actions & Info Sidebar -->
     <div class="col-md-4">
-      
-      <!-- Image Info -->
-      <div class="card mb-3">
-        <div class="card-header bg-success text-white">
-          <h6 class="mb-0">
-            <i class="bi bi-info-circle"></i> Image Information
-          </h6>
-        </div>
-        <div class="card-body">
-          <p class="mb-2">
-            <i class="bi bi-calendar-check"></i> 
-            Created {{ processed_image.created_at|timesince }} ago
-          </p>
-          
-        </div>
-      </div>
 
       <!-- Action Buttons -->
       <div class="card mb-3">
@@ -128,12 +112,7 @@
               </button>
               <ul class="dropdown-menu w-100">
                 <li><h6 class="dropdown-header">Add to Collection</h6></li>
-                <li><a class="dropdown-item add-to-collection" 
-                       href="#" 
-                       data-processed-image-id="{{ processed_image.id }}"
-                       data-collection-type="default">
-                  <i class="bi bi-star"></i> Default Collection
-                </a></li>
+                
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">

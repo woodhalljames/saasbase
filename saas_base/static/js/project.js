@@ -2678,3 +2678,391 @@ window.toggleFavorite = toggleFavorite;
 window.checkJobStatus = checkJobStatus;
 window.showToast = showToast;
 
+
+/**
+ * Footer Overlap Prevention JavaScript
+ * Add this to your project.js file
+ */
+
+// Footer overlap prevention system
+class FooterOverlapPrevention {
+    constructor() {
+        this.init();
+    }
+
+    init() {
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            this.checkAndFixFooterOverlap();
+            this.setupResizeHandler();
+            this.setupDynamicContentObserver();
+        });
+    }
+
+    checkAndFixFooterOverlap() {
+        const main = document.getElementById('main-content');
+        const footer = document.querySelector('.footer-modern');
+        
+        if (!main || !footer) return;
+
+        // Ensure minimum spacing between content and footer
+        const minSpacing = 60; // pixels
+        const mainRect = main.getBoundingClientRect();
+        const footerRect = footer.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        
+        // Check if footer is overlapping or too close to content
+        const currentSpacing = footerRect.top - mainRect.bottom;
+        
+        if (currentSpacing < minSpacing) {
+            // Add dynamic padding to prevent overlap
+            const additionalPadding = minSpacing - currentSpacing + 20; // Extra 20px buffer
+            main.style.paddingBottom = `${additionalPadding}px`;
+            
+            console.log(`Footer overlap detected. Added ${additionalPadding}px padding.`);
+        }
+    }
+
+    setupResizeHandler() {
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                this.checkAndFixFooterOverlap();
+            }, 250);
+        });
+    }
+
+    setupDynamicContentObserver() {
+        // Watch for content changes that might affect layout
+        const main = document.getElementById('main-content');
+        if (!main) return;
+
+        const observer = new MutationObserver((mutations) => {
+            let shouldCheck = false;
+            
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' || 
+                    mutation.type === 'attributes' ||
+                    mutation.type === 'subtree') {
+                    shouldCheck = true;
+                }
+            });
+
+            if (shouldCheck) {
+                // Debounce the check
+                clearTimeout(this.checkTimeout);
+                this.checkTimeout = setTimeout(() => {
+                    this.checkAndFixFooterOverlap();
+                }, 100);
+            }
+        });
+
+        observer.observe(main, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'style']
+        });
+    }
+
+    // Manual trigger for specific cases
+    static trigger() {
+        if (window.footerOverlapPrevention) {
+            window.footerOverlapPrevention.checkAndFixFooterOverlap();
+        }
+    }
+}
+
+// Initialize the footer overlap prevention
+window.footerOverlapPrevention = new FooterOverlapPrevention();
+
+// Make trigger available globally for dynamic content
+window.checkFooterOverlap = FooterOverlapPrevention.trigger;
+
+// Specific fixes for known dynamic content scenarios
+document.addEventListener('DOMContentLoaded', function() {
+    // After image uploads in studio
+    document.addEventListener('imageUploaded', () => {
+        setTimeout(FooterOverlapPrevention.trigger, 100);
+    });
+
+    // After form submissions
+    document.addEventListener('formSubmitted', () => {
+        setTimeout(FooterOverlapPrevention.trigger, 100);
+    });
+
+    // After AJAX content loads
+    document.addEventListener('ajaxContentLoaded', () => {
+        setTimeout(FooterOverlapPrevention.trigger, 100);
+    });
+
+    // After modals are shown/hidden
+    document.addEventListener('shown.bs.modal', () => {
+        setTimeout(FooterOverlapPrevention.trigger, 100);
+    });
+    
+    document.addEventListener('hidden.bs.modal', () => {
+        setTimeout(FooterOverlapPrevention.trigger, 100);
+    });
+
+    // Fix for processing status changes
+    const processingElements = document.querySelectorAll('.processing-status');
+    processingElements.forEach(element => {
+        const observer = new MutationObserver(() => {
+            FooterOverlapPrevention.trigger();
+        });
+        observer.observe(element, { childList: true, subtree: true });
+    });
+});
+
+// Emergency fix function for specific pages
+function emergencyFooterFix() {
+    const main = document.getElementById('main-content');
+    if (main) {
+        const currentPadding = parseInt(window.getComputedStyle(main).paddingBottom) || 0;
+        main.style.paddingBottom = Math.max(currentPadding, 100) + 'px';
+        console.log('Emergency footer fix applied');
+    }
+}
+
+// Make emergency fix available globally
+window.emergencyFooterFix = emergencyFooterFix;
+
+
+// Add this to the bottom of your existing project.js file, before the closing
+
+/**
+ * Replace the existing auto-refresh with this enhanced version
+ * Add this AFTER the existing initialization code
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    // Enhanced auto-refresh for processing jobs - REPLACES existing simple version
+    if (document.querySelector('.processing-status') || document.querySelector('[data-job-id]')) {
+        console.log('🔄 Starting enhanced job monitoring...');
+        
+        // Initialize the enhanced loader
+        if (!window.dynamicJobLoader && typeof DynamicJobLoader !== 'undefined') {
+            window.dynamicJobLoader = new DynamicJobLoader();
+        }
+        
+        // Fallback simple polling if the class isn't available
+        if (!window.dynamicJobLoader) {
+            console.log('📱 Using fallback simple polling...');
+            startSimpleDynamicPolling();
+        }
+    }
+});
+
+// Simple fallback if the main class fails to load
+function startSimpleDynamicPolling() {
+    const processingJobs = [];
+    
+    // Find processing jobs
+    document.querySelectorAll('[data-job-id]').forEach(card => {
+        const badge = card.querySelector('.badge');
+        if (badge && (badge.textContent.includes('Processing') || badge.textContent.includes('Pending'))) {
+            processingJobs.push({
+                id: card.dataset.jobId,
+                element: card
+            });
+        }
+    });
+    
+    if (processingJobs.length === 0) return;
+    
+    console.log(`Found ${processingJobs.length} processing jobs - starting simple polling`);
+    
+    let checks = 0;
+    const maxChecks = 120; // 10 minutes
+    
+    const interval = setInterval(async () => {
+        checks++;
+        let stillProcessing = false;
+        
+        for (const job of processingJobs) {
+            try {
+                const response = await fetch(`/studio/job/${job.id}/status/`);
+                const data = await response.json();
+                
+                if (data.status === 'completed') {
+                    updateJobToCompleted(job.element, job.id);
+                } else if (data.status === 'failed') {
+                    updateJobToFailed(job.element, data.error_message);
+                } else if (data.status === 'processing') {
+                    stillProcessing = true;
+                }
+            } catch (error) {
+                console.error(`Error checking job ${job.id}:`, error);
+            }
+        }
+        
+        // Stop polling if no jobs are processing or max time reached
+        if (!stillProcessing || checks >= maxChecks) {
+            clearInterval(interval);
+            console.log('✅ Polling stopped - all jobs completed or timeout reached');
+        }
+    }, 5000); // Check every 5 seconds
+}
+
+function updateJobToCompleted(jobElement, jobId) {
+    // Update status badge
+    const badge = jobElement.querySelector('.badge');
+    if (badge) {
+        badge.className = 'badge fs-6 bg-success';
+        badge.innerHTML = '<i class="bi bi-check-circle"></i> Completed';
+    }
+    
+    // Update processing area
+    const processingArea = jobElement.querySelector('.processing-status');
+    if (processingArea) {
+        processingArea.innerHTML = `
+            <div class="text-center text-success">
+                <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                <div class="mt-2">✨ Transformation Complete!</div>
+                <button class="btn btn-success btn-sm mt-2" onclick="location.reload()">
+                    <i class="bi bi-eye"></i> View Results
+                </button>
+            </div>
+        `;
+    }
+    
+    // Show success notification
+    if (window.showToast) {
+        window.showToast('✨ Your wedding transformation is ready!', 'success');
+    }
+    
+    // Add some visual flair
+    addSimpleSparkles(jobElement);
+}
+
+function updateJobToFailed(jobElement, errorMessage) {
+    // Update status badge
+    const badge = jobElement.querySelector('.badge');
+    if (badge) {
+        badge.className = 'badge fs-6 bg-danger';
+        badge.innerHTML = '<i class="bi bi-x-circle"></i> Failed';
+    }
+    
+    // Update processing area
+    const processingArea = jobElement.querySelector('.processing-status');
+    if (processingArea) {
+        processingArea.innerHTML = `
+            <div class="text-center text-danger">
+                <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                <div class="mt-2">Processing Failed</div>
+                <small class="text-muted">${errorMessage || 'Unknown error occurred'}</small>
+                <div class="mt-2">
+                    <button class="btn btn-outline-warning btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise"></i> Try Again
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show error notification
+    if (window.showToast) {
+        window.showToast('❌ Transformation failed. Please try again.', 'error');
+    }
+}
+
+function addSimpleSparkles(element) {
+    element.style.position = 'relative';
+    
+    for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+            const sparkle = document.createElement('div');
+            sparkle.innerHTML = '✨';
+            sparkle.style.cssText = `
+                position: absolute;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 50}%;
+                font-size: 1.2rem;
+                animation: simpleFloat 1.5s ease-out forwards;
+                pointer-events: none;
+                z-index: 10;
+            `;
+            
+            element.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1500);
+        }, i * 300);
+    }
+}
+
+// Add animation styles
+const existingStyle = document.querySelector('#dynamic-loader-styles');
+if (!existingStyle) {
+    const style = document.createElement('style');
+    style.id = 'dynamic-loader-styles';
+    style.textContent = `
+        @keyframes simpleFloat {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            50% { opacity: 1; transform: translateY(-15px) scale(1); }
+            100% { opacity: 0; transform: translateY(-30px) scale(0.5); }
+        }
+        
+        .processing-status {
+            transition: all 0.3s ease;
+        }
+        
+        .processing-status.completed {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(25, 135, 84, 0.2);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+console.log('✅ Dynamic job loader enhancements loaded');
+
+/* Add these styles to project.css to fix footer overlap */
+
+/* Ensure main content has proper bottom margin */
+main {
+  margin-bottom: 2rem;
+  min-height: calc(100vh - 200px); /* Ensure content takes up proper space */
+}
+
+/* Fix footer positioning */
+.footer-modern {
+  margin-top: auto;
+  background: var(--primary-navy) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  position: relative; /* Ensure it's not floating */
+  z-index: 1;
+}
+
+/* Ensure body has proper structure */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Main content should flex grow */
+main {
+  flex: 1;
+}
+
+/* Remove the manual spacing divs and replace with proper CSS */
+.content-spacer {
+  height: 2rem; /* Replace those 100px height divs with this class */
+}
+
+/* Fix container bottom spacing */
+.container:last-child {
+  margin-bottom: 2rem;
+}
+
+/* Ensure pages don't have excessive bottom padding */
+.py-4:last-child,
+.py-5:last-child {
+  padding-bottom: 1rem !important;
+}
+
+/* Specific fix for studio page */
+.studio-page .container:last-child {
+  margin-bottom: 1rem;
+}
