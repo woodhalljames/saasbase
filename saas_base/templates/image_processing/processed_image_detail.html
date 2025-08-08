@@ -138,109 +138,7 @@
             </div>
           </div>
 
-          <!-- Transformation Details Section -->
-          <div class="border-bottom">
-            <div class="p-4">
-              <h6 class="fw-bold text-muted mb-3">
-                <i class="bi bi-info-circle me-2"></i>Transformation Details
-              </h6>
-              
-              <div class="row g-4">
-                <!-- Wedding Style Info -->
-                <div class="col-md-6">
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">Wedding Style:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="badge bg-primary">{{ theme_display }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">Space Type:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="badge bg-secondary">{{ space_display }}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {% if processed_image.processing_job.strength %}
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">AI Strength:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="text-muted">{{ processed_image.processing_job.strength }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-
-                <!-- Advanced Parameters -->
-                <div class="col-md-6">
-                  {% if processed_image.processing_job.guest_count %}
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">Guest Count:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="badge bg-light text-dark">{{ processed_image.processing_job.get_guest_count_display }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {% endif %}
-                  
-                  {% if processed_image.processing_job.budget_level %}
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">Budget Level:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="badge bg-info">{{ processed_image.processing_job.get_budget_level_display }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {% endif %}
-                  
-                  {% if processed_image.processing_job.season %}
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">Season:</span>
-                      </div>
-                      <div class="col-7">
-                        <span class="badge bg-warning text-dark">{{ processed_image.processing_job.get_season_display }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {% endif %}
-
-                  {% if processed_image.stability_seed %}
-                  <div class="detail-group">
-                    <div class="row">
-                      <div class="col-5">
-                        <span class="detail-label">AI Seed:</span>
-                      </div>
-                      <div class="col-7">
-                        <code class="small">{{ processed_image.stability_seed }}</code>
-                      </div>
-                    </div>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </div>
 
           <!-- Original Image Reference Section -->
           <div class="border-bottom">
@@ -277,27 +175,7 @@
             </div>
           </div>
 
-          <!-- Advanced Actions Section -->
-          <div class="p-4">
-            <h6 class="fw-bold text-muted mb-3">
-              <i class="bi bi-gear me-2"></i>Advanced Options
-            </h6>
-            
-            <div class="row g-3">
-              <div class="col-md-6">
-                <button class="btn btn-outline-warning w-100" onclick="showShareModal()">
-                  <i class="bi bi-share me-2"></i>Share Transformation
-                </button>
-              </div>
-              <div class="col-md-6">
-                <button class="btn btn-outline-danger w-100 processed-image-delete-btn" 
-                        data-image-id="{{ processed_image.pk }}"
-                        data-image-url="{{ processed_image.processed_image.url }}">
-                  <i class="bi bi-trash me-2"></i>Delete Transformation
-                </button>
-              </div>
-            </div>
-
+          
             <!-- Processing Details Accordion -->
             <div class="mt-4">
               <div class="accordion" id="processingDetails">
