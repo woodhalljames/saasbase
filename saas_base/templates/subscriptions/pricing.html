@@ -1,64 +1,185 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}About DreamWedAI - Your Wedding Visualization Partner{% endblock %}
+{% block title %}Pricing - DreamWedAI{% endblock %}
 
 {% block content %}
-<div class="about-page">
+<div class="pricing-page">
   <!-- Hero Section -->
-  <section class="hero-section">
+  <section class="pricing-hero-section">
     <div class="container">
-      <div class="row align-items-center min-vh-75">
-        <div class="col-lg-6">
-          <h1 class="display-3 fw-bold mb-4 text-white">
-            We Believe Every Couple Deserves to 
-            <span class="text-gradient">See Their Dream</span>
+      <div class="row justify-content-center text-center py-5">
+        <div class="col-lg-8">
+          <h1 class="display-4 fw-bold mb-4">
+            Simple, Transparent 
+            <span class="text-gradient">Pricing</span>
           </h1>
-          <p class="lead mb-4 text-white-75">
-            DreamWedAI was born from a simple idea: wedding planning shouldn't be filled with uncertainty and stress. We're here to help you visualize your perfect day before it happens.
+          <p class="lead text-muted mb-5">
+            Start free with a beautiful wedding page. Upgrade anytime for unlimited AI visualizations.
           </p>
-          <div class="hero-stats">
-            <div class="row text-center">
-              <div class="col-md-4 mb-3">
-                <div class="stat-number">2024</div>
-                <div class="stat-label">Founded</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Cards -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row g-4 justify-content-center">
+        <!-- Free Plan -->
+        <div class="col-lg-4 col-md-6">
+          <div class="card pricing-card h-100 border-0 shadow-lg">
+            <div class="card-header bg-light text-center py-4">
+              <h3 class="fw-bold mb-0">Free Forever</h3>
+              <div class="mt-3">
+                <span class="display-4 fw-bold">$0</span>
+                <span class="text-muted">/month</span>
               </div>
-              <div class="col-md-4 mb-3">
-                <div class="stat-number">15k+</div>
-                <div class="stat-label">Transformations</div>
-              </div>
-              <div class="col-md-4 mb-3">
-                <div class="stat-number">800+</div>
-                <div class="stat-label">Happy Couples</div>
+            </div>
+            <div class="card-body p-4">
+              <ul class="list-unstyled mb-4">
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Beautiful wedding page
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Unlimited registry links
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Social media integration
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  3 AI transformations
+                </li>
+                <li class="mb-3 text-muted">
+                  <i class="bi bi-x-circle text-muted me-2"></i>
+                  <s>Unlimited AI transforms</s>
+                </li>
+                <li class="mb-3 text-muted">
+                  <i class="bi bi-x-circle text-muted me-2"></i>
+                  <s>Priority support</s>
+                </li>
+              </ul>
+              <div class="d-grid">
+                {% if user.is_authenticated %}
+                  <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-primary btn-lg">
+                    Get Started
+                  </a>
+                {% else %}
+                  <a href="{% url 'account_signup' %}" class="btn btn-outline-primary btn-lg">
+                    Sign Up Free
+                  </a>
+                {% endif %}
               </div>
             </div>
           </div>
         </div>
-        <div class="col-lg-6">
-          <div class="hero-visual">
-            <div class="floating-element">
-              <div class="text-center">
-                <i class="bi bi-heart-fill text-rose fs-2 mb-2"></i>
-                <h6 class="mb-0">Love Stories</h6>
-                <small class="text-muted">Beautifully told</small>
+
+        <!-- Pro Plan -->
+        <div class="col-lg-4 col-md-6">
+          <div class="card pricing-card featured h-100 border-0 shadow-lg">
+            <div class="ribbon">
+              <span>Most Popular</span>
+            </div>
+            <div class="card-header bg-gradient-rose text-white text-center py-4">
+              <h3 class="fw-bold mb-0">Pro</h3>
+              <div class="mt-3">
+                <span class="display-4 fw-bold">$19</span>
+                <span>/month</span>
               </div>
             </div>
-            <div class="floating-element">
-              <div class="text-center">
-                <i class="bi bi-magic text-cyan fs-2 mb-2"></i>
-                <h6 class="mb-0">AI Magic</h6>
-                <small class="text-muted">Instant transforms</small>
+            <div class="card-body p-4">
+              <ul class="list-unstyled mb-4">
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  <strong>Everything in Free</strong>
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  <strong>50 AI transformations/month</strong>
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  HD quality exports
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Collections & favorites
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Priority processing
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Email support
+                </li>
+              </ul>
+              <div class="d-grid">
+                <form action="{% url 'subscriptions:create_checkout_session' %}" method="POST">
+                  {% csrf_token %}
+                  <input type="hidden" name="price_id" value="price_pro_monthly">
+                  <button type="submit" class="btn btn-gradient-rose btn-lg w-100">
+                    <i class="bi bi-lightning-fill me-1"></i> Start Pro Trial
+                  </button>
+                </form>
+              </div>
+              <p class="text-center text-muted small mt-2 mb-0">
+                7-day free trial • Cancel anytime
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="col-lg-4 col-md-6">
+          <div class="card pricing-card h-100 border-0 shadow-lg">
+            <div class="card-header bg-gradient-cyan text-white text-center py-4">
+              <h3 class="fw-bold mb-0">Premium</h3>
+              <div class="mt-3">
+                <span class="display-4 fw-bold">$49</span>
+                <span>/month</span>
               </div>
             </div>
-            <div class="floating-element">
-              <div class="text-center">
-                <i class="bi bi-share text-rose fs-2 mb-2"></i>
-                <h6 class="mb-0">Easy Sharing</h6>
-                <small class="text-muted">With loved ones</small>
+            <div class="card-body p-4">
+              <ul class="list-unstyled mb-4">
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  <strong>Everything in Pro</strong>
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  <strong>Unlimited AI transformations</strong>
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  4K quality exports
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Advanced customization
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  White-glove support
+                </li>
+                <li class="mb-3">
+                  <i class="bi bi-check-circle-fill text-success me-2"></i>
+                  Early access features
+                </li>
+              </ul>
+              <div class="d-grid">
+                <form action="{% url 'subscriptions:create_checkout_session' %}" method="POST">
+                  {% csrf_token %}
+                  <input type="hidden" name="price_id" value="price_premium_monthly">
+                  <button type="submit" class="btn btn-gradient-cyan btn-lg w-100">
+                    Go Premium
+                  </button>
+                </form>
               </div>
-            </div>
-            <div class="hero-main-image">
-              <i class="bi bi-heart-fill fs-1"></i>
             </div>
           </div>
         </div>
@@ -66,81 +187,52 @@
     </div>
   </section>
 
-  <!-- Mission Section -->
-  <section class="py-6">
+  <!-- FAQ Section -->
+  <section class="py-6 bg-light">
     <div class="container">
       <div class="row">
-        <div class="col-lg-8 mx-auto text-center">
-          <div class="section-divider"></div>
-          <h2 class="section-title">Our Mission</h2>
-          <p class="section-subtitle">
-            To eliminate the guesswork from wedding planning by giving couples the power to visualize their dream wedding before their special day arrives.
-          </p>
-          <p class="text-muted fs-5">
-            We understand that your wedding day is one of the most important days of your life. That's why we've created tools that help you see, share, and celebrate your vision with confidence.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Story Section -->
-  <section class="py-6 bg-light">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-6 mb-4">
-          <div class="section-divider"></div>
-          <h2 class="section-title">Our Story</h2>
-          <div class="story-content">
-            <p class="mb-4 fs-5">
-              DreamWedAI started when our founder was helping a friend plan their wedding. After visiting dozens of venues, they realized that couples were making one of their biggest decisions based on empty rooms and their imagination.
-            </p>
-            <p class="mb-4 fs-5">
-              "What if we could show them exactly how their venue would look decorated?" That question sparked the creation of DreamWedAI - a platform that transforms any space into a wedding celebration.
-            </p>
-            <p class="mb-4 fs-5">
-              Today, we're proud to help couples around the world visualize their perfect wedding day, share their vision with loved ones, and celebrate with confidence.
-            </p>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-lg">
-            <div class="card-body p-4">
-              <div class="timeline">
-                <div class="d-flex mb-4">
-                  <div class="flex-shrink-0 me-3">
-                    <div class="feature-icon bg-gradient-rose">
-                      <i class="bi bi-exclamation-triangle"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h5 class="mb-2">The Problem</h5>
-                    <p class="text-muted">Couples struggling to visualize their wedding venues</p>
-                  </div>
+        <div class="col-lg-8 mx-auto">
+          <h2 class="text-center mb-5">Frequently Asked Questions</h2>
+          
+          <div class="accordion" id="pricingFAQ">
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                  What's included in the free plan?
+                </button>
+              </h2>
+              <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  The free plan includes a beautiful wedding page, unlimited registry links, 
+                  social media integration, and 3 AI venue transformations to get you started.
                 </div>
-                
-                <div class="d-flex mb-4">
-                  <div class="flex-shrink-0 me-3">
-                    <div class="feature-icon bg-gradient-cyan">
-                      <i class="bi bi-lightbulb"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h5 class="mb-2">The Solution</h5>
-                    <p class="text-muted">Advanced AI visualization technology made simple</p>
-                  </div>
+              </div>
+            </div>
+            
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                  Can I cancel my subscription anytime?
+                </button>
+              </h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  Yes! You can cancel your subscription at any time. You'll continue to have 
+                  access until the end of your billing period, and your wedding page remains free forever.
                 </div>
-                
-                <div class="d-flex">
-                  <div class="flex-shrink-0 me-3">
-                    <div class="feature-icon bg-gradient-rose">
-                      <i class="bi bi-heart-fill"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h5 class="mb-2">The Result</h5>
-                    <p class="text-muted">Thousands of confident, happy couples</p>
-                  </div>
+              </div>
+            </div>
+            
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                  Do unused transformations roll over?
+                </button>
+              </h2>
+              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  Currently, unused transformations don't roll over to the next month. 
+                  Your transformation count resets at the beginning of each billing cycle.
                 </div>
               </div>
             </div>
@@ -150,318 +242,68 @@
     </div>
   </section>
 
-  <!-- Values Section -->
-  <section class="py-6">
-    <div class="container">
-      <div class="row mb-5">
-        <div class="col-12 text-center">
-          <div class="section-divider"></div>
-          <h2 class="section-title">Our Values</h2>
-          <p class="section-subtitle">The principles that guide everything we do</p>
-        </div>
-      </div>
-      
-      <div class="row g-4">
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-people-fill"></i>
-            </div>
-            <h4 class="mb-3">Inclusivity</h4>
-            <p class="text-muted">Love comes in all forms. We celebrate every couple and every type of wedding celebration.</p>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-star-fill"></i>
-            </div>
-            <h4 class="mb-3">Excellence</h4>
-            <p class="text-muted">We're constantly improving our technology to give you the most realistic and beautiful visualizations.</p>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-compass"></i>
-            </div>
-            <h4 class="mb-3">Innovation</h4>
-            <p class="text-muted">We're always exploring new ways to make wedding planning easier, more fun, and more confident.</p>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon bg-gradient-rose">
-              <i class="bi bi-heart-fill"></i>
-            </div>
-            <h4 class="mb-3">Love First</h4>
-            <p class="text-muted">Every feature we build starts with love - for couples, for celebrations, and for the magic of wedding days.</p>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-lightning-charge"></i>
-            </div>
-            <h4 class="mb-3">Simplicity</h4>
-            <p class="text-muted">Wedding planning is complex enough. We believe powerful tools should be simple to use and understand.</p>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="feature-card">
-            <div class="feature-icon">
-              <i class="bi bi-shield-check"></i>
-            </div>
-            <h4 class="mb-3">Privacy</h4>
-            <p class="text-muted">Your wedding details are precious. We protect your privacy and let you control exactly what you share.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- How We Help Section -->
-  <section class="py-6 bg-light">
-    <div class="container">
-      <div class="row mb-5">
-        <div class="col-12 text-center">
-          <div class="section-divider"></div>
-          <h2 class="section-title">How We Help</h2>
-          <p class="section-subtitle">More than just visualization - we're your wedding planning partner</p>
-        </div>
-      </div>
-      
-      <div class="row g-4">
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-lg h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start mb-3">
-                <div class="feature-icon me-3">
-                  <i class="bi bi-magic"></i>
-                </div>
-                <div>
-                  <h4 class="mb-3">Reduce Uncertainty</h4>
-                  <p class="text-muted mb-3">No more wondering "what if" - see exactly how your venue will look with your chosen decorations, colors, and style.</p>
-                </div>
-              </div>
-              <ul class="list-unstyled">
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Instant venue transformations</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Multiple style options</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Realistic visualization</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Save and compare options</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-lg h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start mb-3">
-                <div class="feature-icon me-3">
-                  <i class="bi bi-share-fill"></i>
-                </div>
-                <div>
-                  <h4 class="mb-3">Share Your Vision</h4>
-                  <p class="text-muted mb-3">Create a beautiful wedding page that brings your family and friends into your planning journey.</p>
-                </div>
-              </div>
-              <ul class="list-unstyled">
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Custom wedding pages</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Share your love story</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Link to registries</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Showcase transformations</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-lg h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start mb-3">
-                <div class="feature-icon bg-gradient-cyan me-3">
-                  <i class="bi bi-palette-fill"></i>
-                </div>
-                <div>
-                  <h4 class="mb-3">Inspire Decisions</h4>
-                  <p class="text-muted mb-3">Discover new styles and ideas you might not have considered for your special day.</p>
-                </div>
-              </div>
-              <ul class="list-unstyled">
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>50+ wedding styles</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Seasonal adaptations</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Color scheme options</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Guest count optimization</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-6">
-          <div class="card border-0 shadow-lg h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start mb-3">
-                <div class="feature-icon bg-gradient-rose me-3">
-                  <i class="bi bi-phone-fill"></i>
-                </div>
-                <div>
-                  <h4 class="mb-3">Plan on the Go</h4>
-                  <p class="text-muted mb-3">Take photos during venue visits and see transformations instantly, right from your phone.</p>
-                </div>
-              </div>
-              <ul class="list-unstyled">
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Mobile-friendly interface</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Instant processing</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Share with your partner</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Save to collections</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Team Section -->
-  <section class="py-6">
-    <div class="container">
-      <div class="row mb-5">
-        <div class="col-12 text-center">
-          <div class="section-divider"></div>
-          <h2 class="section-title">Meet Our Team</h2>
-          <p class="section-subtitle">Passionate people dedicated to making your wedding dreams come true</p>
-        </div>
-      </div>
-      
-      <div class="row g-4 justify-content-center">
-        <div class="col-lg-4 col-md-6">
-          <div class="card border-0 shadow-lg text-center">
-            <div class="card-body p-4">
-              <div class="feature-icon mx-auto mb-3">
-                <i class="bi bi-person-circle"></i>
-              </div>
-              <h4 class="mb-2">Sarah Johnson</h4>
-              <p class="text-rose fw-semibold mb-2">Founder & CEO</p>
-              <p class="text-muted mb-3">Former wedding planner who understands the struggles couples face when visualizing their dream day.</p>
-              <div class="d-flex justify-content-center gap-2">
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-linkedin"></i>
-                </a>
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-twitter"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="card border-0 shadow-lg text-center">
-            <div class="card-body p-4">
-              <div class="feature-icon mx-auto mb-3">
-                <i class="bi bi-person-circle"></i>
-              </div>
-              <h4 class="mb-2">Michael Chen</h4>
-              <p class="text-cyan fw-semibold mb-2">Head of Technology</p>
-              <p class="text-muted mb-3">AI expert passionate about making complex visualization tools simple and accessible for everyone.</p>
-              <div class="d-flex justify-content-center gap-2">
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-linkedin"></i>
-                </a>
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-github"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6">
-          <div class="card border-0 shadow-lg text-center">
-            <div class="card-body p-4">
-              <div class="feature-icon mx-auto mb-3">
-                <i class="bi bi-person-circle"></i>
-              </div>
-              <h4 class="mb-2">Emily Rodriguez</h4>
-              <p class="text-rose fw-semibold mb-2">Head of Design</p>
-              <p class="text-muted mb-3">Creative director ensuring every transformation is beautiful and every experience is delightful.</p>
-              <div class="d-flex justify-content-center gap-2">
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-linkedin"></i>
-                </a>
-                <a href="#" class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-instagram"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Contact Section -->
+  <!-- CTA Section -->
   <section class="final-cta">
     <div class="container">
       <div class="row">
         <div class="col-lg-8 mx-auto text-center">
-          <div class="section-divider bg-white opacity-50"></div>
-          <h2 class="section-title">Get In Touch</h2>
-          <p class="section-subtitle">
-            Have questions? Want to share your wedding story? We'd love to hear from you!
+          <h2 class="section-title">Ready to Transform Your Wedding Vision?</h2>
+          <p class="section-subtitle mb-4">
+            Start with our free plan and upgrade whenever you're ready
           </p>
-          
-          <div class="row g-4 mb-5">
-            <div class="col-md-4">
-              <div class="text-center">
-                <div class="feature-icon mx-auto mb-3 bg-gradient-cyan">
-                  <i class="bi bi-envelope-fill"></i>
-                </div>
-                <h5>Email Us</h5>
-                <p class="opacity-75">hello@dreamwedai.com</p>
-              </div>
-            </div>
-            
-            <div class="col-md-4">
-              <div class="text-center">
-                <div class="feature-icon mx-auto mb-3 bg-gradient-rose">
-                  <i class="bi bi-chat-heart-fill"></i>
-                </div>
-                <h5>Live Chat</h5>
-                <p class="opacity-75">Available 9 AM - 6 PM EST</p>
-              </div>
-            </div>
-            
-            <div class="col-md-4">
-              <div class="text-center">
-                <div class="feature-icon mx-auto mb-3 bg-gradient-cyan">
-                  <i class="bi bi-instagram"></i>
-                </div>
-                <h5>Follow Us</h5>
-                <p class="opacity-75">@dreamwedai</p>
-              </div>
-            </div>
-          </div>
-          
           <div class="d-flex flex-wrap justify-content-center gap-3">
-            <a href="mailto:hello@dreamwedai.com" class="hero-cta-primary">
-              <i class="bi bi-envelope-fill"></i> Contact Us
-            </a>
-            {% if not user.is_authenticated %}
-              <a href="{% url 'account_signup' %}" class="hero-cta-secondary">
-                <i class="bi bi-heart-fill"></i> Get Started
+            {% if user.is_authenticated %}
+              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary">
+                <i class="bi bi-magic"></i> Start Creating
+              </a>
+            {% else %}
+              <a href="{% url 'account_signup' %}" class="hero-cta-primary">
+                <i class="bi bi-heart-fill"></i> Get Started Free
               </a>
             {% endif %}
+            <a href="{% url 'about' %}" class="hero-cta-secondary">
+              <i class="bi bi-info-circle"></i> Learn More
+            </a>
           </div>
         </div>
       </div>
     </div>
   </section>
 </div>
+
+<style>
+.pricing-card {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-10px);
+}
+
+.pricing-card.featured {
+  transform: scale(1.05);
+}
+
+.pricing-card.featured:hover {
+  transform: scale(1.05) translateY(-10px);
+}
+
+.ribbon {
+  position: absolute;
+  top: 20px;
+  right: -30px;
+  background: var(--electric-rose);
+  color: white;
+  padding: 5px 40px;
+  transform: rotate(45deg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  z-index: 10;
+}
+
+.pricing-hero-section {
+  background: var(--light-gray);
+}
+</style>
 {% endblock %}

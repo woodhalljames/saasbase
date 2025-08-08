@@ -1,309 +1,869 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ couple.couple_names }} - Wedding{% endblock %}
+{% block title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
 
 {% block content %}
 <div class="wedding-page">
-  <!-- Hero Section -->
-  <section class="hero-section bg-gradient-rose text-white py-5">
+  <!-- Hero Section with Couple Names and Photos -->
+  <section class="couple-hero-section">
     <div class="container">
-      <div class="row align-items-center">
-        {% if couple.couple_photo %}
-          <div class="col-md-4 text-center mb-4 mb-md-0">
-            <img src="{{ couple.couple_photo.url }}" 
-                 class="img-fluid rounded-circle shadow-lg" 
-                 style="width: 200px; height: 200px; object-fit: cover;"
-                 alt="{{ couple.couple_names }}">
-          </div>
-        {% endif %}
-        
-        <div class="{% if couple.couple_photo %}col-md-8{% else %}col-12 text-center{% endif %}">
-          <h1 class="display-4 fw-bold mb-3">{{ couple.couple_names }}</h1>
-          
-          {% if couple.wedding_date %}
-            <p class="fs-4 mb-2">
-              <i class="bi bi-calendar-heart me-2"></i>
-              {{ couple.wedding_date|date:"F j, Y" }}
-            </p>
-          {% endif %}
-          
-          {% if couple.venue_name or couple.venue_location %}
-            <p class="fs-5 mb-3">
-              <i class="bi bi-geo-alt me-2"></i>
-              {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
-              {% if couple.venue_location %}
-                {% if couple.venue_name %} • {% endif %}{{ couple.venue_location }}
+      <div class="row align-items-center py-5">
+        <!-- Couple Names and Info -->
+        <div class="col-lg-5 mb-4 mb-lg-0">
+          <div class="couple-intro">
+            <h1 class="couple-names">{{ couple.couple_names }}</h1>
+            
+            <!-- Wedding Date and Status -->
+            <div class="wedding-status mb-4">
+              {% if couple.wedding_date %}
+                <div class="wedding-date-section">
+                  {% if days_until_wedding %}
+                    <div class="status-upcoming">
+                      <div class="countdown-badge">
+                        <span class="countdown-number">{{ days_until_wedding }}</span>
+                        <span class="countdown-label">day{{ days_until_wedding|pluralize }} to go!</span>
+                      </div>
+                      <p class="wedding-date">{{ couple.wedding_date|date:"F j, Y" }}</p>
+                    </div>
+                  {% elif is_wedding_day %}
+                    <div class="status-today">
+                      <div class="countdown-badge today">
+                        <span class="countdown-number">Today!</span>
+                        <span class="countdown-label">It's the big day!</span>
+                      </div>
+                      <p class="wedding-date">{{ couple.wedding_date|date:"F j, Y" }}</p>
+                    </div>
+                  {% elif wedding_passed %}
+                    <div class="status-married">
+                      <div class="countdown-badge married">
+                        <span class="countdown-number">💍</span>
+                        <span class="countdown-label">Happily Married!</span>
+                      </div>
+                      <p class="wedding-date">
+                        Married {{ couple.wedding_date|date:"F j, Y" }}
+                        <small class="text-muted d-block">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</small>
+                      </p>
+                    </div>
+                  {% endif %}
+                </div>
               {% endif %}
-            </p>
-          {% endif %}
-          
-          <!-- Wedding Countdown -->
-          {% if couple.wedding_date %}
-            <div class="wedding-countdown">
-              {% if days_until_wedding %}
-                <div class="alert alert-light bg-white bg-opacity-25 border-0 d-inline-block">
-                  <strong>{{ days_until_wedding }} day{{ days_until_wedding|pluralize }} to go!</strong>
-                </div>
-              {% elif is_wedding_day %}
-                <div class="alert alert-success bg-white bg-opacity-25 border-0 d-inline-block">
-                  <strong>🎉 Today is the day! 🎉</strong>
-                </div>
-              {% elif wedding_passed %}
-                <div class="alert alert-info bg-white bg-opacity-25 border-0 d-inline-block">
-                  <strong>💍 Happily Married!</strong>
+              
+              <!-- Venue Info (Compact) -->
+              {% if couple.venue_name or couple.venue_location %}
+                <div class="venue-compact mt-3">
+                  <p class="venue-info">
+                    <i class="bi bi-geo-alt text-rose me-2"></i>
+                    {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
+                    {% if couple.venue_location %}
+                      {% if couple.venue_name %} • {% endif %}{{ couple.venue_location }}
+                    {% endif %}
+                  </p>
                 </div>
               {% endif %}
             </div>
-          {% endif %}
+          </div>
+        </div>
+        
+        <!-- Photo Gallery (3 photos) -->
+        <div class="col-lg-7">
+          <div class="couple-photo-gallery">
+            {% if couple.couple_photo %}
+              <div class="photo-grid">
+                <!-- Main large photo -->
+                <div class="main-photo">
+                  <img src="{{ couple.couple_photo.url }}" 
+                       alt="{{ couple.couple_names }}" 
+                       class="img-fluid rounded-3 shadow-lg">
+                  <div class="photo-overlay">
+                    <i class="bi bi-heart-fill"></i>
+                  </div>
+                </div>
+                
+                <!-- Secondary photos -->
+                <div class="secondary-photos">
+                  {% if couple.venue_photo %}
+                    <div class="secondary-photo">
+                      <img src="{{ couple.venue_photo.url }}" 
+                           alt="Wedding Venue" 
+                           class="img-fluid rounded-2 shadow">
+                      <div class="photo-label">Our Venue</div>
+                    </div>
+                  {% else %}
+                    <div class="secondary-photo placeholder">
+                      <div class="placeholder-content">
+                        <i class="bi bi-building"></i>
+                        <span>Venue</span>
+                      </div>
+                    </div>
+                  {% endif %}
+                  
+                  <!-- Third photo slot - engagement photo or fallback -->
+                  {% if couple.engagement_photo %}
+                    <div class="secondary-photo">
+                      <img src="{{ couple.engagement_photo.url }}" 
+                           alt="Engagement Photo" 
+                           class="img-fluid rounded-2 shadow">
+                      <div class="photo-label">Engagement</div>
+                    </div>
+                  {% elif couple.couple_photo %}
+                    <div class="secondary-photo">
+                      <img src="{{ couple.couple_photo.url }}" 
+                           alt="{{ couple.couple_names }}" 
+                           class="img-fluid rounded-2 shadow">
+                      <div class="photo-label">Together</div>
+                    </div>
+                  {% else %}
+                    <div class="secondary-photo placeholder">
+                      <div class="placeholder-content">
+                        <i class="bi bi-camera-fill"></i>
+                        <span>Memories</span>
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% else %}
+              <!-- Fallback if no photos -->
+              <div class="photo-placeholder">
+                <div class="placeholder-main">
+                  <i class="bi bi-heart-fill"></i>
+                  <h3>{{ couple.couple_names }}</h3>
+                  <p>Creating beautiful memories together</p>
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <div class="container py-5">
-    <!-- Venue Photo -->
-    {% if couple.venue_photo %}
-      <div class="row mb-5">
-        <div class="col-12">
-          <div class="text-center">
-            <img src="{{ couple.venue_photo.url }}" 
-                 class="img-fluid rounded shadow-lg" 
-                 style="max-height: 400px; width: 100%; object-fit: cover;"
-                 alt="Wedding Venue">
-            {% if couple.venue_name %}
-              <p class="text-muted mt-2 fs-5">{{ couple.venue_name }}</p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    <!-- Love Story - Main Content -->
-    {% if couple.couple_story %}
-      <div class="row justify-content-center mb-5">
-        <div class="col-lg-8">
-          <div class="text-center mb-4">
-            <h2 class="display-6 text-gradient">Our Love Story</h2>
-            <div class="divider mx-auto mb-4" style="width: 80px; height: 3px; background: linear-gradient(45deg, #00F5FF, #FF69B4);"></div>
-          </div>
-          
-          <div class="story-content">
-            <div class="card border-0 shadow-sm">
-              <div class="card-body p-4">
-                <div class="fs-5 lh-lg text-muted" style="font-family: Georgia, serif;">
-                  {{ couple.couple_story|linebreaks }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    <!-- Social Media - Floating Style -->
-    {% if partner_1_social_links or partner_2_social_links or shared_social_links %}
-      <div class="row justify-content-center mb-5">
-        <div class="col-lg-8">
-          <div class="text-center mb-4">
-            <h3 class="text-gradient">Follow Our Journey</h3>
-            <p class="text-muted">Stay connected with us</p>
-          </div>
-          
-          <div class="social-section">
-            <!-- Partner 1 Social -->
-            {% if partner_1_social_links %}
-              <div class="partner-social mb-4">
-                <h5 class="text-center mb-3">
-                  <i class="bi bi-person-circle text-rose me-2"></i>{{ couple.partner_1_name }}
-                </h5>
-                <div class="d-flex justify-content-center flex-wrap gap-3">
-                  {% for social in partner_1_social_links %}
-                    <a href="{{ social.url }}" 
-                       target="_blank" 
-                       class="btn btn-outline-primary social-btn"
-                       style="border-color: {{ social.platform_color }}; color: {{ social.platform_color }};"
-                       onmouseover="this.style.backgroundColor='{{ social.platform_color }}'; this.style.color='white';"
-                       onmouseout="this.style.backgroundColor=''; this.style.color='{{ social.platform_color }}';">
-                      <i class="{{ social.platform_icon }} me-2"></i>
-                      {{ social.platform_display_name }}
-                    </a>
-                  {% endfor %}
-                </div>
-              </div>
-            {% endif %}
-
-            <!-- Partner 2 Social -->
-            {% if partner_2_social_links %}
-              <div class="partner-social mb-4">
-                <h5 class="text-center mb-3">
-                  <i class="bi bi-person-circle text-cyan me-2"></i>{{ couple.partner_2_name }}
-                </h5>
-                <div class="d-flex justify-content-center flex-wrap gap-3">
-                  {% for social in partner_2_social_links %}
-                    <a href="{{ social.url }}" 
-                       target="_blank" 
-                       class="btn btn-outline-primary social-btn"
-                       style="border-color: {{ social.platform_color }}; color: {{ social.platform_color }};"
-                       onmouseover="this.style.backgroundColor='{{ social.platform_color }}'; this.style.color='white';"
-                       onmouseout="this.style.backgroundColor=''; this.style.color='{{ social.platform_color }}';">
-                      <i class="{{ social.platform_icon }} me-2"></i>
-                      {{ social.platform_display_name }}
-                    </a>
-                  {% endfor %}
-                </div>
-              </div>
-            {% endif %}
-
-            <!-- Shared Social -->
-            {% if shared_social_links %}
-              <div class="partner-social mb-4">
-                <h5 class="text-center mb-3">
-                  <i class="bi bi-heart-fill text-rose me-2"></i>Together
-                </h5>
-                <div class="d-flex justify-content-center flex-wrap gap-3">
-                  {% for social in shared_social_links %}
-                    <a href="{{ social.url }}" 
-                       target="_blank" 
-                       class="btn btn-outline-primary social-btn"
-                       style="border-color: {{ social.platform_color }}; color: {{ social.platform_color }};"
-                       onmouseover="this.style.backgroundColor='{{ social.platform_color }}'; this.style.color='white';"
-                       onmouseout="this.style.backgroundColor=''; this.style.color='{{ social.platform_color }}';">
-                      <i class="{{ social.platform_icon }} me-2"></i>
-                      {{ social.platform_display_name }}
-                    </a>
-                  {% endfor %}
-                </div>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    {% endif %}
-
-    <!-- Wedding Links - Simple Table -->
-    {% if wedding_links %}
+  <!-- Love Story Section -->
+  {% if couple.couple_story %}
+  <section class="love-story-section">
+    <div class="container">
       <div class="row justify-content-center">
         <div class="col-lg-8">
-          <div class="text-center mb-4">
-            <h3 class="text-gradient">Wedding Information</h3>
-            <p class="text-muted">Important links for our special day</p>
-          </div>
-          
-          <div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-              <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <tbody>
-                    {% for link in wedding_links %}
-                      <tr>
-                        <td class="py-3">
-                          <div class="d-flex align-items-center">
-                            <div class="me-3">
-                              <div class="wedding-link-icon" 
-                                   style="width: 40px; height: 40px; background-color: {{ link.service_color }}15; border: 2px solid {{ link.service_color }}30; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="{{ link.service_icon }}" style="color: {{ link.service_color }};"></i>
-                              </div>
-                            </div>
-                            <div class="flex-grow-1">
-                              <h6 class="mb-1">{{ link.title }}</h6>
-                              <small class="text-muted">{{ link.get_link_type_display }}</small>
-                              {% if link.description %}
-                                <p class="text-muted small mb-0 mt-1">{{ link.description }}</p>
-                              {% endif %}
-                            </div>
-                            <div class="ms-3">
-                              <a href="{% url 'wedding_shopping:wedding_link_redirect' link.pk %}" 
-                                 target="_blank"
-                                 class="btn btn-sm"
-                                 style="background-color: {{ link.service_color }}; color: white; border: none;">
-                                {% if link.link_type == 'registry' %}
-                                  <i class="bi bi-gift me-1"></i>Shop
-                                {% elif link.link_type == 'rsvp' %}
-                                  <i class="bi bi-envelope-check me-1"></i>RSVP
-                                {% elif link.link_type == 'livestream' %}
-                                  <i class="bi bi-camera-video me-1"></i>Watch
-                                {% elif link.link_type == 'photos' %}
-                                  <i class="bi bi-camera me-1"></i>View
-                                {% else %}
-                                  <i class="bi bi-link-45deg me-1"></i>Visit
-                                {% endif %}
-                              </a>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+          <div class="love-story-card">
+            <div class="section-header text-center mb-4">
+              <h2 class="section-title">Our Love Story</h2>
+              <div class="section-divider"></div>
+            </div>
+            <div class="story-content">
+              <div class="story-text">
+                {{ couple.couple_story|linebreaks }}
               </div>
             </div>
           </div>
         </div>
       </div>
-    {% endif %}
-  </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Wedding Links Section -->
+  {% if registry_links or rsvp_links or livestream_links or photo_links or other_links %}
+  <section class="wedding-links-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <div class="section-header text-center mb-5">
+            <h2 class="section-title">Wedding Information</h2>
+            <div class="section-divider"></div>
+            <p class="section-subtitle">Everything you need to celebrate with us</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RSVP (Most Important) -->
+      {% if rsvp_links %}
+      <div class="row mb-5">
+        <div class="col-12">
+          <h3 class="subsection-title text-center mb-4">
+            <i class="bi bi-envelope-heart text-rose me-2"></i>RSVP
+          </h3>
+          <div class="row g-3 justify-content-center">
+            {% for rsvp in rsvp_links %}
+            <div class="col-md-6 col-lg-4">
+              <div class="wedding-link-card">
+                <div class="link-content">
+                  <div class="link-icon" style="color: {{ rsvp.service_color }};">
+                    <i class="{{ rsvp.service_icon }}"></i>
+                  </div>
+                  <h4>{{ rsvp.display_title }}</h4>
+                  {% if rsvp.description %}
+                    <p>{{ rsvp.description }}</p>
+                  {% endif %}
+                </div>
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' rsvp.pk %}" 
+                   class="wedding-link-btn"
+                   style="background-color: {{ rsvp.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-envelope-check me-2"></i>RSVP Now
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Wedding Registry -->
+      {% if registry_links %}
+      <div class="row mb-5">
+        <div class="col-12">
+          <h3 class="subsection-title text-center mb-4">
+            <i class="bi bi-gift text-cyan me-2"></i>Wedding Registry
+          </h3>
+          <div class="row g-3">
+            {% for registry in registry_links %}
+            <div class="col-md-6 col-lg-4">
+              <div class="wedding-link-card">
+                <div class="link-content">
+                  <div class="link-icon" style="color: {{ registry.service_color }};">
+                    <i class="{{ registry.service_icon }}"></i>
+                  </div>
+                  <h4>{{ registry.display_title }}</h4>
+                  {% if registry.description %}
+                    <p>{{ registry.description }}</p>
+                  {% endif %}
+                </div>
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' registry.pk %}" 
+                   class="wedding-link-btn"
+                   style="background-color: {{ registry.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-gift me-2"></i>Shop Registry
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Other Wedding Links (Livestream, Photos, etc.) -->
+      {% if livestream_links or photo_links or other_links %}
+      <div class="row">
+        <div class="col-12">
+          <h3 class="subsection-title text-center mb-4">
+            <i class="bi bi-link-45deg text-primary me-2"></i>More Wedding Info
+          </h3>
+          <div class="row g-3">
+            {% for livestream in livestream_links %}
+            <div class="col-md-6 col-lg-4">
+              <div class="wedding-link-card">
+                <div class="link-content">
+                  <div class="link-icon" style="color: {{ livestream.service_color }};">
+                    <i class="{{ livestream.service_icon }}"></i>
+                  </div>
+                  <h4>{{ livestream.display_title }}</h4>
+                  {% if livestream.description %}
+                    <p>{{ livestream.description }}</p>
+                  {% endif %}
+                </div>
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' livestream.pk %}" 
+                   class="wedding-link-btn"
+                   style="background-color: {{ livestream.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-camera-video me-2"></i>Watch Live
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+
+            {% for photo in photo_links %}
+            <div class="col-md-6 col-lg-4">
+              <div class="wedding-link-card">
+                <div class="link-content">
+                  <div class="link-icon" style="color: {{ photo.service_color }};">
+                    <i class="{{ photo.service_icon }}"></i>
+                  </div>
+                  <h4>{{ photo.display_title }}</h4>
+                  {% if photo.description %}
+                    <p>{{ photo.description }}</p>
+                  {% endif %}
+                </div>
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' photo.pk %}" 
+                   class="wedding-link-btn"
+                   style="background-color: {{ photo.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-camera me-2"></i>View Photos
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+
+            {% for other in other_links %}
+            <div class="col-md-6 col-lg-4">
+              <div class="wedding-link-card">
+                <div class="link-content">
+                  <div class="link-icon" style="color: {{ other.service_color }};">
+                    <i class="{{ other.service_icon }}"></i>
+                  </div>
+                  <h4>{{ other.display_title }}</h4>
+                  {% if other.description %}
+                    <p>{{ other.description }}</p>
+                  {% endif %}
+                </div>
+                <a href="{% url 'wedding_shopping:wedding_link_redirect' other.pk %}" 
+                   class="wedding-link-btn"
+                   style="background-color: {{ other.service_color }};"
+                   target="_blank">
+                  <i class="bi bi-link-45deg me-2"></i>Visit Link
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Social Media Section -->
+  {% if partner_1_social_links or partner_2_social_links or shared_social_links %}
+  <section class="social-media-section">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <div class="section-header text-center mb-5">
+            <h2 class="section-title">Follow Our Journey</h2>
+            <div class="section-divider"></div>
+            <p class="section-subtitle">Stay connected with us</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="social-links-container">
+        <!-- Partner 1 Social Links -->
+        {% if partner_1_social_links %}
+        <div class="partner-social-group mb-4">
+          <h4 class="partner-name">{{ couple.partner_1_name }}</h4>
+          <div class="social-links-row">
+            {% for social in partner_1_social_links %}
+              <a href="{{ social.url }}" 
+                 target="_blank" 
+                 class="social-link"
+                 style="color: {{ social.platform_color }};"
+                 title="{{ social.platform_display_name }}">
+                <i class="{{ social.platform_icon }}"></i>
+                <span>{{ social.platform_display_name }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Partner 2 Social Links -->
+        {% if partner_2_social_links %}
+        <div class="partner-social-group mb-4">
+          <h4 class="partner-name">{{ couple.partner_2_name }}</h4>
+          <div class="social-links-row">
+            {% for social in partner_2_social_links %}
+              <a href="{{ social.url }}" 
+                 target="_blank" 
+                 class="social-link"
+                 style="color: {{ social.platform_color }};"
+                 title="{{ social.platform_display_name }}">
+                <i class="{{ social.platform_icon }}"></i>
+                <span>{{ social.platform_display_name }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Shared Social Links -->
+        {% if shared_social_links %}
+        <div class="partner-social-group">
+          <h4 class="partner-name">Together</h4>
+          <div class="social-links-row">
+            {% for social in shared_social_links %}
+              <a href="{{ social.url }}" 
+                 target="_blank" 
+                 class="social-link"
+                 style="color: {{ social.platform_color }};"
+                 title="{{ social.platform_display_name }}">
+                <i class="{{ social.platform_icon }}"></i>
+                <span>{{ social.platform_display_name }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Back to Discovery -->
+  <section class="back-to-discovery">
+    <div class="container">
+      <div class="row">
+        <div class="col-12 text-center">
+          <a href="{% url 'wedding_shopping:public_couples_list' %}" class="back-link">
+            <i class="bi bi-arrow-left me-2"></i>Discover More Wedding Stories
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
+{% endblock %}
 
+{% block javascript %}
+{{ block.super }}
 <style>
+/* Wedding Page Styles */
 .wedding-page {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Hero Section */
+.couple-hero-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+}
+
+.couple-names {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+/* Wedding Status and Date */
+.wedding-status {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.countdown-badge {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.countdown-number {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #e74c3c;
+}
+
+.countdown-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.countdown-badge.today .countdown-number {
+  color: #27ae60;
+}
+
+.countdown-badge.married .countdown-number {
+  font-size: 2rem;
+}
+
+.wedding-date {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #34495e;
+  margin: 0;
+  text-align: center;
+}
+
+.venue-compact {
+  padding: 1rem;
   background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #e74c3c;
 }
 
-.hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.text-gradient {
-  background: linear-gradient(45deg, #00F5FF, #FF69B4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.social-btn {
-  transition: all 0.3s ease;
-  border-width: 2px !important;
+.venue-info {
+  margin: 0;
+  color: #555;
   font-weight: 500;
 }
 
-.social-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+/* Photo Gallery */
+.couple-photo-gallery {
+  height: 100%;
 }
 
-.story-content {
+.photo-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  height: 500px;
+}
+
+.main-photo {
   position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
 }
 
-.story-content::before {
-  content: '"';
-  font-size: 4rem;
-  color: #00F5FF;
+.main-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-overlay {
   position: absolute;
-  top: -20px;
-  left: -10px;
-  font-family: Georgia, serif;
-  opacity: 0.3;
+  top: 20px;
+  right: 20px;
+  background: rgba(231, 76, 60, 0.9);
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
 }
 
-.story-content::after {
-  content: '"';
-  font-size: 4rem;
-  color: #FF69B4;
+.secondary-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.secondary-photo {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.secondary-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-label {
   position: absolute;
-  bottom: -40px;
-  right: -10px;
-  font-family: Georgia, serif;
-  opacity: 0.3;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  color: white;
+  padding: 1rem 0.5rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
 }
 
-.wedding-link-icon {
-  transition: all 0.2s ease;
+.secondary-photo.placeholder {
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #dee2e6;
 }
 
-.table tbody tr:hover .wedding-link-icon {
-  transform: scale(1.1);
+.placeholder-content {
+  text-align: center;
+  color: #adb5bd;
+}
+
+.placeholder-content i {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.photo-placeholder {
+  height: 500px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+}
+
+.placeholder-main i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+/* Love Story Section */
+.love-story-section {
+  padding: 5rem 0;
+  background: white;
+}
+
+.love-story-card {
+  background: #fff;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.section-divider {
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #e74c3c, #f39c12);
+  margin: 0 auto 1rem;
+  border-radius: 2px;
+}
+
+.story-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #555;
+  text-align: center;
+}
+
+/* Wedding Links Section */
+.wedding-links-section {
+  padding: 5rem 0;
+  background: #f8f9fa;
+}
+
+.subsection-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.wedding-link-card {
+  background: white;
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wedding-link-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.link-content {
+  flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.link-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.link-content h4 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.link-content p {
+  color: #666;
+  margin-bottom: 0;
+}
+
+.wedding-link-btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.wedding-link-btn:hover {
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+/* Social Media Section */
+.social-media-section {
+  padding: 4rem 0;
+  background: white;
+}
+
+.partner-social-group {
+  text-align: center;
+}
+
+.partner-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.social-links-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 2px solid #f8f9fa;
+  border-radius: 50px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.social-link i {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.social-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-color: currentColor;
+  color: inherit;
+}
+
+/* Back to Discovery */
+.back-to-discovery {
+  padding: 3rem 0;
+  background: #2c3e50;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 1rem 2rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50px;
+  transition: all 0.3s ease;
+}
+
+.back-link:hover {
+  color: white;
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-2px);
+}
+
+/* Mobile Responsive */
+@media (max-width: 991px) {
+  .couple-names {
+    font-size: 2.2rem;
+  }
+  
+  .photo-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  
+  .main-photo {
+    height: 300px;
+  }
+  
+  .secondary-photos {
+    flex-direction: row;
+  }
+  
+  .secondary-photo {
+    height: 150px;
+  }
+}
+
+@media (max-width: 767px) {
+  .couple-names {
+    font-size: 1.8rem;
+  }
+  
+  .countdown-number {
+    font-size: 2rem;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .love-story-card {
+    padding: 2rem;
+  }
+  
+  .wedding-link-card {
+    padding: 1.5rem;
+  }
+  
+  .social-links-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .social-link {
+    width: 100%;
+    max-width: 250px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .couple-hero-section {
+    min-height: auto;
+    padding: 3rem 0;
+  }
+  
+  .couple-names {
+    font-size: 1.6rem;
+  }
+  
+  .photo-grid {
+    height: auto;
+  }
+  
+  .main-photo {
+    height: 250px;
+  }
+  
+  .secondary-photos {
+    gap: 0.5rem;
+  }
+  
+  .secondary-photo {
+    height: 120px;
+  }
 }
 </style>
 {% endblock %}

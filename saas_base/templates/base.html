@@ -2,7 +2,7 @@
 {% load socialaccount %}
 <!DOCTYPE html>
 {% get_current_language as LANGUAGE_CODE %}
-<html lang="{{ LANGUAGE_CODE }}">
+<meta name="language" content="English" />
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
@@ -13,9 +13,10 @@
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="{% block meta_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages to share with friends and family.{% endblock %}" />
+        content="{% block meta_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta name="author"
         content="Cactus Cat LLC" />
+        
   
   <!-- Favicons -->
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
@@ -24,15 +25,15 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="og:title" content="{% block og_title %}DreamWedAI - Transform Your Wedding Vision with AI{% endblock %}" />
-  <meta property="og:description" content="{% block og_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages.{% endblock %}" />
+  <meta property="og:title" content="{% block og_title %}DreamWedAI - See Your Wedding Before The Big Day.{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Transform Your Wedding Vision with AI{% endblock %}" />
-  <meta property="twitter:description" content="{% block twitter_description %}Transform any venue into your dream wedding with AI. Create stunning visualizations and beautiful wedding pages.{% endblock %}" />
+  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - See Your Wedding Before The Big Day.{% endblock %}" />
+  <meta property="twitter:description" content="{% block twitter_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta property="twitter:image" content="{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
   
   <!-- CSRF Token for AJAX requests -->
@@ -61,9 +62,8 @@
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
   {% endblock css %}
 
-  <!-- Le javascript
-      ================================================== -->
-  {# Placed at the top of the document so pages load faster with defer #}
+  
+
   {% block javascript %}
   <!-- Bootstrap JS -->
   <script defer
@@ -79,8 +79,7 @@
 
 <body class="{% block bodyclass %}{% endblock bodyclass %}">
   {% block body %}
-  <!-- Skip to main content for accessibility -->
-  <a class="visually-hidden-focusable" href="#main-content">Skip to main content</a>
+
   
   <!-- Modern Navigation -->
   <nav class="navbar navbar-expand-md navbar-dark bg-navy shadow-sm">
@@ -116,12 +115,12 @@
               <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="studioDropdown">
                 <li>
                   <a class="dropdown-item" href="{% url 'image_processing:wedding_studio' %}">
-                    <i class="bi bi-camera text-cyan me-2"></i> Upload & Transform
+                    <i class="bi bi-camera text-cyan me-2"></i> Upload & Visualize
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-                    <i class="bi bi-magic text-cyan me-2"></i> My Transformations
+                    <i class="bi bi-magic text-cyan me-2"></i> Visuals
                   </a>
                 </li>
                 <li>
@@ -331,7 +330,7 @@
             <i class="bi bi-heart-fill me-2"></i>DreamWedAI
           </a>
           <p class="text-white-75 small">
-            Dream your wedding before the big day.
+            See Your Wedding Before The Big Day
           </p>
           <!-- Social Media Links -->
           <div class="mt-4">
@@ -474,83 +473,106 @@
   </button>
 
   <!-- JavaScript for enhanced functionality -->
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-      // Back to top functionality
-      const backToTop = document.getElementById('back-to-top');
-      if (backToTop) {
-          window.addEventListener('scroll', function() {
-              if (window.pageYOffset > 300) {
-                  backToTop.classList.remove('d-none');
-              } else {
-                  backToTop.classList.add('d-none');
-              }
-          });
-          
-          backToTop.addEventListener('click', function() {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-          });
-      }
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Back to top functionality
+    const backToTop = document.getElementById('back-to-top');
+    if (backToTop) {
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTop.classList.remove('d-none');
+            } else {
+                backToTop.classList.add('d-none');
+            }
+        });
+        
+        backToTop.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
 
-      // Newsletter form handling
-      const newsletterForm = document.getElementById('newsletter-form');
-      if (newsletterForm) {
-          newsletterForm.addEventListener('submit', function(e) {
-              e.preventDefault();
-              
-              const submitBtn = document.getElementById('newsletter-submit-btn');
-              const icon = document.getElementById('newsletter-icon');
-              const spinner = document.getElementById('newsletter-spinner');
-              const messages = document.getElementById('newsletter-messages');
-              const email = document.getElementById('newsletter-email').value;
-              
-              // Show loading state
-              submitBtn.disabled = true;
-              icon.classList.add('d-none');
-              spinner.classList.remove('d-none');
-              
-              // Simulate newsletter signup (replace with actual endpoint)
-              fetch('/api/newsletter-signup/', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                  },
-                  body: JSON.stringify({ email: email })
-              })
-              .then(response => response.json())
-              .then(data => {
-                  // Show success message
-                  messages.innerHTML = '<div class="alert alert-success alert-sm">Thanks for subscribing!</div>';
-                  newsletterForm.reset();
-              })
-              .catch(error => {
-                  // Show error message
-                  messages.innerHTML = '<div class="alert alert-danger alert-sm">Something went wrong. Please try again.</div>';
-              })
-              .finally(() => {
-                  // Reset button state
-                  submitBtn.disabled = false;
-                  icon.classList.remove('d-none');
-                  spinner.classList.add('d-none');
-                  
-                  // Clear messages after 5 seconds
-                  setTimeout(() => {
-                      messages.innerHTML = '';
-                  }, 5000);
-              });
-          });
-      }
+    // Newsletter form handling - FIXED VERSION
+    const newsletterForm = document.getElementById('newsletter-form');
+    if (newsletterForm) {
+        newsletterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('newsletter-submit-btn');
+            const icon = document.getElementById('newsletter-icon');
+            const spinner = document.getElementById('newsletter-spinner');
+            const messages = document.getElementById('newsletter-messages');
+            const emailInput = document.getElementById('newsletter-email');
+            const email = emailInput.value.trim();
+            
+            // Validate email
+            if (!email) {
+                showNewsletterMessage('Please enter your email address.', 'danger');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            icon.classList.add('d-none');
+            spinner.classList.remove('d-none');
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                            document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+            
+            // Submit to newsletter endpoint
+            fetch('/newsletter/signup/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNewsletterMessage(data.message, 'success');
+                    newsletterForm.reset();
+                } else {
+                    showNewsletterMessage(data.message || 'Something went wrong. Please try again.', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Newsletter signup error:', error);
+                showNewsletterMessage('Something went wrong. Please try again.', 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                icon.classList.remove('d-none');
+                spinner.classList.add('d-none');
+            });
+        });
+    }
+    
+    function showNewsletterMessage(message, type) {
+        const messages = document.getElementById('newsletter-messages');
+        if (messages) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            messages.innerHTML = `<div class="alert ${alertClass} alert-sm mb-2">${message}</div>`;
+            
+            // Clear messages after 5 seconds
+            setTimeout(() => {
+                messages.innerHTML = '';
+            }, 5000);
+        }
+    }
 
-      // Auto-dismiss alerts after 5 seconds
-      const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-      alerts.forEach(alert => {
-          setTimeout(() => {
-              const bsAlert = new bootstrap.Alert(alert);
-              bsAlert.close();
-          }, 5000);
-      });
-  });
-  </script>
+    // Auto-dismiss alerts after 5 seconds
+    const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+});
+</script>
 </body>
 </html>

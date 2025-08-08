@@ -2,49 +2,168 @@
 {% load i18n %}
 {% load allauth %}
 
-{% block head_title %}{% trans "Sign Up" %}{% endblock head_title %}
+{% block head_title %}{% trans "Join DreamWedAI" %}{% endblock head_title %}
 
 {% block content %}
-<div class="card">
-  <div class="card-body">
-    <h2 class="text-center mb-4">{% trans "Create Account" %}</h2>
+<div class="card border-0 shadow-lg">
+  <div class="card-body p-5">
+    <!-- Logo and Welcome -->
+    <div class="text-center mb-4">
+      <div class="feature-icon mx-auto mb-3 bg-gradient-cyan">
+        <i class="bi bi-heart-fill"></i>
+      </div>
+      <h2 class="fw-bold mb-2">Start Your Journey</h2>
+      <p class="text-muted">Create your account and visualize your dream wedding</p>
+    </div>
     
-    <!-- Immediate Social Signup Buttons -->
+    <!-- Benefits -->
+    <div class="row g-2 mb-4">
+      <div class="col-4 text-center">
+        <div class="small">
+          <i class="bi bi-magic text-rose"></i>
+          <div class="text-muted" style="font-size: 0.75rem;">AI Transforms</div>
+        </div>
+      </div>
+      <div class="col-4 text-center">
+        <div class="small">
+          <i class="bi bi-heart text-cyan"></i>
+          <div class="text-muted" style="font-size: 0.75rem;">Free Wedding Page</div>
+        </div>
+      </div>
+      <div class="col-4 text-center">
+        <div class="small">
+          <i class="bi bi-gift text-rose"></i>
+          <div class="text-muted" style="font-size: 0.75rem;">Registry Links</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Social Signup Buttons -->
     <div class="d-grid gap-2 mb-4">
-      <a href="{% provider_login_url 'google' process='login' %}" class="btn btn-outline-danger">
-        <i class="bi bi-google"></i> Sign up with Google
+      <a href="{% provider_login_url 'google' process='login' %}" 
+         class="btn btn-outline-danger d-flex align-items-center justify-content-center py-2">
+        <i class="bi bi-google me-2"></i> Sign up with Google
       </a>
-      <a href="{% provider_login_url 'facebook' process='login' %}" class="btn btn-outline-primary">
-        <i class="bi bi-facebook"></i> Sign up with Facebook
+      <a href="{% provider_login_url 'facebook' process='login' %}" 
+         class="btn btn-outline-primary d-flex align-items-center justify-content-center py-2">
+        <i class="bi bi-facebook me-2"></i> Sign up with Facebook
       </a>
-      <a href="{% provider_login_url 'twitter' process='login' %}" class="btn btn-outline-info">
-        <i class="bi bi-twitter"></i> Sign up with Twitter
+      <a href="{% provider_login_url 'twitter' process='login' %}" 
+         class="btn btn-outline-info d-flex align-items-center justify-content-center py-2">
+        <i class="bi bi-twitter me-2"></i> Sign up with Twitter
       </a>
     </div>
     
-    <div class="text-center mb-3">
-      <hr>
-      <small class="text-muted bg-white px-3">or create account with email</small>
+    <!-- Divider -->
+    <div class="position-relative my-4">
+      <hr class="text-muted">
+      <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
+        <small class="text-muted">or create account with email</small>
+      </div>
     </div>
     
     <!-- Regular Signup Form -->
-    {% element form form=form method="post" action=signup_url %}
-      {% slot body %}
-        {% csrf_token %}
-        {% element fields form=form unlabeled=True %}
-        {% if redirect_field_value %}
-          <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+    <form method="post" action="{% url 'account_signup' %}" class="needs-validation">
+      {% csrf_token %}
+      
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger border-0" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          {{ form.non_field_errors.0 }}
+        </div>
+      {% endif %}
+      
+      <div class="mb-3">
+        <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+          <i class="bi bi-envelope me-1"></i> Email Address
+        </label>
+        <input type="email" 
+               class="form-control form-control-lg {% if form.email.errors %}is-invalid{% endif %}"
+               id="{{ form.email.id_for_label }}"
+               name="{{ form.email.name }}"
+               placeholder="your@email.com"
+               value="{{ form.email.value|default:'' }}"
+               required
+               autofocus>
+        {% if form.email.errors %}
+          <div class="invalid-feedback">{{ form.email.errors.0 }}</div>
         {% endif %}
-      {% endslot %}
-      {% slot actions %}
-        {% element button type="submit" %}
-          {% trans "Create Account" %}
-        {% endelement %}
-      {% endslot %}
-    {% endelement %}
+      </div>
+      
+      {% if form.username %}
+      <div class="mb-3">
+        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+          <i class="bi bi-person me-1"></i> Username
+        </label>
+        <input type="text" 
+               class="form-control form-control-lg {% if form.username.errors %}is-invalid{% endif %}"
+               id="{{ form.username.id_for_label }}"
+               name="{{ form.username.name }}"
+               placeholder="Choose a username"
+               value="{{ form.username.value|default:'' }}"
+               required>
+        {% if form.username.errors %}
+          <div class="invalid-feedback">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+      {% endif %}
+      
+      <div class="mb-3">
+        <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+          <i class="bi bi-lock me-1"></i> Password
+        </label>
+        <input type="password" 
+               class="form-control form-control-lg {% if form.password1.errors %}is-invalid{% endif %}"
+               id="{{ form.password1.id_for_label }}"
+               name="{{ form.password1.name }}"
+               placeholder="Create a strong password"
+               required>
+        <div class="form-text">At least 8 characters with letters and numbers</div>
+        {% if form.password1.errors %}
+          <div class="invalid-feedback">{{ form.password1.errors.0 }}</div>
+        {% endif %}
+      </div>
+      
+      <div class="mb-4">
+        <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+          <i class="bi bi-lock-fill me-1"></i> Confirm Password
+        </label>
+        <input type="password" 
+               class="form-control form-control-lg {% if form.password2.errors %}is-invalid{% endif %}"
+               id="{{ form.password2.id_for_label }}"
+               name="{{ form.password2.name }}"
+               placeholder="Re-enter your password"
+               required>
+        {% if form.password2.errors %}
+          <div class="invalid-feedback">{{ form.password2.errors.0 }}</div>
+        {% endif %}
+      </div>
+      
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+      
+      <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-gradient-cyan btn-lg">
+          <i class="bi bi-heart-fill me-2"></i> Create Account
+        </button>
+      </div>
+      
+      <div class="form-text text-center mb-3">
+        By signing up, you agree to our 
+        <a href="#" class="text-decoration-none">Terms</a> and 
+        <a href="#" class="text-decoration-none">Privacy Policy</a>
+      </div>
+    </form>
     
-    <div class="text-center mt-3">
-      <p>{% trans "Already have an account?" %} <a href="{% url 'account_login' %}">{% trans "Sign in here" %}</a></p>
+    <!-- Sign In Link -->
+    <div class="text-center">
+      <p class="mb-0">
+        Already have an account? 
+        <a href="{% url 'account_login' %}" class="text-decoration-none fw-semibold">
+          Sign in here
+        </a>
+      </p>
     </div>
   </div>
 </div>

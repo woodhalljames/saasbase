@@ -26,7 +26,12 @@ class CoupleProfile(models.Model):
     # Images
     couple_photo = models.ImageField(upload_to='couple_photos/', null=True, blank=True)
     venue_photo = models.ImageField(upload_to='venue_photos/', null=True, blank=True)
-    
+    engagement_photo = models.ImageField(
+    upload_to='engagement_photos/', 
+    null=True, 
+    blank=True,
+    help_text='Engagement or additional couple photo'
+)
     # Story
     couple_story = models.TextField(blank=True, help_text="Tell your love story")
     

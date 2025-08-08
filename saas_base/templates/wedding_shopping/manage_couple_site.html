@@ -124,24 +124,108 @@
           </div>
 
           <!-- Photos -->
-          <div class="col-md-6 mb-3">
+           <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-camera"></i> Photos
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Couple Photo -->
+          <div class="col-lg-4 mb-3">
             <label for="{{ form.couple_photo.id_for_label }}" class="form-label">
               {{ form.couple_photo.label }} <span class="text-danger">*</span>
             </label>
             {{ form.couple_photo }}
+            
             {% if form.instance.couple_photo %}
               <div class="mt-2">
-                <img src="{{ form.instance.couple_photo.url }}" 
-                     class="img-thumbnail" 
-                     style="width: 100px; height: 100px; object-fit: cover;"
-                     alt="Current couple photo">
-                <small class="text-muted d-block">Current photo</small>
+                <div class="d-flex align-items-center">
+                  <img src="{{ form.instance.couple_photo.url }}" 
+                       class="img-thumbnail me-2" 
+                       style="width: 60px; height: 60px; object-fit: cover;"
+                       alt="Current couple photo">
+                  <small class="text-muted">Current main photo</small>
+                </div>
               </div>
+            {% endif %}
+            
+            {% if form.couple_photo.help_text %}
+              <div class="form-text">{{ form.couple_photo.help_text }}</div>
             {% endif %}
             {% if form.couple_photo.errors %}
               <div class="text-danger small">{{ form.couple_photo.errors.0 }}</div>
             {% endif %}
           </div>
+
+          <!-- Venue Photo -->
+          <div class="col-lg-4 mb-3">
+            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
+              {{ form.venue_photo.label }}
+            </label>
+            {{ form.venue_photo }}
+            
+            {% if form.instance.venue_photo %}
+              <div class="mt-2">
+                <div class="d-flex align-items-center">
+                  <img src="{{ form.instance.venue_photo.url }}" 
+                       class="img-thumbnail me-2" 
+                       style="width: 60px; height: 60px; object-fit: cover;"
+                       alt="Current venue photo">
+                  <small class="text-muted">Current venue photo</small>
+                </div>
+              </div>
+            {% endif %}
+            
+            {% if form.venue_photo.help_text %}
+              <div class="form-text">{{ form.venue_photo.help_text }}</div>
+            {% endif %}
+            {% if form.venue_photo.errors %}
+              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Engagement Photo -->
+          <div class="col-lg-4 mb-3">
+            <label for="{{ form.engagement_photo.id_for_label }}" class="form-label">
+              {{ form.engagement_photo.label }}
+            </label>
+            {{ form.engagement_photo }}
+            
+            {% if form.instance.engagement_photo %}
+              <div class="mt-2">
+                <div class="d-flex align-items-center">
+                  <img src="{{ form.instance.engagement_photo.url }}" 
+                       class="img-thumbnail me-2" 
+                       style="width: 60px; height: 60px; object-fit: cover;"
+                       alt="Current engagement photo">
+                  <small class="text-muted">Current engagement photo</small>
+                </div>
+              </div>
+            {% endif %}
+            
+            {% if form.engagement_photo.help_text %}
+              <div class="form-text">{{ form.engagement_photo.help_text }}</div>
+            {% endif %}
+            {% if form.engagement_photo.errors %}
+              <div class="text-danger small">{{ form.engagement_photo.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <div class="alert alert-info border-0 mt-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Photo Tips:</strong>
+          <ul class="mb-0 mt-2">
+            <li><strong>Main Couple Photo:</strong> This will be displayed large on your wedding page</li>
+            <li><strong>Venue Photo:</strong> Shows your wedding location</li>
+            <li><strong>Engagement Photo:</strong> Additional photo to complete your 3-photo gallery</li>
+            <li>All photos are optional but recommended</li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
           <div class="col-md-6 mb-3">
             <label for="{{ form.venue_photo.id_for_label }}" class="form-label">

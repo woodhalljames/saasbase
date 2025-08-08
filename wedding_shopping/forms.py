@@ -12,7 +12,7 @@ class CoupleProfileForm(forms.ModelForm):
         fields = [
             'partner_1_name', 'partner_2_name', 'wedding_date', 
             'venue_name', 'venue_location', 'couple_photo', 
-            'venue_photo', 'couple_story', 'is_public'
+            'venue_photo', 'engagement_photo', 'couple_story', 'is_public'  # Added engagement_photo
         ]
         widgets = {
             'partner_1_name': forms.TextInput(attrs={
@@ -46,6 +46,10 @@ class CoupleProfileForm(forms.ModelForm):
                 'class': 'form-control',
                 'accept': 'image/*'
             }),
+            'engagement_photo': forms.FileInput(attrs={  # Added engagement_photo widget
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
             'couple_story': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 6,
@@ -59,8 +63,9 @@ class CoupleProfileForm(forms.ModelForm):
             'partner_1_name': 'This will be used in your custom wedding URL',
             'partner_2_name': 'This will be used in your custom wedding URL',
             'wedding_date': 'This will be used in your custom wedding URL',
-            'couple_photo': 'Upload a photo of you as a couple',
+            'couple_photo': 'Upload a main photo of you as a couple (will be displayed large)',
             'venue_photo': 'Upload a photo of your wedding venue',
+            'engagement_photo': 'Upload an engagement photo or additional couple photo',  # Added help text
             'is_public': 'Allow others to find your page publicly',
         }
     
