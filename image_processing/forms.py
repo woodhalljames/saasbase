@@ -1,60 +1,79 @@
-# image_processing/forms.py - Updated to ensure all options are available
-
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import UserImage, WEDDING_THEMES, SPACE_TYPES
 
-# Enhanced Guest Count Options - More descriptive
-GUEST_COUNT_CHOICES = [
-    ('', 'Select expected guests'),
-    ('intimate', 'Intimate (1-50 guests) - Close family & friends'),
-    ('medium', 'Medium (51-150 guests) - Traditional size'),
-    ('large', 'Large (151-300 guests) - Extended celebration'),
-    ('grand', 'Grand (300+ guests) - Spectacular gala'),
+# Core Essential Choices - Most Impact
+ESSENTIAL_GUEST_COUNT_CHOICES = [
+    ('', 'Any size'),
+    ('intimate', 'Intimate (1-50)'),
+    ('medium', 'Medium (51-150)'),
+    ('large', 'Large (151-300)'),
+    ('grand', 'Grand (300+)'),
 ]
 
-# Enhanced Budget Options - Clearer descriptions
-BUDGET_CHOICES = [
-    ('', 'Select budget level'),
-    ('budget', 'Budget-Friendly - Creative DIY elegance'),
-    ('moderate', 'Moderate - Professional quality'),
-    ('luxury', 'Luxury - Premium everything'),
-    ('ultra_luxury', 'Ultra Luxury - No limits spectacular'),
+ESSENTIAL_BUDGET_CHOICES = [
+    ('', 'Any budget'),
+    ('budget', 'Budget-Friendly'),
+    ('moderate', 'Moderate'),
+    ('luxury', 'Luxury'),
+    ('ultra_luxury', 'Ultra Luxury'),
 ]
 
-# Season Options
-SEASON_CHOICES = [
-    ('', 'Select season'),
-    ('spring', 'Spring - Fresh blooms & renewal'),
-    ('summer', 'Summer - Bright & vibrant'),
-    ('fall', 'Fall/Autumn - Rich harvest colors'),
-    ('winter', 'Winter - Elegant & cozy'),
+# Contextual Choices - Shown Based on Theme/Space
+CONTEXTUAL_SEASON_CHOICES = [
+    ('', 'Any season'),
+    ('spring', 'Spring'),
+    ('summer', 'Summer'),
+    ('fall', 'Fall'),
+    ('winter', 'Winter'),
 ]
 
-# Time of Day Options
-TIME_OF_DAY_CHOICES = [
-    ('', 'Select time of day'),
-    ('morning', 'Morning - Sunrise to noon'),
-    ('afternoon', 'Afternoon - Golden daylight'),
-    ('evening', 'Evening - Sunset magic hour'),
-    ('night', 'Night - Stars & candlelight'),
+CONTEXTUAL_TIME_CHOICES = [
+    ('', 'Any time'),
+    ('morning', 'Morning'),
+    ('afternoon', 'Afternoon'),
+    ('evening', 'Evening'),
+    ('night', 'Night'),
 ]
 
-# Enhanced Color Schemes
-COLOR_SCHEME_CHOICES = [
-    ('', 'Use theme default colors'),
-    ('neutral', 'Neutral Elegance - Whites, creams, beiges'),
-    ('pastels', 'Soft Pastels - Romantic & dreamy'),
-    ('jewel_tones', 'Jewel Tones - Rich & luxurious'),
-    ('earth_tones', 'Earth Tones - Natural & organic'),
-    ('monochrome', 'Black & White - Classic contrast'),
-    ('bold_colors', 'Bold & Vibrant - Energetic celebration'),
-    ('custom', 'My Custom Palette - Specify below'),
+STREAMLINED_COLOR_CHOICES = [
+    ('', 'Theme default'),
+    ('neutral', 'Neutral (whites, creams)'),
+    ('pastels', 'Soft Pastels'),
+    ('jewel_tones', 'Rich Jewel Tones'),
+    ('earth_tones', 'Earth Tones'),
+    ('monochrome', 'Black & White'),
+    ('bold_colors', 'Bold & Vibrant'),
+    ('custom', 'My Custom Colors'),
+]
+
+# NEW: Religion/Culture Choices for Culturally-Relevant Elements
+RELIGION_CULTURE_CHOICES = [
+    ('', 'No specific preference'),
+    ('christian', 'Christian'),
+    ('jewish', 'Jewish'),
+    ('hindu', 'Hindu'),
+    ('muslim', 'Muslim'),
+    ('buddhist', 'Buddhist'),
+    ('sikh', 'Sikh'),
+    ('interfaith', 'Interfaith/Mixed'),
+    ('secular', 'Secular/Non-religious'),
+    ('cultural_fusion', 'Cultural Fusion'),
+    ('traditional_american', 'Traditional American'),
+    ('european', 'European Heritage'),
+    ('asian', 'Asian Heritage'),
+    ('latin_american', 'Latin American'),
+    ('african', 'African Heritage'),
+    ('middle_eastern', 'Middle Eastern'),
+    ('mediterranean', 'Mediterranean'),
+    ('scandinavian', 'Scandinavian'),
+    ('celtic', 'Celtic'),
+    ('other', 'Other Culture'),
 ]
 
 
 class ImageUploadForm(forms.ModelForm):
-    """Enhanced image upload with better validation"""
+    """Simple, effective image upload"""
     
     class Meta:
         model = UserImage
@@ -62,7 +81,7 @@ class ImageUploadForm(forms.ModelForm):
         widgets = {
             'image': forms.FileInput(attrs={
                 'class': 'form-control form-control-lg',
-                'accept': 'image/jpeg,image/jpg,image/png,image/webp',
+                'accept': 'image/*',
                 'id': 'id_image',
             })
         }
@@ -71,11 +90,10 @@ class ImageUploadForm(forms.ModelForm):
         image = self.cleaned_data.get('image')
         
         if image:
-            # 10MB max for high quality
+            # 10MB max for better quality
             if image.size > 10 * 1024 * 1024:
-                raise ValidationError("Image too large. Maximum size is 10MB for best quality.")
+                raise ValidationError("Image too large. Maximum size is 10MB.")
             
-            # Check content type
             if not image.content_type.startswith('image/'):
                 raise ValidationError("File must be an image.")
             
@@ -88,78 +106,63 @@ class ImageUploadForm(forms.ModelForm):
 
 
 class WeddingTransformForm(forms.Form):
-    """Complete wedding transformation form with all options"""
+    """Enhanced wedding transformation form with religion/culture and negative prompt inputs"""
     
-    # ESSENTIAL - Always visible
+    # ESSENTIAL - Always visible, biggest impact
     wedding_theme = forms.ChoiceField(
-        choices=[('', 'Choose your wedding style...')] + WEDDING_THEMES,
+        choices=[('', 'Choose your style...')] + WEDDING_THEMES,
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-lg',
             'id': 'wedding-theme',
-        }),
-        help_text='Select the overall aesthetic and style for your wedding'
+        })
     )
     
     space_type = forms.ChoiceField(
-        choices=[('', 'What will this space become?')] + SPACE_TYPES,
+        choices=[('', 'What will this space be?')] + SPACE_TYPES,
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-lg',
             'id': 'space-type',
-        }),
-        help_text='Choose the function this space will serve at your wedding'
+        })
     )
     
-    # DYNAMIC OPTIONS - All available
+    # SECONDARY - Hidden by default, high impact when specified
     guest_count = forms.ChoiceField(
-        choices=GUEST_COUNT_CHOICES,
+        choices=ESSENTIAL_GUEST_COUNT_CHOICES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-sm',
             'id': 'guest-count',
-        }),
-        help_text='Expected number of guests affects space layout and scale'
+        })
     )
     
     budget_level = forms.ChoiceField(
-        choices=BUDGET_CHOICES,
+        choices=ESSENTIAL_BUDGET_CHOICES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-sm',
             'id': 'budget-level',
-        }),
-        help_text='Budget level influences decoration complexity and materials'
+        })
     )
     
-    season = forms.ChoiceField(
-        choices=SEASON_CHOICES,
+    # NEW: Religion/Culture Input for Culturally-Relevant Elements
+    religion_culture = forms.ChoiceField(
+        choices=RELIGION_CULTURE_CHOICES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-sm',
-            'id': 'season',
-        }),
-        help_text='Season affects flowers, colors, and atmosphere'
-    )
-    
-    time_of_day = forms.ChoiceField(
-        choices=TIME_OF_DAY_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={
-            'class': 'form-select form-select-sm',
-            'id': 'time-of-day',
-        }),
-        help_text='Time of day influences lighting and ambiance'
+            'id': 'religion-culture',
+        })
     )
     
     color_scheme = forms.ChoiceField(
-        choices=COLOR_SCHEME_CHOICES,
+        choices=STREAMLINED_COLOR_CHOICES,
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-select form-select-sm',
             'id': 'color-scheme',
-        }),
-        help_text='Override theme colors with your preference'
+        })
     )
     
     custom_colors = forms.CharField(
@@ -168,20 +171,49 @@ class WeddingTransformForm(forms.Form):
         widget=forms.TextInput(attrs={
             'class': 'form-control form-control-sm',
             'id': 'custom-colors',
-            'placeholder': 'e.g., dusty rose, sage green, gold accents, ivory',
-        }),
-        help_text='Describe your custom color palette'
+            'placeholder': 'e.g., blush pink, sage green, gold accents',
+        })
     )
     
+    # CONTEXTUAL - Only shown when relevant based on theme/space
+    season = forms.ChoiceField(
+        choices=CONTEXTUAL_SEASON_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm',
+            'id': 'season',
+        })
+    )
+    
+    time_of_day = forms.ChoiceField(
+        choices=CONTEXTUAL_TIME_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm',
+            'id': 'time-of-day',
+        })
+    )
+    
+    # PERSONALIZATION - Optional details
     additional_details = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-control form-control-sm',
             'id': 'additional-details',
-            'rows': 3,
-            'placeholder': 'Any specific elements? (e.g., "include fairy lights", "add photo display area", "space for live band")'
-        }),
-        help_text='Special requests or specific elements you want included'
+            'rows': 2,
+            'placeholder': 'Any specific elements you want to include?'
+        })
+    )
+    
+    # NEW: User-Defined Negative Prompt (Things to Remove/Avoid)
+    user_negative_prompt = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control form-control-sm',
+            'id': 'user-negative-prompt',
+            'rows': 2,
+            'placeholder': 'Things to avoid or remove (e.g., dark colors, modern furniture, artificial flowers)'
+        })
     )
     
     def clean(self):
@@ -191,114 +223,205 @@ class WeddingTransformForm(forms.Form):
         
         # Validate custom colors
         if color_scheme == 'custom' and not custom_colors:
-            raise ValidationError({
-                'custom_colors': "Please specify your custom colors when 'My Custom Palette' is selected."
-            })
+            raise ValidationError("Please specify your custom colors when 'My Custom Colors' is selected.")
         
         return cleaned_data
     
-    def get_theme_description(self, theme):
-        """Get a rich description of the selected theme"""
-        theme_descriptions = {
-            'rustic': 'Warm farmhouse charm with mason jars, burlap, and wildflowers',
-            'modern': 'Sleek contemporary elegance with clean lines and minimalist beauty',
-            'vintage': 'Timeless romance with antique details and old-world charm',
-            'bohemian': 'Free-spirited artistic celebration with eclectic natural elements',
-            'classic': 'Traditional ballroom elegance with formal sophistication',
-            'garden': 'Natural floral paradise with botanical beauty',
-            'beach': 'Coastal paradise with ocean breeze romance',
-            'industrial': 'Urban warehouse chic with raw architectural beauty',
-            'japanese_zen': 'Serene minimalist harmony with cherry blossoms',
-            'indian_palace': 'Opulent maharaja celebration with vibrant colors',
-            'moroccan_nights': 'Exotic Arabian fantasy with rich patterns',
-            'french_chateau': 'Versailles-inspired grandeur and romance',
-            'italian_villa': 'Tuscan warmth with Mediterranean abundance',
-            'scottish_highland': 'Celtic traditions with dramatic Highland beauty',
-            'mexican_fiesta': 'Vibrant celebration with colorful papel picado',
-            'chinese_dynasty': 'Imperial elegance with red and gold prosperity',
-            'winter_wonderland': 'Magical ice palace with sparkling beauty',
-            'autumn_harvest': 'Rich fall colors with cozy abundance',
-            'spring_awakening': 'Fresh blooms and renewal energy',
-            'summer_solstice': 'Sun-drenched celebration with vibrant energy',
-            'fairy_tale': 'Enchanted castle with storybook magic',
-            'great_gatsby': 'Art Deco glamour with champagne and jazz',
+    def get_contextual_fields(self, theme, space_type):
+        """Return which contextual fields should be shown based on theme/space"""
+        show_season = False
+        show_time = False
+        show_religion = False
+        
+        # Show season for outdoor/natural themes
+        outdoor_themes = ['garden', 'beach', 'rustic', 'bohemian']
+        outdoor_spaces = ['garden', 'rooftop', 'beach', 'vineyard']
+        
+        if theme in outdoor_themes or space_type in outdoor_spaces:
+            show_season = True
+        
+        # Show time for ceremonies and outdoor spaces
+        ceremony_spaces = ['wedding_ceremony', 'garden', 'beach', 'rooftop']
+        if space_type in ceremony_spaces or theme in outdoor_themes:
+            show_time = True
+            
+        # Show religion for traditional/cultural themes
+        cultural_themes = ['traditional', 'cultural_fusion', 'vintage', 'classic']
+        if theme in cultural_themes or space_type == 'wedding_ceremony':
+            show_religion = True
+        
+        return {
+            'show_season': show_season,
+            'show_time': show_time,
+            'show_religion': show_religion
         }
-        return theme_descriptions.get(theme, 'Beautiful wedding celebration')
-    
-    def get_space_description(self, space):
-        """Get a rich description of the selected space"""
-        space_descriptions = {
-            'wedding_ceremony': 'Sacred ceremony space with processional aisle and guest seating',
-            'dance_floor': 'Entertainment area with professional dance floor and party lighting',
-            'dining_area': 'Elegant dining hall for wedding feast and toasts',
-            'cocktail_hour': 'Social mingling space with bars and appetizers',
-            'lounge_area': 'Comfortable relaxation area for intimate conversations',
-        }
-        return space_descriptions.get(space, 'Wedding celebration space')
-
-
-class SmartSuggestionForm(forms.Form):
-    """Form for AI-powered smart suggestions based on selections"""
     
     def get_smart_suggestions(self, theme, space_type):
-        """Get intelligent suggestions based on theme and space combination"""
-        
+        """Get AI-powered suggestions based on theme/space combination"""
         suggestions = {
-            # Rustic combinations
-            'rustic_wedding_ceremony': {
-                'guest_count': 'medium',
-                'budget_level': 'moderate',
-                'season': 'fall',
-                'time_of_day': 'afternoon',
-                'color_scheme': 'earth_tones',
-                'suggestion': 'Barn ceremony with hay bale seating, wildflower aisle, mason jar lighting'
-            },
-            'rustic_dining_area': {
+            'rustic_reception_area': {
                 'guest_count': 'medium',
                 'budget_level': 'moderate',
                 'season': 'fall',
                 'color_scheme': 'earth_tones',
-                'suggestion': 'Farm tables with burlap runners, mason jar centerpieces, string lights overhead'
+                'religion_culture': 'christian',
+                'description': 'Medium guest count, moderate budget, fall season, earth tones, traditional Christian elements'
             },
-            
-            # Modern combinations
-            'modern_wedding_ceremony': {
-                'guest_count': 'large',
-                'budget_level': 'luxury',
-                'time_of_day': 'evening',
-                'color_scheme': 'monochrome',
-                'suggestion': 'Minimalist altar with geometric backdrop, lucite chairs, architectural lighting'
-            },
-            'modern_dance_floor': {
+            'modern_ballroom': {
                 'guest_count': 'large',
                 'budget_level': 'luxury',
                 'time_of_day': 'night',
                 'color_scheme': 'monochrome',
-                'suggestion': 'LED dance floor, intelligent lighting, minimalist lounge areas'
+                'religion_culture': 'secular',
+                'description': 'Large guest count, luxury budget, evening time, monochrome colors, modern secular style'
             },
-            
-            # Beach combinations
+            'garden_wedding_ceremony': {
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'season': 'spring',
+                'time_of_day': 'afternoon',
+                'color_scheme': 'pastels',
+                'religion_culture': 'interfaith',
+                'description': 'Medium size, spring afternoon, pastel colors, interfaith friendly'
+            },
             'beach_wedding_ceremony': {
                 'guest_count': 'medium',
                 'season': 'summer',
                 'time_of_day': 'evening',
                 'color_scheme': 'neutral',
-                'suggestion': 'Sunset ceremony with driftwood arbor, flowing fabrics, tiki torches'
+                'religion_culture': 'secular',
+                'description': 'Summer sunset ceremony, neutral coastal colors, relaxed secular style'
             },
-            
-            # Garden combinations
-            'garden_wedding_ceremony': {
+            'vintage_reception_area': {
                 'guest_count': 'medium',
-                'season': 'spring',
-                'time_of_day': 'afternoon',
+                'budget_level': 'moderate',
                 'color_scheme': 'pastels',
-                'suggestion': 'Garden bower with cascading flowers, butterfly release, natural beauty'
+                'religion_culture': 'traditional_american',
+                'description': 'Medium size, moderate budget, soft pastels, traditional American style'
             },
-            
-            # Add more combinations as needed
         }
         
         key = f"{theme}_{space_type}"
-        return suggestions.get(key, {
-            'suggestion': 'Create your perfect wedding vision with this beautiful combination'
+        return suggestions.get(key, {})
+
+
+class QuickPresetForm(forms.Form):
+    """Quick preset selections for common combinations"""
+    
+    PRESET_CHOICES = [
+        ('', 'Choose a quick preset...'),
+        ('rustic_reception', '🌾 Rustic Reception - Cozy barn vibes'),
+        ('modern_ballroom', '✨ Modern Ballroom - Sleek elegance'),
+        ('garden_ceremony', '🌸 Garden Ceremony - Natural beauty'),
+        ('beach_sunset', '🌅 Beach Sunset - Coastal romance'),
+        ('vintage_tea_party', '🫖 Vintage Tea Party - Timeless charm'),
+        ('glamorous_night', '💎 Glamorous Night - Ultra luxury'),
+        ('hindu_traditional', '🕉️ Hindu Traditional - Sacred celebration'),
+        ('jewish_classical', '✡️ Jewish Classical - Elegant tradition'),
+        ('interfaith_modern', '🤝 Interfaith Modern - Unity celebration'),
+    ]
+    
+    preset = forms.ChoiceField(
+        choices=PRESET_CHOICES,
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+            'id': 'preset-selection'
         })
+    )
+    
+    def get_preset_parameters(self, preset_value):
+        """Convert preset to full parameters"""
+        presets = {
+            'rustic_reception': {
+                'wedding_theme': 'rustic',
+                'space_type': 'reception_area',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'season': 'fall',
+                'time_of_day': 'evening',
+                'color_scheme': 'earth_tones',
+                'religion_culture': 'christian'
+            },
+            'modern_ballroom': {
+                'wedding_theme': 'modern',
+                'space_type': 'ballroom',
+                'guest_count': 'large',
+                'budget_level': 'luxury',
+                'time_of_day': 'night',
+                'color_scheme': 'monochrome',
+                'religion_culture': 'secular'
+            },
+            'garden_ceremony': {
+                'wedding_theme': 'garden',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'season': 'spring',
+                'time_of_day': 'afternoon',
+                'color_scheme': 'pastels',
+                'religion_culture': 'interfaith'
+            },
+            'beach_sunset': {
+                'wedding_theme': 'beach',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'season': 'summer',
+                'time_of_day': 'evening',
+                'color_scheme': 'neutral',
+                'religion_culture': 'secular'
+            },
+            'vintage_tea_party': {
+                'wedding_theme': 'vintage',
+                'space_type': 'reception_area',
+                'guest_count': 'intimate',
+                'budget_level': 'moderate',
+                'color_scheme': 'pastels',
+                'religion_culture': 'traditional_american'
+            },
+            'glamorous_night': {
+                'wedding_theme': 'glamorous',
+                'space_type': 'ballroom',
+                'guest_count': 'large',
+                'budget_level': 'ultra_luxury',
+                'time_of_day': 'night',
+                'color_scheme': 'jewel_tones',
+                'religion_culture': 'secular'
+            },
+            'hindu_traditional': {
+                'wedding_theme': 'traditional',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'large',
+                'budget_level': 'luxury',
+                'color_scheme': 'jewel_tones',
+                'religion_culture': 'hindu'
+            },
+            'jewish_classical': {
+                'wedding_theme': 'classic',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'color_scheme': 'neutral',
+                'religion_culture': 'jewish'
+            },
+            'interfaith_modern': {
+                'wedding_theme': 'modern',
+                'space_type': 'wedding_ceremony',
+                'guest_count': 'medium',
+                'budget_level': 'moderate',
+                'color_scheme': 'neutral',
+                'religion_culture': 'interfaith'
+            },
+        }
+        
+        return presets.get(preset_value, {})
+
+
+# Export choices for use in other modules
+GUEST_COUNT_CHOICES = ESSENTIAL_GUEST_COUNT_CHOICES
+BUDGET_CHOICES = ESSENTIAL_BUDGET_CHOICES
+SEASON_CHOICES = CONTEXTUAL_SEASON_CHOICES
+TIME_OF_DAY_CHOICES = CONTEXTUAL_TIME_CHOICES
+COLOR_SCHEME_CHOICES = STREAMLINED_COLOR_CHOICES
+RELIGION_CULTURE_CHOICES = RELIGION_CULTURE_CHOICES

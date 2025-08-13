@@ -422,21 +422,21 @@ class ImageProcessingJob(models.Model):
         return f"Wedding Job {self.id} - {theme_display} {space_display} ({self.status})"
     
     def save(self, *args, **kwargs):
+        """Override save to generate prompt if needed"""
         # Generate space-first prompt if wedding theme and space type are provided
         if self.wedding_theme and self.space_type and not self.generated_prompt:
             try:
+                # Pass all the optional parameters to the prompt generator
                 prompt_data = generate_wedding_prompt_with_dynamics(
                     wedding_theme=self.wedding_theme,
                     space_type=self.space_type,
-                    guest_count=self.guest_count,
-                    budget_level=self.budget_level,
-                    season=self.season,
-                    time_of_day=self.time_of_day,
-                    color_scheme=self.color_scheme,
-                    custom_colors=self.custom_colors,
-                    religion_culture=self.religion_culture,
-                    user_negative_prompt=self.user_negative_prompt,
-                    additional_details=self.additional_details
+                    guest_count=self.guest_count or None,  # Convert empty string to None
+                    budget_level=self.budget_level or None,
+                    season=self.season or None,
+                    time_of_day=self.time_of_day or None,
+                    color_scheme=self.color_scheme or None,
+                    custom_colors=self.custom_colors or None,
+                    additional_details=self.additional_details or None
                 )
                 
                 self.generated_prompt = prompt_data['prompt']
@@ -449,16 +449,17 @@ class ImageProcessingJob(models.Model):
                 self.steps = recommended_params.get('steps', self.steps)
                 self.output_format = recommended_params.get('output_format', self.output_format)
                 
-                logger.info(f"Generated enhanced space-first prompt for job {self.id}: {self.generated_prompt[:100]}...")
+                logger.info(f"Generated space-first prompt for job {self.id}: {self.generated_prompt[:100]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating enhanced space-first prompt for job {self.id}: {str(e)}")
+                logger.error(f"Error generating space-first prompt for job {self.id}: {str(e)}")
                 # Set a basic prompt as fallback
                 theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
                 space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type)
                 self.generated_prompt = f"Transform this space into a beautiful {space_name} for a {theme_name} wedding, professional wedding photography, high quality, elegant decoration"
                 self.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
         
+        # Call the parent save method
         super().save(*args, **kwargs)
     
     def get_stability_ai_params(self):

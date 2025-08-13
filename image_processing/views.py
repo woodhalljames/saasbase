@@ -118,7 +118,7 @@ def wedding_studio(request):
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with AI transformation - enhanced with religion/culture and user negative prompts"""
+    """Process wedding venue image with AI transformation - enhanced with all form fields"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
@@ -163,64 +163,48 @@ def process_wedding_image(request, pk):
                 'error': 'Wedding theme and space type are required'
             }, status=400)
         
-        # Create processing job with enhanced form fields including religion/culture and user negative prompt
-        job_data = {
-            'user_image': user_image,
-            'wedding_theme': wedding_theme,
-            'space_type': space_type,
-            
-            # Optional fields - keep as empty strings, don't convert to None
-            'guest_count': data.get('guest_count', ''),
-            'budget_level': data.get('budget_level', ''),
-            'season': data.get('season', ''),
-            'time_of_day': data.get('time_of_day', ''),
-            'color_scheme': data.get('color_scheme', ''),
-            'custom_colors': data.get('custom_colors', ''),
-            'religion_culture': data.get('religion_culture', ''),  # NEW: Religion/culture field
-        }
+        # Create processing job with all form fields
+        # Use empty string as default and convert to None for database
+        job = ImageProcessingJob(
+            user_image=user_image,
+            wedding_theme=wedding_theme,
+            space_type=space_type
+        )
         
-        # For text fields that can be None, handle separately
-        additional_details = data.get('additional_details', '').strip()
-        user_negative_prompt = data.get('user_negative_prompt', '').strip()
+        # Set optional fields only if they have values
+        optional_fields = [
+            'guest_count', 'budget_level', 'season', 
+            'time_of_day', 'color_scheme', 'custom_colors', 
+            'additional_details'
+        ]
         
-        # Only set text fields if they have content
-        if additional_details:
-            job_data['additional_details'] = additional_details
-        if user_negative_prompt:
-            job_data['user_negative_prompt'] = user_negative_prompt
+        for field in optional_fields:
+            value = data.get(field, '').strip()
+            if value:  # Only set if not empty
+                setattr(job, field, value)
         
-        job = ImageProcessingJob.objects.create(**job_data)
+        # Save the job
+        job.save()
         
         # Queue the processing task
         process_image_async.delay(job.id)
         
-        # Log enhanced parameters for debugging
-        enhanced_params = {
-            'religion_culture': job_data.get('religion_culture'),
-            'user_negative_prompt': job_data.get('user_negative_prompt'),
-            'guest_count': job_data.get('guest_count'),
-            'budget_level': job_data.get('budget_level')
-        }
-        used_enhanced_params = {k: v for k, v in enhanced_params.items() if v}
-        
-        logger.info(f"Created enhanced processing job {job.id}: theme={wedding_theme}, space={space_type}")
-        if used_enhanced_params:
-            logger.info(f"Enhanced parameters used: {used_enhanced_params}")
+        logger.info(f"Created processing job {job.id} with parameters: theme={wedding_theme}, space={space_type}")
         
         return JsonResponse({
             'success': True,
             'job_id': job.id,
             'redirect_url': reverse('image_processing:processing_history'),
-            'message': 'Your enhanced wedding transformation has been queued for processing!'
+            'message': 'Your wedding transformation has been queued for processing!'
         })
         
     except Exception as e:
-        logger.error(f"Error in enhanced process_wedding_image: {str(e)}", exc_info=True)
+        logger.error(f"Error in process_wedding_image: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-
+    
 @login_required
 def image_detail(request, pk):
     """Display single image with enhanced wedding processing options"""
