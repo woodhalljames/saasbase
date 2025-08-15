@@ -28,11 +28,11 @@
                 <i class="bi bi-heart-fill"></i> Get Started Free
               </a>
             {% endif %}
-            <a href="#demo" class="hero-cta-secondary">
+            <!---a href="#demo" class="hero-cta-secondary">
               <i class="bi bi-play-circle"></i> See AI in Action
-            </a>
+            </a-->
           </div>
-          <div class="hero-stats">
+          <!--div class="hero-stats">
             <div class="row text-center">
               <div class="col-4">
                 <div class="stat-number">5k+</div>
@@ -47,7 +47,7 @@
                 <div class="stat-label text-white-50">Wedding Themes</div>
               </div>
             </div>
-          </div>
+          </div--->
         </div>
         <div class="col-lg-6">
           <div class="hero-visual">
@@ -180,14 +180,14 @@
             <i class="bi bi-gift"></i> FREE Forever
           </span>
           <h2 class="section-title">Beautiful Wedding Pages</h2>
-          <p class="section-subtitle">Share your love story, showcase your dream wedding venue, and manage your registries, RSVPs all in one stunning wedding website.</p>
+          <p class="section-subtitle">Share your love story, showcase your dream wedding venue, and manage your registries, RSVPs, & steam links all in one stunning wedding website.</p>
           <ul class="list-unstyled mb-4">
             <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Custom wedding website</li>
-            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Share details about your wedding</li>
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Make it easy to share details about your wedding</li>
             <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Manage all your registries, RSVPs & more</li>
           </ul>
           <div>
-            <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary me-3">
+            <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary me-2">
               <i class="bi bi-eye"></i> See Examples
             </a>
             <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
@@ -205,8 +205,8 @@
     <div class="container">
       <div class="row">
         <div class="col-12 text-center mb-5">
-          <h2 class="section-title text-dark">Complete Wedding Planning Suite</h2>
-          <p class="section-subtitle text-muted">Everything you need to plan and visualize the perfect wedding day</p>
+          <h2 class="section-title text-dark">Wedding Designer Included</h2>
+          <p class="section-subtitle text-muted">Themes by real wedding designers give you everything to plan and visualize the perfect wedding day</p>
         </div>
       </div>
       <div class="tool-grid">
@@ -231,7 +231,7 @@
             <i class="bi bi-people"></i>
           </div>
           <h4 class="mb-3">Wedding Day Satisfaction</h4>
-          <p class="text-muted">Increase wedding day satisfaction with organization & visualization tools for a dream wedding day.</p>
+          <p class="text-muted">Increase wedding day satisfaction with organization & visualization tools for a perfect wedding day.</p>
         </div>
         <div class="tool-card">
           <div class="tool-icon">
@@ -257,7 +257,7 @@
       <div class="row g-4">
         <div class="col-lg-4">
           <div class="step-card">
-            <div class="step-number">1</div>
+           
             <div class="step-icon">
               <i class="bi bi-cloud-upload"></i>
             </div>
@@ -268,7 +268,7 @@
         
         <div class="col-lg-4">
           <div class="step-card">
-            <div class="step-number">2</div>
+           
             <div class="step-icon">
               <i class="bi bi-sliders"></i>
             </div>
@@ -279,9 +279,9 @@
         
         <div class="col-lg-4">
           <div class="step-card">
-            <div class="step-number">3</div>
+            
             <div class="step-icon">
-              <i class="bi bi-heart-eyes"></i>
+              <i class="bi bi-eye"></i>
             </div>
             <h4 class="mb-3">See Your Dream Wedding</h4>
             <p class="text-muted">Watch your venue transform into your perfect wedding space. Save favorites, share, and plan with confidence.</p>
@@ -377,15 +377,16 @@
           <p class="section-subtitle">Join thousands who have turned dreams into reality</p>
           <div class="mb-4">
             {% if user.is_authenticated %}
-              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
+              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-2">
                 <i class="bi bi-magic"></i> See your wedding day
               </a>
              
-            {% endif %}
-            <br>
+            {% else %}
+           
             <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
               <i class="bi bi-info-circle"></i> Subscribe!
             </a>
+            {% endif %}
           </div>
           <p class="small opacity-75 mb-0">
             <i class="bi bi-shield-check me-2"></i>
