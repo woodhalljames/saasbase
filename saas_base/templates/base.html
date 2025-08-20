@@ -13,7 +13,7 @@
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="{% block meta_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
+        content="{% block meta_description %}Say YES to your wedding, before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta name="author"
         content="Cactus Cat LLC" />
         
@@ -25,15 +25,15 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="og:title" content="{% block og_title %}DreamWedAI - See Your Wedding Before The Big Day.{% endblock %}" />
-  <meta property="og:description" content="{% block og_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
+  <meta property="og:title" content="{% block og_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Say Yes to Your Wedding Before The Big Day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - See Your Wedding Before The Big Day.{% endblock %}" />
-  <meta property="twitter:description" content="{% block twitter_description %}See your wedding before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
+  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
+  <meta property="twitter:description" content="{% block twitter_description %}Say Yes to Your Wedding Before The Big Day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
   <meta property="twitter:image" content="{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
   
   <!-- CSRF Token for AJAX requests -->
@@ -199,7 +199,7 @@
             </li>
             <li class="nav-item">
               <a class="btn btn-gradient-rose ms-2 px-3 py-2" href="{% url 'account_signup' %}">
-                <i class="bi bi-house-door-fill me-1"></i> Get Started
+               Get Started
               </a>
             </li>
           </ul>
@@ -218,7 +218,7 @@
       
       if (indicator) {
           // Try to get usage data from API first
-          fetch('/api/usage-data/', {
+          fetch('/studio/api/usage-data/', {
               credentials: 'same-origin',
               headers: {
                   'X-CSRFToken': document.querySelector('[name=csrf-token]').content
@@ -330,7 +330,7 @@
             <i class="bi bi-heart-fill me-2"></i>DreamWedAI
           </a>
           <p class="text-white-75 small">
-            See Your Wedding Before The Big Day
+            Say Yes to Your Wedding Before The Big Day
           </p>
           <!-- Social Media Links -->
           <div class="mt-4">
@@ -343,9 +343,7 @@
             <a href="#" class="text-white-50 me-3 social-link" aria-label="Twitter">
               <i class="bi bi-twitter"></i>
             </a>
-            <a href="#" class="text-white-50 social-link" aria-label="YouTube">
-              <i class="bi bi-youtube"></i>
-            </a>
+            
           </div>
         </div>
 
@@ -385,7 +383,7 @@
           <ul class="list-unstyled">
             <li class="mb-2">
               <a href="{% url 'about' %}" class="text-white-75 text-decoration-none footer-link">
-                <i class="bi bi-info-circle me-2"></i>About Us
+                About Us
               </a>
             </li>
             <li class="mb-2">
@@ -435,7 +433,7 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <p class="text-white-50 small mb-0">
-            © {% now "Y" %} Cactus Cat LLC. All rights reserved.
+            © {% now "Y" %} DreamWedAI. All rights reserved.
           </p>
         </div>
         <div class="col-md-6 text-md-end">

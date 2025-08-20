@@ -31,7 +31,11 @@
               <small class="opacity-75">
                 <i class="bi bi-calendar me-1"></i>
                 Created {{ processed_image.created_at|date:"M d, Y" }} at {{ processed_image.created_at|time:"g:i A" }}
-              </small>
+              </small><br>
+               <small class="text-muted">
+                    <i class="bi bi-arrows-fullscreen text-primary"></i><br>
+                    <strong>{{ processed_image.width }}×{{ processed_image.height }}</strong>
+                  </small>
             </div>
             <div class="d-flex align-items-center gap-2">
               <!-- Favorite Heart -->
@@ -56,10 +60,7 @@
               <!-- Image Stats Row -->
               <div class="row text-center mt-3 py-2 bg-light rounded">
                 <div class="col-4">
-                  <small class="text-muted">
-                    <i class="bi bi-arrows-fullscreen text-primary"></i><br>
-                    <strong>{{ processed_image.width }}×{{ processed_image.height }}</strong>
-                  </small>
+                 
                 </div>
                 <div class="col-4">
                   <small class="text-muted">
@@ -67,12 +68,7 @@
                     <strong>{{ processed_image.file_size|filesizeformat }}</strong>
                   </small>
                 </div>
-                <div class="col-4">
-                  <small class="text-muted">
-                    <i class="bi bi-magic text-primary"></i><br>
-                    <strong>Wedding AI</strong>
-                  </small>
-                </div>
+                
               </div>
             </div>
           </div>

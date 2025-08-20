@@ -1,90 +1,94 @@
 {% extends "allauth/layouts/entrance.html" %}
 {% load i18n %}
-{% load allauth %}
+{% load socialaccount %}
 
-{% block head_title %}{% trans "Sign In to DreamWedAI" %}{% endblock head_title %}
+{% block head_title %}{% trans "Sign In" %}{% endblock head_title %}
 
 {% block content %}
-<div class="card border-0 shadow-lg">
+<div class="card shadow-sm">
   <div class="card-body p-5">
-    <!-- Logo and Welcome -->
     <div class="text-center mb-4">
       <div class="feature-icon mx-auto mb-3 bg-gradient-rose">
-        <i class="bi bi-heart-fill"></i>
+        <i class="bi bi-box-arrow-in-right"></i>
       </div>
-      <h2 class="fw-bold mb-2">Welcome Back!</h2>
-      <p class="text-muted">Sign in to continue planning your dream wedding</p>
+      <h2 class="fw-bold">Welcome Back</h2>
+      <p class="text-muted">Sign in to continue to DreamWedAI</p>
     </div>
     
     <!-- Social Login Buttons -->
     <div class="d-grid gap-2 mb-4">
-      <a href="{% provider_login_url 'google' process='login' %}" 
-         class="btn btn-outline-danger d-flex align-items-center justify-content-center py-2">
-        <i class="bi bi-google me-2"></i> Continue with Google
-      </a>
-      <a href="{% provider_login_url 'facebook' process='login' %}" 
-         class="btn btn-outline-primary d-flex align-items-center justify-content-center py-2">
-        <i class="bi bi-facebook me-2"></i> Continue with Facebook
-      </a>
-      <a href="{% provider_login_url 'twitter' process='login' %}" 
-         class="btn btn-outline-info d-flex align-items-center justify-content-center py-2">
-        <i class="bi bi-twitter me-2"></i> Continue with Twitter
-      </a>
+      {% get_providers as socialaccount_providers %}
+      {% for provider in socialaccount_providers %}
+        {% if provider.id == "google" %}
+          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-danger">
+            <i class="bi bi-google me-2"></i> Continue with Google
+          </a>
+        {% elif provider.id == "facebook" %}
+          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-primary">
+            <i class="bi bi-facebook me-2"></i> Continue with Facebook
+          </a>
+        {% elif provider.id == "twitter" %}
+          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-info">
+            <i class="bi bi-twitter me-2"></i> Continue with Twitter
+          </a>
+        {% endif %}
+      {% endfor %}
     </div>
     
-    <!-- Divider -->
-    <div class="position-relative my-4">
-      <hr class="text-muted">
-      <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
-        <small class="text-muted">or sign in with email</small>
-      </div>
+    <div class="position-relative text-center mb-4">
+      <hr class="my-4">
+      <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+        or sign in with email
+      </span>
     </div>
     
     <!-- Regular Login Form -->
-    <form method="post" action="{% url 'account_login' %}" class="needs-validation">
+    <form method="POST" action="{% url 'account_login' %}">
       {% csrf_token %}
       
       {% if form.non_field_errors %}
-        <div class="alert alert-danger border-0" role="alert">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          {{ form.non_field_errors.0 }}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {% for error in form.non_field_errors %}
+            {{ error }}
+          {% endfor %}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
       {% endif %}
       
       <div class="mb-3">
-        <label for="{{ form.login.id_for_label }}" class="form-label fw-semibold">
-          <i class="bi bi-person me-1"></i> Email or Username
-        </label>
+        <label for="{{ form.login.id_for_label }}" class="form-label">Email or Username</label>
         <input type="text" 
-               class="form-control form-control-lg {% if form.login.errors %}is-invalid{% endif %}"
+               class="form-control {% if form.login.errors %}is-invalid{% endif %}" 
                id="{{ form.login.id_for_label }}"
                name="{{ form.login.name }}"
-               placeholder="Enter your email or username"
                value="{{ form.login.value|default:'' }}"
+               placeholder="Enter your email or username"
                required
                autofocus>
         {% if form.login.errors %}
-          <div class="invalid-feedback">{{ form.login.errors.0 }}</div>
+          <div class="invalid-feedback">
+            {% for error in form.login.errors %}{{ error }}{% endfor %}
+          </div>
         {% endif %}
       </div>
       
       <div class="mb-3">
-        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">
-          <i class="bi bi-lock me-1"></i> Password
-        </label>
+        <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
         <input type="password" 
-               class="form-control form-control-lg {% if form.password.errors %}is-invalid{% endif %}"
+               class="form-control {% if form.password.errors %}is-invalid{% endif %}" 
                id="{{ form.password.id_for_label }}"
                name="{{ form.password.name }}"
                placeholder="Enter your password"
                required>
         {% if form.password.errors %}
-          <div class="invalid-feedback">{{ form.password.errors.0 }}</div>
+          <div class="invalid-feedback">
+            {% for error in form.password.errors %}{{ error }}{% endfor %}
+          </div>
         {% endif %}
       </div>
       
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="form-check">
+      {% if form.remember %}
+        <div class="form-check mb-3">
           <input type="checkbox" 
                  class="form-check-input" 
                  id="{{ form.remember.id_for_label }}"
@@ -94,10 +98,7 @@
             Remember me
           </label>
         </div>
-        <a href="{% url 'account_reset_password' %}" class="text-decoration-none">
-          Forgot password?
-        </a>
-      </div>
+      {% endif %}
       
       {% if redirect_field_value %}
         <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
@@ -110,14 +111,20 @@
       </div>
     </form>
     
-    <!-- Sign Up Link -->
     <div class="text-center">
-      <p class="mb-0">
-        Don't have an account? 
-        <a href="{% url 'account_signup' %}" class="text-decoration-none fw-semibold">
-          Sign up for free
+      <p class="mb-2">
+        <a href="{% url 'account_reset_password' %}" class="text-decoration-none">
+          <i class="bi bi-key me-1"></i> Forgot Password?
         </a>
       </p>
+      {% if ACCOUNT_ALLOW_REGISTRATION %}
+        <p class="mb-0">
+          Don't have an account? 
+          <a href="{% url 'account_signup' %}" class="fw-bold text-decoration-none">
+            Sign up here <i class="bi bi-arrow-right"></i>
+          </a>
+        </p>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -129,9 +129,6 @@
                       <small class="text-gradient fw-bold d-block text-truncate">
                         {{ transformation.get_wedding_theme_display }}
                       </small>
-                      <small class="text-muted">
-                        {{ transformation.created_at|timesince }} ago
-                      </small>
                     </div>
                   </div>
                 </div>
@@ -218,7 +215,7 @@
       <div class="card mb-4">
         <div class="card-header">
           <h6 class="mb-0">
-            <i class="bi bi-credit-card text-gradient"></i> Subscription Status
+            <i class="bi bi-credit-card text-gradient"></i> Account Status
           </h6>
         </div>
         <div class="card-body">
@@ -284,7 +281,7 @@
                 </div>
               {% endwith %}
               
-              <div class="d-grid">
+                  <div class="d-grid gap-2">
                 <a href="{% url 'subscriptions:pricing' %}" 
                    class="btn btn-gradient-rose">
                   <i class="bi bi-arrow-up-circle"></i> Upgrade Now
@@ -292,18 +289,7 @@
               </div>
             </div>
           {% endif %}
-        </div>
-      </div>
-
-      <!-- Account Settings -->
-      <div class="card">
-        <div class="card-header">
-          <h6 class="mb-0">
-            <i class="bi bi-gear text-gradient"></i> Account Settings
-          </h6>
-        </div>
-        <div class="card-body">
-          <div class="d-grid gap-2">
+      
             <a href="{% url 'users:update' %}" 
                class="btn btn-outline-primary">
               <i class="bi bi-person-gear"></i> Edit Profile
@@ -333,6 +319,9 @@
           </div>
         </div>
       </div>
+
+      <!-- Account Settings -->
+      
     </div>
   </div>
 </div>

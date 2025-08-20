@@ -69,11 +69,6 @@
                 <small class="text-muted">
                   <i class="bi bi-magic"></i> Transformation<br>
                   <i class="bi bi-calendar"></i> Created {{ favorite.processed_image.created_at|date:"M d, Y" }}<br>
-                  {% if favorite.processed_image.is_saved %}
-                    <i class="bi bi-collection-fill text-success"></i> Saved
-                  {% else %}
-                    <i class="bi bi-clock text-warning"></i> Temporary
-                  {% endif %}
                 </small>
               {% endwith %}
               

@@ -1,125 +1,133 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block bodyclass %}auth-page{% endblock bodyclass %}
+{% block bodyclass %}bg-light{% endblock bodyclass %}
 
 {% block title %}
   {% block head_title %}
-    {% trans "DreamWedAI" %}
+    {% trans "Authentication" %}
   {% endblock head_title %}
 {% endblock title %}
 
 {% block body %}
-<div class="auth-wrapper min-vh-100 d-flex align-items-center">
-  <div class="auth-particles"></div>
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-lg-5 col-md-7 col-sm-9">
-        <!-- Logo Link -->
-        <div class="text-center mb-4">
-          <a href="{% url 'home' %}" class="text-decoration-none">
-            <h2 class="text-gradient fw-bold">
-              <i class="bi bi-heart-fill me-2"></i>DreamWedAI
-            </h2>
-          </a>
-        </div>
-        
-        <!-- Messages -->
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
-              <div class="d-flex align-items-center">
-                {% if message.tags == 'success' %}
-                  <i class="bi bi-check-circle-fill me-2"></i>
-                {% elif message.tags == 'error' or message.tags == 'danger' %}
-                  <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                {% elif message.tags == 'warning' %}
-                  <i class="bi bi-exclamation-circle-fill me-2"></i>
-                {% else %}
-                  <i class="bi bi-info-circle-fill me-2"></i>
-                {% endif %}
-                {{ message }}
-              </div>
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
-        
-        <!-- Main Content -->
-        {% block content %}
-        {% endblock content %}
-        
-        <!-- Footer Links -->
-        <div class="text-center mt-4">
-          <small class="text-muted">
-            <a href="#" class="text-decoration-none me-3">Privacy Policy</a>
-            <a href="#" class="text-decoration-none me-3">Terms of Service</a>
-            <a href="mailto:support@dreamwedai.com" class="text-decoration-none">Support</a>
-          </small>
+  <div class="min-vh-100 d-flex flex-column">
+    <!-- Simple Header -->
+    <nav class="navbar navbar-light bg-white shadow-sm">
+      <div class="container">
+        <a class="navbar-brand fw-bold text-gradient-nav" href="{% url 'home' %}">
+          <i class="bi bi-heart-fill me-2"></i>DreamWedAI
+        </a>
+      </div>
+    </nav>
+    
+    <!-- Main Content Area -->
+    <div class="flex-grow-1 d-flex align-items-center py-5">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-12 col-md-6 col-lg-5 col-xl-4">
+            
+            <!-- Messages -->
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-4" role="alert">
+                  <div class="d-flex align-items-center">
+                    {% if message.tags == 'success' %}
+                      <i class="bi bi-check-circle-fill me-2"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% elif message.tags == 'warning' %}
+                      <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    {% else %}
+                      <i class="bi bi-info-circle-fill me-2"></i>
+                    {% endif %}
+                    {{ message }}
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+            
+            <!-- Content Block -->
+            {% block content %}
+            {% endblock content %}
+            
+          </div>
         </div>
       </div>
     </div>
+    
+    <!-- Simple Footer -->
+    <footer class="py-4 bg-white border-top">
+      <div class="container text-center">
+        <small class="text-muted">
+          © {% now "Y" %} DreamWedAI by Cactus Cat LLC. All rights reserved.
+        </small>
+      </div>
+    </footer>
   </div>
-</div>
-
-<style>
-.auth-wrapper {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-particles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 0;
-}
-
-.auth-particles::before,
-.auth-particles::after {
-  content: '';
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-}
-
-.auth-particles::before {
-  top: -100px;
-  left: -100px;
-  animation: float 20s infinite ease-in-out;
-}
-
-.auth-particles::after {
-  bottom: -100px;
-  right: -100px;
-  animation: float 15s infinite ease-in-out reverse;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-20px) rotate(180deg); }
-}
-
-.auth-page .card {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-}
-
-.auth-page .btn-gradient-rose,
-.auth-page .btn-gradient-cyan {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.auth-page .btn-gradient-rose:hover,
-.auth-page .btn-gradient-cyan:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-}
-</style>
+  
+  <style>
+    /* Additional styles for auth pages */
+    .entrance-page {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 20px;
+    }
+    
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      background: var(--gradient-rose);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+      box-shadow: 0 10px 30px rgba(255, 107, 157, 0.3);
+    }
+    
+    .feature-icon.bg-gradient-cyan {
+      background: var(--gradient-cyan);
+      box-shadow: 0 10px 30px rgba(0, 245, 255, 0.3);
+    }
+    
+    .btn-lg {
+      padding: 0.75rem 1.5rem;
+      font-weight: 600;
+    }
+    
+    .form-control {
+      border-radius: 10px;
+      border: 2px solid #e9ecef;
+      padding: 0.75rem 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+      border-color: var(--bright-cyan);
+      box-shadow: 0 0 0 0.2rem rgba(0, 245, 255, 0.25);
+    }
+    
+    .btn-outline-danger:hover,
+    .btn-outline-primary:hover,
+    .btn-outline-info:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    @media (max-width: 576px) {
+      .card-body {
+        padding: 2rem !important;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
 {% endblock body %}
