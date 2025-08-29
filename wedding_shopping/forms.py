@@ -216,7 +216,7 @@ SocialMediaFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     SocialMediaLink, 
     form=SocialMediaLinkForm,
-    extra=2,  # Start with 2 empty forms
+    extra=1,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
     max_num=10,  # Allow up to 10 social media links
@@ -229,7 +229,7 @@ WeddingLinkFormSet = forms.inlineformset_factory(
     CoupleProfile, 
     WeddingLink, 
     form=WeddingLinkForm,
-    extra=2,  # Start with 2 empty forms
+    extra=1,  # Start with 2 empty forms
     can_delete=True,
     min_num=0,
     max_num=20,  # Allow up to 20 wedding links

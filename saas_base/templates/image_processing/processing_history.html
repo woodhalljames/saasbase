@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Wedding Processing History{% endblock %}
+{% block title %}Tranformation History{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -12,11 +12,11 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
-          <li class="breadcrumb-item active">Processing History</li>
+          <li class="breadcrumb-item active">Transformation History</li>
         </ol>
       </nav>
-      <h1>💍 Wedding Transformations</h1>
-      <p class="text-muted">View all your AI wedding venue transformations</p>
+      <h1>👰 Wedding Transformations</h1>
+      <p class="text-muted">View all your wedding venue transformations</p>
     </div>
     <div class="col-md-6 text-end">
       <div class="btn-group" role="group">
@@ -33,12 +33,26 @@
     </div>
   </div>
 
+  <!-- Auto-refresh indicator for latest job only -->
+  {% if page_obj and page_obj.0.status == 'processing' or page_obj.0.status == 'pending' %}
+  <div id="autoRefreshIndicator" class="alert alert-info border-0 py-2 px-3 mb-3">
+    <div class="d-flex align-items-center">
+      <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
+      <small>
+        <strong>Monitoring Latest Job:</strong> 
+        Next update in <span id="countdown">15</span> seconds
+      </small>
+      <button type="button" class="btn-close btn-close-sm ms-auto" id="pauseAutoRefresh" title="Stop monitoring"></button>
+    </div>
+  </div>
+  {% endif %}
+
   {% if page_obj %}
     <!-- Processing Jobs List -->
     <div class="row">
       <div class="col-12">
         {% for job in page_obj %}
-          <div class="card mb-4 border-0 shadow-sm" data-job-id="{{ job.id }}">
+          <div class="card mb-4 border-0 shadow-sm job-card" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">
             <div class="card-body">
               <div class="row">
                 <!-- Wedding Transformation Result (Main Focus) -->
@@ -56,7 +70,7 @@
                                  alt="Wedding transformation"
                                  style="width: 100%; max-height: 400px; object-fit: cover;">
                             
-                            <!-- Favorite Heart & Collection Actions -->
+                            <!-- Favorite Heart & Collection Actions - FIXED -->
                             <div class="position-absolute top-0 start-0 p-2">
                               {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_img %}
                             </div>
@@ -87,6 +101,15 @@
                                       </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
+                                    <!-- NEW: Redo transformation button -->
+                                    <li>
+                                      <a class="dropdown-item redo-transformation-btn" 
+                                         href="#" 
+                                         data-job-id="{{ job.id }}"
+                                         onclick="event.preventDefault(); redoTransformation('{{ job.id }}');">
+                                        <i class="bi bi-arrow-repeat text-warning"></i> Use These Settings Again
+                                      </a>
+                                    </li>
                                     <li>
                                       <a class="dropdown-item add-to-collection-btn" 
                                          href="#" 
@@ -121,10 +144,13 @@
                         <div class="spinner-border text-warning mb-2" role="status">
                           <span class="visually-hidden">Processing...</span>
                         </div>
-                        <div class="text-warning">Creating your wedding vision...</div>
+                        <div class="text-warning processing-message">Creating your wedding vision...</div>
+                        <small class="text-muted d-block mt-2">
+                          <span class="processing-duration" data-started="{{ job.started_at|date:'c' }}"></span>
+                        </small>
                         <button class="btn btn-sm btn-outline-info mt-2 check-status-btn" 
                                 data-job-id="{{ job.id }}">
-                          <i class="bi bi-arrow-clockwise"></i> Check Status
+                          <i class="bi bi-arrow-clockwise"></i> Check Now
                         </button>
                       </div>
                     </div>
@@ -133,16 +159,27 @@
                     <div class="alert alert-danger">
                       <h6 class="alert-heading">Processing Failed</h6>
                       <p class="mb-2">{{ job.error_message|default:"An error occurred during processing" }}</p>
-                      <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-warning">
-                        <i class="bi bi-arrow-clockwise"></i> Try Again
-                      </a>
+                      <!-- NEW: Redo button for failed jobs -->
+                      <div class="d-flex gap-2">
+                        <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-warning">
+                          <i class="bi bi-arrow-clockwise"></i> Try Again
+                        </a>
+                        <button class="btn btn-sm btn-outline-primary redo-transformation-btn" 
+                                data-job-id="{{ job.id }}"
+                                onclick="redoTransformation('{{ job.id }}');">
+                          <i class="bi bi-copy"></i> Copy Settings to Studio
+                        </button>
+                      </div>
                     </div>
                     
                   {% else %}
-                    <div class="d-flex align-items-center justify-content-center" style="height: 300px;">
+                    <div class="d-flex align-items-center justify-content-center pending-status" style="height: 300px;">
                       <div class="text-center text-muted">
-                        <i class="bi bi-clock" style="font-size: 2rem;"></i>
+                        <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
                         <div>Waiting to start...</div>
+                        <small class="text-muted d-block mt-2">
+                          Queued <span class="pending-duration" data-created="{{ job.created_at|date:'c' }}"></span> ago
+                        </small>
                       </div>
                     </div>
                   {% endif %}
@@ -161,7 +198,7 @@
                         <span class="text-muted">Unknown style</span>
                       {% endif %}
                     </div>
-                    <span class="badge fs-6 {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                    <span class="badge fs-6 job-status-badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                       {% if job.status == 'processing' %}
                         <i class="bi bi-hourglass-split"></i>
                       {% elif job.status == 'completed' %}
@@ -171,29 +208,33 @@
                       {% else %}
                         <i class="bi bi-clock"></i>
                       {% endif %}
-                      {{ job.get_status_display }}
+                      <span class="status-text">{{ job.get_status_display }}</span>
                     </span>
                   </div>
 
-                  <!-- Advanced Parameters (if any were used) -->
-                  {% if job.guest_count or job.budget_level or job.season or job.time_of_day or job.color_scheme %}
+                  <!-- Fixed Parameters Info -->
+                  <div class="mb-3">
+                    <h6 class="small text-muted mb-2">AI Parameters (Fixed):</h6>
+                    <div class="d-flex flex-wrap gap-1">
+                      <span class="badge bg-light text-dark small">Strength: 70%</span>
+                      <span class="badge bg-light text-dark small">Steps: 30</span>
+                      <span class="badge bg-light text-dark small">CFG: 7.5</span>
+                    </div>
+                  </div>
+
+                  <!-- Optional Parameters (if any were used) -->
+                  {% if job.season or job.lighting_mood or job.color_scheme %}
                     <div class="mb-3">
-                      <h6 class="small text-muted mb-2">Parameters Used:</h6>
+                      <h6 class="small text-muted mb-2">Style Options Used:</h6>
                       <div class="d-flex flex-wrap gap-1">
-                        {% if job.guest_count %}
-                          <span class="badge bg-light text-dark small">{{ job.get_guest_count_display }}</span>
-                        {% endif %}
-                        {% if job.budget_level %}
-                          <span class="badge bg-info small">{{ job.get_budget_level_display }}</span>
-                        {% endif %}
                         {% if job.season %}
-                          <span class="badge bg-warning text-dark small">{{ job.get_season_display }}</span>
+                          <span class="badge bg-warning text-dark small">{{ job.season|title }}</span>
                         {% endif %}
-                        {% if job.time_of_day %}
-                          <span class="badge bg-secondary small">{{ job.get_time_of_day_display }}</span>
+                        {% if job.lighting_mood %}
+                          <span class="badge bg-secondary small">{{ job.lighting_display|default:job.lighting_mood|title }}</span>
                         {% endif %}
                         {% if job.color_scheme %}
-                          <span class="badge bg-success small">{{ job.get_color_scheme_display }}</span>
+                          <span class="badge bg-success small">{{ job.color_display|default:job.color_scheme }}</span>
                         {% endif %}
                       </div>
                     </div>
@@ -234,6 +275,12 @@
                                class="btn btn-success btn-sm">
                               <i class="bi bi-eye"></i> View Full Details
                             </a>
+                            <!-- NEW: Prominent redo button for completed jobs -->
+                            <button class="btn btn-outline-primary btn-sm redo-transformation-btn" 
+                                    data-job-id="{{ job.id }}"
+                                    onclick="redoTransformation('{{ job.id }}');">
+                              <i class="bi bi-arrow-repeat"></i> Use These Settings Again
+                            </button>
                           </div>
                         {% endfor %}
                       {% endif %}
@@ -378,6 +425,189 @@
 </div>
 
 <script>
+// Simplified Latest Job Monitor
+class LatestJobMonitor {
+    constructor() {
+        this.monitoringInterval = null;
+        this.countdownInterval = null;
+        this.checkInterval = 15; // seconds
+        this.countdown = this.checkInterval;
+        this.latestJobId = null;
+        this.init();
+    }
+
+    init() {
+        // Find the latest job that needs monitoring
+        const latestJobCard = document.querySelector('.job-card');
+        if (latestJobCard) {
+            const status = latestJobCard.dataset.jobStatus;
+            if (status === 'pending' || status === 'processing') {
+                this.latestJobId = latestJobCard.dataset.jobId;
+                this.startMonitoring();
+            }
+        }
+
+        // Setup pause button
+        const pauseBtn = document.getElementById('pauseAutoRefresh');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => this.stopMonitoring());
+        }
+
+        // Setup manual check buttons
+        document.querySelectorAll('.check-status-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const jobId = e.target.closest('.check-status-btn').dataset.jobId;
+                this.checkJobStatus(jobId, true);
+            });
+        });
+    }
+
+    startMonitoring() {
+        if (!this.latestJobId) return;
+        
+        console.log(`Monitoring latest job: ${this.latestJobId}`);
+        
+        // Check immediately
+        this.checkJobStatus(this.latestJobId);
+        
+        // Set up regular checking
+        this.monitoringInterval = setInterval(() => {
+            this.checkJobStatus(this.latestJobId);
+        }, this.checkInterval * 1000);
+        
+        this.startCountdown();
+    }
+
+    stopMonitoring() {
+        if (this.monitoringInterval) {
+            clearInterval(this.monitoringInterval);
+            this.monitoringInterval = null;
+        }
+        if (this.countdownInterval) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+        }
+        
+        // Hide the monitoring indicator
+        const indicator = document.getElementById('autoRefreshIndicator');
+        if (indicator) indicator.style.display = 'none';
+        
+        console.log('Stopped monitoring latest job');
+    }
+
+    startCountdown() {
+        this.countdown = this.checkInterval;
+        this.updateCountdownDisplay();
+        
+        this.countdownInterval = setInterval(() => {
+            this.countdown--;
+            this.updateCountdownDisplay();
+            
+            if (this.countdown <= 0) {
+                this.countdown = this.checkInterval;
+            }
+        }, 1000);
+    }
+
+    async checkJobStatus(jobId, isManual = false) {
+        try {
+            const response = await fetch(`/studio/job/${jobId}/status/`);
+            const data = await response.json();
+            
+            console.log(`Job ${jobId} status:`, data.status);
+            
+            if (data.status === 'completed') {
+                this.handleJobCompleted(jobId, data);
+            } else if (data.status === 'failed') {
+                this.handleJobFailed(jobId, data);
+            } else if (data.status === 'processing' && !isManual) {
+                this.updateProcessingMessage(jobId);
+            }
+            
+        } catch (error) {
+            console.error(`Status check error for job ${jobId}:`, error);
+        }
+    }
+
+    handleJobCompleted(jobId, data) {
+        console.log(`Job ${jobId} completed!`);
+        this.stopMonitoring();
+        
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+        notification.innerHTML = `
+            <strong>Wedding Transformation Complete!</strong><br>
+            <small>Your latest transformation is ready to view</small>
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Reload page to show results
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    }
+
+    handleJobFailed(jobId, data) {
+        console.log(`Job ${jobId} failed`);
+        this.stopMonitoring();
+        
+        // Show error notification
+        showAlert('Processing failed. Please try again.', 'danger');
+    }
+
+    updateProcessingMessage(jobId) {
+        const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
+        if (!jobCard) return;
+        
+        const processingMessage = jobCard.querySelector('.processing-message');
+        if (processingMessage) {
+            const messages = [
+                'Creating your wedding vision...',
+                'Applying AI transformations...',
+                'Adding wedding details...',
+                'Almost done...'
+            ];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            processingMessage.textContent = randomMessage;
+        }
+    }
+
+    updateCountdownDisplay() {
+        const countdownEl = document.getElementById('countdown');
+        if (countdownEl) countdownEl.textContent = this.countdown;
+    }
+}
+
+// NEW: Redo transformation functionality
+async function redoTransformation(jobId) {
+    try {
+        showAlert('Copying settings to studio...', 'info');
+        
+        const response = await fetch(`/studio/redo-transformation/${jobId}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Redirect to studio with pre-filled parameters
+            window.location.href = result.redirect_url;
+        } else {
+            showAlert('Failed to copy settings', 'danger');
+        }
+    } catch (error) {
+        console.error('Redo transformation error:', error);
+        showAlert('Error copying settings', 'danger');
+    }
+}
+
 // Collection helper functions
 async function addToDefaultCollection(imageType, imageId) {
     const formData = new FormData();
@@ -452,13 +682,9 @@ async function deleteProcessedImage(imageId) {
         const result = await response.json();
         
         if (result.success) {
-            // Close modal
             bootstrap.Modal.getInstance(document.getElementById('deleteProcessedModal')).hide();
-            
-            // Show success message
             showAlert(result.message, 'success');
             
-            // Reload page after short delay
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
@@ -471,35 +697,7 @@ async function deleteProcessedImage(imageId) {
     }
 }
 
-// Status check functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Check status buttons
-    document.querySelectorAll('.check-status-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const jobId = this.dataset.jobId;
-            checkJobStatus(jobId);
-        });
-    });
-});
-
-async function checkJobStatus(jobId) {
-    try {
-        const response = await fetch(`/studio/job/${jobId}/status/`);
-        const data = await response.json();
-        
-        if (data.status === 'completed' || data.status === 'failed') {
-            location.reload();
-        } else {
-            showAlert('Job is still processing...', 'info');
-        }
-    } catch (error) {
-        console.error('Status check error:', error);
-        showAlert('Failed to check status', 'warning');
-    }
-}
-
 function showAlert(message, type) {
-    // Remove existing alerts
     document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
     
     const alert = document.createElement('div');
@@ -516,5 +714,10 @@ function showAlert(message, type) {
         if (alert.parentElement) alert.remove();
     }, 5000);
 }
+
+// Initialize simplified monitoring when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    window.latestJobMonitor = new LatestJobMonitor();
+});
 </script>
 {% endblock %}

@@ -49,6 +49,55 @@
               <div class="position-absolute top-0 end-0 p-2">
                 {% include 'image_processing/components/favorite_heart.html' with processed_image=favorite.processed_image %}
               </div>
+
+              <!-- NEW: Quick Actions Overlay -->
+              <div class="position-absolute bottom-0 end-0 p-2">
+                <div class="btn-group-vertical">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-light dropdown-toggle shadow-sm" 
+                            type="button" 
+                            data-bs-toggle="dropdown"
+                            title="Quick Actions">
+                      <i class="bi bi-three-dots"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}">
+                          <i class="bi bi-eye text-success"></i> View Details
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ favorite.processed_image.processed_image.url }}" target="_blank">
+                          <i class="bi bi-arrows-fullscreen text-info"></i> Full Size
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="{{ favorite.processed_image.processed_image.url }}" download>
+                          <i class="bi bi-download text-primary"></i> Download
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      <!-- NEW: Redo transformation button -->
+                      <li>
+                        <a class="dropdown-item redo-transformation-btn" 
+                           href="#" 
+                           data-job-id="{{ favorite.processed_image.processing_job.id }}"
+                           onclick="event.preventDefault(); redoTransformation('{{ favorite.processed_image.processing_job.id }}');">
+                          <i class="bi bi-arrow-repeat text-warning"></i> Use These Settings Again
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item add-to-collection-btn" 
+                           href="#" 
+                           data-processed-image-id="{{ favorite.processed_image.id }}"
+                           onclick="event.preventDefault(); addToDefaultCollection('processed', '{{ favorite.processed_image.id }}');">
+                          <i class="bi bi-collection text-success"></i> Save to Collection
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div class="card-body">
@@ -61,8 +110,23 @@
               {% with job=favorite.processed_image.processing_job %}
                 {% if job.wedding_theme and job.space_type %}
                   <div class="mb-2">
-                    <span class="badge bg-primary me-1">{{ job.get_wedding_theme_display }}</span>
-                    <span class="badge bg-secondary">{{ job.get_space_type_display }}</span>
+                    <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
+                    <span class="badge bg-secondary">{{ job.space_display }}</span>
+                  </div>
+                {% endif %}
+                
+                <!-- NEW: Optional parameters display -->
+                {% if job.season or job.lighting_mood or job.color_scheme %}
+                  <div class="mb-2">
+                    {% if job.season %}
+                      <span class="badge bg-warning text-dark small">{{ job.season|title }}</span>
+                    {% endif %}
+                    {% if job.lighting_mood %}
+                      <span class="badge bg-secondary small">{{ job.lighting_mood|title }}</span>
+                    {% endif %}
+                    {% if job.color_scheme %}
+                      <span class="badge bg-success small">{{ job.color_scheme|title }}</span>
+                    {% endif %}
                   </div>
                 {% endif %}
                 
@@ -78,22 +142,50 @@
             </div>
             
             <div class="card-footer bg-transparent">
-              <div class="btn-group w-100" role="group">
+              <div class="row g-1">
                 <!-- Link to Processed Image Detail Page -->
-                <a href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}" 
-                   class="btn btn-sm btn-success">
-                  <i class="bi bi-eye"></i> View Details
-                </a>
-                <a href="{{ favorite.processed_image.processed_image.url }}" 
-                   class="btn btn-sm btn-outline-secondary" 
-                   target="_blank">
-                  <i class="bi bi-arrows-fullscreen"></i>
-                </a>
-                <a href="{{ favorite.processed_image.processed_image.url }}" 
-                   class="btn btn-sm btn-outline-primary" 
-                   download>
-                  <i class="bi bi-download"></i>
-                </a>
+                <div class="col-6">
+                  <a href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}" 
+                     class="btn btn-sm btn-success w-100">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                </div>
+                <!-- NEW: Redo button -->
+                <div class="col-6">
+                  <button class="btn btn-sm btn-outline-primary w-100 redo-transformation-btn" 
+                          data-job-id="{{ favorite.processed_image.processing_job.id }}"
+                          onclick="redoTransformation('{{ favorite.processed_image.processing_job.id }}');"
+                          title="Use these settings again with a different image">
+                    <i class="bi bi-arrow-repeat"></i> Redo
+                  </button>
+                </div>
+              </div>
+              <!-- Additional actions row -->
+              <div class="row g-1 mt-1">
+                <div class="col-4">
+                  <a href="{{ favorite.processed_image.processed_image.url }}" 
+                     class="btn btn-sm btn-outline-secondary w-100" 
+                     target="_blank"
+                     title="View full size">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                  </a>
+                </div>
+                <div class="col-4">
+                  <a href="{{ favorite.processed_image.processed_image.url }}" 
+                     class="btn btn-sm btn-outline-primary w-100" 
+                     download
+                     title="Download image">
+                    <i class="bi bi-download"></i>
+                  </a>
+                </div>
+                <div class="col-4">
+                  <button class="btn btn-sm btn-outline-success w-100 add-to-collection-btn" 
+                          data-processed-image-id="{{ favorite.processed_image.id }}"
+                          onclick="addToDefaultCollection('processed', '{{ favorite.processed_image.id }}');"
+                          title="Add to collection">
+                    <i class="bi bi-collection"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -159,4 +251,107 @@
     </div>
   {% endif %}
 </div>
+
+<!-- Collection Success Toast -->
+<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+  <div class="toast-header">
+    <i class="bi bi-collection text-success me-2"></i>
+    <strong class="me-auto">Collection</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+  </div>
+  <div class="toast-body" id="collectionToastBody">
+    Image added to collection!
+  </div>
+</div>
+
+<script>
+// NEW: Redo transformation functionality
+async function redoTransformation(jobId) {
+    try {
+        showAlert('Copying settings to studio...', 'info');
+        
+        const response = await fetch(`/studio/redo-transformation/${jobId}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Redirect to studio with pre-filled parameters
+            window.location.href = result.redirect_url;
+        } else {
+            showAlert('Failed to copy settings', 'danger');
+        }
+    } catch (error) {
+        console.error('Redo transformation error:', error);
+        showAlert('Error copying settings', 'danger');
+    }
+}
+
+// Collection helper functions
+async function addToDefaultCollection(imageType, imageId) {
+    const formData = new FormData();
+    formData.append('use_default', 'true');
+    
+    if (imageType === 'user') {
+        formData.append('user_image_id', imageId);
+    } else {
+        formData.append('processed_image_id', imageId);
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+    
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    
+    try {
+        const response = await fetch('/studio/collections/add/', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showCollectionToast(result.message, 'success');
+        } else {
+            showCollectionToast(result.message || 'Failed to add to collection', 'warning');
+        }
+    } catch (error) {
+        console.error('Collection error:', error);
+        showCollectionToast('Network error', 'error');
+    }
+}
+
+function showCollectionToast(message, type) {
+    const toastEl = document.getElementById('collectionToast');
+    const toastBody = document.getElementById('collectionToastBody');
+    
+    toastBody.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function showAlert(message, type) {
+    document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed temp-alert`;
+    alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentElement) alert.remove();
+    }, 5000);
+}
+</script>
 {% endblock %}

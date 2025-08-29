@@ -1,7 +1,10 @@
+# image_processing/tasks.py - SIMPLIFIED VERSION with fixed parameters
+
 import logging
 from celery import shared_task
 from django.utils import timezone
-from .models import ImageProcessingJob, ProcessedImage
+from django.db import models
+from .models import ImageProcessingJob, ProcessedImage, UserImage
 from .services import ImageProcessingService
 
 logger = logging.getLogger(__name__)
@@ -10,13 +13,14 @@ logger = logging.getLogger(__name__)
 @shared_task(bind=True, max_retries=3)
 def process_image_async(self, job_id):
     """
-    Asynchronously process a wedding venue image with Stable Image Ultra and dynamic parameters
+    Asynchronously process a wedding venue image - SIMPLIFIED VERSION
     """
     try:
         # Get the processing job
         job = ImageProcessingJob.objects.get(id=job_id)
         
-        logger.info(f"Starting Stable Image Ultra processing job {job_id} for user {job.user_image.user.username}")
+        logger.info(f"Starting processing job {job_id} for user {job.user_image.user.username}")
+        logger.info(f"Job settings: {job.wedding_theme} + {job.space_type} (FIXED: 70% strength, 30 steps)")
         
         # Update job status
         job.status = 'processing'
@@ -26,88 +30,137 @@ def process_image_async(self, job_id):
         # Initialize the processing service
         processing_service = ImageProcessingService()
         
-        # Ensure we have a generated prompt (with dynamic parameters)
+        # Ensure we have a generated prompt with SIMPLIFIED parameter handling
         if not job.generated_prompt:
-            logger.info(f"Generating transformation prompt for Stable Image Ultra job {job_id}")
+            logger.info(f"Generating prompt for job {job_id}")
             try:
-                # Import the function here to avoid circular imports
-                from .models import generate_wedding_prompt_with_dynamics
+                # Import the updated function from models
+                from .models import generate_wedding_prompt
                 
-                prompt_data = generate_wedding_prompt_with_dynamics(
+                # SIMPLIFIED: Only pass non-empty optional parameters
+                optional_params = {}
+                
+                # List of SIMPLIFIED optional fields
+                optional_fields = ['season', 'lighting_mood', 'color_scheme', 'special_features', 'avoid']
+                
+                # Only include parameters that have actual values
+                for field in optional_fields:
+                    value = getattr(job, field, None)
+                    if value and value.strip():  # Only if not empty/None
+                        # Special handling for lighting_mood -> time_of_day mapping if needed
+                        if field == 'lighting_mood':
+                            optional_params['lighting_mood'] = value.strip()
+                        else:
+                            optional_params[field] = value.strip()
+                
+                logger.info(f"Using simplified optional parameters: {optional_params}")
+                
+                prompt_data = generate_wedding_prompt(
                     wedding_theme=job.wedding_theme,
                     space_type=job.space_type,
-                    guest_count=job.guest_count,
-                    budget_level=job.budget_level,
-                    season=job.season,
-                    time_of_day=job.time_of_day,
-                    color_scheme=job.color_scheme,
-                    custom_colors=job.custom_colors,
-                    additional_details=job.additional_details
+                    **optional_params  # Only pass non-empty parameters
                 )
                 
                 job.generated_prompt = prompt_data['prompt']
                 job.negative_prompt = prompt_data['negative_prompt']
                 
-                # Update Stable Image Ultra parameters with recommendations
-                recommended_params = prompt_data['recommended_params']
-                job.strength = recommended_params.get('strength', job.strength)
-                job.cfg_scale = recommended_params.get('cfg_scale', job.cfg_scale)
-                job.steps = recommended_params.get('steps', job.steps)
-                job.output_format = recommended_params.get('output_format', job.output_format)
+                # FIXED: Override with our fixed parameters regardless of recommendations
+                job.strength = 0.70      # Fixed at 70%
+                job.cfg_scale = 7.5      # Standard CFG
+                job.steps = 30           # Fixed at 30 steps
+                job.output_format = 'png'
                 
                 job.save()
-                logger.info(f"Generated concise prompt for Stable Image Ultra job {job_id}: {job.generated_prompt[:100]}...")
+                logger.info(f"Generated prompt for job {job_id} with FIXED parameters")
+                logger.info(f"Prompt preview: {job.generated_prompt[:150]}...")
                 
             except Exception as e:
-                logger.error(f"Error generating transformation prompt for Ultra job {job_id}: {str(e)}")
+                logger.error(f"Error generating prompt for job {job_id}: {str(e)}")
                 # Create a basic fallback prompt
-                job.generated_prompt = f"Transform this space to become a beautiful {job.space_type} with {job.wedding_theme} wedding style, professional wedding photography, high quality, elegant transformation"
-                job.negative_prompt = "people, faces, crowd, guests, blurry, low quality, dark, messy"
+                theme_name = job.theme_display_name
+                space_name = job.space_display_name
+                job.generated_prompt = f"elegant wedding {space_name.lower()} with {theme_name.lower()} style, professional wedding photography, high quality, elegant decoration"
+                job.negative_prompt = "people, faces, crowd, guests, bride, groom, wedding party, blurry, low quality, dark, messy, text, watermark"
+                
+                # FIXED: Still set our fixed parameters even on fallback
+                job.strength = 0.70
+                job.cfg_scale = 7.5
+                job.steps = 30
+                job.output_format = 'png'
                 job.save()
         
-        prompt_text = job.generated_prompt
-        logger.info(f"Processing wedding venue with Stable Image Ultra using prompt: {prompt_text[:100]}...")
+        # Validate critical parameters only
+        if not job.wedding_theme or not job.space_type:
+            raise ValueError("Missing required wedding_theme or space_type")
         
-        # Log dynamic parameters and Ultra settings being used
-        dynamic_params = {
-            'guest_count': job.guest_count,
-            'budget_level': job.budget_level,
-            'season': job.season,
-            'time_of_day': job.time_of_day,
-            'color_scheme': job.color_scheme,
-            'custom_colors': job.custom_colors
-        }
-        ultra_params = {
-            'cfg_scale': job.cfg_scale,
-            'steps': job.steps,
-            'strength': job.strength,
-        }
+        # FIXED: Ensure our fixed parameters are always set correctly
+        if job.strength != 0.70 or job.steps != 30:
+            logger.info(f"Correcting parameters: strength {job.strength}->0.70, steps {job.steps}->30")
+            job.strength = 0.70
+            job.steps = 30
+            job.cfg_scale = 7.5
+            job.save()
         
-        used_params = {k: v for k, v in dynamic_params.items() if v}
-        if used_params:
-            logger.info(f"Using dynamic parameters: {used_params}")
-        logger.info(f"Using Stable Image Ultra parameters: {ultra_params}")
+        # Log final processing parameters
+        logger.info(f"FIXED Processing parameters:")
+        logger.info(f"  - Strength: {job.strength} (FIXED)")
+        logger.info(f"  - CFG Scale: {job.cfg_scale} (FIXED)")
+        logger.info(f"  - Steps: {job.steps} (FIXED)")
+        logger.info(f"  - Theme: {job.wedding_theme}")
+        logger.info(f"  - Space: {job.space_type}")
         
-        # Process the image using the service (Stable Image Ultra)
+        # Simplified active parameters logging
+        active_optional = []
+        if job.season:
+            active_optional.append(f"season={job.season}")
+        if job.lighting_mood:
+            active_optional.append(f"lighting={job.lighting_mood}")
+        if job.color_scheme:
+            active_optional.append(f"colors={job.color_scheme}")
+        if job.special_features:
+            active_optional.append("special_features")
+        if job.avoid:
+            active_optional.append("avoid_list")
+            
+        if active_optional:
+            logger.info(f"  - Optional: {', '.join(active_optional)}")
+        else:
+            logger.info(f"  - Using core parameters only")
+        
+        # Process the image using the enhanced service
         success = processing_service.process_wedding_image(job)
         
         if success:
-            logger.info(f"Successfully completed wedding processing job {job_id} with Stable Image Ultra")
+            logger.info(f"Successfully completed wedding processing job {job_id}")
+            
+            # Log final result info
+            processed_images = job.processed_images.all()
+            if processed_images:
+                img = processed_images.first()
+                logger.info(f"Final result: {img.width}x{img.height}, {img.file_size} bytes")
+                
+                # Validate the result
+                if img.file_size < 10000:  # Less than 10KB
+                    logger.warning(f"Generated image unusually small: {img.file_size} bytes")
+                
+                if img.width < 256 or img.height < 256:
+                    logger.warning(f"Generated image low resolution: {img.width}x{img.height}")
+            
             return {
                 'success': True,
                 'job_id': job_id,
                 'theme': job.wedding_theme,
                 'space_type': job.space_type,
-                'dynamic_params': used_params,
-                'ultra_params': ultra_params,
-                'model': 'Stable-Image-Ultra'
+                'strength': job.strength,
+                'steps': job.steps,
+                'active_optional': active_optional
             }
         else:
-            logger.error(f"Stable Image Ultra wedding processing failed for job {job_id}")
+            logger.error(f"Wedding processing failed for job {job_id}")
             return {
                 'success': False,
                 'job_id': job_id,
-                'error': 'Stable Image Ultra processing failed'
+                'error': 'Processing failed'
             }
             
     except ImageProcessingJob.DoesNotExist:
@@ -116,21 +169,40 @@ def process_image_async(self, job_id):
             'success': False,
             'error': f'Job {job_id} not found'
         }
+    
+    except ValueError as ve:
+        logger.error(f"Validation error for job {job_id}: {str(ve)}")
+        
+        # Mark job as failed
+        try:
+            job = ImageProcessingJob.objects.get(id=job_id)
+            job.status = 'failed'
+            job.error_message = f"Validation error: {str(ve)}"
+            job.completed_at = timezone.now()
+            job.save()
+        except Exception as save_error:
+            logger.error(f"Failed to update job status: {str(save_error)}")
+        
+        return {
+            'success': False,
+            'job_id': job_id,
+            'error': str(ve)
+        }
         
     except Exception as exc:
-        logger.error(f"Error processing wedding job {job_id} with Stable Image Ultra: {str(exc)}", exc_info=True)
+        logger.error(f"Error processing wedding job {job_id}: {str(exc)}", exc_info=True)
         
-        # Retry logic with exponential backoff - Ultra is typically faster but still needs time for quality
+        # Retry logic with exponential backoff
         if self.request.retries < self.max_retries:
-            countdown = 90 * (2 ** self.request.retries)  # 90s, 180s, 360s (adjusted for Ultra)
-            logger.info(f"Retrying Stable Image Ultra wedding job {job_id} in {countdown} seconds (attempt {self.request.retries + 1})")
+            countdown = 60 * (2 ** self.request.retries)  # 60s, 120s, 240s
+            logger.info(f"Retrying wedding job {job_id} in {countdown} seconds (attempt {self.request.retries + 1})")
             raise self.retry(countdown=countdown, exc=exc)
         
         # Mark job as failed if all retries exhausted
         try:
             job = ImageProcessingJob.objects.get(id=job_id)
             job.status = 'failed'
-            job.error_message = f"Stable Image Ultra processing failed after {self.max_retries} retries: {str(exc)}"
+            job.error_message = f"Processing failed after {self.max_retries} retries: {str(exc)}"
             job.completed_at = timezone.now()
             job.save()
             logger.error(f"Job {job_id} marked as failed after {self.max_retries} retries")
@@ -145,10 +217,97 @@ def process_image_async(self, job_id):
 
 
 @shared_task
+def validate_job_before_processing(job_id):
+    """SIMPLIFIED validation - only check core required fields"""
+    try:
+        job = ImageProcessingJob.objects.get(id=job_id)
+        
+        validation_errors = []
+        validation_warnings = []
+        
+        # Check required fields only
+        if not job.wedding_theme:
+            validation_errors.append("Missing wedding theme")
+        elif job.wedding_theme not in [choice[0] for choice in job._meta.get_field('wedding_theme').choices]:
+            validation_errors.append(f"Invalid wedding theme: {job.wedding_theme}")
+        
+        if not job.space_type:
+            validation_errors.append("Missing space type")
+        elif job.space_type not in [choice[0] for choice in job._meta.get_field('space_type').choices]:
+            validation_errors.append(f"Invalid space type: {job.space_type}")
+        
+        # SIMPLIFIED: Check optional field validity (only the ones we kept)
+        if job.color_scheme:
+            from .models import COLOR_SCHEMES
+            valid_colors = [choice[0] for choice in COLOR_SCHEMES if choice[0]]
+            if job.color_scheme not in valid_colors:
+                validation_warnings.append(f"Invalid color scheme: {job.color_scheme}, will be ignored")
+                job.color_scheme = ''
+        
+        # FIXED: Force our fixed parameters regardless of what was set
+        if job.strength != 0.70:
+            validation_warnings.append(f"Strength reset to fixed value 0.70 (was {job.strength})")
+            job.strength = 0.70
+        
+        if job.cfg_scale != 7.5:
+            validation_warnings.append(f"CFG scale reset to fixed value 7.5 (was {job.cfg_scale})")
+            job.cfg_scale = 7.5
+        
+        if job.steps != 30:
+            validation_warnings.append(f"Steps reset to fixed value 30 (was {job.steps})")
+            job.steps = 30
+        
+        # Check text field lengths (simplified)
+        if job.special_features and len(job.special_features) > 500:
+            validation_warnings.append("Special features text too long, will be truncated")
+            job.special_features = job.special_features[:500]
+        
+        if job.avoid and len(job.avoid) > 500:
+            validation_warnings.append("Avoid text too long, will be truncated")
+            job.avoid = job.avoid[:500]
+        
+        # Save any corrections
+        if validation_warnings:
+            job.save()
+        
+        # If we have errors, mark job as failed
+        if validation_errors:
+            job.status = 'failed'
+            job.error_message = "Validation errors: " + "; ".join(validation_errors)
+            job.completed_at = timezone.now()
+            job.save()
+            
+            logger.error(f"Job {job_id} failed validation: {validation_errors}")
+            return {
+                'success': False,
+                'job_id': job_id,
+                'validation_errors': validation_errors,
+                'validation_warnings': validation_warnings
+            }
+        
+        # Log warnings but proceed
+        if validation_warnings:
+            logger.warning(f"Job {job_id} validation warnings: {validation_warnings}")
+        
+        logger.info(f"Job {job_id} passed simplified validation")
+        return {
+            'success': True,
+            'job_id': job_id,
+            'validation_warnings': validation_warnings
+        }
+        
+    except Exception as e:
+        logger.error(f"Error validating job {job_id}: {str(e)}")
+        return {
+            'success': False,
+            'job_id': job_id,
+            'error': str(e)
+        }
+
+
+@shared_task
 def cleanup_failed_jobs():
-    """
-    Clean up failed processing jobs older than 7 days
-    """
+    """Clean up failed processing jobs older than 7 days"""
     from datetime import timedelta
     
     cutoff_date = timezone.now() - timedelta(days=7)
@@ -166,95 +325,93 @@ def cleanup_failed_jobs():
 
 
 @shared_task
-def generate_wedding_preview(theme, space_type, **dynamic_params):
-    """
-    Generate a preview prompt for a wedding theme + space transformation with Stable Image Ultra dynamic params
-    """
-    from .models import generate_wedding_prompt_with_dynamics
+def monitor_stuck_jobs():
+    """Monitor for stuck processing jobs and reset them"""
+    from datetime import timedelta
     
-    prompt_data = generate_wedding_prompt_with_dynamics(
-        wedding_theme=theme,
-        space_type=space_type,
-        **dynamic_params
+    # Find jobs that have been processing for more than 10 minutes
+    stuck_threshold = timezone.now() - timedelta(minutes=10)
+    
+    stuck_jobs = ImageProcessingJob.objects.filter(
+        status='processing',
+        started_at__lt=stuck_threshold
     )
     
-    logger.info(f"Generated Stable Image Ultra transformation preview prompt for {theme} + {space_type} with dynamic params")
+    reset_count = 0
+    for job in stuck_jobs:
+        logger.warning(f"Resetting stuck job {job.id} (processing since {job.started_at})")
+        job.status = 'pending'
+        job.started_at = None
+        job.save()
+        reset_count += 1
+        
+        # Optionally requeue the job
+        process_image_async.delay(job.id)
     
-    return {
-        'theme': theme,
-        'space_type': space_type,
-        'dynamic_params': dynamic_params,
-        'prompt': prompt_data['prompt'],
-        'negative_prompt': prompt_data['negative_prompt'],
-        'recommended_params': prompt_data['recommended_params'],
-        'model': 'Stable-Image-Ultra'
-    }
+    if reset_count > 0:
+        logger.info(f"Reset {reset_count} stuck processing jobs")
+    
+    return reset_count
 
 
 @shared_task
-def optimize_ultra_parameters(job_id):
-    """
-    Optimize Stable Image Ultra parameters based on theme and space type
-    """
+def health_check():
+    """SIMPLIFIED health check for the wedding processing system"""
+    
     try:
-        job = ImageProcessingJob.objects.get(id=job_id)
+        from datetime import timedelta
         
-        # Theme-specific optimizations for Stable Image Ultra
-        optimizations = {
-            'rustic': {'cfg_scale': 6.0, 'steps': 35, 'strength': 0.35},
-            'modern': {'cfg_scale': 8.0, 'steps': 45, 'strength': 0.45},
-            'vintage': {'cfg_scale': 7.5, 'steps': 40, 'strength': 0.4},
-            'bohemian': {'cfg_scale': 6.5, 'steps': 35, 'strength': 0.35},
-            'classic': {'cfg_scale': 8.0, 'steps': 45, 'strength': 0.4},
-            'garden': {'cfg_scale': 6.0, 'steps': 35, 'strength': 0.35},
-            'beach': {'cfg_scale': 6.5, 'steps': 40, 'strength': 0.4},
-            'industrial': {'cfg_scale': 8.5, 'steps': 45, 'strength': 0.45},
-            'indian_palace': {'cfg_scale': 7.5, 'steps': 40, 'strength': 0.4},
-            'japanese_zen': {'cfg_scale': 6.0, 'steps': 35, 'strength': 0.35},
-            'moroccan_nights': {'cfg_scale': 7.0, 'steps': 40, 'strength': 0.4},
-        }
+        # Check database connectivity
+        recent_jobs_count = ImageProcessingJob.objects.filter(
+            created_at__gte=timezone.now() - timedelta(hours=1)
+        ).count()
         
-        # Space-specific adjustments
-        space_adjustments = {
-            'wedding_ceremony': {'strength': -0.05},  # Slightly less strength for ceremonies
-            'dance_floor': {'cfg_scale': 1.0, 'strength': 0.05},  # More transformation for dance floors
-            'dining_area': {'strength': 0.0},         # Neutral for dining
-            'cocktail_hour': {'strength': 0.0},       # Neutral for social space
-            'lounge_area': {'strength': -0.05},       # Gentler for intimate spaces
-        }
+        # Check job status distribution
+        status_counts = {}
+        for status, _ in ImageProcessingJob.STATUS_CHOICES:
+            count = ImageProcessingJob.objects.filter(status=status).count()
+            status_counts[status] = count
         
-        if job.wedding_theme in optimizations:
-            opt = optimizations[job.wedding_theme]
-            job.cfg_scale = opt.get('cfg_scale', job.cfg_scale)
-            job.steps = opt.get('steps', job.steps)
-            job.strength = opt.get('strength', job.strength)
+        # Check for stuck jobs
+        stuck_jobs = ImageProcessingJob.objects.filter(
+            status='processing',
+            started_at__lt=timezone.now() - timedelta(hours=2)
+        ).count()
         
-        if job.space_type in space_adjustments:
-            adj = space_adjustments[job.space_type]
-            job.cfg_scale += adj.get('cfg_scale', 0)
-            job.strength += adj.get('strength', 0)
+        # Check for jobs with missing prompts
+        jobs_without_prompts = ImageProcessingJob.objects.filter(
+            generated_prompt__isnull=True,
+            status='pending'
+        ).count()
         
-        # Clamp values to valid ranges for Stable Image Ultra
-        job.cfg_scale = max(1.0, min(20.0, job.cfg_scale))
-        job.steps = max(10, min(50, job.steps))  # Ultra uses fewer steps
-        job.strength = max(0.0, min(1.0, job.strength))
+        # SIMPLIFIED: Check for jobs with incorrect fixed parameters
+        incorrect_params_jobs = ImageProcessingJob.objects.filter(
+            models.Q(strength__ne=0.70) | 
+            models.Q(steps__ne=30) |
+            models.Q(cfg_scale__ne=7.5)
+        ).count()
         
-        job.save()
+        logger.info(f"Health check: {recent_jobs_count} recent jobs, {stuck_jobs} stuck jobs")
+        logger.info(f"Status distribution: {status_counts}")
         
-        logger.info(f"Optimized Stable Image Ultra parameters for job {job_id}: cfg_scale={job.cfg_scale}, steps={job.steps}, strength={job.strength}")
+        if jobs_without_prompts > 0:
+            logger.warning(f"Found {jobs_without_prompts} pending jobs without generated prompts")
+        
+        if incorrect_params_jobs > 0:
+            logger.warning(f"Found {incorrect_params_jobs} jobs with incorrect fixed parameters")
         
         return {
             'success': True,
-            'job_id': job_id,
-            'optimized_params': {
-                'cfg_scale': job.cfg_scale,
-                'steps': job.steps,
-                'strength': job.strength
-            }
+            'recent_jobs': recent_jobs_count,
+            'stuck_jobs': stuck_jobs,
+            'jobs_without_prompts': jobs_without_prompts,
+            'incorrect_params_jobs': incorrect_params_jobs,
+            'status_counts': status_counts,
+            'timestamp': timezone.now().isoformat()
         }
         
     except Exception as e:
-        logger.error(f"Error optimizing Ultra parameters for job {job_id}: {str(e)}")
+        logger.error(f"Health check failed: {str(e)}")
         return {
             'success': False,
             'error': str(e)
@@ -262,65 +419,40 @@ def optimize_ultra_parameters(job_id):
 
 
 @shared_task
-def cleanup_orphaned_images():
-    """
-    Clean up orphaned processed images (without processing jobs) older than 30 days
-    This is a safety cleanup for any data integrity issues
-    """
-    from datetime import timedelta
-    import os
+def fix_incorrect_parameters():
+    """Fix jobs with incorrect fixed parameters - NEW MAINTENANCE TASK"""
     
-    cutoff_date = timezone.now() - timedelta(days=30)
-    
-    # Find processed images without processing jobs
-    orphaned_images = ProcessedImage.objects.filter(
-        processing_job__isnull=True,
-        created_at__lt=cutoff_date
-    )
-    
-    deleted_count = 0
-    for processed_image in orphaned_images:
-        try:
-            # Delete the image file
-            if processed_image.processed_image:
-                file_path = processed_image.processed_image.path
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-                    logger.info(f"Deleted orphaned image file: {file_path}")
+    try:
+        # Find jobs with incorrect parameters
+        incorrect_jobs = ImageProcessingJob.objects.filter(
+            models.Q(strength__ne=0.70) | 
+            models.Q(steps__ne=30) |
+            models.Q(cfg_scale__ne=7.5)
+        )
+        
+        fixed_count = 0
+        for job in incorrect_jobs:
+            old_params = f"strength={job.strength}, steps={job.steps}, cfg={job.cfg_scale}"
             
-            # Delete the database record
-            processed_image.delete()
-            deleted_count += 1
+            job.strength = 0.70
+            job.steps = 30
+            job.cfg_scale = 7.5
+            job.save()
             
-        except Exception as e:
-            logger.error(f"Error deleting orphaned image {processed_image.id}: {str(e)}")
-    
-    logger.info(f"Cleaned up {deleted_count} orphaned processed images")
-    return deleted_count
-
-
-@shared_task
-def optimize_image_storage():
-    """
-    Optimize image storage by compressing old images and generating missing thumbnails
-    """
-    from .models import UserImage
-    from PIL import Image as PILImage
-    import io
-    from django.core.files.base import ContentFile
-    
-    optimized_count = 0
-    
-    # Generate missing thumbnails for user images
-    user_images_without_thumbnails = UserImage.objects.filter(thumbnail__isnull=True)
-    
-    for user_image in user_images_without_thumbnails[:50]:  # Process 50 at a time
-        try:
-            user_image.create_thumbnail()
-            optimized_count += 1
-            logger.info(f"Generated thumbnail for image: {user_image.original_filename}")
-        except Exception as e:
-            logger.error(f"Error generating thumbnail for {user_image.id}: {str(e)}")
-    
-    logger.info(f"Optimized {optimized_count} images")
-    return optimized_count
+            logger.info(f"Fixed job {job.id} parameters: {old_params} -> strength=0.70, steps=30, cfg=7.5")
+            fixed_count += 1
+        
+        if fixed_count > 0:
+            logger.info(f"Fixed {fixed_count} jobs with incorrect parameters")
+        
+        return {
+            'success': True,
+            'fixed_count': fixed_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fixing parameters: {str(e)}")
+        return {
+            'success': False,
+            'error': str(e)
+        }

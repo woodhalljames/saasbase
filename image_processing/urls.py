@@ -27,6 +27,9 @@ urlpatterns = [
     path('processed/<int:pk>/', views.processed_image_detail, name='processed_image_detail'),
     path('processed/<int:pk>/delete/', views.delete_processed_image, name='delete_processed_image'),
     
+    path('redo-transformation/<int:job_id>/', views.redo_transformation_with_job, name='redo_transformation_with_job'),
+    
+
     # Collections & Favorites - Enhanced
     path('collections/', views.collections_list, name='collections_list'),
     path('collections/create/', views.create_collection, name='create_collection'),

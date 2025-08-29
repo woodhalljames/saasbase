@@ -393,6 +393,30 @@ STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_
 STABILITY_API_KEY = env("STABILITY_API_KEY", default="")
 STABILITY_AI_ENGINE = env("STABILITY_AI_ENGINE", default="stable-diffusion-v1-6")
 
+
+# settings.py - SD3 Configuration
+STABILITY_API_CONFIG = {
+    'base_url': 'https://api.stability.ai/v2beta/stable-image/generate/sd3',
+    'timeout': 60,
+    'max_retries': 5,
+    'optimal_dimensions': {
+        'venue_wide': {'aspect_ratio': '16:9', 'size': (1152, 896)},
+        'venue_square': {'aspect_ratio': '1:1', 'size': (1024, 1024)},
+        'venue_portrait': {'aspect_ratio': '9:16', 'size': (896, 1152)}
+    }
+}
+
+# Optimal SD3 parameters for venue transformations
+SD3_VENUE_PARAMS = {
+    'strength': 0.85,  # Sweet spot for major venue styling
+    'cfg_scale': 3.5,  # SD3-specific low CFG requirement
+    'steps': 28,       # SD3 convergence point
+    'output_format': 'jpeg',
+    'quality': 95
+}
+ENHANCE_VENUE_IMAGES = True  # Enable image preprocessing
+CACHE_PROCESSING_RESULTS = True  # Enable result caching
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {

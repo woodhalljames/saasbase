@@ -1,5 +1,4 @@
-# image_processing/views.py - Enhanced with religion/culture and user negative prompt handling
-
+# image_processing/views.py - CLEANED VERSION with consistent favorites and redo functionality
 import json
 import logging
 from django.shortcuts import render, get_object_or_404, redirect
@@ -9,24 +8,45 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.db import transaction
 from django.urls import reverse
+from urllib.parse import urlencode
 
 from usage_limits.decorators import usage_limit_required
 from .models import (
     UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, Favorite,
-    WEDDING_THEMES, SPACE_TYPES
+    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES
 )
 from .forms import (
-    ImageUploadForm, WeddingTransformForm, GUEST_COUNT_CHOICES, BUDGET_CHOICES, 
-    SEASON_CHOICES, TIME_OF_DAY_CHOICES, COLOR_SCHEME_CHOICES, RELIGION_CULTURE_CHOICES
+    ImageUploadForm, WeddingTransformForm, SEASON_CHOICES, LIGHTING_CHOICES
 )
 from .tasks import process_image_async
 
 logger = logging.getLogger(__name__)
 
 
+# HELPER FUNCTION - Used consistently across all views
+def add_favorite_status_to_processed_images(user, processed_images):
+    """Add is_favorited attribute to processed images efficiently"""
+    if not user.is_authenticated:
+        for img in processed_images:
+            img.is_favorited = False
+        return processed_images
+    
+    # Get all favorite IDs for this user in one query
+    favorite_ids = set(
+        Favorite.objects.filter(user=user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    # Add is_favorited attribute to each image
+    for img in processed_images:
+        img.is_favorited = img.id in favorite_ids
+    
+    return processed_images
+
+
 @login_required
 def wedding_studio(request):
-    """Main wedding venue visualization studio with enhanced dynamic options including religion/culture"""
+    """Main wedding venue transformation studio - simplified"""
     
     # Handle image upload
     if request.method == 'POST':
@@ -43,15 +63,15 @@ def wedding_studio(request):
                     return JsonResponse({
                         'success': True,
                         'message': f'"{user_image.original_filename}" uploaded successfully!',
-                        'image': {
-                            'id': user_image.id,
-                            'original_filename': user_image.original_filename,
-                            'image_url': user_image.image.url,
-                            'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
-                            'width': user_image.width,
-                            'height': user_image.height,
-                            'file_size': user_image.file_size,
-                        }
+                        'image_id': user_image.id,
+                        'image_url': user_image.image.url,
+                        'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                        'image_name': user_image.original_filename,
+                        'venue_name': user_image.venue_name or '',
+                        'venue_description': user_image.venue_description or '',
+                        'width': user_image.width,
+                        'height': user_image.height,
+                        'file_size': user_image.file_size,
                     })
                 
                 messages.success(request, f'"{user_image.original_filename}" uploaded successfully!')
@@ -76,10 +96,10 @@ def wedding_studio(request):
             for error in error_messages:
                 messages.error(request, error)
     
-    # GET request - display the enhanced studio
+    # GET request - display the studio
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
-    # Get specific image if image_id is provided (for preselection from gallery)
+    # Get specific image if image_id is provided
     preselected_image = None
     image_id = request.GET.get('image_id')
     if image_id:
@@ -92,38 +112,49 @@ def wedding_studio(request):
     from usage_limits.usage_tracker import UsageTracker
     usage_data = UsageTracker.get_usage_data(request.user)
     
-    # Get recent processing jobs
+    # Get recent processing jobs with favorite status
     recent_jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
-    ).select_related('user_image').order_by('-created_at')[:5]
+    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')[:5]
+    
+    # Add favorite status to recent jobs
+    favorite_ids = set(
+        Favorite.objects.filter(user=request.user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    for job in recent_jobs:
+        for processed_image in job.processed_images.all():
+            processed_image.is_favorited = processed_image.id in favorite_ids
     
     context = {
         'recent_images': recent_images,
         'preselected_image': preselected_image,
         'usage_data': usage_data,
         'recent_jobs': recent_jobs,
+        # Core choices only
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
-        'guest_count_choices': GUEST_COUNT_CHOICES,
-        'budget_choices': BUDGET_CHOICES,
+        'color_schemes': COLOR_SCHEMES,
         'season_choices': SEASON_CHOICES,
-        'time_choices': TIME_OF_DAY_CHOICES,
-        'color_choices': COLOR_SCHEME_CHOICES,
-        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: Religion/culture choices
+        'lighting_choices': LIGHTING_CHOICES,
+        # Forms
         'upload_form': ImageUploadForm(),
+        'transform_form': WeddingTransformForm(),
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
 
+
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with AI transformation - enhanced with all form fields"""
+    """Process wedding venue image with AI transformation - SIMPLIFIED VERSION"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
         
-        # Check usage limits before processing
+        # Check usage limits
         from usage_limits.usage_tracker import UsageTracker
         usage_data = UsageTracker.get_usage_data(request.user)
         
@@ -135,7 +166,7 @@ def process_wedding_image(request, pk):
                 'needs_upgrade': True
             }, status=429)
         
-        # Try to increment usage (this will fail if no tokens available)
+        # Try to increment usage
         if not UsageTracker.increment_usage(request.user, 1):
             return JsonResponse({
                 'success': False, 
@@ -154,8 +185,8 @@ def process_wedding_image(request, pk):
             }, status=400)
         
         # Validate required fields
-        wedding_theme = data.get('wedding_theme')
-        space_type = data.get('space_type')
+        wedding_theme = data.get('wedding_theme', '').strip()
+        space_type = data.get('space_type', '').strip()
         
         if not wedding_theme or not space_type:
             return JsonResponse({
@@ -163,39 +194,124 @@ def process_wedding_image(request, pk):
                 'error': 'Wedding theme and space type are required'
             }, status=400)
         
-        # Create processing job with all form fields
-        # Use empty string as default and convert to None for database
-        job = ImageProcessingJob(
-            user_image=user_image,
-            wedding_theme=wedding_theme,
-            space_type=space_type
-        )
+        # Validate theme and space type exist in choices
+        valid_themes = [choice[0] for choice in WEDDING_THEMES]
+        valid_spaces = [choice[0] for choice in SPACE_TYPES]
         
-        # Set optional fields only if they have values
-        optional_fields = [
-            'guest_count', 'budget_level', 'season', 
-            'time_of_day', 'color_scheme', 'custom_colors', 
-            'additional_details'
-        ]
+        if wedding_theme not in valid_themes:
+            return JsonResponse({
+                'success': False,
+                'error': f'Invalid wedding theme: {wedding_theme}'
+            }, status=400)
+            
+        if space_type not in valid_spaces:
+            return JsonResponse({
+                'success': False,
+                'error': f'Invalid space type: {space_type}'
+            }, status=400)
         
-        for field in optional_fields:
-            value = data.get(field, '').strip()
-            if value:  # Only set if not empty
-                setattr(job, field, value)
+        # Create processing job with simplified fields and FIXED parameters
+        job = None
+        with transaction.atomic():
+            job = ImageProcessingJob(
+                user_image=user_image,
+                wedding_theme=wedding_theme,
+                space_type=space_type,
+                # FIXED AI GENERATION PARAMETERS
+                strength=0.70,  # Fixed at 70%
+                cfg_scale=7.5,  # Standard CFG
+                steps=30,       # Fixed at 30 steps
+                output_format='png'
+            )
+            
+            # Handle SIMPLIFIED optional fields carefully - only set if valid and not empty
+            optional_fields = [
+                ('season', SEASON_CHOICES, 'season'),
+                ('lighting', LIGHTING_CHOICES, 'lighting'),  # Updated from lighting_mood
+                ('color_scheme', COLOR_SCHEMES, 'color_scheme'),
+            ]
+            
+            for field_name, choices, data_key in optional_fields:
+                value = data.get(data_key, '').strip()
+                if value:  # Only process if not empty
+                    # Validate against choices if applicable
+                    if choices:
+                        valid_values = [choice[0] for choice in choices if choice[0]]
+                        if value in valid_values:
+                            # Map 'lighting' to 'lighting_mood' field for backward compatibility
+                            if field_name == 'lighting':
+                                setattr(job, 'lighting_mood', value)
+                            else:
+                                setattr(job, field_name, value)
+                        else:
+                            logger.warning(f"Invalid {field_name}: {value}, skipping")
+            
+            # Handle text fields
+            special_features = data.get('special_features', '').strip()
+            if special_features and len(special_features) <= 500:
+                job.special_features = special_features
+            
+            avoid = data.get('avoid', '').strip()
+            if avoid and len(avoid) <= 500:
+                job.avoid = avoid
+            
+            # Handle seed if provided
+            seed_value = data.get('seed')
+            if seed_value:
+                try:
+                    job.seed = int(seed_value)
+                except (ValueError, TypeError):
+                    pass  # Leave seed as None
+            
+            # Save the job
+            job.save()
+            
+            logger.info(f"Created simplified job {job.id} - Theme: {wedding_theme}, Space: {space_type}")
+            logger.info(f"Fixed params: strength=0.70, steps=30, cfg_scale=7.5")
+            logger.info(f"Optional params: season={job.season}, lighting={job.lighting_mood}, "
+                       f"color={job.color_scheme}")
+            
+            # Force database commit and refresh
+            transaction.on_commit(lambda: None)
         
-        # Save the job
-        job.save()
+        # Refresh from database to ensure we have the committed version
+        job.refresh_from_db()
         
-        # Queue the processing task
-        process_image_async.delay(job.id)
+        # Add delay to ensure database commit is visible
+        import time
+        time.sleep(0.1)
         
-        logger.info(f"Created processing job {job.id} with parameters: theme={wedding_theme}, space={space_type}")
+        # Verify job exists before queuing task
+        try:
+            verification_job = ImageProcessingJob.objects.get(id=job.id)
+            logger.info(f"Job {job.id} verified in database before queuing task")
+        except ImageProcessingJob.DoesNotExist:
+            logger.error(f"Job {job.id} not found after creation - database issue")
+            return JsonResponse({
+                'success': False,
+                'error': 'Database error: Job creation failed'
+            }, status=500)
         
+        # Queue the processing task with countdown to ensure database visibility
+        task_result = process_image_async.apply_async(args=[job.id], countdown=2)
+        logger.info(f"Task queued with ID: {task_result.id} for job {job.id}")
+        
+        # Return success with job details for frontend monitoring
         return JsonResponse({
             'success': True,
             'job_id': job.id,
-            'redirect_url': reverse('image_processing:processing_history'),
-            'message': 'Your wedding transformation has been queued for processing!'
+            'task_id': task_result.id,
+            'status': 'pending',
+            'message': 'Your wedding transformation has been queued!',
+            'job_details': {
+                'theme': wedding_theme,
+                'space_type': space_type,
+                'theme_display': dict(WEDDING_THEMES).get(wedding_theme, wedding_theme),
+                'space_display': dict(SPACE_TYPES).get(space_type, space_type),
+                'strength': 0.70,  # Fixed value
+                'cfg_scale': 7.5,  # Fixed value  
+                'steps': 30        # Fixed value
+            }
         })
         
     except Exception as e:
@@ -204,10 +320,81 @@ def process_wedding_image(request, pk):
             'success': False,
             'error': 'An unexpected error occurred. Please try again.'
         }, status=500)
-    
+
+
+@login_required
+def job_status(request, job_id):
+    """Get status of a processing job - simplified response"""
+    try:
+        job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+        
+        data = {
+            'job_id': job.id,
+            'status': job.status,
+            'created_at': job.created_at.isoformat(),
+            'wedding_theme': job.wedding_theme,
+            'space_type': job.space_type,
+            'strength': job.strength,
+            'cfg_scale': job.cfg_scale,
+            'steps': job.steps,
+        }
+        
+        # Add display names
+        if job.wedding_theme:
+            data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
+        if job.space_type:
+            data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+        
+        # Add simplified optional fields only if they exist
+        if job.season:
+            data['season'] = job.season
+        if job.lighting_mood:  # Still stored as lighting_mood in DB
+            data['lighting'] = job.lighting_mood
+            data['lighting_display'] = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
+        if job.color_scheme:
+            data['color_scheme'] = job.color_scheme
+            data['color_display'] = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
+        if job.special_features:
+            data['special_features'] = job.special_features
+        if job.avoid:
+            data['avoid'] = job.avoid
+        
+        if job.status == 'completed':
+            data['completed_at'] = job.completed_at.isoformat() if job.completed_at else None
+            processed_images = job.processed_images.all()
+            if processed_images:
+                processed_img = processed_images.first()
+                data['result'] = {
+                    'id': processed_img.id,
+                    'image_url': processed_img.processed_image.url,
+                    'seed': processed_img.stability_seed,
+                    'width': processed_img.width,
+                    'height': processed_img.height,
+                    'file_size': processed_img.file_size,
+                }
+                # Check if favorited
+                data['result']['is_favorited'] = Favorite.objects.filter(
+                    user=request.user,
+                    processed_image=processed_img
+                ).exists()
+        elif job.status == 'failed':
+            data['error_message'] = job.error_message
+        elif job.status == 'processing':
+            data['started_at'] = job.started_at.isoformat() if job.started_at else None
+        
+        return JsonResponse(data)
+        
+    except Exception as e:
+        logger.error(f"Error getting job status for job {job_id}: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Unable to get job status'
+        }, status=500)
+
+
 @login_required
 def image_detail(request, pk):
-    """Display single image with enhanced wedding processing options"""
+    """Display single image with wedding processing options - simplified"""
     user_image = get_object_or_404(UserImage, pk=pk, user=request.user)
     
     # Get user's usage data
@@ -226,78 +413,41 @@ def image_detail(request, pk):
         'transform_form': WeddingTransformForm(),
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
-        'guest_count_choices': GUEST_COUNT_CHOICES,
-        'budget_choices': BUDGET_CHOICES,
+        'color_schemes': COLOR_SCHEMES,
         'season_choices': SEASON_CHOICES,
-        'time_choices': TIME_OF_DAY_CHOICES,
-        'color_choices': COLOR_SCHEME_CHOICES,
-        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: Religion/culture choices
+        'lighting_choices': LIGHTING_CHOICES,
     }
     
     return render(request, 'image_processing/image_detail.html', context)
 
-@login_required
-def job_status(request, job_id):
-    """Get status of a processing job with enhanced wedding context"""
-    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
-    
-    data = {
-        'job_id': job.id,
-        'status': job.status,
-        'created_at': job.created_at.isoformat(),
-        'wedding_theme': job.wedding_theme,
-        'space_type': job.space_type,
-        
-        # Include enhanced parameters in status response
-        'guest_count': job.guest_count,
-        'budget_level': job.budget_level,
-        'season': job.season,
-        'time_of_day': job.time_of_day,
-        'color_scheme': job.color_scheme,
-        'custom_colors': job.custom_colors,
-        'religion_culture': job.religion_culture,  # NEW: Religion/culture in status
-        'user_negative_prompt': job.user_negative_prompt,  # NEW: User negative prompt in status
-    }
-    
-    # Add display names
-    if job.wedding_theme:
-        data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-    if job.space_type:
-        data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-    if job.religion_culture:
-        data['religion_display'] = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
-    
-    if job.status == 'completed':
-        data['completed_at'] = job.completed_at.isoformat()
-        processed_images = job.processed_images.all()
-        if processed_images:
-            processed_img = processed_images.first()
-            data['result'] = {
-                'id': processed_img.id,
-                'image_url': processed_img.processed_image.url,
-                'seed': processed_img.stability_seed,
-            }
-    elif job.status == 'failed':
-        data['error_message'] = job.error_message
-    
-    return JsonResponse(data)
-
 
 @login_required
 def processing_history(request):
-    """View all enhanced wedding processing jobs for the user"""
+    """View all wedding processing jobs for the user - WITH CONSISTENT FAVORITES"""
     jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
-    ).select_related('user_image').order_by('-created_at')
+    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
     
-    # Add display names to jobs including religion/culture
+    # CRITICAL: Get favorite IDs once for efficiency
+    favorite_ids = set(
+        Favorite.objects.filter(user=request.user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    # Add display names and CONSISTENT favorite status to jobs
     for job in jobs:
-        if job.wedding_theme:
-            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-        if job.space_type:
-            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-        if job.religion_culture:
-            job.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
+        job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Unknown'
+        job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Unknown'
+        
+        # Add optional field display names
+        if job.lighting_mood:
+            job.lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
+        if job.color_scheme:
+            job.color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
+        
+        # CRITICAL: Add favorite status to ALL processed images for this job
+        for processed_image in job.processed_images.all():
+            processed_image.is_favorited = processed_image.id in favorite_ids
     
     # Pagination
     from django.core.paginator import Paginator
@@ -312,9 +462,49 @@ def processing_history(request):
     return render(request, 'image_processing/processing_history.html', context)
 
 
+@login_required
+def redo_transformation_with_job(request, job_id):
+    """Redirect to wedding studio with job parameters pre-filled"""
+    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+    
+    # Build query parameters from the job settings
+    params = {
+        'wedding_theme': job.wedding_theme,
+        'space_type': job.space_type,
+    }
+    
+    # Add optional parameters if they exist
+    if job.season:
+        params['season'] = job.season
+    if job.lighting_mood:
+        params['lighting'] = job.lighting_mood  # Map to 'lighting' for consistency
+    if job.color_scheme:
+        params['color_scheme'] = job.color_scheme
+    if job.special_features:
+        params['special_features'] = job.special_features
+    if job.avoid:
+        params['avoid'] = job.avoid
+    if job.seed:
+        params['seed'] = job.seed
+    
+    # Build the redirect URL
+    base_url = reverse('image_processing:wedding_studio')
+    query_string = urlencode(params)
+    redirect_url = f"{base_url}?{query_string}"
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'redirect_url': redirect_url,
+            'message': 'Redirecting to studio with saved settings...'
+        })
+    
+    return redirect(redirect_url)
+
+
 @login_required 
 def image_gallery(request):
-    """Display user's uploaded images and processed transformations with enhanced info"""
+    """Display images and transformations - WITH CONSISTENT FAVORITES"""
     # Original uploaded images
     uploaded_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
@@ -323,7 +513,7 @@ def image_gallery(request):
         processing_job__user_image__user=request.user
     ).select_related('processing_job__user_image').order_by('-created_at')
     
-    # Add favorite status to processed images
+    # CRITICAL: CONSISTENTLY add favorite status
     all_transformations = add_favorite_status_to_processed_images(request.user, all_transformations)
     
     # Get usage data
@@ -331,17 +521,13 @@ def image_gallery(request):
     usage_data = UsageTracker.get_usage_data(request.user)
     
     # Combine and paginate all images
-    from itertools import chain
-    from django.core.paginator import Paginator
-    
-    # Create a combined list with type indicators
     all_images = []
     for img in uploaded_images:
         all_images.append({
             'type': 'original',
             'object': img,
             'date': img.uploaded_at,
-            'title': img.original_filename,
+            'title': img.venue_name or img.original_filename,
             'url': img.thumbnail.url if img.thumbnail else img.image.url
         })
     
@@ -350,17 +536,11 @@ def image_gallery(request):
         theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
         space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
         
-        # Add religion info if available
-        title_parts = [theme_display, space_display]
-        if job.religion_culture:
-            religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
-            title_parts.append(f"({religion_display})")
-        
         all_images.append({
             'type': 'transformation',
             'object': transformation,
             'date': transformation.created_at,
-            'title': " ".join(title_parts),
+            'title': f"{theme_display} {space_display}",
             'url': transformation.processed_image.url
         })
     
@@ -368,6 +548,7 @@ def image_gallery(request):
     all_images.sort(key=lambda x: x['date'], reverse=True)
     
     # Pagination
+    from django.core.paginator import Paginator
     paginator = Paginator(all_images, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -380,38 +561,77 @@ def image_gallery(request):
         'usage_data': usage_data,
         'wedding_themes': WEDDING_THEMES,
         'space_types': SPACE_TYPES,
-        'religion_choices': RELIGION_CULTURE_CHOICES,  # NEW: For filtering
     }
     
     return render(request, 'image_processing/image_gallery.html', context)
 
 
 @login_required
+def favorites_list(request):
+    """Display favorite transformations - WITH REDO FUNCTIONALITY"""
+    from django.core.paginator import Paginator
+    
+    favorites = Favorite.objects.filter(user=request.user).select_related(
+        'processed_image__processing_job__user_image'
+    ).order_by('-created_at')
+    
+    # CRITICAL: Add consistent favorite status and job display names
+    for favorite in favorites:
+        favorite.processed_image.is_favorited = True  # Always true in favorites list
+        
+        # Add job display names for redo functionality
+        job = favorite.processed_image.processing_job
+        job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
+        job.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
+        
+        # Add optional field display names for UI
+        if job.lighting_mood:
+            job.lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
+        if job.color_scheme:
+            job.color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
+    
+    # Pagination
+    paginator = Paginator(favorites, 12)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+    }
+    
+    return render(request, 'image_processing/favorites_list.html', context)
+
+
+@login_required
 def processed_image_detail(request, pk):
-    """View details of a processed wedding image with enhanced information"""
+    """View details of processed image - WITH CONSISTENT FAVORITES"""
     processed_image = get_object_or_404(
         ProcessedImage, 
         pk=pk, 
         processing_job__user_image__user=request.user
     )
     
-    # Add favorite status
+    # CRITICAL: Add favorite status consistently
     processed_image.is_favorited = Favorite.objects.filter(
         user=request.user,
         processed_image=processed_image
     ).exists()
     
-    # Add display names including religion/culture
+    # Add display names
     job = processed_image.processing_job
     theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown')
     space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown')
-    religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, None) if job.religion_culture else None
+    
+    # Simplified optional field display names
+    color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme) if job.color_scheme else None
+    lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood) if job.lighting_mood else None
     
     context = {
         'processed_image': processed_image,
         'theme_display': theme_display,
         'space_display': space_display,
-        'religion_display': religion_display,  # NEW: Religion/culture display
+        'color_display': color_display,
+        'lighting_display': lighting_display,
     }
     
     return render(request, 'image_processing/processed_image_detail.html', context)
@@ -489,7 +709,7 @@ def add_to_collection(request):
 @login_required
 @require_POST
 def toggle_favorite(request):
-    """Toggle favorite status for wedding transformations (processed images only)"""
+    """Toggle favorite status for wedding transformations"""
     processed_image_id = request.POST.get('processed_image_id')
     
     if not processed_image_id:
@@ -527,37 +747,131 @@ def toggle_favorite(request):
 
 
 @login_required
-def favorites_list(request):
-    """Display user's favorite wedding transformations with enhanced information"""
-    from django.core.paginator import Paginator
-    
-    favorites = Favorite.objects.filter(user=request.user).select_related(
-        'processed_image__processing_job__user_image'
-    ).order_by('-created_at')
-    
-    # Add favorite status to processed images (they're all favorited here) and enhanced display info
-    for favorite in favorites:
-        favorite.processed_image.is_favorited = True
+@require_POST
+def ajax_upload_image(request):
+    """Handle AJAX image uploads without page reload"""
+    try:
+        upload_form = ImageUploadForm(request.POST, request.FILES)
         
-        # Add enhanced display information
-        job = favorite.processed_image.processing_job
-        if job.religion_culture:
-            favorite.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
+        if upload_form.is_valid():
+            user_image = upload_form.save(commit=False)
+            user_image.user = request.user
+            user_image.original_filename = request.FILES['image'].name
+            user_image.save()
+            
+            # Force thumbnail creation
+            if not user_image.thumbnail:
+                user_image.create_thumbnail()
+                user_image.refresh_from_db()
+            
+            return JsonResponse({
+                'success': True,
+                'image_id': user_image.id,
+                'image_url': user_image.image.url,
+                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                'image_name': user_image.original_filename,
+                'venue_name': user_image.venue_name or '',
+                'venue_description': user_image.venue_description or '',
+                'width': user_image.width,
+                'height': user_image.height,
+                'file_size': user_image.file_size,
+                'message': f'"{user_image.original_filename}" uploaded successfully!'
+            })
+            
+        else:
+            errors = []
+            for field, field_errors in upload_form.errors.items():
+                errors.extend(field_errors)
+            
+            return JsonResponse({
+                'success': False,
+                'error': ' '.join(errors)
+            }, status=400)
     
-    # Pagination
-    paginator = Paginator(favorites, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-    }
-    
-    return render(request, 'image_processing/favorites_list.html', context)
+    except Exception as e:
+        logger.error(f"Error in upload: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': f'Upload failed: {str(e)}'
+        }, status=500)
 
 
 @login_required
-@require_POST
+def get_usage_data(request):
+    """API endpoint to get user's usage data"""
+    try:
+        from usage_limits.usage_tracker import UsageTracker
+        usage_data = UsageTracker.get_usage_data(request.user)
+        
+        return JsonResponse({
+            'success': True,
+            'remaining': usage_data.get('remaining', 0),
+            'limit': usage_data.get('limit', 0),
+            'used': usage_data.get('used', 0),
+            'reset_date': usage_data.get('reset_date', ''),
+        })
+    except Exception as e:
+        logger.error(f"Error getting usage data: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Unable to load usage data'
+        }, status=500)
+
+
+@login_required
+def job_result(request, job_id):
+    """Get the result of a completed processing job"""
+    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+    
+    if job.status != 'completed':
+        return JsonResponse({
+            'success': False,
+            'error': 'Job not completed yet'
+        })
+    
+    # Get the processed images
+    processed_images = job.processed_images.all()
+    
+    if not processed_images:
+        return JsonResponse({
+            'success': False,
+            'error': 'No results found'
+        })
+    
+    # Get the first (primary) result
+    processed_image = processed_images.first()
+    
+    # Add favorite status
+    is_favorited = Favorite.objects.filter(
+        user=request.user,
+        processed_image=processed_image
+    ).exists()
+    
+    return JsonResponse({
+        'success': True,
+        'result': {
+            'id': processed_image.id,
+            'image_url': processed_image.processed_image.url,
+            'width': processed_image.width,
+            'height': processed_image.height,
+            'file_size': processed_image.file_size,
+            'created_at': processed_image.created_at.isoformat(),
+            'is_favorited': is_favorited,
+            'job': {
+                'id': job.id,
+                'theme': job.wedding_theme,
+                'space': job.space_type,
+                'strength': job.strength,
+                'theme_display': dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else None,
+                'space_display': dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else None,
+            }
+        }
+    })
+
+
+# Collection management views
+@login_required
+@require_POST  
 def create_collection(request):
     """Create a new collection"""
     name = request.POST.get('name', '').strip()
@@ -604,7 +918,7 @@ def get_user_collections(request):
 
 @login_required
 def collection_detail(request, collection_id):
-    """Display a specific collection with enhanced transformation info"""
+    """Display a specific collection"""
     collection = get_object_or_404(Collection, id=collection_id, user=request.user)
     
     # Get all items in the collection
@@ -613,14 +927,12 @@ def collection_detail(request, collection_id):
         'processed_image__processing_job'
     ).order_by('order', '-added_at')
     
-    # Add display information to each item including religion/culture
+    # Add display information to each item
     for item in items:
         if item.processed_image:
             job = item.processed_image.processing_job
             item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
             item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
-            if job.religion_culture:
-                item.religion_display = dict(RELIGION_CULTURE_CHOICES).get(job.religion_culture, job.religion_culture)
             # Add favorite status
             item.processed_image.is_favorited = Favorite.objects.filter(
                 user=request.user,
@@ -644,8 +956,14 @@ def collections_list(request):
     # Get custom collections (non-default)
     collections = Collection.objects.filter(user=request.user, is_default=False).order_by('-updated_at')
     
-    # Get recent favorites
-    recent_favorites = Favorite.objects.filter(user=request.user).order_by('-created_at')[:6]
+    # Get recent favorites with consistent favorite status
+    recent_favorites = Favorite.objects.filter(user=request.user).select_related(
+        'processed_image__processing_job'
+    ).order_by('-created_at')[:6]
+    
+    # Add favorite status to recent favorites (they're all favorited)
+    for favorite in recent_favorites:
+        favorite.processed_image.is_favorited = True
     
     context = {
         'default_collection': default_collection,
@@ -656,57 +974,9 @@ def collections_list(request):
     return render(request, 'image_processing/collections_list.html', context)
 
 
-@login_required
-@require_POST
-def ajax_upload_image(request):
-    """Handle AJAX image uploads without page reload"""
-    try:
-        upload_form = ImageUploadForm(request.POST, request.FILES)
-        
-        if upload_form.is_valid():
-            user_image = upload_form.save(commit=False)
-            user_image.user = request.user
-            user_image.original_filename = request.FILES['image'].name
-            user_image.save()
-            
-            # Force thumbnail creation
-            if not user_image.thumbnail:
-                user_image.create_thumbnail()
-                user_image.refresh_from_db()
-            
-            return JsonResponse({
-                'success': True,
-                'image_id': user_image.id,
-                'image_url': user_image.image.url,  # Full resolution image
-                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,  # Thumbnail for sidebar
-                'image_name': user_image.original_filename,
-                'width': user_image.width,
-                'height': user_image.height,
-                'file_size': user_image.file_size,
-                'message': f'"{user_image.original_filename}" uploaded successfully!'
-            })
-            
-        else:
-            errors = []
-            for field, field_errors in upload_form.errors.items():
-                errors.extend(field_errors)
-            
-            return JsonResponse({
-                'success': False,
-                'error': ' '.join(errors)
-            }, status=400)
-    
-    except Exception as e:
-        logger.error(f"Error in upload: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'error': f'Upload failed: {str(e)}'
-        }, status=500)
-
-
-@login_required
+@login_required 
 def delete_processed_image(request, pk):
-    """Delete a processed image (user's own images only)"""
+    """Delete a processed image"""
     if request.method == 'POST':
         processed_image = get_object_or_404(
             ProcessedImage, 
@@ -754,41 +1024,6 @@ def delete_processed_image(request, pk):
         'processed_image': processed_image
     })
 
-
-# Helper function to check if a processed image is favorited
-def get_favorite_status(user, processed_image_id):
-    """Check if a processed image is favorited by the user"""
-    if not user.is_authenticated:
-        return False
-    
-    return Favorite.objects.filter(
-        user=user,
-        processed_image_id=processed_image_id
-    ).exists()
-
-
-# Add this helper function for template context
-def add_favorite_status_to_processed_images(user, processed_images):
-    """Add is_favorited attribute to processed images"""
-    if not user.is_authenticated:
-        for img in processed_images:
-            img.is_favorited = False
-        return processed_images
-    
-    # Get all favorite IDs for this user
-    favorite_ids = set(
-        Favorite.objects.filter(user=user)
-        .values_list('processed_image_id', flat=True)
-    )
-    
-    # Add is_favorited attribute to each image
-    for img in processed_images:
-        img.is_favorited = img.id in favorite_ids
-    
-    return processed_images
-
-
-# Additional views to add to image_processing/views.py
 
 @login_required
 @require_POST  
@@ -899,77 +1134,3 @@ def remove_from_collection(request, collection_id, item_id):
         messages.error(request, error_msg)
     
     return redirect('image_processing:collection_detail', collection_id=collection_id)
-
-
-@login_required
-def get_usage_data(request):
-    """API endpoint to get user's usage data"""
-    try:
-        from usage_limits.usage_tracker import UsageTracker
-        usage_data = UsageTracker.get_usage_data(request.user)
-        
-        return JsonResponse({
-            'success': True,
-            'remaining': usage_data.get('remaining', 0),
-            'limit': usage_data.get('limit', 0),
-            'used': usage_data.get('used', 0),
-            'reset_date': usage_data.get('reset_date', ''),
-        })
-    except Exception as e:
-        logger.error(f"Error getting usage data: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Unable to load usage data'
-        }, status=500)
-    
-
-    # Add this to image_processing/views.py
-
-@login_required
-def job_result(request, job_id):
-    """Get the result of a completed processing job for dynamic loading"""
-    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
-    
-    if job.status != 'completed':
-        return JsonResponse({
-            'success': False,
-            'error': 'Job not completed yet'
-        })
-    
-    # Get the processed images
-    processed_images = job.processed_images.all()
-    
-    if not processed_images:
-        return JsonResponse({
-            'success': False,
-            'error': 'No results found'
-        })
-    
-    # Get the first (primary) result
-    processed_image = processed_images.first()
-    
-    # Add favorite status
-    is_favorited = Favorite.objects.filter(
-        user=request.user,
-        processed_image=processed_image
-    ).exists()
-    
-    return JsonResponse({
-        'success': True,
-        'result': {
-            'id': processed_image.id,
-            'image_url': processed_image.processed_image.url,
-            'width': processed_image.width,
-            'height': processed_image.height,
-            'file_size': processed_image.file_size,
-            'created_at': processed_image.created_at.isoformat(),
-            'is_favorited': is_favorited,
-            'job': {
-                'id': job.id,
-                'theme': job.wedding_theme,
-                'space': job.space_type,
-                'theme_display': dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else None,
-                'space_display': dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else None,
-            }
-        }
-    })

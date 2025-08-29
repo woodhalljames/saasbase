@@ -10,23 +10,24 @@
     <div class="col-12 text-center">
       <h1 class="h2 mb-2">Wedding Visualizer</h1>
       <p class="text-muted mb-0">Transform any space into your perfect wedding celebration</p>
+      <small class="text-muted">Powered by advanced AI for dramatic transformations</small>
     </div>
   </div>
 
   <!-- Main Layout -->
   <div class="row g-4">
     
-    <!-- Left: Transform Controls -->
+    <!-- Left: Streamlined Transform Controls -->
     <div class="col-xl-3 col-lg-4 col-md-5">
       <div class="card shadow-sm">
         <div class="card-header py-2 bg-primary text-white">
-          <h6 class="mb-0 fw-bold">🎨 Customize Your Vision</h6>
+          <h6 class="mb-0 fw-bold">🎨 Customize Your Wedding</h6>
         </div>
         <div class="card-body p-3">
           <form id="transformForm">
             {% csrf_token %}
             
-            <!-- Required Fields -->
+            <!-- CORE Required Fields -->
             <div class="mb-3">
               <label for="wedding-theme" class="form-label fw-bold small">Wedding Style <span class="text-danger">*</span></label>
               <select class="form-select" id="wedding-theme" name="wedding_theme" required>
@@ -60,120 +61,74 @@
               </div>
             </div>
 
-            <!-- Optional Details Section -->
+            <!-- Optional Details Section - Simplified -->
             <div class="border-top pt-3 mt-3">
               <div class="d-flex align-items-center justify-content-between mb-3">
-                <h6 class="mb-0 text-muted">Optional Details</h6>
+                <h6 class="mb-0 text-muted">Style Customization</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleOptional">
                   <i class="bi bi-chevron-down" id="toggleIcon"></i>
                 </button>
               </div>
               
               <div id="optionalFields" class="d-none">
-                <!-- Guest Count -->
-                <div class="mb-3">
-                  <label for="guest-count" class="form-label small">Guest Count</label>
-                  <select class="form-select form-select-sm" id="guest-count" name="guest_count">
-                    {% for value, label in guest_count_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <!-- Budget Level -->
-                <div class="mb-3">
-                  <label for="budget-level" class="form-label small">Budget Level</label>
-                  <select class="form-select form-select-sm" id="budget-level" name="budget_level">
-                    {% for value, label in budget_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-
-                <!-- NEW: Religion/Culture -->
-                <div class="mb-3" id="religionField">
-                  <label for="religion-culture" class="form-label small">Religion/Culture</label>
-                  <select class="form-select form-select-sm" id="religion-culture" name="religion_culture">
-                    <option value="">No specific preference</option>
-                    <option value="christian">Christian</option>
-                    <option value="jewish">Jewish</option>
-                    <option value="hindu">Hindu</option>
-                    <option value="muslim">Muslim</option>
-                    <option value="buddhist">Buddhist</option>
-                    <option value="sikh">Sikh</option>
-                    <option value="interfaith">Interfaith/Mixed</option>
-                    <option value="secular">Secular/Non-religious</option>
-                    <option value="cultural_fusion">Cultural Fusion</option>
-                    <option value="traditional_american">Traditional American</option>
-                    <option value="european">European Heritage</option>
-                    <option value="asian">Asian Heritage</option>
-                    <option value="latin_american">Latin American</option>
-                    <option value="african">African Heritage</option>
-                    <option value="middle_eastern">Middle Eastern</option>
-                    <option value="mediterranean">Mediterranean</option>
-                    <option value="scandinavian">Scandinavian</option>
-                    <option value="celtic">Celtic</option>
-                    <option value="other">Other Culture</option>
-                  </select>
-                  <div class="form-text">Adds culturally appropriate elements</div>
-                </div>
-
                 <!-- Season -->
-                <div class="mb-3" id="seasonField">
+                <div class="mb-3">
                   <label for="season" class="form-label small">Season</label>
                   <select class="form-select form-select-sm" id="season" name="season">
                     {% for value, label in season_choices %}
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <div class="form-text small">Wedding season for seasonal elements</div>
                 </div>
 
-                <!-- Time of Day -->
-                <div class="mb-3" id="timeField">
-                  <label for="time-of-day" class="form-label small">Time of Day</label>
-                  <select class="form-select form-select-sm" id="time-of-day" name="time_of_day">
-                    {% for value, label in time_choices %}
+                <!-- Simplified Lighting -->
+                <div class="mb-3">
+                  <label for="lighting" class="form-label small">Lighting Atmosphere</label>
+                  <select class="form-select form-select-sm" id="lighting" name="lighting">
+                    {% for value, label in lighting_choices %}
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <div class="form-text small">Preferred lighting mood</div>
                 </div>
 
                 <!-- Color Scheme -->
                 <div class="mb-3">
                   <label for="color-scheme" class="form-label small">Color Scheme</label>
                   <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
-                    {% for value, label in color_choices %}
+                    <option value="">Theme default</option>
+                    {% for value, label in color_schemes %}
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <div class="form-text small">Preferred color palette</div>
                 </div>
 
-                <!-- Custom Colors -->
-                <div class="mb-3" id="customColorField" style="display: none;">
-                  <label for="custom-colors" class="form-label small">Custom Colors</label>
-                  <input type="text" class="form-control form-control-sm" id="custom-colors" name="custom_colors" 
-                         placeholder="e.g., blush pink, sage green, gold accents">
-                  <div class="form-text">Describe your color palette</div>
-                </div>
-
-                <!-- Additional Details -->
+                <!-- Special Features -->
                 <div class="mb-3">
-                  <label for="additional-details" class="form-label small">Additional Details</label>
-                  <textarea class="form-control form-control-sm" id="additional-details" name="additional_details" 
-                            rows="2" placeholder="Any specific elements you want to include?"></textarea>
+                  <label for="special-features" class="form-label small">
+                    Special Features 
+                    <i class="bi bi-question-circle" 
+                       title="Highlight architectural features to enhance"
+                       data-bs-toggle="tooltip"></i>
+                  </label>
+                  <textarea class="form-control form-control-sm" id="special-features" name="special_features" 
+                            rows="2" placeholder="e.g., cathedral ceilings, fireplace, historic details"></textarea>
+                  <div class="form-text small">Features to highlight or incorporate</div>
                 </div>
 
-                <!-- NEW: User Negative Prompt (Things to Avoid) -->
+                <!-- Things to Avoid -->
                 <div class="mb-3">
-                  <label for="user-negative-prompt" class="form-label small">
+                  <label for="avoid" class="form-label small">
                     Things to Avoid 
                     <i class="bi bi-question-circle" 
                        title="Specify elements you don't want in your transformation"
                        data-bs-toggle="tooltip"></i>
                   </label>
-                  <textarea class="form-control form-control-sm" id="user-negative-prompt" name="user_negative_prompt" 
-                            rows="2" placeholder="e.g., dark colors, modern furniture, artificial flowers, minimalist style"></textarea>
-                  <div class="form-text">Helps customize what to exclude from your transformation</div>
+                  <textarea class="form-control form-control-sm" id="avoid" name="avoid" 
+                            rows="2" placeholder="e.g., dark colors, modern furniture, artificial flowers"></textarea>
+                  <div class="form-text small">Elements to exclude from the transformation</div>
                 </div>
               </div>
             </div>
@@ -191,6 +146,14 @@
               </small>
             </div>
             {% endif %}
+
+            <!-- Transformation Info -->
+            <div class="mt-3 p-2 bg-light rounded">
+              <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Fixed Settings:</strong> Strength 70% • 30 Steps • Optimized for quality
+              </small>
+            </div>
           </form>
         </div>
       </div>
@@ -270,7 +233,7 @@
           <div class="spinner-border spinner-border-sm text-warning me-3" role="status"></div>
           <div>
             <div class="fw-bold">Creating Your Wedding Vision...</div>
-            <div class="small text-muted">Using AI to transform your space - this may take 1-2 minutes</div>
+            <div class="small text-muted">Using advanced AI to transform your space - this may take 2-3 minutes</div>
           </div>
         </div>
       </div>
@@ -351,6 +314,11 @@
                             {{ job.get_status_display }}
                           </span>
                         </div>
+                        {% if job.status == 'completed' %}
+                          <small class="text-success">
+                            <i class="bi bi-lightning-fill"></i> AI transformation complete
+                          </small>
+                        {% endif %}
                       </div>
                     </div>
                   </div>
@@ -447,20 +415,10 @@
   border-color: var(--bs-primary);
 }
 
-/* Enhanced form field styling */
-#religionField .form-text {
-  color: #6c757d;
-  font-size: 0.775em;
-}
-
-#user-negative-prompt {
+/* Enhanced transformation info */
+.alert.bg-light {
+  background-color: #f8f9fa !important;
   border: 1px solid #e9ecef;
-  border-radius: 0.375rem;
-}
-
-#user-negative-prompt:focus {
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
 /* Tooltip styling */
@@ -507,28 +465,28 @@
 </style>
 
 <script>
-// Debug logging
-console.log('🚀 Enhanced Studio script loading with Religion & Negative Prompt support...');
+console.log('🚀 Wedding Studio script loading...');
 
-// Wait for DOM to be fully ready
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 DOM Content Loaded');
-    initializeStudio();
+    initializeWeddingStudio();
 });
 
-function initializeStudio() {
-    console.log('🎬 Initializing Enhanced Studio...');
+function initializeWeddingStudio() {
+    console.log('🎬 Initializing Wedding Studio...');
     
-    // Studio Manager Class
-    class StudioManager {
+    // Wedding Studio Manager Class - SIMPLIFIED VERSION
+    class WeddingStudioManager {
         constructor() {
             this.selectedImageId = null;
             this.isUploading = false;
+            this.currentJobId = null;
+            this.statusCheckInterval = null;
             this.init();
         }
 
         init() {
-            console.log('⚙️ Setting up Enhanced Studio Manager...');
+            console.log('⚙️ Setting up Wedding Studio Manager...');
             this.setupUploadButtons();
             this.setupFileInputs();
             this.setupDropZone();
@@ -537,11 +495,10 @@ function initializeStudio() {
             this.setupTabs();
             this.setupOptionalFields();
             this.setupTooltips();
-            console.log('✅ Enhanced Studio Manager ready!');
+            console.log('✅ Wedding Studio Manager ready!');
         }
 
         setupTooltips() {
-            // Initialize Bootstrap tooltips
             const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -549,18 +506,14 @@ function initializeStudio() {
         }
 
         setupOptionalFields() {
-            console.log('🔧 Setting up enhanced optional fields...');
+            console.log('🔧 Setting up optional fields...');
             
             const toggleBtn = document.getElementById('toggleOptional');
             const optionalFields = document.getElementById('optionalFields');
             const toggleIcon = document.getElementById('toggleIcon');
-            const colorScheme = document.getElementById('color-scheme');
-            const customColorField = document.getElementById('customColorField');
             const themeSelect = document.getElementById('wedding-theme');
             const spaceSelect = document.getElementById('space-type');
-            const religionSelect = document.getElementById('religion-culture');
 
-            // Toggle optional fields
             if (toggleBtn && optionalFields && toggleIcon) {
                 toggleBtn.addEventListener('click', () => {
                     const isHidden = optionalFields.classList.contains('d-none');
@@ -574,103 +527,42 @@ function initializeStudio() {
                 });
             }
 
-            // Show/hide custom colors field
-            if (colorScheme && customColorField) {
-                colorScheme.addEventListener('change', () => {
-                    if (colorScheme.value === 'custom') {
-                        customColorField.style.display = 'block';
-                    } else {
-                        customColorField.style.display = 'none';
-                    }
-                });
-            }
-
-            // Show/hide contextual fields based on theme/space
             if (themeSelect && spaceSelect) {
-                const updateContextualFields = () => {
-                    const theme = themeSelect.value;
-                    const space = spaceSelect.value;
-                    const seasonField = document.getElementById('seasonField');
-                    const timeField = document.getElementById('timeField');
-                    const religionField = document.getElementById('religionField');
-
-                    // Show season for outdoor themes
-                    const outdoorThemes = ['garden', 'beach', 'rustic', 'bohemian'];
-                    const outdoorSpaces = ['garden', 'rooftop', 'beach', 'vineyard'];
-                    
-                    if (seasonField) {
-                        if (outdoorThemes.includes(theme) || outdoorSpaces.includes(space)) {
-                            seasonField.style.display = 'block';
-                        } else {
-                            seasonField.style.display = 'none';
-                        }
-                    }
-
-                    // Show time for ceremonies and outdoor spaces
-                    const ceremonySpaces = ['wedding_ceremony', 'garden', 'beach', 'rooftop'];
-                    
-                    if (timeField) {
-                        if (ceremonySpaces.includes(space) || outdoorThemes.includes(theme)) {
-                            timeField.style.display = 'block';
-                        } else {
-                            timeField.style.display = 'none';
-                        }
-                    }
-
-                    // Show religion field for ceremonies and traditional themes
-                    const traditionalThemes = ['traditional', 'classic', 'vintage', 'cultural_fusion'];
-                    
-                    if (religionField) {
-                        if (space === 'wedding_ceremony' || traditionalThemes.includes(theme)) {
-                            religionField.style.display = 'block';
-                        } else {
-                            religionField.style.display = 'block'; // Always show for now
-                        }
-                    }
-
-                    // Update suggestions when contextual fields change
+                const updateSuggestions = () => {
                     this.showSuggestions();
                 };
-
-                themeSelect.addEventListener('change', updateContextualFields);
-                spaceSelect.addEventListener('change', updateContextualFields);
-                
-                // Also listen to religion changes for suggestions
-                if (religionSelect) {
-                    religionSelect.addEventListener('change', () => this.showSuggestions());
-                }
+                themeSelect.addEventListener('change', updateSuggestions);
+                spaceSelect.addEventListener('change', updateSuggestions);
             }
 
-            console.log('✅ Enhanced optional fields setup complete');
+            console.log('✅ Optional fields setup complete');
         }
 
         setupUploadButtons() {
-            console.log('🔘 Setting up upload buttons...');
+            console.log('📘 Setting up upload buttons...');
             
             const uploadBtn = document.getElementById('uploadBtn');
             const cameraBtn = document.getElementById('cameraBtn');
             const fileInput = document.getElementById('fileInput');
             const cameraInput = document.getElementById('cameraInput');
 
-            // Upload button - always opens file picker
             if (uploadBtn && fileInput) {
                 uploadBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('📤 Upload button clicked - opening file picker');
+                    console.log('📤 Upload button clicked');
                     if (!this.isUploading) {
                         fileInput.click();
                     }
                 });
-                console.log('✅ Upload button connected to file picker');
+                console.log('✅ Upload button connected');
             }
 
-            // Camera button - only on mobile, opens camera
             if (cameraBtn && cameraInput) {
                 cameraBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('📷 Camera button clicked - opening camera');
+                    console.log('📷 Camera button clicked');
                     if (!this.isUploading) {
                         cameraInput.click();
                     }
@@ -680,7 +572,7 @@ function initializeStudio() {
         }
 
         setupFileInputs() {
-            console.log('📁 Setting up file inputs...');
+            console.log('📂 Setting up file inputs...');
             
             const fileInput = document.getElementById('fileInput');
             const cameraInput = document.getElementById('cameraInput');
@@ -713,18 +605,16 @@ function initializeStudio() {
             const fileInput = document.getElementById('fileInput');
 
             if (dropZone && fileInput) {
-                // Click on drop zone (but not on buttons)
                 dropZone.addEventListener('click', (e) => {
                     if (!e.target.closest('button') && !e.target.closest('input')) {
                         e.preventDefault();
-                        console.log('🎯 Drop zone clicked - opening file picker');
+                        console.log('🎯 Drop zone clicked');
                         if (!this.isUploading) {
                             fileInput.click();
                         }
                     }
                 });
 
-                // Drag and drop
                 dropZone.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     dropZone.classList.add('dragover');
@@ -768,7 +658,7 @@ function initializeStudio() {
         }
 
         setupForm() {
-            console.log('📝 Setting up enhanced form...');
+            console.log('📋 Setting up form...');
             
             const form = document.getElementById('transformForm');
             const themeSelect = document.getElementById('wedding-theme');
@@ -777,7 +667,7 @@ function initializeStudio() {
             if (form) {
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    console.log('📝 Enhanced form submitted');
+                    console.log('📋 Form submitted');
                     this.processImage();
                 });
             }
@@ -798,7 +688,7 @@ function initializeStudio() {
                 });
             }
 
-            console.log('✅ Enhanced form connected');
+            console.log('✅ Form connected');
         }
 
         setupTabs() {
@@ -849,7 +739,7 @@ function initializeStudio() {
                 formData.append('image', file);
                 formData.append('csrfmiddlewaretoken', this.getCSRF());
 
-                console.log('🌐 Sending upload request to /studio/upload/...');
+                console.log('🌐 Sending upload request...');
 
                 const response = await fetch('/studio/upload/', {
                     method: 'POST',
@@ -872,12 +762,11 @@ function initializeStudio() {
                     throw new Error(data.error || 'Upload failed');
                 }
             } catch (error) {
-                console.error('❌ Upload error:', error);
+                console.error('⛔ Upload error:', error);
                 this.showAlert('Upload failed: ' + error.message, 'danger');
                 this.showUploadArea();
             } finally {
                 this.isUploading = false;
-                // Reset inputs
                 document.getElementById('fileInput').value = '';
                 const cameraInput = document.getElementById('cameraInput');
                 if (cameraInput) cameraInput.value = '';
@@ -887,12 +776,15 @@ function initializeStudio() {
         handleUploadSuccess(data, source) {
             console.log('🎉 Handling upload success...');
             
-            // Add to recent images
             this.addToRecentImages(data);
-            
-            // Auto-select the image
             this.selectedImageId = data.image_id;
-            this.showImagePreview(data.image_url, data.image_name, data.width, data.height, data.file_size);
+            this.showImagePreview(
+                data.image_url, 
+                data.image_name, 
+                data.width, 
+                data.height, 
+                data.file_size
+            );
             this.updateTransformButton();
         }
 
@@ -908,22 +800,24 @@ function initializeStudio() {
                 <div class="venue-thumbnail border rounded overflow-hidden" 
                      data-image-id="${data.image_id}"
                      data-image-url="${data.image_url}"
+                     data-thumbnail-url="${data.thumbnail_url || data.image_url}"
                      data-image-name="${data.image_name}"
-                     style="cursor: pointer; aspect-ratio: 1; height: 100px;">
+                     data-image-width="${data.width}"
+                     data-image-height="${data.height}"
+                     data-file-size="${data.file_size}"
+                     style="cursor: pointer; aspect-ratio: 1; height: 100px;"
+                     title="Click to select ${data.image_name}">
                     <img src="${data.thumbnail_url || data.image_url}" 
                          class="w-100 h-100 object-fit-cover" 
                          alt="${data.image_name}">
                 </div>
             `;
 
-            // Add click handler
             const thumbnail = div.querySelector('.venue-thumbnail');
             thumbnail.addEventListener('click', () => this.selectThumbnail(thumbnail));
 
-            // Insert at beginning
             container.insertBefore(div, container.firstChild);
 
-            // Keep only 6 thumbnails
             const thumbs = container.querySelectorAll('.col-6, .col-sm-4, .col-md-3, .col-lg-2');
             if (thumbs.length > 6) {
                 thumbs[6].remove();
@@ -933,21 +827,21 @@ function initializeStudio() {
         selectThumbnail(thumbnail) {
             console.log('🖼️ Selecting thumbnail...');
             
-            // Remove selected from all
             document.querySelectorAll('.venue-thumbnail').forEach(t => {
                 t.classList.remove('selected');
             });
             
-            // Add selected to clicked
             thumbnail.classList.add('selected');
             
-            // Get data
             const imageId = thumbnail.dataset.imageId;
             const imageUrl = thumbnail.dataset.imageUrl;
             const imageName = thumbnail.dataset.imageName;
+            const imageWidth = thumbnail.dataset.imageWidth;
+            const imageHeight = thumbnail.dataset.imageHeight;
+            const fileSize = thumbnail.dataset.fileSize;
             
             this.selectedImageId = imageId;
-            this.showImagePreview(imageUrl, imageName);
+            this.showImagePreview(imageUrl, imageName, imageWidth, imageHeight, fileSize);
             this.updateTransformButton();
             
             this.showAlert(`Selected "${imageName}" for transformation`, 'success');
@@ -976,12 +870,12 @@ function initializeStudio() {
             img.src = imageUrl;
             name.textContent = imageName;
             
-            let detailText = 'Ready for transformation';
+            let detailText = 'Ready for AI transformation';
             if (width && height) {
-                detailText = `${width}x${height}`;
+                detailText = `${width}x${height} • Ready for transformation`;
                 if (fileSize) {
                     const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
-                    detailText += ` • ${sizeMB}MB`;
+                    detailText = `${width}x${height} • ${sizeMB}MB • Ready for transformation`;
                 }
             }
             details.textContent = detailText;
@@ -1013,7 +907,7 @@ function initializeStudio() {
             
             if (canTransform) {
                 btn.className = 'btn btn-primary py-2';
-                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform Space</span>';
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform with AI</span>';
             } else {
                 btn.className = 'btn btn-secondary py-2';
                 btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>';
@@ -1023,50 +917,32 @@ function initializeStudio() {
         showSuggestions() {
             const theme = document.getElementById('wedding-theme')?.value;
             const space = document.getElementById('space-type')?.value;
-            const religion = document.getElementById('religion-culture')?.value;
             const suggestions = document.getElementById('smartSuggestions');
             const text = document.getElementById('suggestionText');
             
             if (!theme || !space) {
-                suggestions.classList.add('d-none');
+                suggestions?.classList.add('d-none');
                 return;
             }
             
-            // Enhanced suggestion map with religion/culture considerations
             const suggestionMap = {
-                'rustic_wedding_ceremony': 'Intimate outdoor ceremony, natural lighting, wildflower decorations',
-                'rustic_dining_area': 'Farm table setup, mason jar centerpieces, string lighting',
-                'modern_dining_area': 'Clean lines, minimalist centerpieces, geometric lighting',
-                'vintage_lounge_area': 'Antique furniture, romantic lighting, lace details',
-                'beach_wedding_ceremony': 'Sunset ceremony, flowing fabrics, natural coastal elements',
-                'garden_wedding_ceremony': 'Natural garden setting, floral arches, romantic ambiance'
+                'rustic_wedding_ceremony': 'Outdoor ceremony with natural lighting and wildflower decorations',
+                'rustic_dining_area': 'Farm table setup with mason jar centerpieces and string lighting',
+                'modern_dining_area': 'Clean lines with minimalist centerpieces and geometric lighting',
+                'vintage_lounge_area': 'Antique furniture with romantic lighting and lace details',
+                'beach_wedding_ceremony': 'Sunset ceremony with flowing fabrics and coastal elements',
+                'garden_wedding_ceremony': 'Natural garden setting with floral arches and romantic ambiance',
+                'glamorous_dance_floor': 'Luxury party space with crystal and dramatic lighting',
+                'industrial_cocktail_hour': 'Urban loft vibes with Edison bulbs and metal accents'
             };
-            
-            // Add religion-specific suggestions
-            if (religion) {
-                const religionMap = {
-                    'christian_wedding_ceremony': 'Traditional Christian ceremony with cross, unity candle, church styling',
-                    'jewish_wedding_ceremony': 'Jewish ceremony with chuppah, traditional elements, elegant styling',
-                    'hindu_wedding_ceremony': 'Hindu ceremony with mandap, vibrant colors, sacred fire area',
-                    'muslim_wedding_ceremony': 'Islamic ceremony with modest elegant styling, traditional elements',
-                    'interfaith_wedding_ceremony': 'Interfaith ceremony with inclusive elements, unity themes'
-                };
-                
-                const religionKey = `${religion}_${space}`;
-                if (religionMap[religionKey]) {
-                    text.textContent = religionMap[religionKey];
-                    suggestions.classList.remove('d-none');
-                    return;
-                }
-            }
             
             const key = `${theme}_${space}`;
             const suggestion = suggestionMap[key];
             
-            if (suggestion) {
+            if (suggestion && suggestions && text) {
                 text.textContent = suggestion;
                 suggestions.classList.remove('d-none');
-            } else {
+            } else if (suggestions) {
                 suggestions.classList.add('d-none');
             }
         }
@@ -1076,14 +952,14 @@ function initializeStudio() {
             const formData = new FormData(form);
             const data = {};
             
-            // Get all form values
+            // Only include non-empty values
             for (let [key, value] of formData.entries()) {
                 if (value && value.trim() !== '') {
                     data[key] = value.trim();
                 }
             }
             
-            console.log('📝 Enhanced form data:', data);
+            console.log('📋 Simplified form data:', data);
             return data;
         }
 
@@ -1100,11 +976,15 @@ function initializeStudio() {
                 return;
             }
 
-            document.getElementById('processingStatus').classList.remove('d-none');
+            // Show processing status
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                processingStatus.classList.remove('d-none');
+            }
             
             const btn = document.getElementById('transformBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Creating Magic...</span>';
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Creating Transformation...</span>';
 
             try {
                 const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
@@ -1118,25 +998,155 @@ function initializeStudio() {
                 });
 
                 const result = await response.json();
+                console.log('📄 Processing response:', result);
                 
                 if (result.success) {
-                    this.showAlert('✨ Enhanced transformation started! Redirecting...', 'success');
+                    this.currentJobId = result.job_id;
+                    this.showAlert('✨ AI transformation started! Redirecting to visualizations...', 'success');
+                    
+                    // Redirect to visualizations page after short delay
                     setTimeout(() => {
-                        window.location.href = result.redirect_url;
-                    }, 2000);
+                        window.location.href = '/studio/visualizations/';
+                    }, 1500);
+                    
                 } else {
                     throw new Error(result.error || 'Processing failed');
                 }
             } catch (error) {
-                console.error('❌ Processing error:', error);
+                console.error('⛔ Processing error:', error);
                 this.showAlert('Error: ' + error.message, 'danger');
-                document.getElementById('processingStatus').classList.add('d-none');
+                if (processingStatus) {
+                    processingStatus.classList.add('d-none');
+                }
                 this.updateTransformButton();
             }
         }
 
+        // Job status monitoring (same as before)
+        startJobStatusMonitoring(jobId) {
+            console.log(`📄 Starting status monitoring for job ${jobId}`);
+            
+            if (this.statusCheckInterval) {
+                clearInterval(this.statusCheckInterval);
+            }
+            
+            // Check status every 3 seconds
+            this.statusCheckInterval = setInterval(async () => {
+                await this.checkJobStatus(jobId);
+            }, 3000);
+            
+            // Check immediately
+            this.checkJobStatus(jobId);
+        }
+
+        async checkJobStatus(jobId) {
+            try {
+                const response = await fetch(`/studio/job/${jobId}/status/`);
+                const data = await response.json();
+                
+                console.log(`📊 Job ${jobId} status:`, data.status);
+                
+                if (data.status === 'completed') {
+                    this.handleJobCompleted(data);
+                } else if (data.status === 'failed') {
+                    this.handleJobFailed(data);
+                } else if (data.status === 'processing') {
+                    this.updateProcessingStatus('AI is creating your wedding transformation...');
+                }
+                
+            } catch (error) {
+                console.error('⛔ Status check error:', error);
+            }
+        }
+
+        handleJobCompleted(jobData) {
+            console.log('✅ Job completed!', jobData);
+            
+            if (this.statusCheckInterval) {
+                clearInterval(this.statusCheckInterval);
+                this.statusCheckInterval = null;
+            }
+            
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                processingStatus.classList.add('d-none');
+            }
+            
+            this.showAlert('🎉 Your wedding transformation is complete!', 'success');
+            this.updateTransformButton();
+            
+            if (jobData.result && jobData.result.image_url) {
+                this.showResultPreview(jobData.result);
+            }
+            
+            // Reload recent transformations after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        handleJobFailed(jobData) {
+            console.log('⛔ Job failed:', jobData);
+            
+            if (this.statusCheckInterval) {
+                clearInterval(this.statusCheckInterval);
+                this.statusCheckInterval = null;
+            }
+            
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                processingStatus.classList.add('d-none');
+            }
+            
+            const errorMsg = jobData.error_message || 'Processing failed';
+            this.showAlert(`⛔ Processing failed: ${errorMsg}`, 'danger');
+            this.updateTransformButton();
+        }
+
+        updateProcessingStatus(message) {
+            const statusElement = document.querySelector('#processingStatus .fw-bold');
+            if (statusElement) {
+                statusElement.textContent = message;
+            }
+        }
+
+        showResultPreview(result) {
+            const resultPreview = `
+                <div class="alert alert-success border-0 mt-3" id="resultPreview">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <img src="${result.image_url}" class="rounded" 
+                                 style="width: 80px; height: 60px; object-fit: cover;" 
+                                 alt="Transformation result">
+                        </div>
+                        <div class="col">
+                            <div class="fw-bold">Transformation Complete!</div>
+                            <div class="small text-muted">
+                                ${result.width}x${result.height} • 
+                                ${(result.file_size / (1024 * 1024)).toFixed(1)}MB
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <a href="/studio/processed/${result.id}/" class="btn btn-sm btn-success">
+                                <i class="bi bi-eye me-1"></i> View Result
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const existingPreview = document.getElementById('resultPreview');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            
+            const processingStatus = document.getElementById('processingStatus');
+            if (processingStatus) {
+                processingStatus.insertAdjacentHTML('afterend', resultPreview);
+            }
+        }
+
         showAlert(message, type) {
-            // Remove existing alerts
             document.querySelectorAll('.studio-alert').forEach(alert => alert.remove());
             
             const alert = document.createElement('div');
@@ -1156,17 +1166,30 @@ function initializeStudio() {
 
         getCSRF() {
             return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                   document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+                   document.querySelector('meta[name=csrf_token]')?.getAttribute('content');
+        }
+
+        destroy() {
+            if (this.statusCheckInterval) {
+                clearInterval(this.statusCheckInterval);
+            }
         }
     }
 
-    // Initialize Enhanced Studio Manager
+    // Initialize Wedding Studio Manager
     try {
-        window.studioManager = new StudioManager();
-        console.log('🎉 Enhanced Studio with Religion & Negative Prompt support initialized successfully!');
+        window.studioManager = new WeddingStudioManager();
+        console.log('🎉 Wedding Studio initialized successfully!');
     } catch (error) {
-        console.error('💥 Failed to initialize enhanced studio:', error);
+        console.error('💥 Failed to initialize wedding studio:', error);
     }
 }
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.studioManager) {
+        window.studioManager.destroy();
+    }
+});
 </script>
 {% endblock %}

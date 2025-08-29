@@ -4,21 +4,25 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
-<!-- Hero Section for Discover Weddings -->
-<section class="discover-hero-section">
-  <div class="hero-particles"></div>
+<!-- Hero Section -->
+<section class="discovery-hero bg-light py-5">
   <div class="container">
-    <div class="row min-vh-50 align-items-center text-center">
+    <div class="row text-center">
       <div class="col-12">
-        <div class="discover-hero-content">
-          <h1 class="display-4 fw-bold text-white mb-4">
-            Discover Beautiful 
-            <span class="text-gradient">Wedding Stories</span>
-          </h1>
-          <p class="lead text-white-75 mb-4 mx-auto" style="max-width: 600px;">
-            Get inspired by {{ couples.count|default:"0" }} real couples sharing their love stories, dream venues, and wedding registries from our community
+        <h1 class="display-4 fw-bold text-dark mb-3">
+          Discover Beautiful 
+          <span class="text-primary">Wedding Stories</span>
+        </h1>
+        <p class="lead text-muted mb-4 mx-auto" style="max-width: 600px;">
+          Get inspired by real couples sharing their love stories, wedding details, and registries
+        </p>
+        {% if couples %}
+          <p class="h5 text-secondary">
+            <span class="badge bg-primary rounded-pill px-3 py-2">
+              {{ couples.count }} Wedding{{ couples.count|pluralize }}
+            </span>
           </p>
-        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -26,89 +30,100 @@
 
 <div class="container py-5">
   {% if couples %}
- 
-    
-
     <!-- Couples Grid -->
-    <div class="row g-4">
+    <div class="row g-4 mb-5">
       {% for couple in couples %}
         <div class="col-lg-4 col-md-6">
-          <div class="wedding-card h-100 fade-in-up">
-            <div class="wedding-card-image">
+          <div class="wedding-card card h-100 shadow-sm">
+            <!-- Photo -->
+            <div class="wedding-photo">
               {% if couple.couple_photo %}
                 <img src="{{ couple.couple_photo.url }}" 
                      class="card-img-top" 
-                     alt="{{ couple.couple_names }}">
+                     alt="{{ couple.couple_names }}"
+                     style="height: 250px; object-fit: cover;">
               {% else %}
-                <div class="card-img-placeholder">
-                  <i class="bi bi-heart-fill"></i>
+                <div class="photo-placeholder d-flex align-items-center justify-content-center"
+                     style="height: 250px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                  <div class="text-white text-center">
+                    <i class="bi bi-heart-fill display-4 mb-2"></i>
+                    <p class="mb-0">{{ couple.couple_names }}</p>
+                  </div>
                 </div>
               {% endif %}
               
-              <!-- Wedding date overlay -->
+              <!-- Status Badge -->
               {% if couple.wedding_date %}
-                <div class="wedding-date-badge">
-                  {{ couple.wedding_date|date:"M Y" }}
-                </div>
-              {% endif %}
-              
-              <!-- Status indicator -->
-              <div class="wedding-status-indicator">
-                {% if couple.wedding_date %}
+                <div class="status-badge position-absolute top-0 end-0 m-3">
                   {% now "Y-m-d" as today %}
                   {% if couple.wedding_date|date:"Y-m-d" > today %}
-                    <span class="status-upcoming">Upcoming</span>
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+                      <i class="bi bi-calendar-event me-1"></i>Upcoming
+                    </span>
                   {% elif couple.wedding_date|date:"Y-m-d" == today %}
-                    <span class="status-today">Today!</span>
+                    <span class="badge bg-success px-3 py-2 rounded-pill">
+                      <i class="bi bi-star-fill me-1"></i>Today!
+                    </span>
                   {% else %}
-                    <span class="status-married">Married</span>
+                    <span class="badge bg-primary px-3 py-2 rounded-pill">
+                      <i class="bi bi-heart-fill me-1"></i>Married
+                    </span>
                   {% endif %}
-                {% endif %}
-              </div>
+                </div>
+              {% endif %}
             </div>
             
-            <div class="wedding-card-content">
-              <div class="couple-info">
-                <h5 class="couple-names">{{ couple.couple_names }}</h5>
-                
-                {% if couple.venue_name or couple.venue_location %}
-                  <p class="venue-info">
-                    <i class="bi bi-geo-alt text-cyan"></i>
-                    {% if couple.venue_name %}
-                      {{ couple.venue_name }}
-                      {% if couple.venue_location %}<br>{{ couple.venue_location }}{% endif %}
-                    {% elif couple.venue_location %}
-                      {{ couple.venue_location }}
-                    {% endif %}
-                  </p>
-                {% endif %}
-                
-                {% if couple.couple_story %}
-                  <p class="couple-story">
-                    {{ couple.couple_story|truncatewords:15 }}
-                  </p>
-                {% endif %}
-              </div>
+            <!-- Card Content -->
+            <div class="card-body p-4">
+              <h5 class="card-title fw-bold text-dark mb-3">{{ couple.couple_names }}</h5>
               
-              <!-- Registry & Social Stats -->
-              <div class="wedding-stats">
-                <div class="stat-item">
-                  <i class="bi bi-gift text-rose"></i>
-                  <span>{{ couple.registry_links.count }} Registries</span>
-                </div>
-                <div class="stat-item">
-                  <i class="bi bi-share text-cyan"></i>
-                  <span>{{ couple.social_links.count }} Social Links</span>
-                </div>
+              <!-- Wedding Date -->
+              {% if couple.wedding_date %}
+                <p class="text-muted mb-2">
+                  <i class="bi bi-calendar text-primary me-2"></i>
+                  {{ couple.wedding_date|date:"F j, Y" }}
+                </p>
+              {% endif %}
+              
+              <!-- Venue -->
+              {% if couple.venue_name or couple.venue_location %}
+                <p class="text-muted mb-3">
+                  <i class="bi bi-geo-alt text-danger me-2"></i>
+                  {% if couple.venue_name %}
+                    {{ couple.venue_name }}
+                    {% if couple.venue_location %}<br><small class="ms-4">{{ couple.venue_location }}</small>{% endif %}
+                  {% elif couple.venue_location %}
+                    {{ couple.venue_location }}
+                  {% endif %}
+                </p>
+              {% endif %}
+              
+              <!-- Story Preview -->
+              {% if couple.couple_story %}
+                <p class="card-text text-muted small mb-3">
+                  {{ couple.couple_story|truncatewords:20 }}
+                </p>
+              {% endif %}
+              
+              <!-- Quick Stats -->
+              <div class="d-flex gap-3 mb-3 small text-muted">
+                <span>
+                  <i class="bi bi-gift text-primary me-1"></i>
+                  {{ couple.registry_links.count }} Registr{{ couple.registry_links.count|pluralize:"y,ies" }}
+                </span>
+                <span>
+                  <i class="bi bi-link-45deg text-secondary me-1"></i>
+                  {{ couple.wedding_links.count }} Link{{ couple.wedding_links.count|pluralize }}
+                </span>
               </div>
             </div>
             
-            <div class="wedding-card-footer">
+            <!-- Card Footer -->
+            <div class="card-footer bg-transparent border-0 p-4 pt-0">
               <a href="{% url 'wedding_shopping:wedding_page' slug=couple.slug %}" 
-                 class="btn-wedding-visit">
-                <i class="bi bi-heart-fill"></i>
-                <span>Visit Wedding Page</span>
-                <i class="bi bi-arrow-right"></i>
+                 class="btn btn-primary w-100 btn-lg">
+                <i class="bi bi-heart-fill me-2"></i>
+                Visit Wedding Page
               </a>
             </div>
           </div>
@@ -117,48 +132,57 @@
     </div>
     
     <!-- Create Your Own CTA -->
-    <div class="row mt-5">
+    <div class="row">
       <div class="col-12">
-        <div class="create-cta-section">
-          <div class="cta-content">
-            <div class="cta-icon">
-            </div>
-            <h3 class="cta-title mb-3">Ready to Share Your Love Story?</h3>
-            <p class="cta-subtitle mb-4">
-              Create a FREE beautiful wedding page to share your journey, wedding, and registries details with family and friends.
-            </p>
-            <div class="cta-features mb-4">
-              <div class="row g-3">
+        <div class="cta-section card bg-light border-0 p-5 text-center">
+          <div class="row justify-content-center">
+            <div class="col-lg-8">
+              <i class="bi bi-heart-fill text-danger display-3 mb-4"></i>
+              <h2 class="h1 fw-bold text-dark mb-3">Ready to Share Your Love Story?</h2>
+              <p class="lead text-muted mb-4">
+                Create your own beautiful wedding page to share your journey, wedding details, and registries with family and friends.
+              </p>
+              
+              <!-- Features -->
+              <div class="row g-3 mb-5">
                 <div class="col-md-4">
-                  <div class="feature-highlight">
-                    <i class="bi bi-magic text-rose"></i>
-                    <span>Visualization Studio</span>
+                  <div class="feature-item">
+                    <i class="bi bi-camera text-primary display-6 mb-2"></i>
+                    <h6 class="fw-semibold">Photo Gallery</h6>
+                    <small class="text-muted">Share your beautiful photos</small>
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <div class="feature-highlight">
-                    <i class="bi bi-heart text-rose"></i>
-                    <span>Beautiful Wedding Page</span>
+                  <div class="feature-item">
+                    <i class="bi bi-gift text-success display-6 mb-2"></i>
+                    <h6 class="fw-semibold">Registry Links</h6>
+                    <small class="text-muted">Connect all your registries</small>
                   </div>
                 </div>
                 <div class="col-md-4">
-                  <div class="feature-highlight">
-                    <i class="bi bi-gift text-cyan"></i>
-                    <span>Dream Wedding Day</span>
+                  <div class="feature-item">
+                    <i class="bi bi-share text-info display-6 mb-2"></i>
+                    <h6 class="fw-semibold">Easy Sharing</h6>
+                    <small class="text-muted">Custom URL for your guests</small>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="cta-buttons">
-              {% if user.is_authenticated %}
-                <a href="{% url 'wedding_shopping:dashboard' %}" class="hero-cta-primary me-3">
-                  <i class="bi bi-heart-fill"></i> Create My Wedding Page
-                </a>
-              {% else %}
-                <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
-                  <i class="bi bi-info-circle"></i> View Subscription Pricing
-                </a>
-              {% endif %}
+              
+              <!-- CTA Buttons -->
+              <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                {% if user.is_authenticated %}
+                  <a href="{% url 'wedding_shopping:manage_wedding_page' %}" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-plus-circle me-2"></i>Create My Wedding Page
+                  </a>
+                {% else %}
+                  <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-5">
+                    <i class="bi bi-plus-circle me-2"></i>Get Started Free
+                  </a>
+                  <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg px-4">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                  </a>
+                {% endif %}
+              </div>
             </div>
           </div>
         </div>
@@ -166,57 +190,55 @@
     </div>
     
   {% else %}
-    <!-- Enhanced Empty State -->
+    <!-- Empty State -->
     <div class="row">
       <div class="col-lg-8 mx-auto">
-        <div class="empty-state">
-          <div class="empty-state-visual">
-            <div class="floating-hearts">
-              <i class="bi bi-heart-fill heart-1"></i>
-              <i class="bi bi-heart-fill heart-2"></i>
-              <i class="bi bi-heart-fill heart-3"></i>
-            </div>
+        <div class="empty-state text-center py-5">
+          <!-- Animated Hearts -->
+          <div class="hearts-animation mb-4">
+            <i class="bi bi-heart-fill text-danger heart-1"></i>
+            <i class="bi bi-heart-fill text-primary heart-2"></i>
+            <i class="bi bi-heart-fill text-success heart-3"></i>
             <div class="main-heart">
-              <i class="bi bi-heart"></i>
+              <i class="bi bi-heart display-1 text-muted"></i>
             </div>
           </div>
           
-          <h3 class="empty-state-title">Be the First to Share Your Love Story!</h3>
-          <p class="empty-state-subtitle">
-            Start a trend in our community. Create the first beautiful wedding page and inspire other couples.
+          <h2 class="h1 fw-bold text-dark mb-3">Be the First to Share Your Love Story!</h2>
+          <p class="lead text-muted mb-4">
+            Start a trend in our community. Create the first beautiful wedding page and inspire other couples to join.
           </p>
           
-          <div class="empty-state-features">
-            <div class="row g-3 mb-4">
-              <div class="col-sm-6">
-                <div class="feature-item">
-                  <i class="bi bi-lightning-charge text-cyan"></i>
-                  <span>Quick 5-min setup</span>
-                </div>
+          <!-- Features -->
+          <div class="row g-4 mb-5">
+            <div class="col-md-6">
+              <div class="feature-highlight card p-4 h-100 border-0 bg-light">
+                <i class="bi bi-lightning-charge text-warning display-4 mb-3"></i>
+                <h5 class="fw-semibold">Quick Setup</h5>
+                <p class="text-muted mb-0">Get your wedding page live in just 5 minutes</p>
               </div>
-              <div class="col-sm-6">
-                <div class="feature-item">
-                  <i class="bi bi-gift text-rose"></i>
-                  <span>Free forever</span>
-                </div>
+            </div>
+            <div class="col-md-6">
+              <div class="feature-highlight card p-4 h-100 border-0 bg-light">
+                <i class="bi bi-heart text-danger display-4 mb-3"></i>
+                <h5 class="fw-semibold">Forever Free</h5>
+                <p class="text-muted mb-0">Share your wedding story with no hidden costs</p>
               </div>
             </div>
           </div>
           
-          <div class="empty-state-actions">
+          <!-- CTA -->
+          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
             {% if user.is_authenticated %}
-              <a href="{% url 'wedding_shopping:dashboard' %}" class="hero-cta-primary mb-3">
-                <i class="bi bi-plus-circle"></i> Create My Wedding Page
-              </a>
-              <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-secondary">
-                <i class="bi bi-magic"></i> Try AI Visualization
+              <a href="{% url 'wedding_shopping:manage_wedding_page' %}" class="btn btn-primary btn-lg px-5">
+                <i class="bi bi-plus-circle me-2"></i>Create My Wedding Page
               </a>
             {% else %}
-              <a href="{% url 'account_signup' %}" class="hero-cta-primary mb-3">
-                <i class="bi bi-plus-circle"></i> Get Started Free
+              <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-5">
+                <i class="bi bi-plus-circle me-2"></i>Get Started Free
               </a>
-              <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
-                <i class="bi bi-info-circle"></i> Learn More
+              <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg px-4">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
               </a>
             {% endif %}
           </div>
@@ -225,4 +247,182 @@
     </div>
   {% endif %}
 </div>
+
+<style>
+/* Custom styles for the discovery page */
+.discovery-hero {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.wedding-card {
+  border-radius: 1rem;
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.wedding-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+.wedding-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+.wedding-photo img {
+  transition: transform 0.3s ease;
+}
+
+.wedding-card:hover .wedding-photo img {
+  transform: scale(1.05);
+}
+
+.status-badge .badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+}
+
+.cta-section {
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.feature-item {
+  text-align: center;
+}
+
+.feature-highlight {
+  border-radius: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.feature-highlight:hover {
+  transform: translateY(-4px);
+}
+
+/* Hearts animation for empty state */
+.hearts-animation {
+  position: relative;
+  height: 120px;
+  margin: 0 auto;
+  width: 120px;
+}
+
+.main-heart {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.heart-1, .heart-2, .heart-3 {
+  position: absolute;
+  font-size: 1.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.heart-1 {
+  top: 20%;
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.heart-2 {
+  top: 30%;
+  right: 20%;
+  animation-delay: 1s;
+}
+
+.heart-3 {
+  bottom: 20%;
+  left: 30%;
+  animation-delay: 2s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
+.btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+}
+
+.card {
+  border-radius: 1rem;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2.5rem;
+  }
+  
+  .wedding-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .hearts-animation {
+    height: 80px;
+    width: 80px;
+  }
+  
+  .main-heart .bi {
+    font-size: 3rem;
+  }
+  
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .cta-section {
+    padding: 2rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .d-flex.flex-sm-row {
+    flex-direction: column !important;
+  }
+  
+  .wedding-photo {
+    height: 200px;
+  }
+  
+  .wedding-photo img {
+    height: 200px;
+  }
+  
+  .photo-placeholder {
+    height: 200px !important;
+  }
+}
+</style>
 {% endblock %}

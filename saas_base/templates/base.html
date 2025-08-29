@@ -120,7 +120,7 @@
                 </li>
                 <li>
                   <a class="dropdown-item" href="{% url 'image_processing:processing_history' %}">
-                    <i class="bi bi-magic text-cyan me-2"></i> Visuals
+                    <i class="bi bi-magic text-cyan me-2"></i> Transformations
                   </a>
                 </li>
                 <li>
@@ -349,7 +349,7 @@
 
         <!-- Product Column -->
         <div class="col-lg-2 col-md-6 mb-4">
-          <h6 class="fw-bold text-white mb-3">Product</h6>
+          <h6 class="fw-bold text-white mb-3">Offerings</h6>
           <ul class="list-unstyled">
             {% if request.user.is_authenticated %}
               <li class="mb-2">
@@ -362,13 +362,13 @@
                   <i class="bi bi-heart me-2 text-rose"></i>Wedding Page
                 </a>
               </li>
-            {% else %}
+             {% endif %}
               <li class="mb-2">
                 <a href="{% url 'subscriptions:pricing' %}" class="text-white-75 text-decoration-none footer-link">
-                  <i class="bi bi-tag me-2 text-cyan"></i>Pricing
+                  <i class="bi bi-tag me-2 text-cyan"></i>Pricing & Subscribe
                 </a>
               </li>
-            {% endif %}
+           
             <li class="mb-2">
               <a href="{% url 'wedding_shopping:public_couples_list' %}" class="text-white-75 text-decoration-none footer-link">
                 <i class="bi bi-globe2 me-2 text-rose"></i>Discover Weddings
@@ -388,7 +388,7 @@
             </li>
             <li class="mb-2">
               <a href="#" class="text-white-75 text-decoration-none footer-link">
-                <i class="bi bi-envelope me-2"></i>Contact Us
+                Contact Us
               </a>
             </li>
             <li class="mb-2">

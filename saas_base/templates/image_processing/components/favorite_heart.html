@@ -1,8 +1,9 @@
 <!-- saas_base/templates/image_processing/components/favorite_heart.html -->
-<!-- Save this file to: saas_base/templates/image_processing/components/favorite_heart.html -->
+<!-- UPDATED: Combined with consistency fixes and enhanced functionality -->
 
 {% load static %}
 
+{% if processed_image %}
 <button type="button" 
         class="favorite-heart-btn {% if processed_image.is_favorited %}favorited{% else %}not-favorited{% endif %}"
         data-processed-image-id="{{ processed_image.id }}"
@@ -10,6 +11,12 @@
         title="{% if processed_image.is_favorited %}Remove from favorites{% else %}Add to favorites{% endif %}">
   <i class="bi bi-heart{% if processed_image.is_favorited %}-fill{% endif %}"></i>
 </button>
+{% else %}
+<!-- Fallback if no processed_image provided -->
+<span class="text-muted favorite-heart-disabled" title="Favorites not available">
+  <i class="bi bi-heart" style="opacity: 0.3; font-size: 16px;"></i>
+</span>
+{% endif %}
 
 <!-- Only include the script and styles once per page -->
 {% if not favorite_heart_loaded %}
@@ -17,6 +24,9 @@
 // Initialize favorite heart functionality
 if (typeof window.favoriteHeartInitialized === 'undefined') {
     window.favoriteHeartInitialized = true;
+    
+    // Get the toggle favorite URL - more robust approach
+    const toggleFavoriteUrl = '{% url "image_processing:toggle_favorite" %}';
     
     document.addEventListener('click', function(e) {
         if (e.target.closest('.favorite-heart-btn')) {
@@ -27,17 +37,30 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
             const processedImageId = button.dataset.processedImageId;
             const isCurrentlyFavorited = button.dataset.isFavorited === 'true';
             
-            // Disable button during request
+            // Don't process if already disabled
+            if (button.disabled) return;
+            
+            // Disable button during request and add loading state
             button.disabled = true;
+            button.classList.add('loading');
             
             const formData = new FormData();
             formData.append('processed_image_id', processedImageId);
             
-            // Get CSRF token
+            // Get CSRF token with multiple fallback methods
             const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                            document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+                            document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                            document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
             
-            fetch('{% url "image_processing:toggle_favorite" %}', {
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                showFavoriteToast('Security token missing - please refresh the page', 'error');
+                button.disabled = false;
+                button.classList.remove('loading');
+                return;
+            }
+            
+            fetch(toggleFavoriteUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,
@@ -45,75 +68,109 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
                 },
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    // Update button appearance
+                    // Update button appearance with animation
                     const icon = button.querySelector('i');
                     const newIsFavorited = data.is_favorited;
                     
-                    if (newIsFavorited) {
-                        icon.className = 'bi bi-heart-fill';
-                        button.classList.remove('not-favorited');
-                        button.classList.add('favorited');
-                        button.title = 'Remove from favorites';
-                    } else {
-                        icon.className = 'bi bi-heart';
-                        button.classList.remove('favorited');
-                        button.classList.add('not-favorited');
-                        button.title = 'Add to favorites';
-                    }
+                    // Add transition class for smooth animation
+                    button.classList.add('updating');
                     
-                    // Update data attribute
-                    button.dataset.isFavorited = newIsFavorited.toString();
+                    setTimeout(() => {
+                        if (newIsFavorited) {
+                            icon.className = 'bi bi-heart-fill';
+                            button.classList.remove('not-favorited');
+                            button.classList.add('favorited');
+                            button.title = 'Remove from favorites';
+                        } else {
+                            icon.className = 'bi bi-heart';
+                            button.classList.remove('favorited');
+                            button.classList.add('not-favorited');
+                            button.title = 'Add to favorites';
+                        }
+                        
+                        // Update data attribute for future clicks
+                        button.dataset.isFavorited = newIsFavorited.toString();
+                        
+                        button.classList.remove('updating');
+                        
+                        // Show success toast
+                        showFavoriteToast(data.message, 'success');
+                    }, 100);
                     
-                    // Show toast notification
-                    showFavoriteToast(data.message, 'success');
                 } else {
                     showFavoriteToast(data.error || 'Error updating favorite', 'error');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                showFavoriteToast('Network error', 'error');
+                console.error('Favorite toggle error:', error);
+                let errorMessage = 'Network error occurred';
+                
+                if (error.message.includes('403')) {
+                    errorMessage = 'Permission denied - please refresh the page';
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'Feature not found - please refresh the page';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Server error - please try again';
+                }
+                
+                showFavoriteToast(errorMessage, 'error');
             })
             .finally(() => {
                 button.disabled = false;
+                button.classList.remove('loading');
             });
         }
     });
     
-    // Toast notification function
+    // Enhanced toast notification function
     function showFavoriteToast(message, type) {
-        // Remove any existing toasts
+        // Remove any existing favorite toasts
         const existingToasts = document.querySelectorAll('.favorite-toast');
-        existingToasts.forEach(toast => toast.remove());
+        existingToasts.forEach(toast => {
+            if (toast.parentElement) {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }
+        });
         
         const toast = document.createElement('div');
         toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed favorite-toast`;
-        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: slideInRight 0.3s ease;';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 280px; max-width: 350px; animation: slideInRight 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+        
+        const icon = type === 'success' ? 'bi-heart-fill text-danger' : 'bi-exclamation-triangle-fill text-warning';
+        
         toast.innerHTML = `
             <div class="d-flex align-items-center">
-                <i class="bi bi-heart${type === 'success' ? '-fill' : ''} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                <i class="bi ${icon} me-2"></i>
+                <span class="flex-grow-1">${message}</span>
+                <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
             </div>
         `;
         
         document.body.appendChild(toast);
         
-        // Auto remove after 3 seconds
+        // Auto remove after 4 seconds (slightly longer for error messages)
+        const autoRemoveDelay = type === 'error' ? 5000 : 3000;
         setTimeout(() => {
             if (toast.parentElement) {
                 toast.style.animation = 'slideOutRight 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
             }
-        }, 3000);
+        }, autoRemoveDelay);
     }
 }
 </script>
 
 <style>
+/* Enhanced favorite heart button styles */
 .favorite-heart-btn {
     transition: all 0.2s ease;
     border-radius: 50%;
@@ -128,6 +185,7 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .favorite-heart-btn:hover {
@@ -159,9 +217,31 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
 .favorite-heart-btn.favorited i {
     color: white;
     font-size: 16px;
-    animation: heartPulse 0.3s ease;
 }
 
+/* Loading state */
+.favorite-heart-btn.loading {
+    opacity: 0.7;
+    transform: none !important;
+    cursor: wait;
+}
+
+.favorite-heart-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.favorite-heart-btn.loading i {
+    opacity: 0;
+}
+
+/* Disabled state */
 .favorite-heart-btn:disabled {
     opacity: 0.6;
     transform: none !important;
@@ -173,7 +253,17 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
     background-color: #dc3545;
 }
 
-/* Heart pulse animation when favorited */
+/* Update animation */
+.favorite-heart-btn.updating i {
+    animation: heartPulse 0.4s ease;
+}
+
+/* When favorited, add pulse animation */
+.favorite-heart-btn.favorited:not(.loading):not(.updating) i {
+    animation: heartPulse 0.3s ease;
+}
+
+/* Heart pulse animation */
 @keyframes heartPulse {
     0% {
         transform: scale(1);
@@ -186,6 +276,13 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
     }
 }
 
+/* Loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Toast animations */
 @keyframes slideInRight {
     from {
         transform: translateX(100%);
@@ -231,9 +328,37 @@ if (typeof window.favoriteHeartInitialized === 'undefined') {
         opacity: 1;
     }
 }
+
+/* Disabled heart styling */
+.favorite-heart-disabled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .favorite-heart-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .favorite-heart-btn i {
+        font-size: 14px;
+    }
+    
+    .favorite-toast {
+        right: 10px !important;
+        left: 10px !important;
+        max-width: none !important;
+        min-width: auto !important;
+    }
+}
 </style>
 
-{% load static %}
 <!-- Mark that favorite heart has been loaded -->
 <script>window.favorite_heart_loaded = true;</script>
 {% endif %}
