@@ -1,0 +1,9 @@
+<div class="collection-picker-component d-inline-block">
+  <button class="btn btn-outline-success btn-sm collection-save-btn" 
+          type="button" 
+          data-processed-image-id="{{ processed_image.id|default:'' }}"
+          data-user-image-id="{{ user_image.id|default:'' }}">
+    <i class="bi bi-collection me-1"></i>
+    {% if button_text %}{{ button_text }}{% else %}Save{% endif %}
+  </button>
+</div>

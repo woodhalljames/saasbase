@@ -1,428 +1,684 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title }} - DreamWedAI{% endblock %}
 
-{% block content %}
-<!-- Hero Section -->
-<section class="discovery-hero bg-light py-5">
-  <div class="container">
-    <div class="row text-center">
-      <div class="col-12">
-        <h1 class="display-4 fw-bold text-dark mb-3">
-          Discover Beautiful 
-          <span class="text-primary">Wedding Stories</span>
-        </h1>
-        <p class="lead text-muted mb-4 mx-auto" style="max-width: 600px;">
-          Get inspired by real couples sharing their love stories, wedding details, and registries
-        </p>
-        {% if couples %}
-          <p class="h5 text-secondary">
-            <span class="badge bg-primary rounded-pill px-3 py-2">
-              {{ couples.count }} Wedding{{ couples.count|pluralize }}
-            </span>
-          </p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</section>
+{% block meta_description %}Discover beautiful wedding celebrations and get inspiration for your own special day. Browse public wedding pages created by couples around the world.{% endblock %}
 
-<div class="container py-5">
-  {% if couples %}
-    <!-- Couples Grid -->
-    <div class="row g-4 mb-5">
-      {% for couple in couples %}
-        <div class="col-lg-4 col-md-6">
-          <div class="wedding-card card h-100 shadow-sm">
-            <!-- Photo -->
-            <div class="wedding-photo">
-              {% if couple.couple_photo %}
-                <img src="{{ couple.couple_photo.url }}" 
-                     class="card-img-top" 
-                     alt="{{ couple.couple_names }}"
-                     style="height: 250px; object-fit: cover;">
-              {% else %}
-                <div class="photo-placeholder d-flex align-items-center justify-content-center"
-                     style="height: 250px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                  <div class="text-white text-center">
-                    <i class="bi bi-heart-fill display-4 mb-2"></i>
-                    <p class="mb-0">{{ couple.couple_names }}</p>
-                  </div>
-                </div>
-              {% endif %}
-              
-              <!-- Status Badge -->
-              {% if couple.wedding_date %}
-                <div class="status-badge position-absolute top-0 end-0 m-3">
-                  {% now "Y-m-d" as today %}
-                  {% if couple.wedding_date|date:"Y-m-d" > today %}
-                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
-                      <i class="bi bi-calendar-event me-1"></i>Upcoming
-                    </span>
-                  {% elif couple.wedding_date|date:"Y-m-d" == today %}
-                    <span class="badge bg-success px-3 py-2 rounded-pill">
-                      <i class="bi bi-star-fill me-1"></i>Today!
-                    </span>
-                  {% else %}
-                    <span class="badge bg-primary px-3 py-2 rounded-pill">
-                      <i class="bi bi-heart-fill me-1"></i>Married
-                    </span>
-                  {% endif %}
-                </div>
-              {% endif %}
-            </div>
-            
-            <!-- Card Content -->
-            <div class="card-body p-4">
-              <h5 class="card-title fw-bold text-dark mb-3">{{ couple.couple_names }}</h5>
-              
-              <!-- Wedding Date -->
-              {% if couple.wedding_date %}
-                <p class="text-muted mb-2">
-                  <i class="bi bi-calendar text-primary me-2"></i>
-                  {{ couple.wedding_date|date:"F j, Y" }}
-                </p>
-              {% endif %}
-              
-              <!-- Venue -->
-              {% if couple.venue_name or couple.venue_location %}
-                <p class="text-muted mb-3">
-                  <i class="bi bi-geo-alt text-danger me-2"></i>
-                  {% if couple.venue_name %}
-                    {{ couple.venue_name }}
-                    {% if couple.venue_location %}<br><small class="ms-4">{{ couple.venue_location }}</small>{% endif %}
-                  {% elif couple.venue_location %}
-                    {{ couple.venue_location }}
-                  {% endif %}
-                </p>
-              {% endif %}
-              
-              <!-- Story Preview -->
-              {% if couple.couple_story %}
-                <p class="card-text text-muted small mb-3">
-                  {{ couple.couple_story|truncatewords:20 }}
-                </p>
-              {% endif %}
-              
-              <!-- Quick Stats -->
-              <div class="d-flex gap-3 mb-3 small text-muted">
-                <span>
-                  <i class="bi bi-gift text-primary me-1"></i>
-                  {{ couple.registry_links.count }} Registr{{ couple.registry_links.count|pluralize:"y,ies" }}
-                </span>
-                <span>
-                  <i class="bi bi-link-45deg text-secondary me-1"></i>
-                  {{ couple.wedding_links.count }} Link{{ couple.wedding_links.count|pluralize }}
-                </span>
-              </div>
-            </div>
-            
-            <!-- Card Footer -->
-            <div class="card-footer bg-transparent border-0 p-4 pt-0">
-              <a href="{% url 'wedding_shopping:wedding_page' slug=couple.slug %}" 
-                 class="btn btn-primary w-100 btn-lg">
-                <i class="bi bi-heart-fill me-2"></i>
-                Visit Wedding Page
-              </a>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-    
-    <!-- Create Your Own CTA -->
-    <div class="row">
-      <div class="col-12">
-        <div class="cta-section card bg-light border-0 p-5 text-center">
-          <div class="row justify-content-center">
-            <div class="col-lg-8">
-              <i class="bi bi-heart-fill text-danger display-3 mb-4"></i>
-              <h2 class="h1 fw-bold text-dark mb-3">Ready to Share Your Love Story?</h2>
-              <p class="lead text-muted mb-4">
-                Create your own beautiful wedding page to share your journey, wedding details, and registries with family and friends.
-              </p>
-              
-              <!-- Features -->
-              <div class="row g-3 mb-5">
-                <div class="col-md-4">
-                  <div class="feature-item">
-                    <i class="bi bi-camera text-primary display-6 mb-2"></i>
-                    <h6 class="fw-semibold">Photo Gallery</h6>
-                    <small class="text-muted">Share your beautiful photos</small>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="feature-item">
-                    <i class="bi bi-gift text-success display-6 mb-2"></i>
-                    <h6 class="fw-semibold">Registry Links</h6>
-                    <small class="text-muted">Connect all your registries</small>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="feature-item">
-                    <i class="bi bi-share text-info display-6 mb-2"></i>
-                    <h6 class="fw-semibold">Easy Sharing</h6>
-                    <small class="text-muted">Custom URL for your guests</small>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- CTA Buttons -->
-              <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                {% if user.is_authenticated %}
-                  <a href="{% url 'wedding_shopping:manage_wedding_page' %}" class="btn btn-primary btn-lg px-5">
-                    <i class="bi bi-plus-circle me-2"></i>Create My Wedding Page
-                  </a>
-                {% else %}
-                  <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-5">
-                    <i class="bi bi-plus-circle me-2"></i>Get Started Free
-                  </a>
-                  <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg px-4">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-                  </a>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-  {% else %}
-    <!-- Empty State -->
-    <div class="row">
-      <div class="col-lg-8 mx-auto">
-        <div class="empty-state text-center py-5">
-          <!-- Animated Hearts -->
-          <div class="hearts-animation mb-4">
-            <i class="bi bi-heart-fill text-danger heart-1"></i>
-            <i class="bi bi-heart-fill text-primary heart-2"></i>
-            <i class="bi bi-heart-fill text-success heart-3"></i>
-            <div class="main-heart">
-              <i class="bi bi-heart display-1 text-muted"></i>
-            </div>
-          </div>
-          
-          <h2 class="h1 fw-bold text-dark mb-3">Be the First to Share Your Love Story!</h2>
-          <p class="lead text-muted mb-4">
-            Start a trend in our community. Create the first beautiful wedding page and inspire other couples to join.
-          </p>
-          
-          <!-- Features -->
-          <div class="row g-4 mb-5">
-            <div class="col-md-6">
-              <div class="feature-highlight card p-4 h-100 border-0 bg-light">
-                <i class="bi bi-lightning-charge text-warning display-4 mb-3"></i>
-                <h5 class="fw-semibold">Quick Setup</h5>
-                <p class="text-muted mb-0">Get your wedding page live in just 5 minutes</p>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="feature-highlight card p-4 h-100 border-0 bg-light">
-                <i class="bi bi-heart text-danger display-4 mb-3"></i>
-                <h5 class="fw-semibold">Forever Free</h5>
-                <p class="text-muted mb-0">Share your wedding story with no hidden costs</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- CTA -->
-          <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-            {% if user.is_authenticated %}
-              <a href="{% url 'wedding_shopping:manage_wedding_page' %}" class="btn btn-primary btn-lg px-5">
-                <i class="bi bi-plus-circle me-2"></i>Create My Wedding Page
-              </a>
-            {% else %}
-              <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg px-5">
-                <i class="bi bi-plus-circle me-2"></i>Get Started Free
-              </a>
-              <a href="{% url 'account_login' %}" class="btn btn-outline-primary btn-lg px-4">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
-              </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  {% endif %}
-</div>
+{% block css %}
+{{ block.super }}
+<!-- Wedding-specific fonts scoped to discovery content only -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* Custom styles for the discovery page */
-.discovery-hero {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+/* Scoped to discovery content only - doesn't affect header/footer */
+.discovery-content {
+  font-family: 'Lora', serif;
 }
 
-.wedding-card {
-  border-radius: 1rem;
+.discovery-content .wedding-script {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 600;
+}
+
+.discovery-content .wedding-elegant {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Discovery page variables */
+:root {
+  --wedding-charcoal: #2d3748;
+  --wedding-gray: #4a5568;
+  --wedding-light-gray: #a0aec0;
+  --wedding-off-white: #fafafa;
+  --wedding-invitation: #f8f8f8;
+  --wedding-white: #ffffff;
+  --wedding-border: #e2e8f0;
+  --wedding-text: #2d3748;
+  --wedding-text-light: #718096;
+  --wedding-accent: #4299e1;
+  --wedding-hover: #f7fafc;
+}
+
+.discovery-page {
+  background: var(--wedding-off-white);
+  color: var(--wedding-text);
+  min-height: 100vh;
+}
+
+/* Header Section */
+.discovery-header {
+  background: var(--wedding-white);
+  padding: 4rem 0 3rem;
+  text-align: center;
+  border-bottom: 1px solid var(--wedding-border);
+}
+
+.discovery-title {
+  font-size: 4rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.discovery-subtitle {
+  font-size: 1.3rem;
+  color: var(--wedding-text-light);
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+.create-page-cta {
+  background: var(--wedding-charcoal);
+  color: white;
   border: none;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  padding: 1.2rem 2.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 15px rgba(45, 55, 72, 0.2);
+}
+
+.create-page-cta:hover {
+  background: var(--wedding-gray);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 55, 72, 0.3);
+}
+
+/* Content Section */
+.discovery-content {
+  padding: 3rem 0;
+}
+
+/* Enhanced Wedding Cards Grid */
+.couples-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+}
+
+/* Improved Wedding Cards - Now Fully Clickable */
+.couple-card {
+  background: var(--wedding-invitation);
+  border-radius: 15px;
   overflow: hidden;
-}
-
-.wedding-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
-}
-
-.wedding-photo {
+  box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+  border: 1px solid var(--wedding-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  height: 320px; /* Reduced from 450px */
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.couple-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--wedding-light-gray), var(--wedding-charcoal), var(--wedding-light-gray));
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.couple-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  background: var(--wedding-hover);
+  text-decoration: none;
+  color: inherit;
+}
+
+.couple-card:hover::before {
+  background: linear-gradient(90deg, var(--wedding-accent), var(--wedding-charcoal), var(--wedding-accent));
+  height: 6px;
+}
+
+.couple-card:focus {
+  outline: 3px solid var(--wedding-accent);
+  outline-offset: 2px;
+}
+
+/* Photo Section with Better Aspect Ratio */
+.couple-photo-wrapper {
+  height: 200px; /* Reduced from 260px */
   overflow: hidden;
+  position: relative;
+  background: var(--wedding-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
 }
 
-.wedding-photo img {
+.couple-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Changed from contain to cover for better visual */
+  object-position: center;
   transition: transform 0.3s ease;
+  border-radius: 6px;
 }
 
-.wedding-card:hover .wedding-photo img {
+.couple-card:hover .couple-photo {
   transform: scale(1.05);
 }
 
-.status-badge .badge {
-  font-size: 0.75rem;
-  font-weight: 500;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+.photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--wedding-invitation), var(--wedding-border));
+  color: var(--wedding-light-gray);
+  font-size: 3rem;
+  border-radius: 6px;
 }
 
-.cta-section {
-  border-radius: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-}
-
-.feature-item {
+/* Simplified Card Content */
+.couple-info {
+  padding: 1rem 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--wedding-white);
   text-align: center;
 }
 
-.feature-highlight {
-  border-radius: 1rem;
-  transition: transform 0.2s ease;
+.couple-names {
+  font-size: 1.8rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
-.feature-highlight:hover {
-  transform: translateY(-4px);
+.couple-card:hover .couple-names {
+  color: var(--wedding-accent);
 }
 
-/* Hearts animation for empty state */
-.hearts-animation {
-  position: relative;
-  height: 120px;
-  margin: 0 auto;
-  width: 120px;
+.wedding-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
 }
 
-.main-heart {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+.wedding-date {
+  color: var(--wedding-text-light);
+  font-style: italic;
+  font-size: 1rem;
+  font-weight: 400;
+  transition: color 0.3s ease;
 }
 
-.heart-1, .heart-2, .heart-3 {
-  position: absolute;
-  font-size: 1.5rem;
-  animation: float 3s ease-in-out infinite;
-}
-
-.heart-1 {
-  top: 20%;
-  left: 20%;
-  animation-delay: 0s;
-}
-
-.heart-2 {
-  top: 30%;
-  right: 20%;
-  animation-delay: 1s;
-}
-
-.heart-3 {
-  bottom: 20%;
-  left: 30%;
-  animation-delay: 2s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateY(-10px);
-    opacity: 1;
-  }
-}
-
-.btn {
-  border-radius: 0.5rem;
+.wedding-venue {
+  color: var(--wedding-text);
+  font-size: 0.95rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: color 0.3s ease;
 }
 
-.btn-lg {
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
+.couple-card:hover .wedding-date,
+.couple-card:hover .wedding-venue {
+  color: var(--wedding-charcoal);
 }
 
-.btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 4rem;
 }
 
-.card {
-  border-radius: 1rem;
+.pagination {
+  background: var(--wedding-white);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  border: 1px solid var(--wedding-border);
 }
 
-/* Mobile responsiveness */
+.pagination .page-link {
+  color: var(--wedding-text);
+  border: none;
+  background: none;
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  margin: 0 0.25rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.pagination .page-link:hover {
+  background: var(--wedding-invitation);
+  color: var(--wedding-charcoal);
+  transform: translateY(-1px);
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--wedding-charcoal);
+  color: white;
+  box-shadow: 0 3px 10px rgba(45, 55, 72, 0.2);
+}
+
+/* Enhanced Empty State */
+.empty-state {
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--wedding-text-light);
+  background: var(--wedding-white);
+  border-radius: 20px;
+  margin: 3rem auto;
+  max-width: 700px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 2rem;
+}
+
+.empty-state h3 {
+  font-size: 2.5rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 1.5rem;
+}
+
+.empty-state p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+}
+
+/* Call to Action Section */
+.cta-section {
+  background: var(--wedding-white);
+  border-top: 1px solid var(--wedding-border);
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.cta-title {
+  font-size: 3rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.cta-subtitle {
+  font-size: 1.2rem;
+  color: var(--wedding-text-light);
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+
+/* Mobile Responsive - Improved for Touch */
+@media (max-width: 1200px) {
+  .couples-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 900px;
+  }
+}
+
 @media (max-width: 768px) {
-  .display-4 {
-    font-size: 2.5rem;
-  }
-  
-  .wedding-card {
-    margin-bottom: 1.5rem;
-  }
-  
-  .hearts-animation {
-    height: 80px;
-    width: 80px;
-  }
-  
-  .main-heart .bi {
+  .discovery-title {
     font-size: 3rem;
   }
   
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+  .discovery-subtitle {
+    font-size: 1.2rem;
+    padding: 0 1rem;
   }
   
-  .cta-section {
-    padding: 2rem !important;
+  .couples-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    max-width: 500px;
+  }
+  
+  .couple-card {
+    height: 280px; /* Even more compact on mobile */
+  }
+  
+  .couple-photo-wrapper {
+    height: 160px; /* Reduced for mobile */
+  }
+  
+  .couple-names {
+    font-size: 1.6rem;
+  }
+  
+  .couple-info {
+    padding: 0.75rem 1rem;
+  }
+  
+  .discovery-header {
+    padding: 3rem 0 2rem;
+  }
+  
+  .discovery-content {
+    padding: 2rem 0;
+  }
+  
+  .cta-title {
+    font-size: 2.5rem;
+  }
+  
+  .create-page-cta {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
   }
 }
 
 @media (max-width: 576px) {
-  .btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
+  .discovery-title {
+    font-size: 2.5rem;
   }
   
-  .d-flex.flex-sm-row {
-    flex-direction: column !important;
+  .couple-names {
+    font-size: 1.5rem;
   }
   
-  .wedding-photo {
-    height: 200px;
+  .couple-photo-wrapper {
+    height: 140px;
   }
   
-  .wedding-photo img {
-    height: 200px;
+  .couple-card {
+    height: 260px;
   }
   
-  .photo-placeholder {
-    height: 200px !important;
+  .couples-grid {
+    padding: 0 0.5rem;
+    gap: 1rem;
+  }
+  
+  .create-page-cta {
+    padding: 0.875rem 1.75rem;
+    font-size: 1rem;
+  }
+  
+  .wedding-date {
+    font-size: 0.95rem;
+  }
+  
+  .wedding-venue {
+    font-size: 0.9rem;
+  }
+  
+  .empty-state {
+    padding: 3rem 1.5rem;
+  }
+  
+  .empty-state h3 {
+    font-size: 2rem;
+  }
+  
+  .cta-title {
+    font-size: 2rem;
+  }
+}
+
+/* Enhanced Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.couple-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.couple-card:nth-child(1) { animation-delay: 0.1s; }
+.couple-card:nth-child(2) { animation-delay: 0.2s; }
+.couple-card:nth-child(3) { animation-delay: 0.3s; }
+.couple-card:nth-child(4) { animation-delay: 0.4s; }
+.couple-card:nth-child(5) { animation-delay: 0.5s; }
+.couple-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Accessibility improvements */
+.couple-card:focus-visible {
+  outline: 3px solid var(--wedding-accent);
+  outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+  .couple-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  
+  .couple-card:hover {
+    transform: none;
   }
 }
 </style>
+{% endblock %}
+
+{% block bodyclass %}discovery-page{% endblock %}
+
+{% block content %}
+<!-- SEO Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Wedding Celebrations Gallery",
+  "description": "Discover beautiful love stories and wedding celebrations from couples around the world",
+  "url": "{{ request.build_absolute_uri }}",
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": "{{ couples.paginator.count|default:0 }}",
+    "itemListElement": [
+      {% for couple in couples %}
+      {
+        "@type": "Event",
+        "@id": "{{ request.build_absolute_uri }}{{ couple.get_absolute_url }}",
+        "name": "{{ couple.couple_names|escape }} Wedding",
+        "description": "Wedding celebration of {{ couple.couple_names|escape }}",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        {% if couple.wedding_date %}
+        "startDate": "{{ couple.wedding_date|date:'Y-m-d' }}",
+        {% endif %}
+        {% if couple.display_city %}
+        "location": {
+          "@type": "Place",
+          "name": "{{ couple.display_city|escape }}"
+        },
+        {% endif %}
+        "url": "{{ request.build_absolute_uri }}{{ couple.get_absolute_url }}"
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  }
+}
+</script>
+
+<header class="discovery-header">
+  <div class="container">
+    <h1 class="discovery-title wedding-script">Wedding Celebrations</h1>
+    <p class="discovery-subtitle wedding-elegant">
+      Discover beautiful love stories and get inspired for your own special day. 
+      Browse wedding pages created by couples from around the world.
+    </p>
+  </div>
+</header>
+
+<main class="discovery-content">
+  <div class="container">
+    
+    {% if couples %}
+      <section class="couples-grid" role="main" aria-label="Wedding celebration cards">
+        {% for couple in couples %}
+          <article class="couple-card" 
+                   role="link" 
+                   tabindex="0" 
+                   onclick="window.location.href='{{ couple.get_absolute_url }}'"
+                   onkeydown="if(event.key==='Enter'||event.key===' '){window.location.href='{{ couple.get_absolute_url }}'}"
+                   aria-label="View {{ couple.couple_names }} wedding page"
+                   itemscope 
+                   itemtype="https://schema.org/Event">
+            
+            <div class="couple-photo-wrapper">
+              {% if couple.couple_photo %}
+                <img src="{{ couple.couple_photo.url }}" 
+                     alt="{{ couple.couple_names }} wedding photo" 
+                     class="couple-photo"
+                     itemprop="image"
+                     loading="lazy">
+              {% else %}
+                <div class="photo-placeholder" role="img" aria-label="Wedding photo placeholder">
+                  <i class="bi bi-heart wedding-script" aria-hidden="true"></i>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="couple-info">
+              <h2 class="couple-names wedding-script" itemprop="name">{{ couple.couple_names }}</h2>
+              
+              <div class="wedding-details">
+                {% if couple.wedding_date %}
+                  <time class="wedding-date wedding-elegant" 
+                        itemprop="startDate"
+                        datetime="{{ couple.wedding_date|date:'Y-m-d' }}">
+                    {{ couple.wedding_date|date:"F j, Y" }}
+                  </time>
+                {% endif %}
+                
+                {% if couple.display_city %}
+                  <div class="wedding-venue" itemprop="location" itemscope itemtype="https://schema.org/Place">
+                    <span itemprop="name">{{ couple.display_city }}</span>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <!-- Hidden link for SEO -->
+            <link itemprop="url" href="{{ couple.get_absolute_url }}">
+          </article>
+        {% endfor %}
+      </section>
+      
+      <!-- Enhanced Pagination -->
+      {% if couples.has_other_pages %}
+        <nav class="pagination-wrapper" aria-label="Wedding pages navigation">
+          <ul class="pagination">
+            {% if couples.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="Go to first page">
+                  <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ couples.previous_page_number }}" aria-label="Go to previous page">
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                </a>
+              </li>
+            {% endif %}
+            
+            {% for num in couples.paginator.page_range %}
+              {% if couples.number == num %}
+                <li class="page-item active" aria-current="page">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > couples.number|add:'-3' and num < couples.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}" aria-label="Go to page {{ num }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if couples.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ couples.next_page_number }}" aria-label="Go to next page">
+                  <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ couples.paginator.num_pages }}" aria-label="Go to last page">
+                  <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+      
+    {% else %}
+      <!-- Enhanced Empty State -->
+      <section class="empty-state" role="main">
+        <div class="empty-state-icon" role="img" aria-label="Heart icon">
+          <i class="bi bi-heart wedding-script" aria-hidden="true"></i>
+        </div>
+        <h2 class="wedding-script">Be the First to Share</h2>
+        <p class="wedding-elegant">
+          No public wedding pages have been created yet. Be the first couple to share 
+          your beautiful love story and inspire others to create their own wedding pages.
+        </p>
+        <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:manage_wedding_page' %}{% else %}{% url 'account_signup' %}{% endif %}" 
+           class="create-page-cta">
+          <i class="bi bi-heart-fill" aria-hidden="true"></i>
+          Create the First Wedding Page
+        </a>
+      </section>
+    {% endif %}
+    
+  </div>
+</main>
+
+<!-- Enhanced Call to Action -->
+<section class="cta-section">
+  <div class="container">
+    <h2 class="cta-title wedding-script">
+      Ready to Share Your Love Story?
+    </h2>
+    <p class="cta-subtitle wedding-elegant">
+      Create your own beautiful wedding page in minutes. It's free forever and perfect for sharing with family and friends.
+    </p>
+    <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:manage_wedding_page' %}{% else %}{% url 'account_signup' %}{% endif %}" 
+       class="create-page-cta">
+      <i class="bi bi-plus-heart" aria-hidden="true"></i>
+      Start Your Wedding Page
+    </a>
+  </div>
+</section>
 {% endblock %}

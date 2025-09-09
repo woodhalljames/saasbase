@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ processed_image.processing_job.user_image.original_filename }} Transformation Details{% endblock %}
+{% block title %}Transformation Details{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -21,7 +21,7 @@
       <div class="card shadow-lg border-0">
         
         <!-- Card Header with Title and Status -->
-        <div class="card-header bg-navy-card text-white py-3">
+        <div class="card-header bg-navy text-white py-3">
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <h4 class="mb-1">
@@ -31,18 +31,12 @@
               <small class="text-white-75">
                 <i class="bi bi-calendar me-1"></i>
                 Created {{ processed_image.created_at|date:"M d, Y" }}
-              </small><br>
-               <small class="text-white-75">
-                    <i class="bi bi-arrows-fullscreen text-cyan"></i><br>
-                    <strong>{{ processed_image.width }}×{{ processed_image.height }}</strong>
-                  </small>
+              </small>
+            
             </div>
             <div class="d-flex align-items-center gap-2">
               <!-- Favorite Heart -->
               {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_image %}
-              
-              <!-- Saved Badge -->
-             
             </div>
           </div>
         </div>
@@ -57,19 +51,7 @@
                    alt="Wedding Transformation"
                    style="max-height: 600px; width: 100%; object-fit: contain;">
               
-              <!-- Image Stats Row -->
-              <div class="row text-center mt-3 py-2 bg-light rounded">
-                <div class="col-4">
-                 
-                </div>
-                <div class="col-4">
-                  <small class="text-muted">
-                    <i class="bi bi-hdd text-primary"></i><br>
-                    <strong>{{ processed_image.file_size|filesizeformat }}</strong>
-                  </small>
-                </div>
-                
-              </div>
+         
             </div>
           </div>
 
@@ -104,35 +86,17 @@
                   </button>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                  <div class="dropdown w-100">
-                    <button class="btn btn-outline-success dropdown-toggle w-100" 
-                            type="button" 
-                            data-bs-toggle="dropdown">
-                      <i class="bi bi-collection mb-1 d-block"></i>
-                      <small>Add to Collection</small>
-                    </button>
-                    <ul class="dropdown-menu w-100">
-                      <li><h6 class="dropdown-header">Add to Collection</h6></li>
-                      <li><a class="dropdown-item add-to-collection" 
-                             href="#" 
-                             data-processed-image-id="{{ processed_image.id }}"
-                             data-collection-type="default">
-                        <i class="bi bi-star text-warning"></i> Default Collection
-                      </a></li>
-                      <li><hr class="dropdown-divider"></li>
-                      <li>
-                        <a class="dropdown-item" href="{% url 'image_processing:collections_list' %}">
-                          <i class="bi bi-plus"></i> Manage Collections
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
+                  <!-- UNIVERSAL Collection Button - Uses centralized system from base.html -->
+                  <button class="btn btn-success w-100" 
+                          type="button" 
+                          data-processed-image-id="{{ processed_image.id }}">
+                    <i class="bi bi-collection mb-1 d-block"></i>
+                    <small>Save to Collection</small>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-
-
 
           <!-- Original Image Reference Section -->
           <div class="border-bottom">
@@ -259,46 +223,8 @@
   </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
-
-
 <style>
-
-/* Remove background gradients and set solid color */
-.navbar.navbar-expand-md.navbar-dark.bg-navy,
-nav.navbar.navbar-dark.bg-navy,
-.navbar.bg-navy {
-  background-color: #1a365d !important;
-  background-image: none !important;
-  background: #1a365d !important;
-}
-
-/* Ensure navbar brand maintains correct colors */
-.navbar.bg-navy .navbar-brand {
-  color: #ffffff !important;
-}
-
-/* Ensure nav links have correct colors */
-.navbar.bg-navy .navbar-nav .nav-link {
-  color: rgba(255, 255, 255, 0.75) !important;
-}
-
-.navbar.bg-navy .navbar-nav .nav-link:hover,
-.navbar.bg-navy .navbar-nav .nav-link:focus {
-  color: #ffffff !important;
-}
-
-/* Dropdown menu styling for consistency */
-.navbar.bg-navy .dropdown-menu {
-  background-color: #1a365d !important;
-}
-
-/* Keep the general bg-navy for card headers */
-.bg-navy {
-  background: #1a365d !important;
-}
-
-/* Rest of existing styles... */
+/* Unified Card Styling */
 .detail-group {
   margin-bottom: 1rem;
 }
@@ -307,6 +233,11 @@ nav.navbar.navbar-dark.bg-navy,
   font-weight: 500;
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+/* Navy header to match app theme */
+.bg-navy {
+  background: #1a365d !important;
 }
 
 .text-white-75 {
@@ -321,7 +252,7 @@ nav.navbar.navbar-dark.bg-navy,
   color: #f43f5e !important;
 }
 
-/* Responsive image container */
+/* Responsive design */
 @media (max-width: 768px) {
   .card-body .p-4 {
     padding: 1.5rem !important;
@@ -335,23 +266,16 @@ nav.navbar.navbar-dark.bg-navy,
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Handle delete button
-  document.querySelectorAll('.processed-image-delete-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const imageId = this.dataset.imageId;
-      const imageUrl = this.dataset.imageUrl;
-      showDeleteModal(imageId, imageUrl);
+    // Collection picker is automatically handled by the centralized system in base.html
+    console.log('Page loaded - collection picker ready');
+    
+    // Share image button
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('share-image-btn') || e.target.closest('.share-image-btn')) {
+            e.preventDefault();
+            showShareModal();
+        }
     });
-  });
-
-  // Handle add to collection
-  document.querySelectorAll('.add-to-collection').forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const processedImageId = this.dataset.processedImageId;
-      addToDefaultCollection('processed', processedImageId);
-    });
-  });
 });
 
 function showShareModal() {
@@ -419,33 +343,6 @@ async function deleteProcessedImage(imageId) {
   } catch (error) {
     console.error('Delete error:', error);
     showAlert('Network error occurred', 'danger');
-  }
-}
-
-async function addToDefaultCollection(imageType, imageId) {
-  const formData = new FormData();
-  formData.append('use_default', 'true');
-  formData.append('processed_image_id', imageId);
-  
-  try {
-    const response = await fetch('/studio/collections/add/', {
-      method: 'POST',
-      headers: {
-        'X-CSRFToken': getCSRFToken()
-      },
-      body: formData
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      showAlert(result.message, 'success');
-    } else {
-      showAlert(result.message || 'Failed to add to collection', 'warning');
-    }
-  } catch (error) {
-    console.error('Collection error:', error);
-    showAlert('Network error', 'error');
   }
 }
 

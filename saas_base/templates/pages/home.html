@@ -114,7 +114,7 @@
           <div class="text-center mt-4">
             <p class="text-muted mb-0">
               <i class="bi bi-stopwatch me-2"></i>
-              Transformation completed in under 60 seconds • <i class="bi bi-cursor me-2"></i>Subscribe today to try it!
+              Transformation completed in under 20 seconds • <i class="bi bi-cursor me-2"></i>Subscribe today to try it!
             </p>
           </div>
         </div>
@@ -179,21 +179,21 @@
           <span class="free-badge">
             <i class="bi bi-gift"></i> FREE Forever
           </span>
-          <h2 class="section-title">Beautiful Wedding Pages</h2>
-          <p class="section-subtitle">Share your love story, showcase your dream wedding venue, and manage your registries, RSVPs, & steam links all in one stunning wedding website.</p>
+          <h2 class="section-title">Beautiful Wedding Page</h2>
+          <p class="section-subtitle">Share your love story, showcase your dream wedding venue, and manage your registries, RSVPs, & stream links all in one stunning place.</p>
           <ul class="list-unstyled mb-4">
-            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Custom wedding website</li>
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Free custom wedding site</li>
             <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Make it easy to share details about your wedding</li>
-            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Manage all your registries, RSVPs & more</li>
+            <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Easy for people to find your registries, RSVPs & more</li>
           </ul>
           <div>
-            <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary me-2">
-              <i class="bi bi-eye"></i> See Examples
-            </a>
-            <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
-              <i class="bi bi-heart"></i> Create Your Page Free
-            </a>
-          </div>
+  <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary-rose me-2">
+    <i class="bi bi-eye"></i> See Examples
+  </a>
+  <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+    <i class="bi bi-heart"></i> Create Your Free Page
+  </a>
+</div>
         </div>
        
       </div>
@@ -273,7 +273,7 @@
               <i class="bi bi-sliders"></i>
             </div>
             <h4 class="mb-3">Choose Your Style</h4>
-            <p class="text-muted">Select from rustic, modern, garden, bohemian, and dozens of other wedding styles. Customize colors, season, budget and guest count.</p>
+            <p class="text-muted">Select from rustic, modern, garden, bohemian, and dozens of other wedding styles. Customize colors, season, and more.</p>
           </div>
         </div>
         

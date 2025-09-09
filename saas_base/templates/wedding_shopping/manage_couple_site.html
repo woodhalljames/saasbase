@@ -1,631 +1,719 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{% if is_new %}Create Your Wedding Page{% else %}Manage Your Wedding Page{% endif %}{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="container py-4">
   <!-- Header -->
   <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <h1 class="h2 mb-1">
-            <i class="bi bi-heart-fill text-primary"></i>
-            {{ title }}
-          </h1>
-          <p class="text-muted mb-0">
-            {% if is_new %}
-              Create your beautiful wedding website to share with friends and family
-            {% else %}
-              Update your wedding details and share with your loved ones
-            {% endif %}
-          </p>
-        </div>
-        {% if not is_new and object.slug %}
-          <div class="text-end">
-            <a href="{% url 'wedding_shopping:wedding_page' slug=object.slug %}" 
-               class="btn btn-outline-primary"
-               target="_blank">
-              <i class="bi bi-eye"></i> Preview Site
-            </a>
-          </div>
-        {% endif %}
-      </div>
+    <div class="col-md-8">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'wedding_shopping:dashboard' %}">Wedding Dashboard</a></li>
+          <li class="breadcrumb-item active">{% if is_new %}Create Wedding Page{% else %}Manage Wedding Page{% endif %}</li>
+        </ol>
+      </nav>
+      <h1 class="display-6 mb-2">{{ title }}</h1>
+      <p class="text-muted">{% if is_new %}Create your beautiful wedding page to share with family and friends{% else %}Update your wedding page details and settings{% endif %}</p>
+    </div>
+    <div class="col-md-4 text-end">
+      {% if not is_new and object.slug %}
+        <a href="{{ object.get_absolute_url }}" class="btn btn-outline-success" target="_blank">
+          <i class="bi bi-eye"></i> Preview Wedding Page
+        </a>
+      {% endif %}
     </div>
   </div>
 
-  <!-- Form -->
-  <form method="post" enctype="multipart/form-data" id="couple-form">
+  <!-- Main Form -->
+  <form method="post" enctype="multipart/form-data" id="wedding-form" novalidate>
     {% csrf_token %}
-
-    <!-- Basic Wedding Information -->
-    <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">
-          <i class="bi bi-info-circle"></i> Wedding Information
-        </h5>
+    
+    <!-- Basic Information Card with URL Preview -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white">
+        <h5 class="mb-0"><i class="bi bi-heart-fill me-2"></i>Basic Information</h5>
       </div>
       <div class="card-body">
         <div class="row">
-          <!-- Partner Names -->
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.partner_1_name.id_for_label }}" class="form-label">
-              {{ form.partner_1_name.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.partner_1_name }}
-            {% if form.partner_1_name.errors %}
-              <div class="text-danger small">{{ form.partner_1_name.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.partner_2_name.id_for_label }}" class="form-label">
-              {{ form.partner_2_name.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.partner_2_name }}
-            {% if form.partner_2_name.errors %}
-              <div class="text-danger small">{{ form.partner_2_name.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Wedding Date -->
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.wedding_date.id_for_label }}" class="form-label">
-              {{ form.wedding_date.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.wedding_date }}
-            {% if form.wedding_date.errors %}
-              <div class="text-danger small">{{ form.wedding_date.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- URL Preview -->
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.url_preview.id_for_label }}" class="form-label">
-              {{ form.url_preview.label }}
-            </label>
-            {{ form.url_preview }}
-            <div class="form-text">This is your custom wedding page URL</div>
-          </div>
-
-          <!-- Venue Information -->
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.venue_name.id_for_label }}" class="form-label">
-              {{ form.venue_name.label }}
-            </label>
-            {{ form.venue_name }}
-            {% if form.venue_name.errors %}
-              <div class="text-danger small">{{ form.venue_name.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.venue_location.id_for_label }}" class="form-label">
-              {{ form.venue_location.label }}
-            </label>
-            {{ form.venue_location }}
-            <div class="form-text">City, State</div>
-            {% if form.venue_location.errors %}
-              <div class="text-danger small">{{ form.venue_location.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Couple Story -->
-          <div class="col-12 mb-3">
-            <label for="{{ form.couple_story.id_for_label }}" class="form-label">
-              {{ form.couple_story.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.couple_story }}
-            <div class="form-text">Tell your love story - this will be the main content of your wedding page</div>
-            {% if form.couple_story.errors %}
-              <div class="text-danger small">{{ form.couple_story.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Photos -->
-           <div class="card mb-4">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0">
-          <i class="bi bi-camera"></i> Photos
-        </h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <!-- Couple Photo -->
-          <div class="col-lg-4 mb-3">
-            <label for="{{ form.couple_photo.id_for_label }}" class="form-label">
-              {{ form.couple_photo.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.couple_photo }}
-            
-            {% if form.instance.couple_photo %}
-              <div class="mt-2">
-                <div class="d-flex align-items-center">
-                  <img src="{{ form.instance.couple_photo.url }}" 
-                       class="img-thumbnail me-2" 
-                       style="width: 60px; height: 60px; object-fit: cover;"
-                       alt="Current couple photo">
-                  <small class="text-muted">Current main photo</small>
-                </div>
-              </div>
-            {% endif %}
-            
-            {% if form.couple_photo.help_text %}
-              <div class="form-text">{{ form.couple_photo.help_text }}</div>
-            {% endif %}
-            {% if form.couple_photo.errors %}
-              <div class="text-danger small">{{ form.couple_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Venue Photo -->
-          <div class="col-lg-4 mb-3">
-            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
-              {{ form.venue_photo.label }}
-            </label>
-            {{ form.venue_photo }}
-            
-            {% if form.instance.venue_photo %}
-              <div class="mt-2">
-                <div class="d-flex align-items-center">
-                  <img src="{{ form.instance.venue_photo.url }}" 
-                       class="img-thumbnail me-2" 
-                       style="width: 60px; height: 60px; object-fit: cover;"
-                       alt="Current venue photo">
-                  <small class="text-muted">Current venue photo</small>
-                </div>
-              </div>
-            {% endif %}
-            
-            {% if form.venue_photo.help_text %}
-              <div class="form-text">{{ form.venue_photo.help_text }}</div>
-            {% endif %}
-            {% if form.venue_photo.errors %}
-              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Engagement Photo -->
-          <div class="col-lg-4 mb-3">
-            <label for="{{ form.engagement_photo.id_for_label }}" class="form-label">
-              {{ form.engagement_photo.label }}
-            </label>
-            {{ form.engagement_photo }}
-            
-            {% if form.instance.engagement_photo %}
-              <div class="mt-2">
-                <div class="d-flex align-items-center">
-                  <img src="{{ form.instance.engagement_photo.url }}" 
-                       class="img-thumbnail me-2" 
-                       style="width: 60px; height: 60px; object-fit: cover;"
-                       alt="Current engagement photo">
-                  <small class="text-muted">Current engagement photo</small>
-                </div>
-              </div>
-            {% endif %}
-            
-            {% if form.engagement_photo.help_text %}
-              <div class="form-text">{{ form.engagement_photo.help_text }}</div>
-            {% endif %}
-            {% if form.engagement_photo.errors %}
-              <div class="text-danger small">{{ form.engagement_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-        </div>
-        
-        <div class="alert alert-info border-0 mt-3">
-          <i class="bi bi-info-circle me-2"></i>
-          <strong>Photo Tips:</strong>
-          <ul class="mb-0 mt-2">
-            <li><strong>Main Couple Photo:</strong> This will be displayed large on your wedding page</li>
-            <li><strong>Venue Photo:</strong> Shows your wedding location</li>
-            <li><strong>Engagement Photo:</strong> Additional photo to complete your 3-photo gallery</li>
-            <li>All photos are optional but recommended</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-          <div class="col-md-6 mb-3">
-            <label for="{{ form.venue_photo.id_for_label }}" class="form-label">
-              {{ form.venue_photo.label }}
-            </label>
-            {{ form.venue_photo }}
-            {% if form.instance.venue_photo %}
-              <div class="mt-2">
-                <img src="{{ form.instance.venue_photo.url }}" 
-                     class="img-thumbnail" 
-                     style="width: 100px; height: 100px; object-fit: cover;"
-                     alt="Current venue photo">
-                <small class="text-muted d-block">Current photo</small>
-              </div>
-            {% endif %}
-            {% if form.venue_photo.errors %}
-              <div class="text-danger small">{{ form.venue_photo.errors.0 }}</div>
-            {% endif %}
-          </div>
-
-          <!-- Public Setting -->
-          <div class="col-12">
-            <div class="form-check">
-              {{ form.is_public }}
-              <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
-                {{ form.is_public.label }}
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.partner_1_name.id_for_label }}" class="form-label fw-medium">
+                First Partner's Name <span class="text-danger">*</span>
               </label>
-              <div class="form-text">Allow others to discover your page publicly</div>
+              {{ form.partner_1_name }}
+              {% if form.partner_1_name.errors %}
+                <div class="invalid-feedback d-block">{{ form.partner_1_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.partner_2_name.id_for_label }}" class="form-label fw-medium">
+                Second Partner's Name <span class="text-danger">*</span>
+              </label>
+              {{ form.partner_2_name }}
+              {% if form.partner_2_name.errors %}
+                <div class="invalid-feedback d-block">{{ form.partner_2_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.wedding_date.id_for_label }}" class="form-label fw-medium">Wedding Date</label>
+              {{ form.wedding_date }}
+              {% if form.wedding_date.errors %}
+                <div class="invalid-feedback d-block">{{ form.wedding_date.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label fw-medium">Your Wedding Page URL</label>
+              <div class="input-group">
+                <span class="input-group-text">{{ request.get_host }}/wedding/</span>
+                <input type="text" class="form-control" id="url-preview" readonly value="{% if object.slug %}{{ object.slug }}{% else %}your-names-date{% endif %}">
+                <button type="button" class="btn btn-outline-secondary" onclick="copyUrl()">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+              <small class="form-text text-muted">This URL will be generated automatically from your names and wedding date</small>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Social Media Links -->
-    <div class="card mb-4">
-      <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-          <i class="bi bi-share"></i> Social Media Links
-        </h5>
-        <button type="button" class="btn btn-light btn-sm" id="add-social-btn">
-          <i class="bi bi-plus"></i> Add Social Link
-        </button>
+    <!-- Venue Details Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white">
+        <h5 class="mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Venue Details</h5>
       </div>
       <div class="card-body">
-        <div id="social-formset">
-          {{ social_formset.management_form }}
-          
-          <div id="social-forms-container">
-            {% for form in social_formset %}
-              <div class="social-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
-                <div class="row">
-                  <div class="col-md-3 mb-2">
-                    <label class="form-label">{{ form.owner.label }}</label>
-                    {{ form.owner }}
-                    {% if form.owner.errors %}
-                      <div class="text-danger small">{{ form.owner.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-4 mb-2">
-                    <label class="form-label">{{ form.url.label }}</label>
-                    {{ form.url }}
-                    {% if form.url.errors %}
-                      <div class="text-danger small">{{ form.url.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-4 mb-2">
-                    <label class="form-label">{{ form.display_name.label }}</label>
-                    {{ form.display_name }}
-                    {% if form.display_name.errors %}
-                      <div class="text-danger small">{{ form.display_name.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-1 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="social">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                
-                <!-- Hidden fields -->
-                {% if form.DELETE %}{{ form.DELETE }}{% endif %}
-                {% if form.id %}{{ form.id.as_hidden }}{% endif %}
-              </div>
-            {% endfor %}
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.venue_name.id_for_label }}" class="form-label fw-medium">Venue Name</label>
+              {{ form.venue_name }}
+              {% if form.venue_name.errors %}
+                <div class="invalid-feedback d-block">{{ form.venue_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.venue_location.id_for_label }}" class="form-label fw-medium">City, State/Country</label>
+              {{ form.venue_location }}
+              {% if form.venue_location.errors %}
+                <div class="invalid-feedback d-block">{{ form.venue_location.errors.0 }}</div>
+              {% endif %}
+              <small class="form-text text-muted">e.g., "San Francisco, California" or "Paris, France"</small>
+            </div>
           </div>
         </div>
-        <small class="text-muted">
-          <i class="bi bi-info-circle"></i> 
-          Add social media profiles for each partner or shared accounts
-        </small>
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="{{ form.venue_address.id_for_label }}" class="form-label fw-medium">Full Venue Address</label>
+              {{ form.venue_address }}
+              {% if form.venue_address.errors %}
+                <div class="invalid-feedback d-block">{{ form.venue_address.errors.0 }}</div>
+              {% endif %}
+              <small class="form-text text-muted">Complete address for map directions (e.g., "123 Main Street, San Francisco, CA 94102")</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Wedding Links -->
-    <div class="card mb-4">
-      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-          <i class="bi bi-link-45deg"></i> Wedding Links
-        </h5>
-        <button type="button" class="btn btn-light btn-sm" id="add-wedding-link-btn">
-          <i class="bi bi-plus"></i> Add Link
+    <!-- Photos Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white">
+        <h5 class="mb-0"><i class="bi bi-camera-fill me-2"></i>Photos</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Couple Photo -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.couple_photo.id_for_label }}" class="form-label fw-medium">
+                Couple Photo <span class="text-danger">*</span>
+              </label>
+              {% if object.couple_photo %}
+                <div class="current-photo mb-2">
+                  <img src="{{ object.couple_photo.url }}" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                  <div class="mt-1">
+                    <small class="text-muted">Current photo</small>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="deletePhoto('couple')">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              {% endif %}
+              {{ form.couple_photo }}
+              {% if form.couple_photo.errors %}
+                <div class="invalid-feedback d-block">{{ form.couple_photo.errors.0 }}</div>
+              {% endif %}
+              <small class="form-text text-muted">Upload a photo of you both together</small>
+            </div>
+          </div>
+          
+          <!-- Venue Photo -->
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="{{ form.venue_photo.id_for_label }}" class="form-label fw-medium">Venue Photo</label>
+              {% if object.venue_photo %}
+                <div class="current-photo mb-2">
+                  <img src="{{ object.venue_photo.url }}" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                  <div class="mt-1">
+                    <small class="text-muted">Current photo</small>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="deletePhoto('venue')">
+                      <i class="bi bi-trash"></i> Remove
+                    </button>
+                  </div>
+                </div>
+              {% endif %}
+              {{ form.venue_photo }}
+              {% if form.venue_photo.errors %}
+                <div class="invalid-feedback d-block">{{ form.venue_photo.errors.0 }}</div>
+              {% endif %}
+              <small class="form-text text-muted">Upload a photo of your venue or another couple photo</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Love Story Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white">
+        <h5 class="mb-0"><i class="bi bi-heart me-2"></i>Your Love Story</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="{{ form.couple_story.id_for_label }}" class="form-label fw-medium">Tell Your Story</label>
+          {{ form.couple_story }}
+          {% if form.couple_story.errors %}
+            <div class="invalid-feedback d-block">{{ form.couple_story.errors.0 }}</div>
+          {% endif %}
+          <small class="form-text text-muted">Share how you met, your engagement, or what you're excited about for your wedding day</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wedding Links Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Wedding Links</h5>
+        <button type="button" class="btn btn-light btn-sm" onclick="addWeddingLink()">
+          Add Link
         </button>
       </div>
       <div class="card-body">
-        <div id="wedding-link-formset">
+        <div class="alert alert-info mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          <small>
+            <strong>Examples:</strong> Wedding registry, RSVP form, hotel bookings, rehearsal dinner details, or gift information.
+          </small>
+        </div>
+        
+        <div id="wedding-links-container">
           {{ wedding_link_formset.management_form }}
-          
-          <div id="wedding-link-forms-container">
-            {% for form in wedding_link_formset %}
-              <div class="wedding-link-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
-                <div class="row">
-                  <div class="col-md-3 mb-2">
-                    <label class="form-label">{{ form.link_type.label }}</label>
-                    {{ form.link_type }}
-                    {% if form.link_type.errors %}
-                      <div class="text-danger small">{{ form.link_type.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-4 mb-2">
-                    <label class="form-label">{{ form.url.label }}</label>
-                    {{ form.url }}
-                    {% if form.url.errors %}
-                      <div class="text-danger small">{{ form.url.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-4 mb-2">
-                    <label class="form-label">{{ form.title.label }} <span class="text-danger">*</span></label>
-                    {{ form.title }}
-                    {% if form.title.errors %}
-                      <div class="text-danger small">{{ form.title.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                  <div class="col-md-1 mb-2 d-flex align-items-end">
-                    <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="wedding-link">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-                
-                <div class="row">
-                  <div class="col-12 mb-2">
-                    <label class="form-label">{{ form.description.label }}</label>
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                      <div class="text-danger small">{{ form.description.errors.0 }}</div>
-                    {% endif %}
-                  </div>
-                </div>
-                
-                <!-- Hidden fields -->
-                {% if form.DELETE %}{{ form.DELETE }}{% endif %}
-                {% if form.id %}{{ form.id.as_hidden }}{% endif %}
+          {% for form in wedding_link_formset %}
+            <div class="wedding-link-form border rounded p-3 mb-3" data-form-index="{{ forloop.counter0 }}">
+              {% if form.id %}{{ form.id }}{% endif %}
+              {% if form.DELETE %}
+                <div class="d-none">{{ form.DELETE }}</div>
+              {% endif %}
+              
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="mb-0">Link #{{ forloop.counter }}</h6>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeWeddingLink(this)">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
               </div>
-            {% endfor %}
+              
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Title</label>
+                    {{ form.title }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">URL</label>
+                    {{ form.url }}
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    {{ form.description }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        
+        <!-- Empty form template -->
+        <div id="empty-wedding-link-form" style="display: none;">
+          <div class="wedding-link-form border rounded p-3 mb-3" data-form-index="__prefix__">
+            {{ wedding_link_formset.empty_form.id }}
+            <div class="d-none">{{ wedding_link_formset.empty_form.DELETE }}</div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0">New Link</h6>
+              <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeWeddingLink(this)">
+                <i class="bi bi-trash"></i> Remove
+              </button>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label class="form-label">Title</label>
+                  {{ wedding_link_formset.empty_form.title }}
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label class="form-label">URL</label>
+                  {{ wedding_link_formset.empty_form.url }}
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label class="form-label">Description</label>
+                  {{ wedding_link_formset.empty_form.description }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <small class="text-muted">
-          <i class="bi bi-info-circle"></i> 
-          Add links to your wedding registries, RSVP pages, live streams, photo galleries, and more
-        </small>
       </div>
     </div>
 
-    <!-- Submit Section -->
-    <div class="text-center">
-      <button type="submit" class="btn btn-primary btn-lg me-3">
-        <i class="bi bi-heart-fill"></i>
-        {% if is_new %}Create Wedding Page{% else %}Update Wedding Page{% endif %}
-      </button>
-      <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary">
-        Cancel
-      </a>
+    <!-- Settings Card -->
+    <div class="card mb-4 border-0 shadow-sm">
+      <div class="card-header header-rose text-white">
+        <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Page Settings</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <div class="form-check">
+                {{ form.is_public }}
+                <label class="form-check-label fw-medium" for="{{ form.is_public.id_for_label }}">
+                  Make this wedding page public
+                </label>
+              </div>
+              <small class="form-text text-muted">Allow others to discover your wedding page in our public gallery</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            {% if not is_new %}
+              <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                <i class="bi bi-trash"></i> Delete Wedding Page
+              </button>
+            {% endif %}
+          </div>
+          <div>
+            <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary me-2">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-cyan">
+              <i class="bi bi-check-circle"></i> {% if is_new %}Create Wedding Page{% else %}Save Changes{% endif %}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </form>
 </div>
 
-<!-- Hidden templates for new forms -->
-<div style="display: none;">
-  <!-- Empty social form template -->
-  <div id="empty-social-form" class="social-form border rounded p-3 mb-3">
-    <div class="row">
-      <div class="col-md-3 mb-2">
-        <label class="form-label">Belongs To</label>
-        <select class="form-select" name="social-__prefix__-owner">
-          <option value="partner_1">{{ form.instance.partner_1_name|default:"Partner 1" }}</option>
-          <option value="partner_2">{{ form.instance.partner_2_name|default:"Partner 2" }}</option>
-          <option value="shared">Both/Shared</option>
-        </select>
+<!-- Photo Delete Modal -->
+<div class="modal fade" id="deletePhotoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Remove Photo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="col-md-4 mb-2">
-        <label class="form-label">Social Media URL</label>
-        <input type="url" class="form-control" name="social-__prefix__-url" placeholder="https://instagram.com/yourusername">
+      <div class="modal-body">
+        <p>Are you sure you want to remove this photo? You can upload a new one afterwards.</p>
       </div>
-      <div class="col-md-4 mb-2">
-        <label class="form-label">Display Name</label>
-        <input type="text" class="form-control" name="social-__prefix__-display_name" placeholder="@yourusername">
-      </div>
-      <div class="col-md-1 mb-2 d-flex align-items-end">
-        <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="social">
-          <i class="bi bi-trash"></i>
-        </button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmPhotoDelete">Remove Photo</button>
       </div>
     </div>
-    <input type="hidden" name="social-__prefix__-id">
-    <input type="checkbox" name="social-__prefix__-DELETE" style="display: none;">
   </div>
-  
-  <!-- Empty wedding link form template -->
-  <div id="empty-wedding-link-form" class="wedding-link-form border rounded p-3 mb-3">
-    <div class="row">
-      <div class="col-md-3 mb-2">
-        <label class="form-label">Link Type</label>
-        <select class="form-select" name="weddinglink-__prefix__-link_type">
-          <option value="registry">Wedding Registry</option>
-          <option value="rsvp">RSVP Site</option>
-          <option value="livestream">Live Stream</option>
-          <option value="photos">Wedding Photos</option>
-          <option value="website">Wedding Website</option>
-          <option value="other">Other</option>
-        </select>
+</div>
+
+<!-- Delete Wedding Page Modal -->
+<div class="modal fade" id="deleteWeddingModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Delete Wedding Page</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <div class="col-md-4 mb-2">
-        <label class="form-label">URL</label>
-        <input type="url" class="form-control" name="weddinglink-__prefix__-url" placeholder="https://example.com/your-link">
+      <div class="modal-body">
+        <p><strong>This action cannot be undone.</strong></p>
+        <p>Are you sure you want to delete your entire wedding page? This will remove all your information, photos, and links.</p>
       </div>
-      <div class="col-md-4 mb-2">
-        <label class="form-label">Title <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" name="weddinglink-__prefix__-title" placeholder="Link Title" required>
-      </div>
-      <div class="col-md-1 mb-2 d-flex align-items-end">
-        <button type="button" class="btn btn-outline-danger btn-sm delete-form-btn w-100" data-form-type="wedding-link">
-          <i class="bi bi-trash"></i>
-        </button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" style="display: inline;">
+          {% csrf_token %}
+          <input type="hidden" name="delete_wedding_page" value="1">
+          <button type="submit" class="btn btn-danger">Delete Forever</button>
+        </form>
       </div>
     </div>
-    <div class="row">
-      <div class="col-12 mb-2">
-        <label class="form-label">Description</label>
-        <textarea class="form-control" name="weddinglink-__prefix__-description" rows="2" placeholder="Description of this link (optional)"></textarea>
-      </div>
-    </div>
-    <input type="hidden" name="weddinglink-__prefix__-id">
-    <input type="checkbox" name="weddinglink-__prefix__-DELETE" style="display: none;">
   </div>
 </div>
 
 <script>
+// Form validation and management
 document.addEventListener('DOMContentLoaded', function() {
-    // URL preview functionality
-    function updateUrlPreview() {
-        const name1 = document.getElementById('id_partner_1_name').value || '';
-        const name2 = document.getElementById('id_partner_2_name').value || '';
-        const date = document.getElementById('id_wedding_date').value || '';
-        
-        const cleanName1 = name1.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
-        const cleanName2 = name2.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().substring(0, 15);
+    // Initialize URL preview
+    updateUrlPreview();
+    
+    // Add event listeners for real-time URL update
+    document.getElementById('{{ form.partner_1_name.id_for_label }}').addEventListener('input', updateUrlPreview);
+    document.getElementById('{{ form.partner_2_name.id_for_label }}').addEventListener('input', updateUrlPreview);
+    document.getElementById('{{ form.wedding_date.id_for_label }}').addEventListener('change', updateUrlPreview);
+    
+    // Form validation
+    const form = document.getElementById('wedding-form');
+    form.addEventListener('submit', validateForm);
+    
+    // Initialize formset counter
+    updateFormsetTotal();
+});
+
+function updateUrlPreview() {
+    const name1 = document.getElementById('{{ form.partner_1_name.id_for_label }}').value.trim();
+    const name2 = document.getElementById('{{ form.partner_2_name.id_for_label }}').value.trim();
+    const weddingDate = document.getElementById('{{ form.wedding_date.id_for_label }}').value;
+    
+    let slug = 'your-names-date';
+    
+    if (name1 && name2) {
+        // Clean names - remove special characters, keep only alphanumeric
+        const cleanName1 = name1.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
+        const cleanName2 = name2.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
         
         let dateStr = 'tbd';
-        if (date) {
-            const dateObj = new Date(date);
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            const year = String(dateObj.getFullYear()).slice(-2);
+        if (weddingDate) {
+            // FIXED: Proper date handling to avoid off-by-one error
+            const date = new Date(weddingDate + 'T00:00:00'); // Add time to avoid timezone issues
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = String(date.getFullYear()).substring(2);
             dateStr = month + day + year;
         }
         
-        const preview = document.getElementById('url-preview');
-        if (preview) {
-            if (cleanName1 && cleanName2) {
-                preview.value = `yoursite.com/wedding/${cleanName1}${cleanName2}${dateStr}/`;
-            } else {
-                preview.value = 'Enter names and date to see your custom URL...';
-            }
-        }
+        slug = cleanName1 + cleanName2 + dateStr;
     }
     
-    // Attach event listeners for URL preview
-    ['id_partner_1_name', 'id_partner_2_name', 'id_wedding_date'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('input', updateUrlPreview);
-            element.addEventListener('change', updateUrlPreview);
+    document.getElementById('url-preview').value = slug;
+}
+
+function validateForm(event) {
+    let isValid = true;
+    
+    // Check required fields
+    const requiredFields = ['{{ form.partner_1_name.id_for_label }}', '{{ form.partner_2_name.id_for_label }}'];
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        const value = field.value.trim();
+        
+        field.classList.remove('is-invalid');
+        
+        if (!value) {
+            field.classList.add('is-invalid');
+            isValid = false;
         }
     });
     
-    // Initialize URL preview
-    updateUrlPreview();
+    // Check if at least one photo is provided
+    const couplePhoto = document.getElementById('{{ form.couple_photo.id_for_label }}');
+    const hasExistingCouplePhoto = {% if object.couple_photo %}true{% else %}false{% endif %};
+    
+    if (!hasExistingCouplePhoto && !couplePhoto.files.length) {
+        couplePhoto.classList.add('is-invalid');
+        showAlert('Please upload at least a couple photo', 'danger');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        event.preventDefault();
+        showAlert('Please fill in all required fields', 'danger');
+    }
+}
 
-    // Formset management
-    let socialFormCount = parseInt(document.getElementById('id_social-TOTAL_FORMS').value);
-    let weddingLinkFormCount = parseInt(document.getElementById('id_weddinglink-TOTAL_FORMS').value);
+// Wedding Links Formset Management
+function addWeddingLink() {
+    const container = document.getElementById('wedding-links-container');
+    const emptyForm = document.getElementById('empty-wedding-link-form');
+    const totalForms = document.querySelector('#id_weddinglink-TOTAL_FORMS');
+    const formNum = parseInt(totalForms.value);
+    
+    // Clone the empty form
+    const newForm = emptyForm.querySelector('.wedding-link-form').cloneNode(true);
+    
+    // Update form attributes
+    newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, formNum);
+    newForm.setAttribute('data-form-index', formNum);
+    
+    // Update the link number display
+    newForm.querySelector('h6').textContent = `Link #${formNum + 1}`;
+    
+    // Add to container
+    container.appendChild(newForm);
+    
+    // Update total forms
+    totalForms.value = formNum + 1;
+    
+    // Show success message
+    showAlert('New link added', 'success');
+}
 
-    // Add social media form
-    document.getElementById('add-social-btn').addEventListener('click', function() {
-        const container = document.getElementById('social-forms-container');
-        const template = document.getElementById('empty-social-form');
-        const newForm = template.cloneNode(true);
-        
-        // Update form attributes
-        newForm.id = '';
-        newForm.style.display = 'block';
-        newForm.setAttribute('data-form-index', socialFormCount);
-        
-        // Update input names and IDs
-        const inputs = newForm.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            const name = input.getAttribute('name');
-            const id = input.getAttribute('id');
-            if (name) {
-                input.setAttribute('name', name.replace('__prefix__', socialFormCount));
-            }
-            if (id) {
-                input.setAttribute('id', id.replace('__prefix__', socialFormCount));
-            }
-        });
-        
-        // Update labels
-        const labels = newForm.querySelectorAll('label');
-        labels.forEach(label => {
-            const forAttr = label.getAttribute('for');
-            if (forAttr) {
-                label.setAttribute('for', forAttr.replace('__prefix__', socialFormCount));
-            }
-        });
-        
-        container.appendChild(newForm);
-        socialFormCount++;
-        document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
-    });
+function removeWeddingLink(button) {
+    const linkForm = button.closest('.wedding-link-form');
+    const deleteInput = linkForm.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteInput) {
+        // Mark for deletion instead of removing immediately
+        deleteInput.checked = true;
+        linkForm.style.display = 'none';
+    } else {
+        // Remove completely if it's a new form
+        linkForm.remove();
+        updateFormsetTotal();
+    }
+    
+    showAlert('Link removed', 'info');
+}
 
-    // Add wedding link form
-    document.getElementById('add-wedding-link-btn').addEventListener('click', function() {
-        const container = document.getElementById('wedding-link-forms-container');
-        const template = document.getElementById('empty-wedding-link-form');
-        const newForm = template.cloneNode(true);
-        
-        // Update form attributes
-        newForm.id = '';
-        newForm.style.display = 'block';
-        newForm.setAttribute('data-form-index', weddingLinkFormCount);
-        
-        // Update input names and IDs
-        const inputs = newForm.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
-            const name = input.getAttribute('name');
-            const id = input.getAttribute('id');
-            if (name) {
-                input.setAttribute('name', name.replace('__prefix__', weddingLinkFormCount));
-            }
-            if (id) {
-                input.setAttribute('id', id.replace('__prefix__', weddingLinkFormCount));
-            }
-        });
-        
-        // Update labels
-        const labels = newForm.querySelectorAll('label');
-        labels.forEach(label => {
-            const forAttr = label.getAttribute('for');
-            if (forAttr) {
-                label.setAttribute('for', forAttr.replace('__prefix__', weddingLinkFormCount));
-            }
-        });
-        
-        container.appendChild(newForm);
-        weddingLinkFormCount++;
-        document.getElementById('id_weddinglink-TOTAL_FORMS').value = weddingLinkFormCount;
-    });
+function updateFormsetTotal() {
+    const totalForms = document.querySelector('#id_weddinglink-TOTAL_FORMS');
+    const visibleForms = document.querySelectorAll('.wedding-link-form:not([style*="display: none"])').length;
+    totalForms.value = visibleForms;
+}
 
-    // Delete form functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.delete-form-btn')) {
-            const button = e.target.closest('.delete-form-btn');
-            const form = button.closest('.social-form, .wedding-link-form');
-            const formType = button.getAttribute('data-form-type');
-            
-            // Check if this is an existing form (has an ID)
-            const idInput = form.querySelector('input[name$="-id"]');
-            if (idInput && idInput.value) {
-                // Mark for deletion
-                const deleteInput = form.querySelector('input[name$="-DELETE"]');
-                if (deleteInput) {
-                    deleteInput.checked = true;
-                }
-                form.style.display = 'none';
-            } else {
-                // Remove from DOM completely
-                form.remove();
-                
-                // Update form count
-                if (formType === 'social') {
-                    socialFormCount--;
-                    document.getElementById('id_social-TOTAL_FORMS').value = socialFormCount;
-                } else if (formType === 'wedding-link') {
-                    weddingLinkFormCount--;
-                    document.getElementById('id_weddinglink-TOTAL_FORMS').value = weddingLinkFormCount;
-                }
-            }
+// Photo Management
+let photoToDelete = null;
+
+function deletePhoto(photoType) {
+    photoToDelete = photoType;
+    const modal = new bootstrap.Modal(document.getElementById('deletePhotoModal'));
+    modal.show();
+}
+
+document.getElementById('confirmPhotoDelete').addEventListener('click', function() {
+    if (photoToDelete) {
+        // Create a hidden input to mark photo for deletion
+        const form = document.getElementById('wedding-form');
+        const deleteInput = document.createElement('input');
+        deleteInput.type = 'hidden';
+        deleteInput.name = `delete_${photoToDelete}_photo`;
+        deleteInput.value = '1';
+        form.appendChild(deleteInput);
+        
+        // Hide the current photo display
+        const photoContainer = document.querySelector(`[for="id_${photoToDelete}_photo"]`).parentElement.querySelector('.current-photo');
+        if (photoContainer) {
+            photoContainer.style.display = 'none';
         }
-    });
+        
+        showAlert(`${photoToDelete === 'couple' ? 'Couple' : 'Venue'} photo will be removed when you save`, 'info');
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('deletePhotoModal'));
+    modal.hide();
+    photoToDelete = null;
 });
+
+// Wedding Page Deletion
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteWeddingModal'));
+    modal.show();
+}
+
+// Utility Functions
+function copyUrl() {
+    const urlField = document.getElementById('url-preview');
+    const fullUrl = `{{ request.get_host }}/wedding/${urlField.value}/`;
+    
+    navigator.clipboard.writeText(fullUrl).then(() => {
+        showAlert('URL copied to clipboard!', 'success');
+    }).catch(() => {
+        // Fallback for older browsers
+        urlField.select();
+        document.execCommand('copy');
+        showAlert('URL copied to clipboard!', 'success');
+    });
+}
+
+function showAlert(message, type) {
+    // Remove existing alerts
+    document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
+    
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed temp-alert`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentElement) alert.remove();
+    }, 5000);
+}
 </script>
+
+<style>
+/* Enhanced form styling */
+.card-header {
+    font-weight: 600;
+}
+
+.form-label.fw-medium {
+    color: #374151;
+}
+
+.wedding-link-form {
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.wedding-link-form:hover {
+    background: #e9ecef;
+}
+
+.current-photo {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.input-group-text {
+    background: #e9ecef;
+    border-color: #ced4da;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Form validation styles */
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+.invalid-feedback {
+    display: block !important;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* Button enhancements */
+.btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3, #004085);
+}
+
+/* UPDATED: Cyan button for Save Changes */
+.btn-cyan {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border: none;
+    color: white;
+}
+
+.btn-cyan:hover {
+    background: linear-gradient(135deg, #138496, #0f6674);
+    color: white;
+}
+
+/* UPDATED: Proper Electric Rose Color from App Theme */
+.card-header.header-rose {
+    background: linear-gradient(135deg, #FF6B9D, #e91e63) !important;
+    color: white !important;
+}
+
+.card-header.header-rose h5,
+.card-header.header-rose i,
+.card-header.header-rose * {
+    color: white !important;
+}
+
+/* UPDATED: Add Link Button - Rose Text on White Background */
+.card-header .btn-light {
+    background: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    color: #FF6B9D !important;
+    font-weight: 600;
+}
+
+.card-header .btn-light:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #e91e63 !important;
+    border-color: rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .wedding-link-form .row .col-md-4 {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
 {% endblock %}

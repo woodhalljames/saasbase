@@ -15,9 +15,7 @@ urlpatterns = [
     # Tracking and redirects
     path('link/<int:pk>/', views.wedding_link_redirect, name='wedding_link_redirect'), 
     
-    # API endpoints
-    path('api/detect-branding/', views.detect_url_branding_api, name='api_detect_branding'),
-    
+   
     # Fallback token-based URL (for sharing before custom URL is set)
     path('token/<uuid:share_token>/', views.PublicCoupleDetailView.as_view(), name='wedding_page_token'),
     

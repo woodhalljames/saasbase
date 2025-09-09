@@ -1,4 +1,5 @@
-# image_processing/models.py - Streamlined for core venue + theme transformations
+# image_processing/models.py - Simplified for Gemini 2.5 real-time processing
+
 import os
 import uuid
 from datetime import timedelta
@@ -25,11 +26,11 @@ def user_image_upload_path(instance, filename):
 def processed_image_upload_path(instance, filename):
     """Generate upload path for processed images"""
     ext = filename.split('.')[-1]
-    filename = f"processed_{uuid.uuid4().hex}.{ext}"
+    filename = f"gemini_{uuid.uuid4().hex}.{ext}"
     return f"processed_images/{instance.processing_job.user_image.user.id}/{filename}"
 
 
-# Comprehensive Wedding Theme Choices
+# Wedding Theme Choices - Same as before with enhanced descriptions
 WEDDING_THEMES = [
     # Core Popular Themes
     ('rustic', 'Rustic Farmhouse'),
@@ -45,7 +46,33 @@ WEDDING_THEMES = [
     ('fairy_tale', 'Fairy Tale Enchanted'),
     ('cultural_fusion', 'Cultural Fusion'),
     
-    # Cultural & Traditional Themes
+    # Core Basic Styles
+    ('minimalist', 'Minimalist Clean'),
+    ('romantic', 'Romantic Dreamy'),
+    ('elegant', 'Elegant Sophisticated'),
+    ('chic', 'Chic Contemporary'),
+    ('timeless', 'Timeless Classic'),
+    
+    # Popular Style Variations
+    ('country_barn', 'Country Barn'),
+    ('art_deco', 'Art Deco Glamour'),
+    ('scandinavian', 'Scandinavian Hygge'),
+    ('mediterranean', 'Mediterranean Warmth'),
+    ('prairie_wildflower', 'Prairie Wildflower'),
+    
+    # Seasonal Specific
+    ('winter_wonderland', 'Winter Wonderland'),
+    ('spring_fresh', 'Spring Fresh'),
+    ('harvest_festival', 'Harvest Festival'),
+    
+    # Approach-Based
+    ('whimsical', 'Whimsical Playful'),
+    ('monochrome', 'Monochrome Sophisticated'),
+    ('statement_bold', 'Statement Bold'),
+    ('soft_dreamy', 'Soft Dreamy'),
+    ('luxury', 'Luxury Premium'),
+    
+    # Cultural & Traditional Themes - Enhanced with authentic details
     ('japanese_zen', 'Japanese Zen'),
     ('chinese_dynasty', 'Chinese Dynasty'),
     ('indian_palace', 'Indian Palace'),
@@ -65,8 +92,7 @@ WEDDING_THEMES = [
     ('african_safari', 'African Safari'),
     ('egyptian_royal', 'Egyptian Royal'),
     
-    # Seasonal & Nature Themes
-    ('winter_wonderland', 'Winter Wonderland'),
+    # Nature & Seasonal Themes
     ('spring_awakening', 'Spring Awakening'),
     ('summer_solstice', 'Summer Solstice'),
     ('autumn_harvest', 'Autumn Harvest'),
@@ -96,6 +122,7 @@ WEDDING_THEMES = [
     ('great_gatsby', 'Great Gatsby'),
 ]
 
+
 # Space Types for wedding venues
 SPACE_TYPES = [
     ('wedding_ceremony', 'Wedding Ceremony'),
@@ -106,170 +133,171 @@ SPACE_TYPES = [
     ('entrance_area', 'Entrance / Welcome Area'),
 ]
 
-# Color scheme options
+# Color scheme options - Comprehensive palette
 COLOR_SCHEMES = [
-    ('neutral', 'Neutral Elegance'),
-    ('pastels', 'Soft Pastels'),
-    ('jewel_tones', 'Rich Jewel Tones'),
-    ('earth_tones', 'Warm Earth Tones'),
-    ('monochrome', 'Black & White'),
-    ('bold_colors', 'Vibrant Bold Colors'),
-    ('blush_gold', 'Blush & Gold'),
-    ('sage_cream', 'Sage & Cream'),
-    ('navy_copper', 'Navy & Copper'),
-    ('burgundy_ivory', 'Burgundy & Ivory'),
+    # Solid Colors - Single color focus
+    ('red', 'Red'),
+    ('pink', 'Pink'),
+    ('coral', 'Coral'),
+    ('orange', 'Orange'),
+    ('yellow', 'Yellow'),
+    ('green', 'Green'),
+    ('blue', 'Blue'),
+    ('purple', 'Purple'),
+    ('white', 'White'),
+    ('black', 'Black'),
+    
+    # Pastels - Soft, light colors
+    ('pastel_pink', 'Pastel Pink'),
+    ('pastel_peach', 'Pastel Peach'),
+    ('pastel_yellow', 'Pastel Yellow'),
+    ('pastel_mint', 'Pastel Mint'),
+    ('pastel_blue', 'Pastel Blue'),
+    ('pastel_lavender', 'Pastel Lavender'),
+    ('pastel_sage', 'Pastel Sage'),
+    ('pastel_cream', 'Pastel Cream'),
+    
+    # Earth Tones - Natural, warm colors
+    ('earth_brown', 'Brown & Tan'),
+    ('earth_rust', 'Rust & Terracotta'),
+    ('earth_forest', 'Forest Green & Brown'),
+    ('earth_desert', 'Sand & Copper'),
+    ('earth_autumn', 'Autumn Orange & Brown'),
+    ('earth_moss', 'Moss Green & Stone'),
+    
+    # Popular Combinations - Most requested pairs
+    ('black_white', 'Black & White'),
+    ('pink_gold', 'Pink & Gold'),
+    ('blue_white', 'Blue & White'),
+    ('red_white', 'Red & White'),
+    ('sage_cream', 'Sage Green & Cream'),
+    ('blush_gold', 'Blush Pink & Gold'),
+    ('navy_gold', 'Navy Blue & Gold'),
+    ('burgundy_gold', 'Burgundy & Gold'),
+    
+    # Seasonal - Classic seasonal palettes
+    ('spring_fresh', 'Spring (Pink, Green, Yellow)'),
+    ('summer_bright', 'Summer (Coral, Turquoise, Yellow)'),
+    ('autumn_harvest', 'Autumn (Orange, Burgundy, Gold)'),
+    ('winter_elegant', 'Winter (Navy, Silver, White)'),
 ]
 
-# Style intensity levels
-STYLE_INTENSITY = [
-    ('subtle', 'Subtle Enhancement'),
-    ('moderate', 'Balanced Transformation'),
-    ('dramatic', 'Bold Transformation'),
-    ('complete', 'Complete Reimagining'),
-]
-
-# Lighting mood options
+# Enhanced lighting mood options for more detailed prompts
 LIGHTING_MOODS = [
-    ('romantic', 'Romantic & Intimate'),
+    ('romantic', 'Romantic Candlelit'),
+    ('bright', 'Bright & Cheerful'),
+    ('dim', 'Intimate & Cozy'),
     ('dramatic', 'Dramatic & Bold'),
-    ('soft', 'Soft & Dreamy'),
-    ('vibrant', 'Bright & Energetic'),
-    ('moody', 'Atmospheric & Moody'),
-    ('natural', 'Natural & Fresh'),
+    ('natural', 'Natural Daylight'),
+    ('golden', 'Golden Hour'),
+    ('dusk', 'Twilight Dusk'),
+    ('dawn', 'Dawn Morning Light'),
+]
+
+# Season options for seasonal decorations
+SEASONS = [
+    ('spring', 'Spring'),
+    ('summer', 'Summer'),
+    ('fall', 'Fall/Autumn'),
+    ('winter', 'Winter'),
 ]
 
 
-def generate_wedding_prompt(wedding_theme, space_type, season=None, lighting_mood=None,
-                          color_scheme=None, special_features=None, user_negative_prompt=None, **kwargs):
-    """Generate SIMPLIFIED wedding venue transformation prompt with FIXED parameters"""
+def generate_wedding_venue_prompt(wedding_theme, space_type, season=None, lighting_mood=None,
+                                 color_scheme=None, custom_prompt=None, user_instructions=None):
+    """Generate enhanced narrative text prompt for Gemini 2.5 venue transformation"""
     try:
-        from .prompt_generator import WeddingPromptGenerator
+        from .prompt_generator import WeddingVenuePromptGenerator
         
-        # Use simplified prompt generator with only the core parameters
-        return WeddingPromptGenerator.generate_wedding_prompt(
+        return WeddingVenuePromptGenerator.generate_prompt(
             wedding_theme=wedding_theme,
             space_type=space_type,
             season=season,
-            lighting_mood=lighting_mood,  # Simplified from multiple lighting options
+            lighting_mood=lighting_mood,
             color_scheme=color_scheme,
-            special_features=special_features,
-            avoid=user_negative_prompt,
+            custom_prompt=custom_prompt,
+            user_instructions=user_instructions
         )
     except ImportError as e:
-        logger.warning(f"Could not import WeddingPromptGenerator: {e}")
+        logger.warning(f"Could not import WeddingVenuePromptGenerator: {e}")
         return generate_fallback_prompt(
             wedding_theme, space_type, season, lighting_mood,
-            color_scheme, special_features, user_negative_prompt
+            color_scheme, custom_prompt, user_instructions
         )
 
+
 def generate_fallback_prompt(wedding_theme, space_type, season=None, lighting_mood=None,
-                           color_scheme=None, special_features=None, user_negative_prompt=None):
-    """SIMPLIFIED fallback prompt generation with FIXED parameters"""
+                           color_scheme=None, custom_prompt=None, user_instructions=None):
+    """Enhanced fallback prompt generation with narrative descriptions"""
     
-    # Get display names
+    # If custom prompt provided, use it with user instructions
+    if custom_prompt and custom_prompt.strip():
+        prompt = custom_prompt.strip()
+        if user_instructions and user_instructions.strip():
+            prompt += f" {user_instructions.strip()}"
+        # Ensure no people
+        if 'no people' not in prompt.lower() and 'without people' not in prompt.lower():
+            prompt += " Transform this space without any people visible."
+        return prompt
+    
+    # Build enhanced guided prompt with narrative flow
     theme_display = dict(WEDDING_THEMES).get(wedding_theme, wedding_theme.replace('_', ' '))
     space_display = dict(SPACE_TYPES).get(space_type, space_type.replace('_', ' '))
     
-    # Simplified theme details - core themes only
+    # Start with a more descriptive base
+    prompt = f"Transform this venue into a breathtaking {space_display.lower()} with elegant {theme_display.lower()} wedding styling, "
+    
+    # Add theme-specific decorative details
     theme_details = {
-        'rustic': 'rustic farmhouse style with wooden elements, mason jars, string lights, wildflower arrangements',
-        'modern': 'modern contemporary style with clean lines, minimalist decor, geometric elements',
-        'vintage': 'vintage romantic style with antique furniture, lace details, garden roses, crystal chandeliers',
-        'bohemian': 'bohemian chic style with macrame hangings, pampas grass, natural textures, eclectic patterns',
-        'classic': 'classic traditional style with white roses, gold accents, elegant furniture, sophisticated linens',
-        'garden': 'garden natural style with seasonal blooms, wrought iron details, natural lighting, greenery',
-        'beach': 'beach coastal style with driftwood accents, seashells, hurricane lanterns, tropical florals',
-        'industrial': 'industrial urban style with exposed brick, steel beams, Edison bulbs, metal fixtures',
-        'glamorous': 'glamorous luxury style with crystal chandeliers, gold accents, premium roses, dramatic lighting',
-        'tropical': 'tropical paradise style with palm fronds, exotic flowers, bamboo elements, vibrant colors'
-    }.get(wedding_theme, f'{theme_display} style decorations')
-    
-    # Build main prompt
-    main_parts = [
-        f'elegant {space_display.lower()} wedding venue',
-        f'decorated in {theme_details}'
-    ]
-    
-    # Add SIMPLIFIED optional elements
-    if color_scheme:
-        color_map = {
-            'neutral': 'with sophisticated neutral palette of whites, creams, and beiges',
-            'pastels': 'with soft pastel colors including blush pinks and sage greens',
-            'jewel_tones': 'with rich jewel tones of emerald, sapphire, and gold',
-            'earth_tones': 'with warm earth tones of terracotta, sage, and bronze',
-            'monochrome': 'with elegant black, white, and gray palette',
-            'bold_colors': 'with vibrant bold colors and striking contrasts'
-        }
-        if color_scheme in color_map:
-            main_parts.append(color_map[color_scheme])
-    
-    # Add lighting mood (simplified from multiple lighting options)
-    if lighting_mood:
-        lighting_map = {
-            'romantic': 'with romantic warm lighting and intimate ambiance',
-            'bright': 'with bright cheerful lighting and energetic atmosphere',
-            'dim': 'with intimate dim lighting and cozy atmosphere',
-            'dramatic': 'with dramatic bold lighting and theatrical mood',
-            'natural': 'with beautiful natural lighting and fresh brightness',
-            'golden': 'with golden hour lighting and warm glow',
-            'dusk': 'with twilight dusk atmosphere and evening ambiance',
-            'dawn': 'with soft morning light and fresh beginning feel'
-        }
-        if lighting_mood in lighting_map:
-            main_parts.append(lighting_map[lighting_mood])
-    
-    # Add seasonal context
-    if season:
-        seasonal_map = {
-            'spring': 'with spring blooms and fresh greenery',
-            'summer': 'with lush summer elements and light colors',
-            'fall': 'with autumn colors and warm golden tones',
-            'winter': 'with winter elegance and rich textures'
-        }
-        if season in seasonal_map:
-            main_parts.append(seasonal_map[season])
-    
-    # Add special features
-    if special_features and special_features.strip():
-        main_parts.append(f'incorporating {special_features.strip()}')
-    
-    main_prompt = " ".join(main_parts)
-    
-    # Quality descriptors (simplified)
-    quality_parts = [
-        "professional wedding photography",
-        "elegant design execution",
-        "beautiful lighting setup", 
-        "high quality details",
-        "sophisticated styling"
-    ]
-    
-    final_prompt = f"{main_prompt}, {', '.join(quality_parts)}"
-    
-    # Negative prompt (simplified)
-    negative_elements = [
-        "people, person, humans, guests, bride, groom, wedding party",
-        "blurry, poorly lit, overexposed",
-        "tables and chairs with multiple legs, multiple utilities in the same space",
-        "text, watermark, logos"
-    ]
-    
-    if user_negative_prompt and user_negative_prompt.strip():
-        negative_elements.append(user_negative_prompt.strip())
-    
-    negative_prompt = ", ".join(negative_elements)
-    
-    # FIXED parameters - no more customization
-    return {
-        'prompt': final_prompt,
-        'negative_prompt': negative_prompt,
-        'recommended_params': {
-            'strength': 0.70,      # FIXED at 70%
-            'cfg_scale': 7.5,      # FIXED standard CFG  
-            'steps': 30,           # FIXED at 30 steps
-            'output_format': 'png'
-        }
+        'rustic': 'featuring weathered wood accents, mason jar centerpieces with wildflowers, burlap and lace details, vintage farm elements, and warm Edison bulb lighting',
+        'modern': 'incorporating sleek geometric designs, minimalist white orchid arrangements, metallic accents, clean lines, and contemporary lighting fixtures',
+        'vintage': 'showcasing antique lace overlays, vintage china and crystal, soft pastel roses in mercury glass vessels, pearl details, and romantic chandelier lighting',
+        'bohemian': 'with eclectic tapestries, macrame installations, mixed pattern textiles, pampas grass arrangements, layered rugs, and warm lantern lighting',
+        'garden': 'featuring abundant fresh flowers and greenery, natural wood elements, potted plants as centerpieces, ivy garlands, and soft natural lighting',
+        'beach': 'incorporating driftwood accents, flowing white fabrics, nautical rope details, coastal flowers, seashell decorations, and breezy ambient lighting',
+        'glamorous': 'with crystal chandeliers, sequined linens, metallic gold accents, dramatic floral arrangements, mirror details, and theatrical lighting',
     }
+    
+    if wedding_theme in theme_details:
+        prompt += theme_details[wedding_theme] + ". "
+    else:
+        prompt += "with beautiful thematic decorations and styling. "
+    
+    # Add seasonal elements with specific flowers and decorations
+    if season:
+        seasonal_touches = {
+            'spring': 'Include fresh spring elements with tulips, daffodils, cherry blossoms, and delicate green foliage creating a renewal atmosphere.',
+            'summer': 'Feature abundant summer blooms including hydrangeas, peonies, garden roses, and lush greenery in full bloom.',
+            'fall': 'Incorporate rich autumn elements with maple leaves, chrysanthemums, wheat stalks, and warm golden tones throughout.',
+            'winter': 'Add elegant winter touches with evergreen garlands, white roses, silver accents, and crystalline decorative elements.'
+        }
+        prompt += seasonal_touches.get(season, '')
+    
+    # Add detailed lighting descriptions
+    if lighting_mood:
+        lighting_touches = {
+            'romantic': ' Create intimate romance with warm candlelight from multiple sources, soft string lights, and golden ambient lighting.',
+            'bright': ' Ensure bright, cheerful illumination with abundant white lights, clear uplighting, and well-lit focal points.',
+            'dim': ' Establish cozy intimacy with scattered tea lights, hurricane lanterns, and warm low-level lighting.',
+            'dramatic': ' Add bold dramatic effects with spotlights on key features, colored uplighting, and dynamic shadow play.',
+            'natural': ' Maximize natural daylight with sheer fabrics, reflective surfaces, and minimal artificial lighting.',
+            'golden': ' Capture golden hour warmth with amber-toned lighting, honey-colored candles, and sunset-inspired illumination.',
+        }
+        prompt += lighting_touches.get(lighting_mood, '')
+    
+    # Add color scheme with specific applications
+    if color_scheme:
+        color_display = dict(COLOR_SCHEMES).get(color_scheme, color_scheme.replace('_', ' '))
+        prompt += f" Apply a {color_display.lower()} color palette throughout the floral arrangements, fabric draping, and decorative accents."
+    
+    # Add user instructions
+    if user_instructions and user_instructions.strip():
+        prompt += f" {user_instructions.strip()}"
+    
+    # Ensure no people and emphasize decoration
+    prompt += " The beautifully decorated space should be empty with no people visible, showcasing only the stunning wedding decorations and ambiance."
+    
+    return prompt
 
 
 class UserImage(models.Model):
@@ -347,7 +375,7 @@ class UserImage(models.Model):
 
 
 class ImageProcessingJob(models.Model):
-    """Wedding venue transformation jobs - streamlined version"""
+    """Wedding venue transformation jobs - simplified for real-time processing"""
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -359,33 +387,25 @@ class ImageProcessingJob(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
     
-    # Core transformation parameters
-    wedding_theme = models.CharField(max_length=50, choices=WEDDING_THEMES)
-    space_type = models.CharField(max_length=20, choices=SPACE_TYPES)
+    # Core transformation parameters (guided mode)
+    wedding_theme = models.CharField(max_length=50, choices=WEDDING_THEMES, blank=True)
+    space_type = models.CharField(max_length=20, choices=SPACE_TYPES, blank=True)
     
-    # Style customization
-    season = models.CharField(max_length=20, blank=True, help_text="Wedding season")
-    time_of_day = models.CharField(max_length=20, blank=True, help_text="Time of day")
+    # Optional customization (guided mode) - Enhanced options
+    season = models.CharField(max_length=20, choices=SEASONS, blank=True, help_text="Wedding season")
+    lighting_mood = models.CharField(max_length=20, choices=LIGHTING_MOODS, blank=True, help_text="Lighting atmosphere")
     color_scheme = models.CharField(max_length=30, choices=COLOR_SCHEMES, blank=True)
-    style_intensity = models.CharField(max_length=20, choices=STYLE_INTENSITY, blank=True)
-    lighting_mood = models.CharField(max_length=20, choices=LIGHTING_MOODS, blank=True)
     
-    # Additional customization
-    special_features = models.TextField(blank=True, null=True, 
-                                      help_text="Special features to highlight or incorporate")
-    avoid = models.TextField(blank=True, null=True, 
-                           help_text="Elements to avoid in the transformation")
+    # Custom prompt for advanced users (custom mode)
+    custom_prompt = models.TextField(blank=True, null=True,
+                                   help_text="Custom prompt (overrides theme/style settings)")
     
-    # Generated prompts
+    # User instructions - appended to ALL prompts
+    user_instructions = models.TextField(blank=True, null=True,
+                                       help_text="Additional instructions for any prompt mode")
+    
+    # Generated final prompt (cached)
     generated_prompt = models.TextField(blank=True, null=True)
-    negative_prompt = models.TextField(blank=True, null=True)
-    
-    # Generation parameters
-    cfg_scale = models.FloatField(default=7.5, help_text="CFG scale (1.0-20.0)")
-    steps = models.IntegerField(default=40, help_text="Generation steps (10-100)")
-    seed = models.BigIntegerField(blank=True, null=True, help_text="Random seed")
-    strength = models.FloatField(default=0.85, help_text="Transformation strength (0.0-1.0)")
-    output_format = models.CharField(max_length=10, default='png')
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -396,99 +416,99 @@ class ImageProcessingJob(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
+        if self.custom_prompt:
+            return f"Job {self.id} - Custom Prompt ({self.status})"
         theme_display = dict(WEDDING_THEMES).get(self.wedding_theme, 'Unknown')
         space_display = dict(SPACE_TYPES).get(self.space_type, 'Unknown')
         return f"Job {self.id} - {theme_display} {space_display} ({self.status})"
     
     def save(self, *args, **kwargs):
-        """Generate prompt if needed"""
-        if self.wedding_theme and self.space_type and not self.generated_prompt:
+        """Generate enhanced narrative prompt if needed"""
+        if not self.generated_prompt and (self.custom_prompt or (self.wedding_theme and self.space_type)):
             try:
-                prompt_data = generate_wedding_prompt(
+                self.generated_prompt = generate_wedding_venue_prompt(
                     wedding_theme=self.wedding_theme,
                     space_type=self.space_type,
                     season=self.season or None,
-                    time_of_day=self.time_of_day or None,
-                    color_scheme=self.color_scheme or None,
-                    style_intensity=self.style_intensity or None,
                     lighting_mood=self.lighting_mood or None,
-                    special_features=self.special_features or None,
-                    avoid=self.avoid or None
+                    color_scheme=self.color_scheme or None,
+                    custom_prompt=self.custom_prompt or None,
+                    user_instructions=self.user_instructions or None
                 )
                 
-                self.generated_prompt = prompt_data['prompt']
-                self.negative_prompt = prompt_data['negative_prompt']
-                
-                # Update parameters with recommendations
-                recommended = prompt_data['recommended_params']
-                self.strength = recommended.get('strength', self.strength)
-                self.cfg_scale = recommended.get('cfg_scale', self.cfg_scale)
-                self.steps = recommended.get('steps', self.steps)
-                self.output_format = recommended.get('output_format', self.output_format)
-                
-                logger.info(f"Generated prompt for job {self.id}")
+                logger.info(f"Generated enhanced Gemini prompt for job {self.id}")
                 
             except Exception as e:
                 logger.error(f"Error generating prompt for job {self.id}: {str(e)}")
-                # Fallback prompt
-                theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
-                space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type)
-                self.generated_prompt = f"elegant wedding {space_name.lower()} with {theme_name.lower()} style, professional wedding photography"
-                self.negative_prompt = "people, faces, crowd, guests, blurry, low quality"
+                # Enhanced fallback with more detail
+                if self.custom_prompt:
+                    self.generated_prompt = f"{self.custom_prompt}. Transform and decorate this space beautifully without any people visible."
+                else:
+                    theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme) if self.wedding_theme else "elegant"
+                    space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type) if self.space_type else "wedding space"
+                    self.generated_prompt = f"Transform this venue into a breathtaking {space_name.lower()} with beautiful {theme_name.lower()} wedding styling, featuring appropriate decorations, floral arrangements, and lighting. The space should be elegantly decorated and empty with no people visible."
+                
+                if self.user_instructions:
+                    self.generated_prompt += f" {self.user_instructions}"
         
         super().save(*args, **kwargs)
     
-    def get_stability_ai_params(self):
-        """Get parameters for Stability AI API"""
-        return {
-            'prompt': self.generated_prompt,
-            'negative_prompt': self.negative_prompt,
-            'strength': self.strength,
-            'cfg_scale': self.cfg_scale,
-            'steps': self.steps,
-            'seed': self.seed,
-            'output_format': self.output_format,
-        }
-    
     @property
     def theme_display_name(self):
-        return dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme)
+        if self.custom_prompt:
+            return "Custom Design"
+        return dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme) if self.wedding_theme else "Custom"
     
     @property
     def space_display_name(self):
-        return dict(SPACE_TYPES).get(self.space_type, self.space_type)
+        if self.custom_prompt:
+            return "Custom Space"
+        return dict(SPACE_TYPES).get(self.space_type, self.space_type) if self.space_type else "Space"
+    
+    @property
+    def is_custom_mode(self):
+        """Check if this job uses custom prompt mode"""
+        return bool(self.custom_prompt and self.custom_prompt.strip())
 
 
 class ProcessedImage(models.Model):
-    """Processed wedding venue images"""
+    """Processed wedding venue images from Gemini 2.5"""
     processing_job = models.ForeignKey(ImageProcessingJob, on_delete=models.CASCADE, related_name='processed_images')
     processed_image = models.ImageField(upload_to=processed_image_upload_path)
     file_size = models.PositiveIntegerField(help_text="Size in bytes")
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
     
-    # AI generation metadata
-    stability_seed = models.BigIntegerField(blank=True, null=True)
+    # Gemini generation metadata
+    gemini_model = models.CharField(max_length=50, default='gemini-2.5-flash-image-preview')
     finish_reason = models.CharField(max_length=50, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     
     def save(self, *args, **kwargs):
-        if self.processed_image:
-            img = Image.open(self.processed_image)
-            self.width, self.height = img.size
-            self.file_size = self.processed_image.size
+        if self.processed_image and not self.width:
+            try:
+                img = Image.open(self.processed_image)
+                self.width, self.height = img.size
+                self.file_size = self.processed_image.size
+            except Exception as e:
+                logger.error(f"Error getting image dimensions: {str(e)}")
+                # Set default values if image can't be opened
+                self.width = 512
+                self.height = 512
+                self.file_size = getattr(self.processed_image, 'size', 0) or 0
             
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"Wedding Design - {self.processing_job.theme_display_name}"
+        return f"Gemini Wedding Design - {self.processing_job.theme_display_name}"
     
     @property
     def transformation_title(self):
         return f"{self.processing_job.theme_display_name} {self.processing_job.space_display_name}"
 
 
+# Collection and Favorite models remain the same
 class Collection(models.Model):
     """User collections for organizing wedding designs"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
@@ -596,11 +616,11 @@ class Favorite(models.Model):
 
 # Helper functions
 def get_wedding_choices():
-    """Get choices for forms"""
+    """Get choices for forms with enhanced options"""
     return {
         'themes': WEDDING_THEMES,
         'spaces': SPACE_TYPES,
         'color_schemes': COLOR_SCHEMES,
-        'style_intensity': STYLE_INTENSITY,
         'lighting_moods': LIGHTING_MOODS,
+        'seasons': SEASONS,
     }

@@ -3,865 +3,711 @@
 
 {% block title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
 
-{% block content %}
-<div class="wedding-page">
-  <!-- Hero Section with Couple Names and Photos -->
-  <section class="couple-hero-section">
-    <div class="container">
-      <div class="row align-items-center py-5">
-        <!-- Couple Names and Info -->
-        <div class="col-lg-5 mb-4 mb-lg-0">
-          <div class="couple-intro">
-            <h1 class="couple-names">{{ couple.couple_names }}</h1>
-            
-            <!-- Wedding Date and Status -->
-            <div class="wedding-status mb-4">
-              {% if couple.wedding_date %}
-                <div class="wedding-date-section">
-                  {% if days_until_wedding %}
-                    <div class="status-upcoming">
-                      <div class="countdown-badge">
-                        <span class="countdown-number">{{ days_until_wedding }}</span>
-                        <span class="countdown-label">day{{ days_until_wedding|pluralize }} to go!</span>
-                      </div>
-                      <p class="wedding-date">{{ couple.wedding_date|date:"F j, Y" }}</p>
-                    </div>
-                  {% elif is_wedding_day %}
-                    <div class="status-today">
-                      <div class="countdown-badge today">
-                        <span class="countdown-number">Today!</span>
-                        <span class="countdown-label">It's the big day!</span>
-                      </div>
-                      <p class="wedding-date">{{ couple.wedding_date|date:"F j, Y" }}</p>
-                    </div>
-                  {% elif wedding_passed %}
-                    <div class="status-married">
-                      <div class="countdown-badge married">
-                        <span class="countdown-number">💍</span>
-                        <span class="countdown-label">Happily Married!</span>
-                      </div>
-                      <p class="wedding-date">
-                        Married {{ couple.wedding_date|date:"F j, Y" }}
-                        <small class="text-muted d-block">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</small>
-                      </p>
-                    </div>
-                  {% endif %}
-                </div>
-              {% endif %}
-              
-              <!-- Venue Info (Compact) -->
-              {% if couple.venue_name or couple.venue_location %}
-                <div class="venue-compact mt-3">
-                  <p class="venue-info">
-                    <i class="bi bi-geo-alt text-rose me-2"></i>
-                    {% if couple.venue_name %}{{ couple.venue_name }}{% endif %}
-                    {% if couple.venue_location %}
-                      {% if couple.venue_name %} • {% endif %}{{ couple.venue_location }}
-                    {% endif %}
-                  </p>
-                </div>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        
-        <!-- Photo Gallery (3 photos) -->
-        <div class="col-lg-7">
-          <div class="couple-photo-gallery">
-            {% if couple.couple_photo %}
-              <div class="photo-grid">
-                <!-- Main large photo -->
-                <div class="main-photo">
-                  <img src="{{ couple.couple_photo.url }}" 
-                       alt="{{ couple.couple_names }}" 
-                       class="img-fluid rounded-3 shadow-lg">
-                 
-                </div>
-                
-                <!-- Secondary photos -->
-                <div class="secondary-photos">
-                  {% if couple.venue_photo %}
-                    <div class="secondary-photo">
-                      <img src="{{ couple.venue_photo.url }}" 
-                           alt="Wedding Venue" 
-                           class="img-fluid rounded-2 shadow">
-                      <div class="photo-label">Our Venue</div>
-                    </div>
-                  {% else %}
-                    <div class="secondary-photo placeholder">
-                      <div class="placeholder-content">
-                        <i class="bi bi-building"></i>
-                        <span>Venue</span>
-                      </div>
-                    </div>
-                  {% endif %}
-                  
-                  <!-- Third photo slot - engagement photo or fallback -->
-                  {% if couple.engagement_photo %}
-                    <div class="secondary-photo">
-                      <img src="{{ couple.engagement_photo.url }}" 
-                           alt="Engagement Photo" 
-                           class="img-fluid rounded-2 shadow">
-                      <div class="photo-label">Engagement</div>
-                    </div>
-                  {% elif couple.couple_photo %}
-                    <div class="secondary-photo">
-                      <img src="{{ couple.couple_photo.url }}" 
-                           alt="{{ couple.couple_names }}" 
-                           class="img-fluid rounded-2 shadow">
-                      <div class="photo-label">Together</div>
-                    </div>
-                  {% else %}
-                    <div class="secondary-photo placeholder">
-                      <div class="placeholder-content">
-                        <i class="bi bi-camera-fill"></i>
-                        <span>Memories</span>
-                      </div>
-                    </div>
-                  {% endif %}
-                </div>
-              </div>
-            {% else %}
-              <!-- Fallback if no photos -->
-              <div class="photo-placeholder">
-                <div class="placeholder-main">
-                  <i class="bi bi-heart-fill"></i>
-                  <h3>{{ couple.couple_names }}</h3>
-                  <p>Creating beautiful memories together</p>
-                </div>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+{% block meta_description %}Join {{ couple.couple_names }} as they celebrate their wedding{% if couple.wedding_date %} on {{ couple.wedding_date|date:"F j, Y" }}{% endif %}{% if couple.venue_location %} in {{ couple.venue_location }}{% endif %}.{% endblock %}
 
-  <!-- Love Story Section -->
-  {% if couple.couple_story %}
-  <section class="love-story-section">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-lg-8">
-          <div class="love-story-card">
-            <div class="section-header text-center mb-4">
-              <h2 class="section-title">Our Love Story</h2>
-              <div class="section-divider"></div>
-            </div>
-            <div class="story-content">
-              <div class="story-text">
-                {{ couple.couple_story|linebreaks }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-  {% endif %}
+{% block og_title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
+{% block og_description %}Join {{ couple.couple_names }} as they celebrate their wedding{% if couple.wedding_date %} on {{ couple.wedding_date|date:"F j, Y" }}{% endif %}.{% endblock %}
 
-  <!-- Wedding Links Section -->
-  {% if registry_links or rsvp_links or livestream_links or photo_links or other_links %}
-  <section class="wedding-links-section">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <div class="section-header text-center mb-5">
-            <h2 class="section-title">Wedding Information</h2>
-            <div class="section-divider"></div>
-            <p class="section-subtitle">Everything you need to celebrate with us</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- RSVP (Most Important) -->
-      {% if rsvp_links %}
-      <div class="row mb-5">
-        <div class="col-12">
-          <h3 class="subsection-title text-center mb-4">
-            <i class="bi bi-envelope-heart text-rose me-2"></i>RSVP
-          </h3>
-          <div class="row g-3 justify-content-center">
-            {% for rsvp in rsvp_links %}
-            <div class="col-md-6 col-lg-4">
-              <div class="wedding-link-card">
-                <div class="link-content">
-                  <div class="link-icon" style="color: {{ rsvp.service_color }};">
-                    <i class="{{ rsvp.service_icon }}"></i>
-                  </div>
-                  <h4>{{ rsvp.display_title }}</h4>
-                  {% if rsvp.description %}
-                    <p>{{ rsvp.description }}</p>
-                  {% endif %}
-                </div>
-                <a href="{% url 'wedding_shopping:wedding_link_redirect' rsvp.pk %}" 
-                   class="wedding-link-btn"
-                   style="background-color: {{ rsvp.service_color }};"
-                   target="_blank">
-                  <i class="bi bi-envelope-check me-2"></i>RSVP Now
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- Wedding Registry -->
-      {% if registry_links %}
-      <div class="row mb-5">
-        <div class="col-12">
-          <h3 class="subsection-title text-center mb-4">
-            <i class="bi bi-gift text-cyan me-2"></i>Wedding Registry
-          </h3>
-          <div class="row g-3">
-            {% for registry in registry_links %}
-            <div class="col-md-6 col-lg-4">
-              <div class="wedding-link-card">
-                <div class="link-content">
-                  <div class="link-icon" style="color: {{ registry.service_color }};">
-                    <i class="{{ registry.service_icon }}"></i>
-                  </div>
-                  <h4>{{ registry.display_title }}</h4>
-                  {% if registry.description %}
-                    <p>{{ registry.description }}</p>
-                  {% endif %}
-                </div>
-                <a href="{% url 'wedding_shopping:wedding_link_redirect' registry.pk %}" 
-                   class="wedding-link-btn"
-                   style="background-color: {{ registry.service_color }};"
-                   target="_blank">
-                  <i class="bi bi-gift me-2"></i>Shop Registry
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- Other Wedding Links (Livestream, Photos, etc.) -->
-      {% if livestream_links or photo_links or other_links %}
-      <div class="row">
-        <div class="col-12">
-          <h3 class="subsection-title text-center mb-4">
-            <i class="bi bi-link-45deg text-primary me-2"></i>More Wedding Info
-          </h3>
-          <div class="row g-3">
-            {% for livestream in livestream_links %}
-            <div class="col-md-6 col-lg-4">
-              <div class="wedding-link-card">
-                <div class="link-content">
-                  <div class="link-icon" style="color: {{ livestream.service_color }};">
-                    <i class="{{ livestream.service_icon }}"></i>
-                  </div>
-                  <h4>{{ livestream.display_title }}</h4>
-                  {% if livestream.description %}
-                    <p>{{ livestream.description }}</p>
-                  {% endif %}
-                </div>
-                <a href="{% url 'wedding_shopping:wedding_link_redirect' livestream.pk %}" 
-                   class="wedding-link-btn"
-                   style="background-color: {{ livestream.service_color }};"
-                   target="_blank">
-                  <i class="bi bi-camera-video me-2"></i>Watch Live
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-
-            {% for photo in photo_links %}
-            <div class="col-md-6 col-lg-4">
-              <div class="wedding-link-card">
-                <div class="link-content">
-                  <div class="link-icon" style="color: {{ photo.service_color }};">
-                    <i class="{{ photo.service_icon }}"></i>
-                  </div>
-                  <h4>{{ photo.display_title }}</h4>
-                  {% if photo.description %}
-                    <p>{{ photo.description }}</p>
-                  {% endif %}
-                </div>
-                <a href="{% url 'wedding_shopping:wedding_link_redirect' photo.pk %}" 
-                   class="wedding-link-btn"
-                   style="background-color: {{ photo.service_color }};"
-                   target="_blank">
-                  <i class="bi bi-camera me-2"></i>View Photos
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-
-            {% for other in other_links %}
-            <div class="col-md-6 col-lg-4">
-              <div class="wedding-link-card">
-                <div class="link-content">
-                  <div class="link-icon" style="color: {{ other.service_color }};">
-                    <i class="{{ other.service_icon }}"></i>
-                  </div>
-                  <h4>{{ other.display_title }}</h4>
-                  {% if other.description %}
-                    <p>{{ other.description }}</p>
-                  {% endif %}
-                </div>
-                <a href="{% url 'wedding_shopping:wedding_link_redirect' other.pk %}" 
-                   class="wedding-link-btn"
-                   style="background-color: {{ other.service_color }};"
-                   target="_blank">
-                  <i class="bi bi-link-45deg me-2"></i>Visit Link
-                </a>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-      {% endif %}
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- Social Media Section -->
-  {% if partner_1_social_links or partner_2_social_links or shared_social_links %}
-  <section class="social-media-section">
-    <div class="container">
-      <div class="row">
-        <div class="col-12">
-          <div class="section-header text-center mb-5">
-            <h2 class="section-title">Follow Our Journey</h2>
-            <div class="section-divider"></div>
-            <p class="section-subtitle">Stay connected with us</p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="social-links-container">
-        <!-- Partner 1 Social Links -->
-        {% if partner_1_social_links %}
-        <div class="partner-social-group mb-4">
-          <h4 class="partner-name">{{ couple.partner_1_name }}</h4>
-          <div class="social-links-row">
-            {% for social in partner_1_social_links %}
-              <a href="{{ social.url }}" 
-                 target="_blank" 
-                 class="social-link"
-                 style="color: {{ social.platform_color }};"
-                 title="{{ social.platform_display_name }}">
-                <i class="{{ social.platform_icon }}"></i>
-                <span>{{ social.platform_display_name }}</span>
-              </a>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Partner 2 Social Links -->
-        {% if partner_2_social_links %}
-        <div class="partner-social-group mb-4">
-          <h4 class="partner-name">{{ couple.partner_2_name }}</h4>
-          <div class="social-links-row">
-            {% for social in partner_2_social_links %}
-              <a href="{{ social.url }}" 
-                 target="_blank" 
-                 class="social-link"
-                 style="color: {{ social.platform_color }};"
-                 title="{{ social.platform_display_name }}">
-                <i class="{{ social.platform_icon }}"></i>
-                <span>{{ social.platform_display_name }}</span>
-              </a>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Shared Social Links -->
-        {% if shared_social_links %}
-        <div class="partner-social-group">
-          <h4 class="partner-name">Together</h4>
-          <div class="social-links-row">
-            {% for social in shared_social_links %}
-              <a href="{{ social.url }}" 
-                 target="_blank" 
-                 class="social-link"
-                 style="color: {{ social.platform_color }};"
-                 title="{{ social.platform_display_name }}">
-                <i class="{{ social.platform_icon }}"></i>
-                <span>{{ social.platform_display_name }}</span>
-              </a>
-            {% endfor %}
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- Back to Discovery -->
-  <section class="back-to-discovery">
-    <div class="container">
-      <div class="row">
-        <div class="col-12 text-center">
-          <a href="{% url 'wedding_shopping:public_couples_list' %}" class="back-link">
-            <i class="bi bi-arrow-left me-2"></i>Discover More Wedding Stories
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-{% endblock %}
-
-{% block javascript %}
+{% block css %}
 {{ block.super }}
+<!-- Wedding-specific fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
 <style>
-/* Wedding Page Styles */
-.wedding-page {
-  font-family: 'Inter', sans-serif;
+/* Paper-like Wedding Page Styles */
+.wedding-content {
+  font-family: 'Lora', serif;
+  line-height: 1.7;
+  background: #fafafa;
+  min-height: 100vh;
 }
 
-/* Hero Section */
-.couple-hero-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  min-height: 70vh;
+.wedding-content .wedding-script {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 600;
+}
+
+.wedding-content .wedding-elegant {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Wedding page variables */
+:root {
+  --wedding-charcoal: #2d3748;
+  --wedding-gray: #4a5568;
+  --wedding-light-gray: #a0aec0;
+  --wedding-off-white: #fafafa;
+  --wedding-white: #ffffff;
+  --wedding-border: #e2e8f0;
+  --wedding-text: #2d3748;
+  --wedding-text-light: #718096;
+  --wedding-accent: #4299e1;
+  --wedding-table-border: #e5e7eb;
+}
+
+/* Hero Section - Better Mobile Handling */
+.wedding-hero {
+  position: relative;
+  width: 100%;
+  height: 65vh;
+  min-height: 400px;
+  overflow: hidden;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: flex-start;
 }
 
-.couple-names {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-  line-height: 1.2;
+.hero-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: 1;
 }
 
-/* Wedding Status and Date */
-.wedding-status {
-  padding: 1.5rem;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, rgba(0,0,0,0.15), rgba(0,0,0,0));
+  z-index: 2;
 }
 
-.countdown-badge {
+.hero-content {
+  position: relative;
+  z-index: 3;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+  padding: 3rem;
+  max-width: 600px;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  margin: 0;
+  text-align: left;
+}
+
+/* Countdown Section - Enhanced with Save the Date */
+.countdown-section {
+  padding: 3rem 0;
+  background: var(--wedding-off-white);
   text-align: center;
-  margin-bottom: 1rem;
+}
+
+.save-the-date {
+  font-size: 1.4rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.countdown-simple {
+  display: inline-block;
+  background: var(--wedding-white);
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border: 1px solid var(--wedding-border);
 }
 
 .countdown-number {
-  display: block;
   font-size: 2.5rem;
   font-weight: 700;
-  color: #e74c3c;
+  color: var(--wedding-charcoal);
+  margin: 0;
 }
 
 .countdown-label {
-  display: block;
-  font-size: 0.9rem;
-  color: #7f8c8d;
+  font-size: 1rem;
+  color: var(--wedding-text-light);
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.countdown-badge.today .countdown-number {
-  color: #27ae60;
-}
-
-.countdown-badge.married .countdown-number {
-  font-size: 2rem;
-}
-
-.wedding-date {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #34495e;
-  margin: 0;
-  text-align: center;
-}
-
-.venue-compact {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 10px;
-  border-left: 4px solid #e74c3c;
-}
-
-.venue-info {
-  margin: 0;
-  color: #555;
-  font-weight: 500;
-}
-
-/* Photo Gallery */
-.couple-photo-gallery {
-  height: 100%;
-}
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1rem;
-  height: 500px;
-}
-
-.main-photo {
-  position: relative;
-  overflow: hidden;
-  border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-}
-
-.main-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-overlay {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(231, 76, 60, 0.9);
+/* Special Messages */
+.special-message {
+  background: var(--wedding-charcoal);
   color: white;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-}
-
-.secondary-photos {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.secondary-photo {
-  position: relative;
-  flex: 1;
-  overflow: hidden;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.secondary-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.7));
-  color: white;
-  padding: 1rem 0.5rem 0.5rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.secondary-photo.placeholder {
-  background: #f8f9fa;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #dee2e6;
-}
-
-.placeholder-content {
-  text-align: center;
-  color: #adb5bd;
-}
-
-.placeholder-content i {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.photo-placeholder {
-  height: 500px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-align: center;
-}
-
-.placeholder-main i {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-/* Love Story Section */
-.love-story-section {
-  padding: 5rem 0;
-  background: white;
-}
-
-.love-story-card {
-  background: #fff;
-  padding: 3rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-}
-
-.section-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 0.5rem;
-}
-
-.section-divider {
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(90deg, #e74c3c, #f39c12);
-  margin: 0 auto 1rem;
-  border-radius: 2px;
-}
-
-.story-text {
-  font-size: 1.1rem;
-  line-height: 1.8;
-  color: #555;
-  text-align: center;
-}
-
-/* Wedding Links Section */
-.wedding-links-section {
-  padding: 5rem 0;
-  background: #f8f9fa;
-}
-
-.subsection-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #34495e;
-}
-
-.wedding-link-card {
-  background: white;
   border-radius: 15px;
   padding: 2rem;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
-.wedding-link-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+.special-message h2 {
+  font-size: 2.5rem;
+  margin: 0;
 }
 
-.link-content {
-  flex: 1;
-  margin-bottom: 1.5rem;
+.special-message p {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
 }
 
-.link-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+/* Paper-like Content Layout - Widened by 30% */
+.wedding-page-content {
+  background: var(--wedding-off-white);
+  padding: 2rem 0;
 }
 
-.link-content h4 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: #2c3e50;
+.paper-container {
+  max-width: 1040px; /* Increased from 800px (30% wider) */
+  margin: 0 auto;
+  background: var(--wedding-off-white);
+  padding: 2rem 1rem;
 }
 
-.link-content p {
-  color: #666;
+/* Section Styling - No Cards, Minimal Padding */
+.content-section {
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.content-section:last-child {
   margin-bottom: 0;
 }
 
-.wedding-link-btn {
-  display: inline-block;
-  padding: 0.8rem 2rem;
-  color: white;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: 600;
-  transition: all 0.3s ease;
+.section-title {
+  font-size: 2.8rem;
+  color: var(--wedding-charcoal);
   text-align: center;
+  margin-bottom: 2.5rem;
 }
 
-.wedding-link-btn:hover {
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+/* Elegant Dividers */
+.section-divider {
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--wedding-border), transparent);
+  margin: 3rem auto;
+  position: relative;
 }
 
-/* Social Media Section */
-.social-media-section {
-  padding: 4rem 0;
-  background: white;
+.section-divider::before {
+  content: '♥';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--wedding-white);
+  color: var(--wedding-light-gray);
+  padding: 0 1rem;
+  font-size: 1rem;
 }
 
-.partner-social-group {
-  text-align: center;
+/* Love Story Section */
+.love-story {
+  font-size: 1.2rem;
+  line-height: 1.8;
+  color: var(--wedding-text);
+  max-width: 700px;
+  margin: 0 auto;
+  text-align: left;
+  font-style: italic;
+  position: relative;
+  padding: 2rem 0;
 }
 
-.partner-name {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #2c3e50;
+.love-story::before,
+.love-story::after {
+  content: '"';
+  font-size: 3rem;
+  color: var(--wedding-light-gray);
+  font-family: 'Playfair Display', serif;
+  position: absolute;
+}
+
+.love-story::before {
+  top: 0;
+  left: -2rem;
+}
+
+.love-story::after {
+  bottom: 0;
+  right: -2rem;
+}
+
+/* UPDATED: Venue Section - Desktop Layout with Image Left, Details Right */
+.venue-section {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  gap: 3rem;
+  align-items: center;
+  text-align: left;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.venue-image {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.venue-details {
+  padding-left: 0;
+}
+
+.venue-name {
+  font-size: 2.2rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 1rem;
+}
+
+.venue-location {
+  font-size: 1.3rem;
+  color: var(--wedding-text-light);
+  margin-bottom: 0.5rem;
+}
+
+.venue-date {
+  font-size: 1.2rem;
+  color: var(--wedding-text);
   margin-bottom: 1.5rem;
 }
 
-.social-links-row {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+.venue-address {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
 }
 
-.social-link {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  background: white;
-  border: 2px solid #f8f9fa;
-  border-radius: 50px;
+.address-link {
+  color: var(--wedding-charcoal);
   text-decoration: none;
-  color: inherit;
   transition: all 0.3s ease;
-  font-weight: 500;
-}
-
-.social-link i {
-  font-size: 1.2rem;
-  margin-right: 0.5rem;
-}
-
-.social-link:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  border-color: currentColor;
-  color: inherit;
-}
-
-/* Back to Discovery */
-.back-to-discovery {
-  padding: 3rem 0;
-  background: #2c3e50;
-}
-
-.back-link {
   display: inline-flex;
   align-items: center;
-  color: white;
-  text-decoration: none;
-  font-size: 1.1rem;
-  font-weight: 500;
-  padding: 1rem 2rem;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-radius: 50px;
-  transition: all 0.3s ease;
+  background: var(--wedding-off-white);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--wedding-border);
+  gap: 0.5rem;
 }
 
-.back-link:hover {
-  color: white;
-  background: rgba(255,255,255,0.1);
+.address-link:hover {
+  color: var(--wedding-accent);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.address-link i {
+  color: var(--wedding-accent);
+}
+
+/* UPDATED: Enhanced Links Table with Borders */
+.links-section {
+  text-align: left;
+}
+
+.links-table {
+  width: 100%;
+  background: var(--wedding-white);
+  border: 1px solid var(--wedding-table-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.links-table th {
+  background: var(--wedding-off-white);
+  color: var(--wedding-charcoal);
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--wedding-table-border);
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.links-table td {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--wedding-table-border);
+  vertical-align: middle;
+  background: var(--wedding-white);
+}
+
+.links-table tr:last-child td {
+  border-bottom: none;
+}
+
+.links-table tr:hover td {
+  background: var(--wedding-off-white);
+  transition: background-color 0.2s ease;
+}
+
+.link-title {
+  font-weight: 600;
+  color: var(--wedding-charcoal);
+  font-size: 1.1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.link-title:hover {
+  color: var(--wedding-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-title i {
+  font-size: 0.9rem;
+  transition: transform 0.3s ease;
+}
+
+.link-title:hover i {
+  transform: translateX(2px);
+}
+
+.link-description {
+  color: var(--wedding-text-light);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+/* Wedding Footer */
+.wedding-footer {
+  background: var(--wedding-off-white);
+  padding: 3rem 0;
+  text-align: center;
+}
+
+.footer-signature {
+  font-size: 2.2rem;
+  color: var(--wedding-charcoal);
+  margin-bottom: 0.5rem;
+}
+
+.footer-date {
+  font-size: 1rem;
+  color: var(--wedding-text-light);
+}
+
+.decorative-line {
+  width: 100px;
+  height: 1px;
+  background: var(--wedding-border);
+  margin: 2rem auto;
 }
 
 /* Mobile Responsive */
-@media (max-width: 991px) {
-  .couple-names {
+@media (max-width: 768px) {
+  .wedding-hero {
+    height: 65vh; /* Increased from 50vh to show more image */
+    min-height: 350px;
+  }
+  
+  .hero-content {
+    padding: 2rem;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .paper-container {
+    padding: 2rem 1.5rem;
+    margin: 0 1rem;
+    box-shadow: none;
+    border-radius: 8px;
+    max-width: calc(100% - 2rem); /* Responsive width on mobile */
+  }
+  
+  .section-title {
     font-size: 2.2rem;
   }
   
-  .photo-grid {
+  .save-the-date {
+    font-size: 1.2rem;
+  }
+  
+  .love-story {
+    font-size: 1.1rem;
+    padding: 1rem 0;
+  }
+  
+  .love-story::before,
+  .love-story::after {
+    display: none;
+  }
+  
+  /* UPDATED: Mobile venue layout - stack vertically */
+  .venue-section {
     grid-template-columns: 1fr;
-    height: auto;
+    gap: 2rem;
+    text-align: center;
   }
   
-  .main-photo {
-    height: 300px;
+  .venue-details {
+    padding-left: 0;
   }
   
-  .secondary-photos {
-    flex-direction: row;
+  .venue-name {
+    font-size: 1.8rem;
   }
   
-  .secondary-photo {
-    height: 150px;
+  .venue-location {
+    font-size: 1.2rem;
+  }
+  
+  .venue-date {
+    font-size: 1.1rem;
+  }
+  
+  .venue-image {
+    height: 250px;
+  }
+  
+  .links-table th,
+  .links-table td {
+    padding: 1rem;
+  }
+  
+  .links-table th {
+    font-size: 1rem;
+  }
+  
+  .section-divider {
+    width: 150px;
   }
 }
 
-@media (max-width: 767px) {
-  .couple-names {
-    font-size: 1.8rem;
+@media (max-width: 576px) {
+  .wedding-hero {
+    height: 60vh; /* Still increased from original 50vh */
+    min-height: 300px;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-content {
+    padding: 1.5rem;
+  }
+  
+  .paper-container {
+    padding: 1.5rem 1rem;
+    margin: 0 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  .venue-image {
+    height: 200px;
+  }
+  
+  .countdown-simple {
+    padding: 0.75rem 1.5rem;
   }
   
   .countdown-number {
     font-size: 2rem;
   }
   
-  .section-title {
-    font-size: 2rem;
+  .save-the-date {
+    font-size: 1.1rem;
   }
   
-  .love-story-card {
-    padding: 2rem;
+  .links-table {
+    font-size: 0.9rem;
   }
   
-  .wedding-link-card {
-    padding: 1.5rem;
+  .links-table th,
+  .links-table td {
+    padding: 0.75rem;
   }
   
-  .social-links-row {
-    flex-direction: column;
-    align-items: center;
+  .link-title {
+    font-size: 1rem;
   }
   
-  .social-link {
-    width: 100%;
-    max-width: 250px;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 576px) {
-  .couple-hero-section {
-    min-height: auto;
-    padding: 3rem 0;
-  }
-  
-  .couple-names {
-    font-size: 1.6rem;
-  }
-  
-  .photo-grid {
-    height: auto;
-  }
-  
-  .main-photo {
-    height: 250px;
-  }
-  
-  .secondary-photos {
-    gap: 0.5rem;
-  }
-  
-  .secondary-photo {
-    height: 120px;
+  .address-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="wedding-content">
+  <!-- Hero Section with Large Photo -->
+  <div class="wedding-hero">
+    {% if couple.couple_photo %}
+      <img src="{{ couple.couple_photo.url }}" alt="{{ couple.couple_names }}" class="hero-image">
+      <div class="hero-overlay"></div>
+    {% endif %}
+    
+    <div class="hero-content">
+      <h1 class="hero-title wedding-script">{{ couple.couple_names }}</h1>
+    </div>
+  </div>
+
+  <!-- Countdown Section with Save the Date -->
+  {% if couple.wedding_date %}
+    <div class="countdown-section">
+      <div class="container">
+        {% if is_wedding_day %}
+          <div class="special-message">
+            <h2 class="wedding-script">Today is the Day!</h2>
+            <p class="wedding-elegant">Celebrating the marriage of {{ couple.couple_names }}</p>
+          </div>
+        {% elif wedding_passed %}
+          <div class="special-message">
+            <h2 class="wedding-script">Happily Married</h2>
+            <p class="wedding-elegant">{{ days_since_wedding }} day{{ days_since_wedding|pluralize }} ago</p>
+          </div>
+        {% else %}
+         
+          <div class="countdown-simple">
+            <div class="countdown-number wedding-elegant">{{ days_until_wedding }}</div>
+            <div class="countdown-label">Day{{ days_until_wedding|pluralize }}</div>
+          
+           <div class="save-the-date wedding-elegant">
+            {{ couple.wedding_date|date:"F j, Y" }}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="wedding-page-content">
+    <div class="paper-container">
+      
+      <!-- Love Story Section -->
+      {% if couple.couple_story %}
+        <div class="content-section">
+          <h2 class="section-title wedding-script">Our Love Story</h2>
+          <div class="love-story wedding-elegant">
+            {{ couple.couple_story|linebreaks }}
+          </div>
+        </div>
+        
+        <div class="section-divider"></div>
+      {% endif %}
+      
+      <!-- Venue Section -->
+      {% if couple.venue_name or couple.venue_location or couple.venue_photo %}
+        <div class="content-section">
+          <h2 class="section-title wedding-script">Venue</h2>
+          <div class="venue-section">
+            {% if couple.venue_photo %}
+              <img src="{{ couple.venue_photo.url }}" alt="{{ couple.venue_name|default:'Wedding venue' }}" class="venue-image">
+            {% endif %}
+            
+            <div class="venue-details">
+              {% if couple.venue_name %}
+                <h3 class="venue-name wedding-elegant">{{ couple.venue_name }}</h3>
+              {% endif %}
+              {% if couple.venue_location %}
+                <p class="venue-location wedding-elegant">{{ couple.venue_location }}</p>
+              {% endif %}
+              {% if couple.wedding_date %}
+                <p class="venue-date wedding-elegant">{{ couple.wedding_date|date:"F j, Y" }}</p>
+              {% endif %}
+              {% if couple.venue_location %}
+                <a href="https://maps.google.com/?q={{ couple.venue_location|urlencode }}" target="_blank" class="address-link">
+                  <i class="bi bi-geo-alt-fill"></i>
+                  Get Directions
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        
+        {% if wedding_links %}
+          <div class="section-divider"></div>
+        {% endif %}
+      {% endif %}
+      
+      <!-- Wedding Links Section -->
+      {% if wedding_links %}
+        <div class="content-section links-section">
+          <h2 class="section-title wedding-script">Important Links</h2>
+          <table class="links-table">
+            <tbody>
+              {% for link in wedding_links %}
+                <tr>
+                  <td>
+                    <a href="{% url 'wedding_shopping:wedding_link_redirect' link.pk %}" 
+                       target="_blank" 
+                       class="link-title">
+                       <i class="bi bi-box-arrow-up-right"></i>
+                       {{ link.title }}
+                    </a>
+                  </td>
+                  <td>
+                    {% if link.description %}
+                      <div class="link-description">
+                        {{ link.description }}
+                      </div>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      
+    </div>
+  </div>
+
+  <!-- Wedding Footer -->
+  <div class="wedding-footer">
+    <div class="container">
+      <div class="decorative-line"></div>
+      <p class="footer-signature wedding-script">{{ couple.couple_names }}</p>
+      {% if couple.wedding_date %}
+        <p class="footer-date wedding-elegant">{{ couple.wedding_date|date:"F j, Y" }}</p>
+      {% endif %}
+      <div class="decorative-line"></div>
+    </div>
+  </div>
+</div>
+
+{% if couple.wedding_date and not is_wedding_day and not wedding_passed %}
+<script>
+// Simple countdown timer - just days
+function updateCountdown() {
+    const weddingDate = new Date('{{ couple.wedding_date|date:"Y-m-d" }}T00:00:00').getTime();
+    const now = new Date().getTime();
+    const distance = weddingDate - now;
+    
+    if (distance > 0) {
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const numberEl = document.querySelector('.countdown-number');
+        const labelEl = document.querySelector('.countdown-label');
+        if (numberEl && labelEl) {
+            numberEl.textContent = days;
+            labelEl.textContent = `Day${days !== 1 ? 's' : ''}`;
+        }
+    } else {
+        // Wedding day has arrived
+        location.reload();
+    }
+}
+
+// Update countdown every hour (since we only show days)
+setInterval(updateCountdown, 3600000);
+updateCountdown(); // Initial call
+</script>
+{% endif %}
 {% endblock %}

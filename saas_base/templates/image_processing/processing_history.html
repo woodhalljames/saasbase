@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Tranformation History{% endblock %}
+{% block title %}Transformation History{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -15,8 +15,8 @@
           <li class="breadcrumb-item active">Transformation History</li>
         </ol>
       </nav>
-      <h1>👰 Wedding Transformations</h1>
-      <p class="text-muted">View all your wedding venue transformations</p>
+      <h1>Wedding Transformations</h1>
+      <p class="text-muted">View all your wedding dreams</p>
     </div>
     <div class="col-md-6 text-end">
       <div class="btn-group" role="group">
@@ -32,20 +32,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Auto-refresh indicator for latest job only -->
-  {% if page_obj and page_obj.0.status == 'processing' or page_obj.0.status == 'pending' %}
-  <div id="autoRefreshIndicator" class="alert alert-info border-0 py-2 px-3 mb-3">
-    <div class="d-flex align-items-center">
-      <div class="spinner-border spinner-border-sm text-info me-2" role="status"></div>
-      <small>
-        <strong>Monitoring Latest Job:</strong> 
-        Next update in <span id="countdown">15</span> seconds
-      </small>
-      <button type="button" class="btn-close btn-close-sm ms-auto" id="pauseAutoRefresh" title="Stop monitoring"></button>
-    </div>
-  </div>
-  {% endif %}
 
   {% if page_obj %}
     <!-- Processing Jobs List -->
@@ -63,75 +49,23 @@
                     {% with processed_images=job.processed_images.all %}
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
+                          {% if processed_img and processed_img.pk %}
                           <div class="position-relative">
-                            <!-- Large processed image -->
+                            <!-- Large processed image - NO overlay icons except heart -->
                             <img src="{{ processed_img.processed_image.url }}" 
                                  class="img-fluid rounded shadow-sm mb-3" 
                                  alt="Wedding transformation"
                                  style="width: 100%; max-height: 400px; object-fit: cover;">
                             
-                            <!-- Favorite Heart & Collection Actions - FIXED -->
+                            <!-- ONLY Favorite Heart - NO other overlay icons -->
                             <div class="position-absolute top-0 start-0 p-2">
-                              {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_img %}
-                            </div>
-                            
-                            <!-- Quick Actions Overlay -->
-                            <div class="position-absolute top-0 end-0 p-2">
-                              <div class="btn-group-vertical">
-                                <div class="dropdown">
-                                  <button class="btn btn-sm btn-light dropdown-toggle shadow-sm" 
-                                          type="button" 
-                                          data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots"></i>
-                                  </button>
-                                  <ul class="dropdown-menu">
-                                    <li>
-                                      <a class="dropdown-item" href="{% url 'image_processing:processed_image_detail' processed_img.pk %}">
-                                        <i class="bi bi-eye text-success"></i> View Details
-                                      </a>
-                                    </li>
-                                    <li>
-                                      <a class="dropdown-item" href="{{ processed_img.processed_image.url }}" target="_blank">
-                                        <i class="bi bi-arrows-fullscreen text-info"></i> Full Size
-                                      </a>
-                                    </li>
-                                    <li>
-                                      <a class="dropdown-item" href="{{ processed_img.processed_image.url }}" download>
-                                        <i class="bi bi-download text-primary"></i> Download
-                                      </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <!-- NEW: Redo transformation button -->
-                                    <li>
-                                      <a class="dropdown-item redo-transformation-btn" 
-                                         href="#" 
-                                         data-job-id="{{ job.id }}"
-                                         onclick="event.preventDefault(); redoTransformation('{{ job.id }}');">
-                                        <i class="bi bi-arrow-repeat text-warning"></i> Use These Settings Again
-                                      </a>
-                                    </li>
-                                    <li>
-                                      <a class="dropdown-item add-to-collection-btn" 
-                                         href="#" 
-                                         data-processed-image-id="{{ processed_img.id }}"
-                                         onclick="event.preventDefault(); addToDefaultCollection('processed', '{{ processed_img.id }}');">
-                                        <i class="bi bi-collection text-success"></i> Save to Collection
-                                      </a>
-                                    </li>
-                                    <li>
-                                      <a class="dropdown-item text-danger delete-processed-btn" 
-                                         href="#" 
-                                         data-image-id="{{ processed_img.pk }}"
-                                         data-image-url="{{ processed_img.processed_image.url }}"
-                                         onclick="event.preventDefault(); confirmDeleteProcessed('{{ processed_img.pk }}', '{{ processed_img.processed_image.url }}');">
-                                        <i class="bi bi-trash"></i> Delete
-                                      </a>
-                                    </li>
-                                  </ul>
-                                </div>
-                              </div>
+                              <button class="btn btn-sm favorite-heart-btn" 
+                                      data-processed-image-id="{{ processed_img.id }}">
+                                <i class="bi bi-{% if processed_img.is_favorited %}heart-fill text-danger{% else %}heart{% endif %} favorite-heart-icon"></i>
+                              </button>
                             </div>
                           </div>
+                          {% endif %}
                         {% endfor %}
                       {% else %}
                         <div class="text-muted">No results available</div>
@@ -139,44 +73,49 @@
                     {% endwith %}
                     
                   {% elif job.status == 'processing' %}
-                    <div class="d-flex align-items-center justify-content-center processing-status" style="height: 300px;">
+                    <div class="d-flex align-items-center justify-content-center processing-placeholder border rounded" style="height: 300px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                       <div class="text-center">
-                        <div class="spinner-border text-warning mb-2" role="status">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
                           <span class="visually-hidden">Processing...</span>
                         </div>
-                        <div class="text-warning processing-message">Creating your wedding vision...</div>
+                        <div class="text-primary fs-5 fw-medium processing-message">Creating your wedding vision...</div>
                         <small class="text-muted d-block mt-2">
+                          Transformation in progress
                           <span class="processing-duration" data-started="{{ job.started_at|date:'c' }}"></span>
                         </small>
-                        <button class="btn btn-sm btn-outline-info mt-2 check-status-btn" 
-                                data-job-id="{{ job.id }}">
-                          <i class="bi bi-arrow-clockwise"></i> Check Now
-                        </button>
                       </div>
                     </div>
                     
                   {% elif job.status == 'failed' %}
-                    <div class="alert alert-danger">
-                      <h6 class="alert-heading">Processing Failed</h6>
-                      <p class="mb-2">{{ job.error_message|default:"An error occurred during processing" }}</p>
-                      <!-- NEW: Redo button for failed jobs -->
-                      <div class="d-flex gap-2">
-                        <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" class="btn btn-sm btn-outline-warning">
-                          <i class="bi bi-arrow-clockwise"></i> Try Again
-                        </a>
-                        <button class="btn btn-sm btn-outline-primary redo-transformation-btn" 
+                    <div class="alert alert-danger persistent-error">
+                      <h6 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Processing Failed</h6>
+                      <p class="mb-3">{{ job.error_message|default:"An error occurred during processing. This may be a temporary issue with the AI service." }}</p>
+                      
+                      <!-- Unified action buttons -->
+                      <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-warning btn-sm redo-transformation-btn" 
                                 data-job-id="{{ job.id }}"
                                 onclick="redoTransformation('{{ job.id }}');">
-                          <i class="bi bi-copy"></i> Copy Settings to Studio
+                          <i class="bi bi-arrow-clockwise"></i> Try Again with Same Settings
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm redo-transformation-btn" 
+                                data-job-id="{{ job.id }}"
+                                onclick="redoTransformation('{{ job.id }}');">
+                          <i class="bi bi-gear"></i> Edit Settings & Try Again
                         </button>
                       </div>
+                      
+                      <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle me-1"></i>
+                        If this error persists, the AI service may be temporarily unavailable. Please try again in a few minutes.
+                      </small>
                     </div>
                     
                   {% else %}
-                    <div class="d-flex align-items-center justify-content-center pending-status" style="height: 300px;">
+                    <div class="d-flex align-items-center justify-content-center pending-placeholder border rounded" style="height: 300px; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                       <div class="text-center text-muted">
-                        <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
-                        <div>Waiting to start...</div>
+                        <div class="spinner-border spinner-border-sm text-secondary mb-2" style="width: 2rem; height: 2rem;" role="status"></div>
+                        <div class="fs-6">Waiting to start...</div>
                         <small class="text-muted d-block mt-2">
                           Queued <span class="pending-duration" data-created="{{ job.created_at|date:'c' }}"></span> ago
                         </small>
@@ -191,7 +130,10 @@
                   <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
                       <h6>Wedding Style</h6>
-                      {% if job.wedding_theme and job.space_type %}
+                      {% if job.custom_prompt %}
+                        <span class="badge bg-purple me-1">Custom Design</span>
+                        <small class="text-muted d-block mt-1">{{ job.custom_prompt|truncatechars:60 }}</small>
+                      {% elif job.wedding_theme and job.space_type %}
                         <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
                         <span class="badge bg-secondary">{{ job.space_display }}</span>
                       {% else %}
@@ -212,18 +154,8 @@
                     </span>
                   </div>
 
-                  <!-- Fixed Parameters Info -->
-                  <div class="mb-3">
-                    <h6 class="small text-muted mb-2">AI Parameters (Fixed):</h6>
-                    <div class="d-flex flex-wrap gap-1">
-                      <span class="badge bg-light text-dark small">Strength: 70%</span>
-                      <span class="badge bg-light text-dark small">Steps: 30</span>
-                      <span class="badge bg-light text-dark small">CFG: 7.5</span>
-                    </div>
-                  </div>
-
-                  <!-- Optional Parameters (if any were used) -->
-                  {% if job.season or job.lighting_mood or job.color_scheme %}
+                  <!-- Optional Parameters -->
+                  {% if job.season or job.lighting_mood or job.color_scheme or job.user_instructions %}
                     <div class="mb-3">
                       <h6 class="small text-muted mb-2">Style Options Used:</h6>
                       <div class="d-flex flex-wrap gap-1">
@@ -235,6 +167,9 @@
                         {% endif %}
                         {% if job.color_scheme %}
                           <span class="badge bg-success small">{{ job.color_display|default:job.color_scheme }}</span>
+                        {% endif %}
+                        {% if job.user_instructions %}
+                          <span class="badge bg-info small">Custom Instructions</span>
                         {% endif %}
                       </div>
                     </div>
@@ -265,23 +200,43 @@
                     </div>
                   </div>
                   
-                  <!-- Quick Actions -->
+                  <!-- ALL Actions in Sidebar (NO overlay icons) -->
                   {% if job.status == 'completed' %}
                     {% with processed_images=job.processed_images.all %}
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
+                          {% if processed_img and processed_img.pk %}
                           <div class="d-grid gap-2 mb-3">
                             <a href="{% url 'image_processing:processed_image_detail' processed_img.pk %}" 
                                class="btn btn-success btn-sm">
                               <i class="bi bi-eye"></i> View Full Details
                             </a>
-                            <!-- NEW: Prominent redo button for completed jobs -->
+                            <!-- Prominent redo button for completed jobs -->
                             <button class="btn btn-outline-primary btn-sm redo-transformation-btn" 
                                     data-job-id="{{ job.id }}"
                                     onclick="redoTransformation('{{ job.id }}');">
                               <i class="bi bi-arrow-repeat"></i> Use These Settings Again
                             </button>
+                            <!-- UNIVERSAL Collection Save Button - Works with centralized system -->
+                            <button class="btn btn-outline-success btn-sm w-100" 
+                                    type="button" 
+                                    data-processed-image-id="{{ processed_img.id }}">
+                              <i class="bi bi-collection"></i> Save to Collection
+                            </button>
+                            <!-- View Full Image Button -->
+                            <a href="{{ processed_img.processed_image.url }}" 
+                               class="btn btn-outline-info btn-sm" 
+                               target="_blank">
+                              <i class="bi bi-arrows-fullscreen"></i> View Full Image
+                            </a>
+                            <!-- Download Button -->
+                            <a href="{{ processed_img.processed_image.url }}" 
+                               class="btn btn-outline-secondary btn-sm" 
+                               download>
+                              <i class="bi bi-download"></i> Download Image
+                            </a>
                           </div>
+                          {% endif %}
                         {% endfor %}
                       {% endif %}
                     {% endwith %}
@@ -289,7 +244,7 @@
                   
                   <div class="d-grid gap-2">
                     <a href="{% url 'image_processing:image_detail' job.user_image.pk %}" 
-                       class="btn btn-outline-info btn-sm">
+                       class="btn btn-outline-secondary btn-sm">
                       <i class="bi bi-image"></i> View Original Image
                     </a>
                   </div>
@@ -328,7 +283,7 @@
       </div>
     </div>
 
-    <!-- Pagination -->
+    <!-- Fixed Pagination -->
     {% if page_obj.has_other_pages %}
       <nav aria-label="Processing history pagination" class="mt-4">
         <ul class="pagination justify-content-center">
@@ -384,98 +339,37 @@
   {% endif %}
 </div>
 
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteProcessedModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Delete Wedding Transformation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete this wedding transformation?</p>
-        <p class="text-danger"><small>This action cannot be undone.</small></p>
-        <div class="text-center">
-          <img id="deletePreviewImage" 
-               class="img-fluid rounded" 
-               style="max-height: 200px;" 
-               alt="Transformation to delete">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteProcessedBtn">
-          <i class="bi bi-trash"></i> Delete Transformation
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Collection Success Toast -->
-<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
-  <div class="toast-header">
-    <i class="bi bi-collection text-success me-2"></i>
-    <strong class="me-auto">Collection</strong>
-    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-  </div>
-  <div class="toast-body" id="collectionToastBody">
-    Image added to collection!
-  </div>
-</div>
-
 <script>
-// Simplified Latest Job Monitor
-class LatestJobMonitor {
+// Simplified Job Monitor - No collection picker code needed
+class SimpleJobMonitor {
     constructor() {
         this.monitoringInterval = null;
-        this.countdownInterval = null;
-        this.checkInterval = 15; // seconds
-        this.countdown = this.checkInterval;
-        this.latestJobId = null;
+        this.checkInterval = 5; // Check every 5 seconds
+        this.activeJobId = null;
         this.init();
     }
 
     init() {
-        // Find the latest job that needs monitoring
-        const latestJobCard = document.querySelector('.job-card');
-        if (latestJobCard) {
-            const status = latestJobCard.dataset.jobStatus;
-            if (status === 'pending' || status === 'processing') {
-                this.latestJobId = latestJobCard.dataset.jobId;
-                this.startMonitoring();
-            }
+        // Find any job that needs monitoring (pending or processing)
+        const activeJobCard = document.querySelector('.job-card[data-job-status="pending"], .job-card[data-job-status="processing"]');
+        if (activeJobCard) {
+            this.activeJobId = activeJobCard.dataset.jobId;
+            this.startMonitoring();
         }
-
-        // Setup pause button
-        const pauseBtn = document.getElementById('pauseAutoRefresh');
-        if (pauseBtn) {
-            pauseBtn.addEventListener('click', () => this.stopMonitoring());
-        }
-
-        // Setup manual check buttons
-        document.querySelectorAll('.check-status-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const jobId = e.target.closest('.check-status-btn').dataset.jobId;
-                this.checkJobStatus(jobId, true);
-            });
-        });
     }
 
     startMonitoring() {
-        if (!this.latestJobId) return;
+        if (!this.activeJobId) return;
         
-        console.log(`Monitoring latest job: ${this.latestJobId}`);
+        console.log(`Monitoring job: ${this.activeJobId}`);
         
         // Check immediately
-        this.checkJobStatus(this.latestJobId);
+        this.checkJobStatus(this.activeJobId);
         
-        // Set up regular checking
+        // Set up regular checking every 5 seconds
         this.monitoringInterval = setInterval(() => {
-            this.checkJobStatus(this.latestJobId);
+            this.checkJobStatus(this.activeJobId);
         }, this.checkInterval * 1000);
-        
-        this.startCountdown();
     }
 
     stopMonitoring() {
@@ -483,33 +377,10 @@ class LatestJobMonitor {
             clearInterval(this.monitoringInterval);
             this.monitoringInterval = null;
         }
-        if (this.countdownInterval) {
-            clearInterval(this.countdownInterval);
-            this.countdownInterval = null;
-        }
-        
-        // Hide the monitoring indicator
-        const indicator = document.getElementById('autoRefreshIndicator');
-        if (indicator) indicator.style.display = 'none';
-        
-        console.log('Stopped monitoring latest job');
+        console.log('Stopped monitoring job');
     }
 
-    startCountdown() {
-        this.countdown = this.checkInterval;
-        this.updateCountdownDisplay();
-        
-        this.countdownInterval = setInterval(() => {
-            this.countdown--;
-            this.updateCountdownDisplay();
-            
-            if (this.countdown <= 0) {
-                this.countdown = this.checkInterval;
-            }
-        }, 1000);
-    }
-
-    async checkJobStatus(jobId, isManual = false) {
+    async checkJobStatus(jobId) {
         try {
             const response = await fetch(`/studio/job/${jobId}/status/`);
             const data = await response.json();
@@ -520,12 +391,13 @@ class LatestJobMonitor {
                 this.handleJobCompleted(jobId, data);
             } else if (data.status === 'failed') {
                 this.handleJobFailed(jobId, data);
-            } else if (data.status === 'processing' && !isManual) {
-                this.updateProcessingMessage(jobId);
+            } else if (data.status === 'processing') {
+                this.updateProcessingState(jobId);
             }
             
         } catch (error) {
             console.error(`Status check error for job ${jobId}:`, error);
+            // Continue monitoring even if there's an error
         }
     }
 
@@ -534,55 +406,115 @@ class LatestJobMonitor {
         this.stopMonitoring();
         
         // Show success notification
-        const notification = document.createElement('div');
-        notification.className = 'alert alert-success alert-dismissible fade show position-fixed';
-        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 350px;';
-        notification.innerHTML = `
-            <strong>Wedding Transformation Complete!</strong><br>
-            <small>Your latest transformation is ready to view</small>
-            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
-        `;
+        this.showNotification('Your wedding transformation is complete!', 'success');
         
-        document.body.appendChild(notification);
-        
-        // Reload page to show results
+        // Reload page to show fresh results
         setTimeout(() => {
             window.location.reload();
-        }, 2000);
+        }, 1500);
     }
 
     handleJobFailed(jobId, data) {
         console.log(`Job ${jobId} failed`);
         this.stopMonitoring();
         
-        // Show error notification
-        showAlert('Processing failed. Please try again.', 'danger');
+        // Show error notification but DON'T auto-reload
+        const errorMsg = data.error_message || 'Processing failed';
+        this.showNotification(`Processing failed: ${errorMsg.substring(0, 100)}...`, 'danger', 8000);
+        
+        // Update the page to show failed state without full reload
+        this.updateFailedJobDisplay(jobId, data);
     }
 
-    updateProcessingMessage(jobId) {
+    updateFailedJobDisplay(jobId, data) {
+        // Update the job card to show failed state without full page reload
+        const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
+        if (jobCard) {
+            jobCard.dataset.jobStatus = 'failed';
+            
+            // Find and update the status badge
+            const statusBadge = jobCard.querySelector('.job-status-badge');
+            if (statusBadge) {
+                statusBadge.className = 'badge fs-6 job-status-badge bg-danger';
+                statusBadge.innerHTML = '<i class="bi bi-x-circle"></i> <span class="status-text">Failed</span>';
+            }
+        }
+    }
+
+    updateProcessingState(jobId) {
         const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
         if (!jobCard) return;
         
+        // Update processing message with subtle variety
         const processingMessage = jobCard.querySelector('.processing-message');
         if (processingMessage) {
             const messages = [
                 'Creating your wedding vision...',
-                'Applying AI transformations...',
-                'Adding wedding details...',
-                'Almost done...'
+                'Applying your transformations...',
+                'Adding magical details...',
+                'Almost ready...'
             ];
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            processingMessage.textContent = randomMessage;
+            
+            // Use a different message occasionally to show progress
+            if (Math.random() < 0.3) { // 30% chance to change message
+                const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                processingMessage.textContent = randomMessage;
+            }
+        }
+
+        // Update duration display
+        this.updateDurationDisplay(jobCard);
+    }
+
+    updateDurationDisplay(jobCard) {
+        const durationElement = jobCard.querySelector('.processing-duration');
+        if (!durationElement) return;
+
+        const startedAt = durationElement.dataset.started;
+        if (startedAt) {
+            const started = new Date(startedAt);
+            const now = new Date();
+            const diffSeconds = Math.floor((now - started) / 1000);
+            
+            if (diffSeconds > 0) {
+                const minutes = Math.floor(diffSeconds / 60);
+                const seconds = diffSeconds % 60;
+                
+                if (minutes > 0) {
+                    durationElement.textContent = ` • ${minutes}m ${seconds}s elapsed`;
+                } else {
+                    durationElement.textContent = ` • ${seconds}s elapsed`;
+                }
+            }
         }
     }
 
-    updateCountdownDisplay() {
-        const countdownEl = document.getElementById('countdown');
-        if (countdownEl) countdownEl.textContent = this.countdown;
+    showNotification(message, type, duration = 5000) {
+        // Remove any existing notifications
+        document.querySelectorAll('.job-notification').forEach(notif => notif.remove());
+        
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed job-notification`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after specified duration
+        setTimeout(() => {
+            if (notification.parentElement) notification.remove();
+        }, duration);
+    }
+
+    destroy() {
+        this.stopMonitoring();
     }
 }
 
-// NEW: Redo transformation functionality
+// UPDATED Redo transformation functionality
 async function redoTransformation(jobId) {
     try {
         showAlert('Copying settings to studio...', 'info');
@@ -608,92 +540,50 @@ async function redoTransformation(jobId) {
     }
 }
 
-// Collection helper functions
-async function addToDefaultCollection(imageType, imageId) {
-    const formData = new FormData();
-    formData.append('use_default', 'true');
+// Handle favorite toggle for heart buttons
+async function handleFavoriteToggle(button) {
+    const processedImageId = button.dataset.processedImageId;
+    const heartIcon = button.querySelector('.favorite-heart-icon');
     
-    if (imageType === 'user') {
-        formData.append('user_image_id', imageId);
-    } else {
-        formData.append('processed_image_id', imageId);
+    if (!processedImageId) {
+        console.error('No processed image ID found');
+        return;
     }
     
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-    
-    formData.append('csrfmiddlewaretoken', csrfToken);
-    
     try {
-        const response = await fetch('/studio/collections/add/', {
-            method: 'POST',
-            body: formData
-        });
+        // Optimistic UI update
+        button.disabled = true;
+        const wasLiked = heartIcon.classList.contains('bi-heart-fill');
         
-        const result = await response.json();
-        
-        if (result.success) {
-            showCollectionToast(result.message, 'success');
-        } else {
-            showCollectionToast(result.message || 'Failed to add to collection', 'warning');
-        }
-    } catch (error) {
-        console.error('Collection error:', error);
-        showCollectionToast('Network error', 'error');
-    }
-}
-
-function showCollectionToast(message, type) {
-    const toastEl = document.getElementById('collectionToast');
-    const toastBody = document.getElementById('collectionToastBody');
-    
-    toastBody.textContent = message;
-    
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
-}
-
-// Delete processed image functionality
-function confirmDeleteProcessed(imageId, imageUrl) {
-    const modal = document.getElementById('deleteProcessedModal');
-    const previewImg = document.getElementById('deletePreviewImage');
-    const confirmBtn = document.getElementById('confirmDeleteProcessedBtn');
-    
-    previewImg.src = imageUrl;
-    
-    confirmBtn.onclick = function() {
-        deleteProcessedImage(imageId);
-    };
-    
-    new bootstrap.Modal(modal).show();
-}
-
-async function deleteProcessedImage(imageId) {
-    try {
-        const response = await fetch(`/studio/processed/${imageId}/delete/`, {
+        const response = await fetch('/studio/favorite/', {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                              document.querySelector('meta[name=csrf-token]')?.getAttribute('content'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCSRFToken(),
                 'X-Requested-With': 'XMLHttpRequest'
-            }
+            },
+            body: `processed_image_id=${processedImageId}`
         });
         
-        const result = await response.json();
+        const data = await response.json();
         
-        if (result.success) {
-            bootstrap.Modal.getInstance(document.getElementById('deleteProcessedModal')).hide();
-            showAlert(result.message, 'success');
-            
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+        if (data.success) {
+            if (data.is_favorited) {
+                heartIcon.className = 'bi bi-heart-fill text-danger favorite-heart-icon';
+                showAlert('Added to favorites', 'success');
+            } else {
+                heartIcon.className = 'bi bi-heart favorite-heart-icon';
+                showAlert('Removed from favorites', 'info');
+            }
         } else {
-            showAlert(result.message || 'Failed to delete image', 'danger');
+            showAlert(data.error || 'Error updating favorites', 'danger');
         }
+        
     } catch (error) {
-        console.error('Delete error:', error);
-        showAlert('Network error occurred', 'danger');
+        console.error('Favorite toggle error:', error);
+        showAlert('Error updating favorites', 'danger');
+    } finally {
+        button.disabled = false;
     }
 }
 
@@ -715,9 +605,115 @@ function showAlert(message, type) {
     }, 5000);
 }
 
-// Initialize simplified monitoring when page loads
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+}
+
+// Initialize monitoring when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    window.latestJobMonitor = new LatestJobMonitor();
+    console.log('Initializing simple job monitor...');
+    window.jobMonitor = new SimpleJobMonitor();
+    
+    // Handle favorite heart clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('favorite-heart-btn') || e.target.closest('.favorite-heart-btn')) {
+            e.preventDefault();
+            handleFavoriteToggle(e.target.closest('.favorite-heart-btn') || e.target);
+        }
+    });
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (window.jobMonitor) {
+        window.jobMonitor.destroy();
+    }
 });
 </script>
+
+<style>
+/* Enhanced processing placeholder styling */
+.processing-placeholder, .pending-placeholder {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.processing-placeholder::before, .pending-placeholder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.processing-placeholder .spinner-border {
+    filter: drop-shadow(0 0 8px rgba(13, 110, 253, 0.3));
+}
+
+/* Improved status badges */
+.job-status-badge {
+    font-size: 0.875rem !important;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Better visual hierarchy for processing states */
+.processing-message {
+    background: linear-gradient(45deg, #0d6efd, #6f42c1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 600;
+}
+
+/* Enhanced error display - persistent and more informative */
+.persistent-error {
+    border-left: 4px solid #dc3545;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.persistent-error .alert-heading {
+    color: #721c24;
+    font-weight: 600;
+}
+
+/* Purple badge for custom prompts */
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: white;
+}
+
+/* Favorite heart styling - ONLY overlay icon */
+.favorite-heart-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.favorite-heart-btn:hover {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.favorite-heart-icon {
+    font-size: 1.1rem;
+}
+</style>
 {% endblock %}

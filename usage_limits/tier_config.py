@@ -4,7 +4,7 @@ class TierLimits:
     """Define usage limits for wedding venue visualization"""
     TIERS = {
         'free': {
-            'monthly_limit': 0,  # 1 images per month
+            'monthly_limit': 1,  # 1 images per month
             'stripe_price_ids': [],
         },
         'basic': {

@@ -8,10 +8,9 @@
   <!-- Header -->
   <div class="row mb-4">
     <div class="col-12 text-center">
-      <h1 class="h2 mb-2">Wedding Visualizer</h1>
+      <h1 class="h2 mb-2">Wedding Studio</h1>
       <p class="text-muted mb-0">Transform any space into your perfect wedding celebration</p>
-      <small class="text-muted">Powered by advanced AI for dramatic transformations</small>
-    </div>
+   </div>
   </div>
 
   <!-- Main Layout -->
@@ -147,13 +146,7 @@
             </div>
             {% endif %}
 
-            <!-- Transformation Info -->
-            <div class="mt-3 p-2 bg-light rounded">
-              <small class="text-muted">
-                <i class="bi bi-info-circle me-1"></i>
-                <strong>Fixed Settings:</strong> Strength 70% • 30 Steps • Optimized for quality
-              </small>
-            </div>
+          
           </form>
         </div>
       </div>
@@ -233,7 +226,7 @@
           <div class="spinner-border spinner-border-sm text-warning me-3" role="status"></div>
           <div>
             <div class="fw-bold">Creating Your Wedding Vision...</div>
-            <div class="small text-muted">Using advanced AI to transform your space - this may take 2-3 minutes</div>
+            <div class="small text-muted">Redirecting you to view the transformation progress</div>
           </div>
         </div>
       </div>
@@ -314,11 +307,7 @@
                             {{ job.get_status_display }}
                           </span>
                         </div>
-                        {% if job.status == 'completed' %}
-                          <small class="text-success">
-                            <i class="bi bi-lightning-fill"></i> AI transformation complete
-                          </small>
-                        {% endif %}
+                       
                       </div>
                     </div>
                   </div>
@@ -467,6 +456,21 @@
 <script>
 console.log('🚀 Wedding Studio script loading...');
 
+// Make preselected image data available to JavaScript
+{% if preselected_image %}
+window.preselectedImageData = {
+    id: {{ preselected_image.id }},
+    image_url: "{{ preselected_image.image.url }}",
+    name: "{{ preselected_image.original_filename|escapejs }}",
+    width: {{ preselected_image.width }},
+    height: {{ preselected_image.height }},
+    file_size: {{ preselected_image.file_size }}
+};
+console.log('📌 Preselected image data loaded:', window.preselectedImageData);
+{% else %}
+window.preselectedImageData = null;
+{% endif %}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 DOM Content Loaded');
     initializeWeddingStudio();
@@ -475,13 +479,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeWeddingStudio() {
     console.log('🎬 Initializing Wedding Studio...');
     
-    // Wedding Studio Manager Class - SIMPLIFIED VERSION
+    // Wedding Studio Manager Class - FIXED VERSION
     class WeddingStudioManager {
         constructor() {
             this.selectedImageId = null;
             this.isUploading = false;
             this.currentJobId = null;
-            this.statusCheckInterval = null;
             this.init();
         }
 
@@ -495,7 +498,136 @@ function initializeWeddingStudio() {
             this.setupTabs();
             this.setupOptionalFields();
             this.setupTooltips();
+            
+            // FIXED: Call these methods in the correct order
+            this.handlePreselectedImage();
+            this.handleURLParameters();  // This was being called but had issues
+            
             console.log('✅ Wedding Studio Manager ready!');
+        }
+
+        handlePreselectedImage() {
+            console.log('🎯 Checking for preselected image...');
+            
+            // Check if there's preselected image data from the template
+            const preselectedData = window.preselectedImageData;
+            if (preselectedData) {
+                console.log('📌 Found preselected image:', preselectedData.id);
+                
+                // Set the selected image ID
+                this.selectedImageId = preselectedData.id;
+                
+                // Find and select the corresponding thumbnail if it exists
+                const thumbnail = document.querySelector(`[data-image-id="${preselectedData.id}"]`);
+                if (thumbnail) {
+                    this.selectThumbnail(thumbnail);
+                } else {
+                    // If thumbnail doesn't exist in recent images, show the image directly
+                    this.showImagePreview(
+                        preselectedData.image_url,
+                        preselectedData.name,
+                        preselectedData.width,
+                        preselectedData.height,
+                        preselectedData.file_size
+                    );
+                }
+                
+                console.log('✅ Preselected image loaded successfully');
+            } else {
+                console.log('ℹ️ No preselected image found');
+            }
+        }
+
+        handleURLParameters() {
+            console.log('🔗 Checking URL parameters for form population...');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            let settingsApplied = false;
+            
+            // Handle image selection from URL
+            const imageId = urlParams.get('image_id');
+            if (imageId && !this.selectedImageId) {
+                console.log('📌 Found image_id in URL:', imageId);
+                
+                // Try to find this image in thumbnails
+                const thumbnail = document.querySelector(`[data-image-id="${imageId}"]`);
+                if (thumbnail) {
+                    this.selectThumbnail(thumbnail);
+                    settingsApplied = true;
+                } else {
+                    // Set the ID so it will be used when form is submitted
+                    this.selectedImageId = imageId;
+                    console.log('📌 Set selectedImageId from URL, but thumbnail not found in recent images');
+                }
+            }
+            
+            // FIXED: Handle guided mode form fields with proper mapping
+            const formFields = [
+                { param: 'wedding_theme', elementId: 'wedding-theme' },
+                { param: 'space_type', elementId: 'space-type' },
+                { param: 'season', elementId: 'season' },
+                { param: 'lighting', elementId: 'lighting' }, // URL param is 'lighting', form field is also 'lighting'
+                { param: 'color_scheme', elementId: 'color-scheme' }
+            ];
+            
+            formFields.forEach(field => {
+                const value = urlParams.get(field.param);
+                if (value) {
+                    const element = document.getElementById(field.elementId);
+                    if (element) {
+                        element.value = value;
+                        settingsApplied = true;
+                        console.log(`📝 Set ${field.param}:`, value);
+                    }
+                }
+            });
+            
+            // Handle special features and avoid fields
+            const specialFeatures = urlParams.get('special_features');
+            if (specialFeatures) {
+                const specialFeaturesField = document.getElementById('special-features');
+                if (specialFeaturesField) {
+                    specialFeaturesField.value = specialFeatures;
+                    settingsApplied = true;
+                }
+            }
+            
+            const avoid = urlParams.get('avoid');
+            if (avoid) {
+                const avoidField = document.getElementById('avoid');
+                if (avoidField) {
+                    avoidField.value = avoid;
+                    settingsApplied = true;
+                }
+            }
+            
+            if (settingsApplied) {
+                // FIXED: Show optional fields if any optional parameters were set
+                if (urlParams.get('season') || urlParams.get('lighting') || urlParams.get('color_scheme') || 
+                    urlParams.get('special_features') || urlParams.get('avoid')) {
+                    const optionalFields = document.getElementById('optionalFields');
+                    const toggleIcon = document.getElementById('toggleIcon');
+                    if (optionalFields && optionalFields.classList.contains('d-none')) {
+                        optionalFields.classList.remove('d-none');
+                        if (toggleIcon) toggleIcon.className = 'bi bi-chevron-up';
+                    }
+                }
+                
+                // FIXED: Update suggestions and transform button after parameters are loaded
+                this.showSuggestions();
+                this.updateTransformButton();
+                
+                this.showAlert('Settings loaded from previous transformation', 'success');
+                console.log('✅ URL parameters applied successfully');
+                
+                // Clean up URL without causing reload
+                if (window.history && window.history.replaceState) {
+                    const cleanUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                }
+            } else {
+                console.log('ℹ️ No form parameters found in URL');
+            }
         }
 
         setupTooltips() {
@@ -963,6 +1095,7 @@ function initializeWeddingStudio() {
             return data;
         }
 
+        // UPDATED processImage method - redirects to history page
         async processImage() {
             if (!this.selectedImageId) {
                 this.showAlert('Please select an image first', 'danger');
@@ -976,15 +1109,10 @@ function initializeWeddingStudio() {
                 return;
             }
 
-            // Show processing status
-            const processingStatus = document.getElementById('processingStatus');
-            if (processingStatus) {
-                processingStatus.classList.remove('d-none');
-            }
-            
+            // Update button state but don't show yellow popup
             const btn = document.getElementById('transformBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Creating Transformation...</span>';
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Starting Transformation...</span>';
 
             try {
                 const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
@@ -1002,12 +1130,12 @@ function initializeWeddingStudio() {
                 
                 if (result.success) {
                     this.currentJobId = result.job_id;
-                    this.showAlert('✨ AI transformation started! Redirecting to visualizations...', 'success');
+                    this.showAlert('AI transformation started! Redirecting to view progress...', 'success');
                     
-                    // Redirect to visualizations page after short delay
+                    // Immediate redirect to history page to monitor progress
                     setTimeout(() => {
                         window.location.href = '/studio/visualizations/';
-                    }, 1500);
+                    }, 1000);
                     
                 } else {
                     throw new Error(result.error || 'Processing failed');
@@ -1015,134 +1143,7 @@ function initializeWeddingStudio() {
             } catch (error) {
                 console.error('⛔ Processing error:', error);
                 this.showAlert('Error: ' + error.message, 'danger');
-                if (processingStatus) {
-                    processingStatus.classList.add('d-none');
-                }
                 this.updateTransformButton();
-            }
-        }
-
-        // Job status monitoring (same as before)
-        startJobStatusMonitoring(jobId) {
-            console.log(`📄 Starting status monitoring for job ${jobId}`);
-            
-            if (this.statusCheckInterval) {
-                clearInterval(this.statusCheckInterval);
-            }
-            
-            // Check status every 3 seconds
-            this.statusCheckInterval = setInterval(async () => {
-                await this.checkJobStatus(jobId);
-            }, 3000);
-            
-            // Check immediately
-            this.checkJobStatus(jobId);
-        }
-
-        async checkJobStatus(jobId) {
-            try {
-                const response = await fetch(`/studio/job/${jobId}/status/`);
-                const data = await response.json();
-                
-                console.log(`📊 Job ${jobId} status:`, data.status);
-                
-                if (data.status === 'completed') {
-                    this.handleJobCompleted(data);
-                } else if (data.status === 'failed') {
-                    this.handleJobFailed(data);
-                } else if (data.status === 'processing') {
-                    this.updateProcessingStatus('AI is creating your wedding transformation...');
-                }
-                
-            } catch (error) {
-                console.error('⛔ Status check error:', error);
-            }
-        }
-
-        handleJobCompleted(jobData) {
-            console.log('✅ Job completed!', jobData);
-            
-            if (this.statusCheckInterval) {
-                clearInterval(this.statusCheckInterval);
-                this.statusCheckInterval = null;
-            }
-            
-            const processingStatus = document.getElementById('processingStatus');
-            if (processingStatus) {
-                processingStatus.classList.add('d-none');
-            }
-            
-            this.showAlert('🎉 Your wedding transformation is complete!', 'success');
-            this.updateTransformButton();
-            
-            if (jobData.result && jobData.result.image_url) {
-                this.showResultPreview(jobData.result);
-            }
-            
-            // Reload recent transformations after a short delay
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
-        }
-
-        handleJobFailed(jobData) {
-            console.log('⛔ Job failed:', jobData);
-            
-            if (this.statusCheckInterval) {
-                clearInterval(this.statusCheckInterval);
-                this.statusCheckInterval = null;
-            }
-            
-            const processingStatus = document.getElementById('processingStatus');
-            if (processingStatus) {
-                processingStatus.classList.add('d-none');
-            }
-            
-            const errorMsg = jobData.error_message || 'Processing failed';
-            this.showAlert(`⛔ Processing failed: ${errorMsg}`, 'danger');
-            this.updateTransformButton();
-        }
-
-        updateProcessingStatus(message) {
-            const statusElement = document.querySelector('#processingStatus .fw-bold');
-            if (statusElement) {
-                statusElement.textContent = message;
-            }
-        }
-
-        showResultPreview(result) {
-            const resultPreview = `
-                <div class="alert alert-success border-0 mt-3" id="resultPreview">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            <img src="${result.image_url}" class="rounded" 
-                                 style="width: 80px; height: 60px; object-fit: cover;" 
-                                 alt="Transformation result">
-                        </div>
-                        <div class="col">
-                            <div class="fw-bold">Transformation Complete!</div>
-                            <div class="small text-muted">
-                                ${result.width}x${result.height} • 
-                                ${(result.file_size / (1024 * 1024)).toFixed(1)}MB
-                            </div>
-                        </div>
-                        <div class="col-auto">
-                            <a href="/studio/processed/${result.id}/" class="btn btn-sm btn-success">
-                                <i class="bi bi-eye me-1"></i> View Result
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const existingPreview = document.getElementById('resultPreview');
-            if (existingPreview) {
-                existingPreview.remove();
-            }
-            
-            const processingStatus = document.getElementById('processingStatus');
-            if (processingStatus) {
-                processingStatus.insertAdjacentHTML('afterend', resultPreview);
             }
         }
 
@@ -1170,9 +1171,7 @@ function initializeWeddingStudio() {
         }
 
         destroy() {
-            if (this.statusCheckInterval) {
-                clearInterval(this.statusCheckInterval);
-            }
+            // Cleanup if needed
         }
     }
 

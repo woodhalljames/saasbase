@@ -1,11 +1,11 @@
-# wedding_shopping/models.py - Simplified social media without owner field
+# wedding_shopping/models.py - Updated with venue_location as address field
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 import uuid
 from django.utils.text import slugify
 import re
-from urllib.parse import urlparse
+import urllib.parse
 
 User = get_user_model()
 
@@ -21,17 +21,22 @@ class CoupleProfile(models.Model):
     # Wedding Details
     wedding_date = models.DateField(null=True, blank=True)
     venue_name = models.CharField(max_length=200, blank=True)
-    venue_location = models.CharField(max_length=200, blank=True, help_text="City, State")
+    venue_location = models.CharField(max_length=200, blank=True, help_text="Full address or City, State")
     
-    # Images
-    couple_photo = models.ImageField(upload_to='couple_photos/', null=True, blank=True)
-    venue_photo = models.ImageField(upload_to='venue_photos/', null=True, blank=True)
-    engagement_photo = models.ImageField(
-    upload_to='engagement_photos/', 
-    null=True, 
-    blank=True,
-    help_text='Engagement or additional couple photo'
-)
+    # Images - Keep existing field names for compatibility
+    couple_photo = models.ImageField(
+        upload_to='couple_photos/', 
+        null=True, 
+        blank=True,
+        help_text='Main photo of the couple'
+    )
+    venue_photo = models.ImageField(
+        upload_to='venue_photos/', 
+        null=True, 
+        blank=True,
+        help_text='Venue photo or additional couple photo'
+    )
+    
     # Story
     couple_story = models.TextField(blank=True, help_text="Tell your love story")
     
@@ -121,280 +126,49 @@ class CoupleProfile(models.Model):
     def wedding_url_preview(self):
         return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
     
-    # Helper methods for wedding links by category
     @property
-    def registry_links(self):
-        return self.wedding_links.filter(link_type='registry').order_by('id')
-    
-    @property
-    def rsvp_links(self):
-        return self.wedding_links.filter(link_type='rsvp').order_by('id')
-    
-    @property
-    def livestream_links(self):
-        return self.wedding_links.filter(link_type='livestream').order_by('id')
+    def address_map_url(self):
+        """Generate Google Maps URL from venue_location"""
+        if not self.venue_location:
+            return None
+        encoded_address = urllib.parse.quote(self.venue_location)
+        return f"https://maps.google.com/maps?q={encoded_address}"
     
     @property
-    def photo_links(self):
-        return self.wedding_links.filter(link_type='photos').order_by('id')
-    
-    @property
-    def other_links(self):
-        return self.wedding_links.filter(link_type='other').order_by('id')
-
-
-class SocialMediaLink(models.Model):
-    """Simplified social media links without owner assignment"""
-    
-    couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='social_links')
-    url = models.URLField()
-    display_name = models.CharField(max_length=100, blank=True, help_text="Display name (e.g., @username)")
-    
-    class Meta:
-        unique_together = ['couple_profile', 'url']
-        ordering = ['id']  # Order by creation order
-    
-    def __str__(self):
-        return f"{self.couple_profile} - {self.display_name or self.url}"
-    
-    def _detect_platform_from_url(self):
-        """Auto-detect platform from URL"""
-        if not self.url:
-            return 'other'
+    def display_city(self):
+        """Extract city for discovery cards - works with both full addresses and city/state"""
+        if not self.venue_location:
+            return ""
         
-        domain = urlparse(self.url).netloc.lower()
+        # If it looks like a full address (contains numbers), try to extract city
+        if any(char.isdigit() for char in self.venue_location):
+            # Split by comma and take the second-to-last part as likely city
+            parts = [part.strip() for part in self.venue_location.split(',')]
+            if len(parts) >= 2:
+                return parts[-2]  # Usually the city part
+            return parts[0] if parts else ""
         
-        platform_patterns = {
-            'instagram': ['instagram.com', 'instagr.am'],
-            'facebook': ['facebook.com', 'fb.com'],
-            'twitter': ['twitter.com', 'x.com'],
-            'tiktok': ['tiktok.com'],
-            'youtube': ['youtube.com', 'youtu.be'],
-            'pinterest': ['pinterest.com'],
-            'linkedin': ['linkedin.com'],
-        }
-        
-        for platform, patterns in platform_patterns.items():
-            if any(pattern in domain for pattern in patterns):
-                return platform
-        
-        return 'website' if any(tld in domain for tld in ['.com', '.org', '.net']) else 'other'
-    
-    @property
-    def platform(self):
-        """Returns detected platform"""
-        return self._detect_platform_from_url()
-    
-    @property
-    def platform_icon(self):
-        """Returns Bootstrap icon class for the platform"""
-        icons = {
-            'instagram': 'bi-instagram',
-            'facebook': 'bi-facebook',
-            'twitter': 'bi-twitter-x',
-            'tiktok': 'bi-tiktok',
-            'youtube': 'bi-youtube',
-            'pinterest': 'bi-pinterest',
-            'linkedin': 'bi-linkedin',
-            'website': 'bi-globe',
-            'other': 'bi-link-45deg',
-        }
-        return icons.get(self.platform, 'bi-link-45deg')
-
-    @property
-    def platform_color(self):
-        """Returns brand color for the platform"""
-        colors = {
-            'instagram': '#E4405F',
-            'facebook': '#1877F2',
-            'twitter': '#000000',
-            'tiktok': '#FF0050',
-            'youtube': '#FF0000',
-            'pinterest': '#BD081C',
-            'linkedin': '#0A66C2',
-            'website': '#007bff',
-            'other': '#6c757d',
-        }
-        return colors.get(self.platform, '#6c757d')
-    
-    @property
-    def platform_display_name(self):
-        """Returns the display name to show on the wedding page"""
-        return self.display_name or self.url
-    
-    @property
-    def platform_name(self):
-        """Returns formatted platform name"""
-        names = {
-            'instagram': 'Instagram',
-            'facebook': 'Facebook',
-            'twitter': 'X (Twitter)',
-            'tiktok': 'TikTok',
-            'youtube': 'YouTube',
-            'pinterest': 'Pinterest',
-            'linkedin': 'LinkedIn',
-            'website': 'Website',
-            'other': 'Other',
-        }
-        return names.get(self.platform, 'Other')
+        # If no numbers, assume it's already in "City, State" format
+        return self.venue_location
 
 
 class WeddingLink(models.Model):
-    """Enhanced link model for registries, RSVP, livestreams, and other wedding content"""
-    
-    LINK_TYPE_CHOICES = [
-        ('registry', 'Wedding Registry'),
-        ('rsvp', 'RSVP Site'),
-        ('livestream', 'Live Stream'),
-        ('photos', 'Wedding Photos'),
-        ('website', 'Wedding Website'),
-        ('other', 'Other'),
-    ]
+    """Simplified link model for wedding-related links"""
     
     couple_profile = models.ForeignKey(CoupleProfile, on_delete=models.CASCADE, related_name='wedding_links')
-    link_type = models.CharField(max_length=20, choices=LINK_TYPE_CHOICES, default='registry')
-    url = models.URLField(help_text="Link URL")
-    title = models.CharField(max_length=100, help_text="Title for this link")
+    title = models.CharField(max_length=100, help_text="Site or link title")
     description = models.TextField(blank=True, help_text="Description of this link")
+    url = models.URLField(help_text="Link URL")
     
     # Tracking
     click_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['id']  # Order by creation order
+        ordering = ['created_at']  # Order by creation order
     
     def __str__(self):
-        return f"{self.couple_profile} - {self.get_link_type_display()} - {self.title}"
-    
-    def _detect_service_from_url(self):
-        """Auto-detect service type from URL"""
-        if not self.url:
-            return 'other'
-        
-        domain = urlparse(self.url).netloc.lower()
-        
-        service_patterns = {
-            # Registries
-            'amazon': ['amazon.com', 'amzn.com'],
-            'target': ['target.com'],
-            'bed_bath_beyond': ['bedbathandbeyond.com', 'buybuybaby.com'],
-            'williams_sonoma': ['williams-sonoma.com', 'williamssonoma.com'],
-            'crate_barrel': ['crateandbarrel.com', 'cb2.com'],
-            'pottery_barn': ['potterybarn.com', 'pbteen.com', 'pbkids.com'],
-            'macy': ['macys.com'],
-            'zola': ['zola.com'],
-            'the_knot': ['theknot.com'],
-            'wayfair': ['wayfair.com'],
-            'honeyfund': ['honeyfund.com'],
-            
-            # RSVP Sites
-            'rsvpify': ['rsvpify.com'],
-            'wedding_wire': ['rsvp.weddingwire.com'],
-            'anrsvp': ['anrsvp.com'],
-            'withjoy': ['withjoy.com'],
-            
-            # Livestream
-            'zoom': ['zoom.us', 'zoom.com'],
-            'youtube_live': ['youtube.com/watch', 'youtu.be'],
-            'facebook_live': ['facebook.com'],
-            'instagram_live': ['instagram.com'],
-            
-            # Photo sharing
-            'google_photos': ['photos.google.com', 'photos.app.goo.gl'],
-            'dropbox': ['dropbox.com'],
-            'shutterfly': ['shutterfly.com'],
-            'smugmug': ['smugmug.com'],
-        }
-        
-        for service_type, patterns in service_patterns.items():
-            if any(pattern in domain for pattern in patterns):
-                return service_type
-        
-        return 'custom'
-    
-    @property
-    def service_type(self):
-        """Returns detected service type"""
-        return self._detect_service_from_url()
-    
-    @property
-    def service_icon(self):
-        """Returns appropriate Bootstrap icon based on link type and detected service"""
-        link_type_icons = {
-            'registry': 'bi-gift',
-            'rsvp': 'bi-envelope-check',
-            'livestream': 'bi-camera-video',
-            'photos': 'bi-camera',
-            'website': 'bi-globe',
-            'other': 'bi-link-45deg',
-        }
-        
-        # Service-specific icons
-        service_icons = {
-            'amazon': 'bi-amazon',
-            'target': 'bi-bullseye',
-            'zoom': 'bi-camera-video',
-            'youtube_live': 'bi-youtube',
-            'facebook_live': 'bi-facebook',
-            'google_photos': 'bi-google',
-            'dropbox': 'bi-dropbox',
-        }
-        
-        # Try service-specific icon first, then link type icon
-        return service_icons.get(self.service_type, link_type_icons.get(self.link_type, 'bi-link-45deg'))
-
-    @property
-    def service_color(self):
-        """Returns brand color based on detected service"""
-        colors = {
-            # Registries
-            'amazon': '#FF9900',
-            'target': '#CC0000',
-            'bed_bath_beyond': '#003087',
-            'williams_sonoma': '#8B4513',
-            'crate_barrel': '#000000',
-            'pottery_barn': '#8B4513',
-            'macy': '#E21937',
-            'zola': '#FF6B6B',
-            'the_knot': '#FF69B4',
-            'wayfair': '#663399',
-            'honeyfund': '#FFA500',
-            
-            # RSVP
-            'rsvpify': '#007bff',
-            'wedding_wire': '#28a745',
-            'anrsvp': '#6f42c1',
-            'withjoy': '#fd7e14',
-            
-            # Livestream
-            'zoom': '#2D8CFF',
-            'youtube_live': '#FF0000',
-            'facebook_live': '#1877F2',
-            'instagram_live': '#E4405F',
-            
-            # Photos
-            'google_photos': '#4285F4',
-            'dropbox': '#0061FF',
-            'shutterfly': '#00A651',
-            'smugmug': '#6DB33F',
-        }
-        
-        link_type_colors = {
-            'registry': '#007bff',
-            'rsvp': '#28a745', 
-            'livestream': '#dc3545',
-            'photos': '#6f42c1',
-            'website': '#17a2b8',
-            'other': '#6c757d',
-        }
-        
-        return colors.get(self.service_type, link_type_colors.get(self.link_type, '#6c757d'))
-    
-    @property
-    def display_title(self):
-        """Returns the title to display on the wedding page"""
-        return self.title
+        return f"{self.couple_profile} - {self.title}"
     
     def increment_clicks(self):
         """Increment click count"""
@@ -407,5 +181,5 @@ class WeddingLink(models.Model):
         return self.url
 
 
-# For backwards compatibility, keep RegistryLink as an alias
+# Keep backwards compatibility
 RegistryLink = WeddingLink

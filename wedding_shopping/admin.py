@@ -1,48 +1,31 @@
-# wedding_shopping/admin.py - Updated for simplified social media
+# wedding_shopping/admin.py - Simple admin for basic moderation
 from django.contrib import admin
-from .models import CoupleProfile, SocialMediaLink, WeddingLink
-
-
-class SocialMediaLinkInline(admin.TabularInline):
-    """Inline admin for social media links"""
-    model = SocialMediaLink
-    extra = 1
-    fields = ['url', 'display_name', 'platform_info']
-    readonly_fields = ['platform_info']
-    
-    def platform_info(self, obj):
-        """Show detected platform info"""
-        if obj.pk:
-            return f"{obj.platform_name} ({obj.platform_icon})"
-        return "Will be detected from URL"
-    platform_info.short_description = "Detected Platform"
+from django.utils.html import format_html
+from django.urls import reverse
+from .models import CoupleProfile, WeddingLink
 
 
 class WeddingLinkInline(admin.TabularInline):
     """Inline admin for wedding links"""
     model = WeddingLink
-    extra = 1
-    fields = ['link_type', 'url', 'title', 'description', 'service_info', 'click_count']
-    readonly_fields = ['service_info', 'click_count']
-    
-    def service_info(self, obj):
-        """Show detected service info"""
-        if obj.pk:
-            return f"{obj.service_type.replace('_', ' ').title()} ({obj.service_icon})"
-        return "Will be detected from URL"
-    service_info.short_description = "Detected Service"
+    extra = 0
+    fields = ['title', 'url', 'description', 'click_count']
+    readonly_fields = ['click_count']
 
 
 @admin.register(CoupleProfile)
 class CoupleProfileAdmin(admin.ModelAdmin):
-    """Admin interface for couple profiles"""
+    """Simple admin for wedding page moderation"""
     list_display = [
-        'couple_names', 'wedding_date', 'venue_name', 'is_public', 
-        'social_count', 'wedding_links_count', 'created_at'
+        'couple_names', 'user_email', 'wedding_date', 'venue_display', 'is_public', 
+        'link_count', 'created_at', 'view_page_link'
     ]
-    list_filter = ['is_public', 'wedding_date', 'created_at']
-    search_fields = ['partner_1_name', 'partner_2_name', 'venue_name', 'venue_location']
-    readonly_fields = ['slug', 'share_token', 'wedding_url_preview', 'created_at', 'updated_at']
+    list_filter = ['is_public', 'created_at', 'wedding_date']
+    search_fields = [
+        'partner_1_name', 'partner_2_name', 'venue_name', 'venue_location',
+        'user__email', 'user__username', 'user__first_name', 'user__last_name'
+    ]
+    readonly_fields = ['slug', 'share_token', 'created_at', 'updated_at', 'view_page_link']
     
     fieldsets = (
         ('Basic Information', {
@@ -50,84 +33,110 @@ class CoupleProfileAdmin(admin.ModelAdmin):
         }),
         ('Venue Details', {
             'fields': ('venue_name', 'venue_location'),
-            'classes': ('collapse',)
         }),
         ('Photos', {
             'fields': ('couple_photo', 'venue_photo'),
-            'classes': ('collapse',)
         }),
         ('Story', {
             'fields': ('couple_story',),
-            'classes': ('collapse',)
         }),
         ('Settings', {
-            'fields': ('is_public', 'slug', 'share_token', 'wedding_url_preview'),
-            'classes': ('collapse',)
+            'fields': ('is_public', 'slug', 'share_token', 'view_page_link'),
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
         }),
     )
     
-    inlines = [SocialMediaLinkInline, WeddingLinkInline]
+    inlines = [WeddingLinkInline]
     
-    def social_count(self, obj):
-        """Count of social media links"""
-        return obj.social_links.count()
-    social_count.short_description = "Social Links"
+    def user_email(self, obj):
+        """Show user email with link to user admin"""
+        user_url = reverse('admin:auth_user_change', args=[obj.user.pk])
+        return format_html('<a href="{}">{}</a>', user_url, obj.user.email)
+    user_email.short_description = "User Email"
+    user_email.admin_order_field = 'user__email'
     
-    def wedding_links_count(self, obj):
-        """Count of wedding links"""
+    def venue_display(self, obj):
+        """Show venue info compactly"""
+        parts = []
+        if obj.venue_name:
+            parts.append(obj.venue_name)
+        if obj.venue_location:
+            # Show just city if it's a full address
+            if obj.display_city:
+                parts.append(obj.display_city)
+            else:
+                parts.append(obj.venue_location)
+        return ' - '.join(parts) if parts else '-'
+    venue_display.short_description = "Venue"
+    
+    def link_count(self, obj):
+        """Count wedding links"""
         return obj.wedding_links.count()
-    wedding_links_count.short_description = "Wedding Links"
+    link_count.short_description = "Links"
+    
+    def view_page_link(self, obj):
+        """Link to view the public wedding page"""
+        if obj.slug:
+            url = obj.get_absolute_url()
+            return format_html(
+                '<a href="{}" target="_blank" class="viewlink">View Page</a>', 
+                url
+            )
+        return "No page"
+    view_page_link.short_description = "Wedding Page"
+    
+    # Simple actions for moderation
+    actions = ['make_private', 'make_public', 'delete_selected']
+    
+    def make_private(self, request, queryset):
+        """Make selected pages private (hide from public)"""
+        updated = queryset.update(is_public=False)
+        self.message_user(request, f'{updated} wedding page(s) made private.')
+    make_private.short_description = "Hide selected pages from public"
+    
+    def make_public(self, request, queryset):
+        """Make selected pages public"""
+        updated = queryset.update(is_public=True)
+        self.message_user(request, f'{updated} wedding page(s) made public.')
+    make_public.short_description = "Make selected pages public"
     
     def get_queryset(self, request):
         """Optimize queries"""
-        return super().get_queryset(request).select_related('user').prefetch_related(
-            'social_links', 'wedding_links'
-        )
-
-
-@admin.register(SocialMediaLink)
-class SocialMediaLinkAdmin(admin.ModelAdmin):
-    """Admin interface for social media links"""
-    list_display = ['couple_profile', 'platform_name', 'display_name', 'url', 'created_at']
-    list_filter = ['couple_profile__is_public']
-    search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'display_name', 'url']
-    readonly_fields = ['platform', 'platform_icon', 'platform_color', 'platform_name']
-    ordering = ['couple_profile', 'id']
-    
-    fields = ['couple_profile', 'url', 'display_name', 'platform_name', 'platform_icon', 'platform_color']
-    
-    def created_at(self, obj):
-        """Show creation order"""
-        return f"#{obj.id}"
-    created_at.short_description = "Order"
-    
-    def get_queryset(self, request):
-        """Optimize queries"""
-        return super().get_queryset(request).select_related('couple_profile')
+        return super().get_queryset(request).select_related('user').prefetch_related('wedding_links')
 
 
 @admin.register(WeddingLink)
 class WeddingLinkAdmin(admin.ModelAdmin):
-    """Admin interface for wedding links"""
-    list_display = ['couple_profile', 'link_type', 'title', 'service_type', 'click_count', 'created_at']
-    list_filter = ['link_type', 'couple_profile__is_public', 'created_at']
-    search_fields = ['couple_profile__partner_1_name', 'couple_profile__partner_2_name', 'title', 'url']
-    readonly_fields = ['service_type', 'service_icon', 'service_color', 'click_count', 'created_at']
-    ordering = ['couple_profile', 'id']
+    """Simple admin for wedding links"""
+    list_display = ['couple_profile', 'title', 'url_display', 'click_count', 'created_at']
+    list_filter = ['created_at']
+    search_fields = [
+        'couple_profile__partner_1_name', 'couple_profile__partner_2_name', 
+        'title', 'url', 'description'
+    ]
+    readonly_fields = ['click_count', 'created_at']
+    ordering = ['-created_at']
     
     fields = [
-        'couple_profile', 'link_type', 'url', 'title', 'description', 
-        'service_type', 'service_icon', 'service_color',
+        'couple_profile', 'title', 'url', 'description', 
         'click_count', 'created_at'
     ]
+    
+    def url_display(self, obj):
+        """Show truncated URL"""
+        if len(obj.url) > 50:
+            return obj.url[:47] + "..."
+        return obj.url
+    url_display.short_description = "URL"
     
     def get_queryset(self, request):
         """Optimize queries"""
         return super().get_queryset(request).select_related('couple_profile')
 
 
-# Note: RegistryLink is now just an alias for WeddingLink, so no separate registration needed
+# Custom admin site titles
+admin.site.site_header = "DreamWedAI Administration"
+admin.site.site_title = "DreamWedAI Admin"
+admin.site.index_title = "Wedding Pages Management"

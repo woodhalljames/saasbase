@@ -312,26 +312,32 @@ CELERY_TASK_TIME_LIMIT = 5 * 60
 CELERY_TASK_SOFT_TIME_LIMIT = 60
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-# Add to config/settings/base.py
 
-# Celery Beat Schedule for cleanup tasks
-
+# Celery Beat Schedule for automated tasks
 CELERY_BEAT_SCHEDULE = {
-    'cleanup-temporary-images': {
-        'task': 'image_processing.tasks.cleanup_temporary_images',
-        'schedule': crontab(hour=2, minute=0),  # Run daily at 2 AM
-    },
     'cleanup-failed-jobs': {
         'task': 'image_processing.tasks.cleanup_failed_jobs',
         'schedule': crontab(hour=3, minute=0, day_of_week=0),  # Run weekly on Sunday at 3 AM
     },
+    # Automated yearly reset system - runs daily at 2 AM
+    'process-yearly-resets': {
+        'task': 'usage_limits.tasks.process_automatic_yearly_resets',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
+    },
+    # Usage system cleanup - runs daily at 4 AM
+    'cleanup-usage-system': {
+        'task': 'usage_limits.tasks.cleanup_usage_system',
+        'schedule': crontab(hour=4, minute=0),  # Daily at 4 AM
+    },
 }
+
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-send-task-events
 CELERY_WORKER_SEND_TASK_EVENTS = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#std-setting-task_send_sent_event
 CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
@@ -369,15 +375,12 @@ FACEBOOK_APP_SECRET = env("FACEBOOK_APP_SECRET", default="")
 TWITTER_CONSUMER_KEY = env("TWITTER_CONSUMER_KEY", default="")
 TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
 
-
 SOCIALACCOUNT_ADAPTER = "saas_base.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSocialSignupForm"}
 
-
-# Your stuff...
-# ------------------------------------------------------------------------------
 # Stripe
+# ------------------------------------------------------------------------------
 STRIPE_LIVE_SECRET_KEY = env("STRIPE_LIVE_SECRET_KEY", default="")
 STRIPE_TEST_SECRET_KEY = env("STRIPE_TEST_SECRET_KEY", default="")
 STRIPE_LIVE_PUBLIC_KEY = env("STRIPE_LIVE_PUBLIC_KEY", default="")
@@ -389,33 +392,25 @@ STRIPE_LIVE_MODE = env.bool("STRIPE_LIVE_MODE", default=False)
 STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_SECRET_KEY
 STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_PUBLIC_KEY
 
-
-STABILITY_API_KEY = env("STABILITY_API_KEY", default="")
-STABILITY_AI_ENGINE = env("STABILITY_AI_ENGINE", default="stable-diffusion-v1-6")
-
-
-# settings.py - SD3 Configuration
-STABILITY_API_CONFIG = {
-    'base_url': 'https://api.stability.ai/v2beta/stable-image/generate/sd3',
-    'timeout': 60,
-    'max_retries': 5,
-    'optimal_dimensions': {
-        'venue_wide': {'aspect_ratio': '16:9', 'size': (1152, 896)},
-        'venue_square': {'aspect_ratio': '1:1', 'size': (1024, 1024)},
-        'venue_portrait': {'aspect_ratio': '9:16', 'size': (896, 1152)}
-    }
+# Google Gemini API Configuration
+# ------------------------------------------------------------------------------
+GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.5-flash-image-preview")
+GEMINI_API_CONFIG = {
+    'timeout': 120,  # 2 minutes for image processing
+    'max_retries': 3,
+    
+    'safety_settings': [
+        {
+            'category': 'HARM_CATEGORY_HARASSMENT',
+            'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        },
+        {
+            'category': 'HARM_CATEGORY_HATE_SPEECH', 
+            'threshold': 'BLOCK_MEDIUM_AND_ABOVE'
+        }
+    ]
 }
-
-# Optimal SD3 parameters for venue transformations
-SD3_VENUE_PARAMS = {
-    'strength': 0.85,  # Sweet spot for major venue styling
-    'cfg_scale': 3.5,  # SD3-specific low CFG requirement
-    'steps': 28,       # SD3 convergence point
-    'output_format': 'jpeg',
-    'quality': 95
-}
-ENHANCE_VENUE_IMAGES = True  # Enable image preprocessing
-CACHE_PROCESSING_RESULTS = True  # Enable result caching
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
@@ -445,3 +440,4 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['tweet.read', 'users.read'],
     }
 }
+

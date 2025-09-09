@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}{{ user_image.original_filename }}{% endblock %}
+{% block title %}{{ image.original_filename }}{% endblock %}
 
 {% block content %}
 {% csrf_token %}
@@ -13,95 +13,373 @@
         <ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="{% url 'image_processing:wedding_studio' %}">Wedding Studio</a></li>
           <li class="breadcrumb-item"><a href="{% url 'image_processing:image_gallery' %}">My Images</a></li>
-          <li class="breadcrumb-item active">{{ user_image.original_filename }}</li>
+          <li class="breadcrumb-item active">{{ image.original_filename }}</li>
         </ol>
       </nav>
-      <h1>📸 {{ user_image.original_filename }}</h1>
+      <h1>📸 {{ image.original_filename }}</h1>
     </div>
   </div>
 
   <div class="row">
-    <!-- Main Image -->
-    <div class="col-md-8 mb-4">
-      <div class="card">
-        <div class="card-body text-center">
-          <img src="{{ user_image.image.url }}" 
+    <!-- Main Image Display -->
+    <div class="col-lg-8 mb-4">
+      <div class="card shadow-sm">
+        <div class="card-body text-center p-4">
+          <img src="{{ image.image.url }}" 
                class="img-fluid rounded shadow" 
-               alt="{{ user_image.original_filename }}"
-               style="max-height: 600px;">
+               alt="{{ image.original_filename }}"
+               style="max-height: 600px; max-width: 100%; object-fit: contain;">
         </div>
-        <div class="card-footer">
-          <div class="row text-center">
-            <div class="col-md-3">
-              <small class="text-muted">
-                <i class="bi bi-arrows-fullscreen"></i><br>
-                {{ user_image.width }}×{{ user_image.height }}
-              </small>
-            </div>
-            <div class="col-md-3">
-              <small class="text-muted">
-                <i class="bi bi-hdd"></i><br>
-                {{ user_image.file_size|filesizeformat }}
-              </small>
-            </div>
-            <div class="col-md-3">
-              <small class="text-muted">
-                <i class="bi bi-calendar"></i><br>
-                {{ user_image.uploaded_at|date:"M d, Y" }}
-              </small>
-            </div>
-            <div class="col-md-3">
-              <small class="text-muted">
-                <i class="bi bi-clock"></i><br>
-                {{ user_image.uploaded_at|time:"g:i A" }}
-              </small>
-            </div>
-          </div>
-        </div>
+       
       </div>
     </div>
 
     <!-- Actions Sidebar -->
-   
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Actions</h6>
+        </div>
+        <div class="card-body">
+          <!-- Quick Transform Button -->
+          <div class="d-grid gap-2 mb-3">
+            <a href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.id }}" 
+               class="btn btn-primary btn-lg">
+              <i class="bi bi-magic me-2"></i>Transform This Image
+            </a>
+          </div>
+          
+          <!-- Download & View Options -->
+          <div class="d-grid gap-2 mb-3">
+            <a href="{{ image.image.url }}" 
+               target="_blank" 
+               class="btn btn-outline-info">
+              <i class="bi bi-arrows-fullscreen me-2"></i>View Full Size
+            </a>
+            <a href="{{ image.image.url }}" 
+               download="{{ image.original_filename }}" 
+               class="btn btn-outline-success">
+              <i class="bi bi-download me-2"></i>Download Original
+            </a>
+          </div>
+
+          <!-- Collection Picker -->
+          <div class="d-grid gap-2 mb-3">
+            {% include 'image_processing/components/collection_picker.html' with user_image=image image_id=image.id %}
+          </div>
+
+          <!-- Venue Information -->
+          {% if image.venue_name or image.venue_description %}
+          <div class="border-top pt-3 mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-geo-alt me-2"></i>Venue Details</h6>
+            {% if image.venue_name %}
+              <p class="mb-2">
+                <strong>Name:</strong> {{ image.venue_name }}
+              </p>
+            {% endif %}
+            {% if image.venue_description %}
+              <p class="mb-0">
+                <strong>Description:</strong> {{ image.venue_description }}
+              </p>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Transformation History & Technical Details Combined -->
+          <div class="border-top pt-3">
+            {% if jobs %}
+              <h6 class="text-muted mb-3"><i class="bi bi-clock-history me-2"></i>Transformation History</h6>
+              
+              <!-- Completed Transformations in horizontal rows -->
+              {% for job in jobs %}
+                <div class="transformation-item mb-3 p-3 border rounded bg-light">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="flex-grow-1">
+                      <div class="fw-medium small mb-1">
+                        {% if job.custom_prompt %}
+                          <i class="bi bi-palette text-purple me-1"></i>Custom Design
+                        {% else %}
+                          <i class="bi bi-magic text-primary me-1"></i>{{ job.theme_display }} • {{ job.space_display }}
+
+                          
+                        {% endif %}
+                      </div>
+                      <div class="text-muted small">
+                        <i class="bi bi-calendar me-1"></i>{{ job.created_at|date:"M d, g:i A" }}
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge 
+                        {% if job.status == 'completed' %}bg-success
+                        {% elif job.status == 'failed' %}bg-danger
+                        {% elif job.status == 'processing' %}bg-warning text-dark
+                        {% else %}bg-secondary{% endif %}">
+                        {% if job.status == 'processing' %}
+                          <i class="bi bi-hourglass-split me-1"></i>
+                        {% elif job.status == 'completed' %}
+                          <i class="bi bi-check-circle me-1"></i>
+                        {% elif job.status == 'failed' %}
+                          <i class="bi bi-x-circle me-1"></i>
+                        {% else %}
+                          <i class="bi bi-clock me-1"></i>
+                        {% endif %}
+                        {{ job.get_status_display }}
+                      </span>
+                      {% if job.status == 'completed' and job.processed_images.exists %}
+                        <div class="btn-group" role="group">
+                          <a href="{% url 'image_processing:processed_image_detail' job.processed_images.first.pk %}" 
+                             class="btn btn-sm btn-outline-primary"
+                             title="View transformation details">
+                            <i class="bi bi-eye"></i>
+                          </a>
+                          <button class="btn btn-sm btn-outline-secondary redo-transformation-btn" 
+                                  data-job-id="{{ job.id }}"
+                                  onclick="redoTransformation('{{ job.id }}');"
+                                  title="Use these settings again">
+                            <i class="bi bi-arrow-repeat"></i>
+                          </button>
+                        </div>
+                      {% elif job.status == 'failed' %}
+                        <button class="btn btn-sm btn-outline-warning redo-transformation-btn" 
+                                data-job-id="{{ job.id }}"
+                                onclick="redoTransformation('{{ job.id }}');"
+                                title="Try again with same settings">
+                          <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Additional job details for completed transformations -->
+              
+                </div>
+              {% endfor %}
+              
+              <div class="text-center mt-3">
+                <a href="{% url 'image_processing:processing_history' %}" 
+                   class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-list me-1"></i>View All Transformations
+                </a>
+              </div>
+              
+              <!-- Technical Details Section -->
+              <div class="border-top pt-3 mt-3">
+                <h6 class="text-muted mb-2"><i class="bi bi-info-circle me-2"></i>Technical Details</h6>
+                <div class="small text-muted">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Original Filename:</span>
+                    <span class="text-end text-truncate ms-2" style="max-width: 60%;">{{ image.original_filename }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Dimensions:</span>
+                    <span>{{ image.width }} × {{ image.height }} px</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>File Size:</span>
+                    <span>{{ image.file_size|filesizeformat }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Uploaded:</span>
+                    <span>{{ image.uploaded_at|date:"M d, Y g:i A" }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span>Transformations:</span>
+                    <span>{{ jobs|length }} total</span>
+                  </div>
+                </div>
+              </div>
+              
+            {% else %}
+              <!-- No transformations yet -->
+              <h6 class="text-muted mb-3"><i class="bi bi-info-circle me-2"></i>Technical Details</h6>
+              <div class="small text-muted mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span>Original Filename:</span>
+                  <span class="text-end text-truncate ms-2" style="max-width: 60%;">{{ image.original_filename }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span>Dimensions:</span>
+                  <span>{{ image.width }} × {{ image.height }} px</span>
+                </div>
+                <div class="d-flex justify-content-between mb-1">
+                  <span>File Size:</span>
+                  <span>{{ image.file_size|filesizeformat }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Uploaded:</span>
+                  <span>{{ image.uploaded_at|date:"M d, Y g:i A" }}</span>
+                </div>
+              </div>
+              
+              <div class="text-center p-3 bg-light rounded">
+                <i class="bi bi-magic text-muted mb-2" style="font-size: 2rem;"></i>
+                <p class="small text-muted mb-2">No transformations yet</p>
+                <a href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.id }}" 
+                   class="btn btn-sm btn-primary">
+                  <i class="bi bi-magic me-1"></i>Create First Transformation
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- Collection Success Toast -->
+<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+  <div class="toast-header">
+    <i class="bi bi-collection text-success me-2"></i>
+    <strong class="me-auto">Collection</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+  </div>
+  <div class="toast-body" id="collectionToastBody">
+    Image added to collection!
+  </div>
+</div>
+
+<style>
+/* Enhanced styling for image detail page */
+.transformation-item {
+  transition: all 0.3s ease;
+  background-color: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+}
+
+.transformation-item:hover {
+  background-color: #e9ecef !important;
+  border-color: #dee2e6 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge {
+  font-size: 0.75rem;
+}
+
+.btn-group .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Purple color for custom designs */
+.text-purple {
+  color: #6f42c1 !important;
+}
+
+/* Card enhancements */
+.card {
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .transformation-item {
+    padding: 0.75rem !important;
+  }
+  
+  .btn-group .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+  
+  .d-flex.justify-content-between {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .d-flex.justify-content-between > div:last-child {
+    margin-top: 0.5rem;
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 576px) {
+  .transformation-item .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .transformation-item .d-flex > div:last-child {
+    margin-top: 0.75rem;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Collection picker styling */
+.collection-picker-dropdown .btn {
+  width: 100%;
+}
+
+/* Animation for status badges */
+.badge {
+  transition: all 0.3s ease;
+}
+
+.transformation-item:hover .badge {
+  transform: scale(1.05);
+}
+</style>
+
 <script>
-// Simple collection function
-async function addToDefaultCollection(imageType, imageId) {
+// Redo transformation functionality
+async function redoTransformation(jobId) {
     try {
-        const formData = new FormData();
-        formData.append('use_default', 'true');
-        formData.append('user_image_id', imageId);
+        showAlert('Copying settings to studio...', 'info');
         
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                         document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-        formData.append('csrfmiddlewaretoken', csrfToken);
-        
-        const response = await fetch('/studio/collections/add/', {
-            method: 'POST',
-            body: formData
+        const response = await fetch(`/studio/redo-transformation/${jobId}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
         
         const result = await response.json();
         
         if (result.success) {
-            showAlert(result.message, 'success');
+            // Redirect to studio with pre-filled parameters
+            window.location.href = result.redirect_url;
         } else {
-            showAlert(result.message || 'Failed to add to collection', 'warning');
+            showAlert('Failed to copy settings', 'danger');
         }
     } catch (error) {
-        showAlert('Network error', 'error');
+        console.error('Redo transformation error:', error);
+        showAlert('Error copying settings', 'danger');
     }
 }
 
+// Collection helper function
+function showCollectionToast(message, type) {
+    const toastEl = document.getElementById('collectionToast');
+    const toastBody = document.getElementById('collectionToastBody');
+    
+    toastBody.textContent = message;
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
 function showAlert(message, type) {
+    // Remove existing alerts
+    document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
+    
     const alert = document.createElement('div');
-    alert.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} position-fixed`;
+    alert.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'info' ? 'info' : 'warning'} alert-dismissible fade show position-fixed temp-alert`;
     alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
     alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'error' ? 'exclamation-triangle-fill' : type === 'info' ? 'info-circle-fill' : 'exclamation-triangle-fill'} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
     `;
     
     document.body.appendChild(alert);

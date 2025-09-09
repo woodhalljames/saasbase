@@ -15,107 +15,68 @@
           <li class="breadcrumb-item active">Favorites</li>
         </ol>
       </nav>
-      <h1>❤️ My Favorite Wedding Transformations</h1>
-      <p class="text-muted">Your favorite AI-generated wedding venue transformations</p>
+      <h1>❤️ My Favorites</h1>
+      <p class="text-muted">Your favorite wedding transformations</p>
     </div>
     <div class="col-md-6 text-end">
-      <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Create New Transformation
-      </a>
+      <div class="btn-group" role="group">
+        <a href="{% url 'image_processing:collections_list' %}" class="btn btn-outline-primary">
+          <i class="bi bi-collection"></i> Collections
+        </a>
+        <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
+          <i class="bi bi-plus-circle"></i> Create New
+        </a>
+      </div>
     </div>
   </div>
 
   {% if page_obj %}
     <!-- Favorites Grid -->
-    <div class="row">
+    <div class="row g-3" id="favoritesGrid">
       {% for favorite in page_obj %}
+        {% with processed_image=favorite.processed_image %}
+        {% if processed_image and processed_image.pk %}
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4 favorite-item" data-favorite-id="{{ favorite.id }}">
-          <div class="card h-100">
-            <div class="position-relative">
-              <!-- Image Display -->
-              <img src="{{ favorite.image_url }}" 
+          <div class="card h-100 shadow-sm favorite-card">
+            <div class="position-relative image-container">
+              <img src="{{ processed_image.processed_image.url }}" 
                    class="card-img-top" 
-                   alt="Favorite Wedding Transformation"
-                   style="height: 200px; object-fit: cover;">
+                   alt="Wedding transformation"
+                   style="height: 250px; object-fit: cover;">
               
-              <!-- Type Badge -->
+              <!-- ONLY Favorite Heart (no other overlay icons) -->
               <div class="position-absolute top-0 start-0 p-2">
-                <span class="badge bg-success">
-                  <i class="bi bi-magic"></i> Wedding Transformation
-                </span>
-              </div>
-              
-              <!-- Favorite Heart -->
-              <div class="position-absolute top-0 end-0 p-2">
-                {% include 'image_processing/components/favorite_heart.html' with processed_image=favorite.processed_image %}
-              </div>
-
-              <!-- NEW: Quick Actions Overlay -->
-              <div class="position-absolute bottom-0 end-0 p-2">
-                <div class="btn-group-vertical">
-                  <div class="dropdown">
-                    <button class="btn btn-sm btn-light dropdown-toggle shadow-sm" 
-                            type="button" 
-                            data-bs-toggle="dropdown"
-                            title="Quick Actions">
-                      <i class="bi bi-three-dots"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a class="dropdown-item" href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}">
-                          <i class="bi bi-eye text-success"></i> View Details
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="{{ favorite.processed_image.processed_image.url }}" target="_blank">
-                          <i class="bi bi-arrows-fullscreen text-info"></i> Full Size
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="{{ favorite.processed_image.processed_image.url }}" download>
-                          <i class="bi bi-download text-primary"></i> Download
-                        </a>
-                      </li>
-                      <li><hr class="dropdown-divider"></li>
-                      <!-- NEW: Redo transformation button -->
-                      <li>
-                        <a class="dropdown-item redo-transformation-btn" 
-                           href="#" 
-                           data-job-id="{{ favorite.processed_image.processing_job.id }}"
-                           onclick="event.preventDefault(); redoTransformation('{{ favorite.processed_image.processing_job.id }}');">
-                          <i class="bi bi-arrow-repeat text-warning"></i> Use These Settings Again
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item add-to-collection-btn" 
-                           href="#" 
-                           data-processed-image-id="{{ favorite.processed_image.id }}"
-                           onclick="event.preventDefault(); addToDefaultCollection('processed', '{{ favorite.processed_image.id }}');">
-                          <i class="bi bi-collection text-success"></i> Save to Collection
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                <button class="btn btn-sm favorite-heart-btn" 
+                        data-processed-image-id="{{ processed_image.id }}">
+                  <i class="bi bi-heart-fill text-danger favorite-heart-icon"></i>
+                </button>
               </div>
             </div>
             
             <div class="card-body">
-              <!-- Title -->
               <h6 class="card-title text-truncate">
-                {{ favorite.image_title }}
+                {% if processed_image.processing_job.custom_prompt %}
+                  Custom Design
+                {% else %}
+                  {{ processed_image.processing_job.theme_display_name|default:"Wedding Style" }} {{ processed_image.processing_job.space_display_name|default:"Space" }}
+                {% endif %}
               </h6>
               
-              <!-- Wedding Transformation Details -->
-              {% with job=favorite.processed_image.processing_job %}
-                {% if job.wedding_theme and job.space_type %}
+              <!-- Wedding Style Badges -->
+              {% with job=processed_image.processing_job %}
+                {% if job.custom_prompt %}
                   <div class="mb-2">
-                    <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
-                    <span class="badge bg-secondary">{{ job.space_display }}</span>
+                    <span class="badge bg-purple">Custom Design</span>
+                  </div>
+                  <small class="text-muted d-block mb-2">{{ job.custom_prompt|truncatechars:50 }}</small>
+                {% elif job.wedding_theme and job.space_type %}
+                  <div class="mb-2">
+                    <span class="badge bg-primary me-1">{{ job.theme_display_name|default:job.wedding_theme }}</span>
+                    <span class="badge bg-secondary">{{ job.space_display_name|default:job.space_type }}</span>
                   </div>
                 {% endif %}
                 
-                <!-- NEW: Optional parameters display -->
+                <!-- Optional parameters -->
                 {% if job.season or job.lighting_mood or job.color_scheme %}
                   <div class="mb-2">
                     {% if job.season %}
@@ -129,67 +90,56 @@
                     {% endif %}
                   </div>
                 {% endif %}
-                
-                <small class="text-muted">
-                  <i class="bi bi-magic"></i> Transformation<br>
-                  <i class="bi bi-calendar"></i> Created {{ favorite.processed_image.created_at|date:"M d, Y" }}<br>
-                </small>
               {% endwith %}
               
-              <small class="text-muted d-block mt-2">
+              <small class="text-muted">
+                <i class="bi bi-magic"></i> Created {{ processed_image.created_at|date:"M d, Y" }}<br>
                 <i class="bi bi-heart-fill text-danger"></i> Favorited {{ favorite.created_at|timesince }} ago
               </small>
             </div>
             
+            <!-- ALL Actions in Card Footer (NO overlay icons) -->
             <div class="card-footer bg-transparent">
               <div class="row g-1">
-                <!-- Link to Processed Image Detail Page -->
                 <div class="col-6">
-                  <a href="{% url 'image_processing:processed_image_detail' favorite.processed_image.pk %}" 
+                  <a href="{% url 'image_processing:processed_image_detail' processed_image.pk %}" 
                      class="btn btn-sm btn-success w-100">
                     <i class="bi bi-eye"></i> View
                   </a>
                 </div>
-                <!-- NEW: Redo button -->
                 <div class="col-6">
                   <button class="btn btn-sm btn-outline-primary w-100 redo-transformation-btn" 
-                          data-job-id="{{ favorite.processed_image.processing_job.id }}"
-                          onclick="redoTransformation('{{ favorite.processed_image.processing_job.id }}');"
-                          title="Use these settings again with a different image">
+                          data-job-id="{{ processed_image.processing_job.id }}"
+                          onclick="redoTransformation('{{ processed_image.processing_job.id }}');"
+                          title="Use these settings again">
                     <i class="bi bi-arrow-repeat"></i> Redo
                   </button>
                 </div>
               </div>
-              <!-- Additional actions row -->
+              <!-- Second row of actions -->
               <div class="row g-1 mt-1">
-                <div class="col-4">
-                  <a href="{{ favorite.processed_image.processed_image.url }}" 
-                     class="btn btn-sm btn-outline-secondary w-100" 
-                     target="_blank"
-                     title="View full size">
-                    <i class="bi bi-arrows-fullscreen"></i>
-                  </a>
+                <div class="col-6">
+                  <!-- UNIVERSAL Collection Button - Uses centralized system from base.html -->
+                  <button class="btn btn-sm btn-outline-success w-100" 
+                          type="button" 
+                          data-processed-image-id="{{ processed_image.id }}">
+                    <i class="bi bi-collection"></i> Save
+                  </button>
                 </div>
-                <div class="col-4">
-                  <a href="{{ favorite.processed_image.processed_image.url }}" 
+                <div class="col-6">
+                  <a href="{{ processed_image.processed_image.url }}" 
                      class="btn btn-sm btn-outline-primary w-100" 
                      download
                      title="Download image">
-                    <i class="bi bi-download"></i>
+                    <i class="bi bi-download"></i> Download
                   </a>
-                </div>
-                <div class="col-4">
-                  <button class="btn btn-sm btn-outline-success w-100 add-to-collection-btn" 
-                          data-processed-image-id="{{ favorite.processed_image.id }}"
-                          onclick="addToDefaultCollection('processed', '{{ favorite.processed_image.id }}');"
-                          title="Add to collection">
-                    <i class="bi bi-collection"></i>
-                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        {% endif %}
+        {% endwith %}
       {% endfor %}
     </div>
 
@@ -231,19 +181,19 @@
     {% endif %}
 
   {% else %}
-    <!-- Empty State -->
+    <!-- Empty state -->
     <div class="row">
       <div class="col-12">
         <div class="text-center py-5">
           <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
           <h3 class="mt-3 text-muted">No Favorites Yet</h3>
-          <p class="text-muted">Start creating wedding venue transformations and add your favorites here</p>
+          <p class="text-muted">Heart your favorite wedding transformations to see them here</p>
           <div class="mt-4">
-            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg me-3">
-              <i class="bi bi-plus-circle"></i> Create Transformation
+            <a href="{% url 'image_processing:processing_history' %}" class="btn btn-outline-primary btn-lg me-3">
+              <i class="bi bi-magic"></i> View Transformations
             </a>
-            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-secondary btn-lg">
-              <i class="bi bi-images"></i> Browse Gallery
+            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-plus-circle"></i> Create New Transformation
             </a>
           </div>
         </div>
@@ -252,20 +202,212 @@
   {% endif %}
 </div>
 
-<!-- Collection Success Toast -->
-<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
-  <div class="toast-header">
-    <i class="bi bi-collection text-success me-2"></i>
-    <strong class="me-auto">Collection</strong>
-    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-  </div>
-  <div class="toast-body" id="collectionToastBody">
-    Image added to collection!
-  </div>
-</div>
+<style>
+/* Enhanced favorites styling - NO overlay icons except heart */
+.favorite-card {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.favorite-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+  border-color: #ff6b8a;
+}
+
+.image-container {
+  overflow: hidden;
+  border-radius: calc(0.375rem - 1px) calc(0.375rem - 1px) 0 0;
+}
+
+.image-container img {
+  transition: transform 0.3s ease;
+}
+
+.favorite-card:hover .image-container img {
+  transform: scale(1.05);
+}
+
+/* Favorite heart styling - ONLY overlay icon */
+.favorite-heart-btn {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.favorite-heart-btn:hover {
+  background: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.favorite-heart-icon {
+  font-size: 1.1rem;
+  animation: heartbeat 2s infinite;
+}
+
+@keyframes heartbeat {
+  0%, 50%, 100% { transform: scale(1); }
+  25%, 75% { transform: scale(1.1); }
+}
+
+/* Badge styling */
+.badge {
+  font-size: 0.75rem;
+}
+
+.badge.small {
+  font-size: 0.7rem;
+}
+
+/* Purple badge for custom prompts */
+.bg-purple {
+  background-color: #6f42c1 !important;
+  color: white;
+}
+
+/* Button styling */
+.btn-sm {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .image-container img {
+    height: 200px !important;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .image-container img {
+    height: 180px !important;
+  }
+  
+  .btn-sm {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.3rem;
+  }
+}
+
+/* Staggered animation for favorites */
+.favorite-item {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.favorite-item:nth-child(1) { animation-delay: 0.1s; }
+.favorite-item:nth-child(2) { animation-delay: 0.2s; }
+.favorite-item:nth-child(3) { animation-delay: 0.3s; }
+.favorite-item:nth-child(4) { animation-delay: 0.4s; }
+.favorite-item:nth-child(n+5) { animation-delay: 0.5s; }
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
 
 <script>
-// NEW: Redo transformation functionality
+// Simplified Favorites Management - Universal collection picker handles collections
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('❤️ Setting up simplified favorites management...');
+    
+    // Collection picker is automatically handled by the universal system in base.html
+    
+    // Handle favorite heart clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('favorite-heart-btn') || e.target.closest('.favorite-heart-btn')) {
+            e.preventDefault();
+            handleFavoriteToggle(e.target.closest('.favorite-heart-btn') || e.target);
+        }
+    });
+});
+
+async function handleFavoriteToggle(button) {
+    const processedImageId = button.dataset.processedImageId;
+    const heartIcon = button.querySelector('.favorite-heart-icon');
+    const favoriteItem = button.closest('.favorite-item');
+    
+    if (!processedImageId) {
+        console.error('No processed image ID found');
+        return;
+    }
+    
+    try {
+        // Optimistic UI update
+        heartIcon.classList.add('animate__animated', 'animate__pulse');
+        button.disabled = true;
+        
+        const response = await fetch('/studio/favorite/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: `processed_image_id=${processedImageId}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (!data.is_favorited) {
+                // Item was unfavorited, remove from grid with animation
+                favoriteItem.style.transition = 'all 0.4s ease';
+                favoriteItem.style.transform = 'scale(0.8)';
+                favoriteItem.style.opacity = '0';
+                
+                setTimeout(() => {
+                    favoriteItem.remove();
+                    
+                    // Check if no favorites left
+                    const remainingFavorites = document.querySelectorAll('.favorite-item');
+                    if (remainingFavorites.length === 0) {
+                        // Reload to show empty state
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                }, 400);
+                
+                showAlert('Removed from favorites', 'info');
+            } else {
+                // Shouldn't happen on favorites page, but handle gracefully
+                showAlert('Added to favorites', 'success');
+            }
+        } else {
+            showAlert(data.error || 'Error updating favorites', 'danger');
+        }
+        
+    } catch (error) {
+        console.error('Favorite toggle error:', error);
+        showAlert('Error updating favorites', 'danger');
+    } finally {
+        heartIcon.classList.remove('animate__animated', 'animate__pulse');
+        button.disabled = false;
+    }
+}
+
+// Redo transformation functionality
 async function redoTransformation(jobId) {
     try {
         showAlert('Copying settings to studio...', 'info');
@@ -291,60 +433,24 @@ async function redoTransformation(jobId) {
     }
 }
 
-// Collection helper functions
-async function addToDefaultCollection(imageType, imageId) {
-    const formData = new FormData();
-    formData.append('use_default', 'true');
-    
-    if (imageType === 'user') {
-        formData.append('user_image_id', imageId);
-    } else {
-        formData.append('processed_image_id', imageId);
-    }
-    
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-    
-    formData.append('csrfmiddlewaretoken', csrfToken);
-    
-    try {
-        const response = await fetch('/studio/collections/add/', {
-            method: 'POST',
-            body: formData
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            showCollectionToast(result.message, 'success');
-        } else {
-            showCollectionToast(result.message || 'Failed to add to collection', 'warning');
-        }
-    } catch (error) {
-        console.error('Collection error:', error);
-        showCollectionToast('Network error', 'error');
-    }
-}
-
-function showCollectionToast(message, type) {
-    const toastEl = document.getElementById('collectionToast');
-    const toastBody = document.getElementById('collectionToastBody');
-    
-    toastBody.textContent = message;
-    
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+           document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
 }
 
 function showAlert(message, type) {
+    // Remove existing alerts
     document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
     
     const alert = document.createElement('div');
     alert.className = `alert alert-${type} alert-dismissible fade show position-fixed temp-alert`;
     alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
     alert.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'danger' ? 'exclamation-triangle-fill' : 'info-circle-fill'} me-2"></i>
+            <div>${message}</div>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
     `;
     
     document.body.appendChild(alert);
