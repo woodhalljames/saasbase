@@ -343,13 +343,9 @@
             <a href="#" class="text-white-50 me-3 social-link" aria-label="Facebook">
               <i class="bi bi-facebook"></i>
             </a>
-            <a href="#" class="text-white-50 me-3 social-link" aria-label="Instagram">
+            <a href="https://www.instagram.com/dreamwedai/" class="text-white-50 me-3 social-link" aria-label="Instagram">
               <i class="bi bi-instagram"></i>
             </a>
-            <a href="#" class="text-white-50 me-3 social-link" aria-label="Twitter">
-              <i class="bi bi-twitter"></i>
-            </a>
-            
           </div>
         </div>
 
@@ -390,11 +386,6 @@
             <li class="mb-2">
               <a href="{% url 'about' %}" class="text-white-75 text-decoration-none footer-link">
                 About Us
-              </a>
-            </li>
-            <li class="mb-2">
-              <a href="#" class="text-white-75 text-decoration-none footer-link">
-                Contact Us
               </a>
             </li>
             <li class="mb-2">
@@ -557,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// CENTRALIZED COLLECTION SYSTEM - Works with ANY button class
+// FIXED CENTRALIZED COLLECTION SYSTEM - Works with ANY button class
 class UniversalCollectionPicker {
     constructor() {
         this.collections = [];
@@ -724,7 +715,7 @@ class UniversalCollectionPicker {
             }
         });
         
-        // FIXED: Proper modal cleanup
+        // Modal cleanup
         document.addEventListener('hidden.bs.modal', (e) => {
             if (e.target.id === 'universalCollectionModal' || e.target.id === 'createCollectionModal') {
                 this.cleanupModal();
@@ -732,6 +723,7 @@ class UniversalCollectionPicker {
         });
     }
     
+    // 🔧 FIXED: Enhanced openForButton method
     async openForButton(button) {
         console.log('Opening collection picker for button:', button);
         
@@ -745,30 +737,45 @@ class UniversalCollectionPicker {
         this.originalSelections = new Set();
         this.currentSelections = new Set();
         
-        // Show modal
+        // Show modal immediately
         this.modal.show();
         
-        // Load data
-        await this.loadData();
-        
-        // Focus search
-        setTimeout(() => this.searchInput?.focus(), 300);
+        // Load data with better error handling
+        try {
+            await this.loadData();
+            
+            // Ensure proper focus after modal is fully shown
+            setTimeout(() => {
+                if (this.searchInput && this.collections.length > 0) {
+                    this.searchInput.focus();
+                }
+            }, 500);
+            
+        } catch (error) {
+            console.error('Error loading collection data:', error);
+            this.showError();
+        }
     }
     
+    // 🔧 FIXED: Improved loadData method with proper state management
     async loadData() {
         try {
             this.showLoading();
             
+            // Load both collections and current selections
             await Promise.all([
                 this.loadCollections(),
                 this.loadCurrentSelections()
             ]);
             
+            // CRITICAL: Proper state management
             if (this.collections.length === 0) {
                 this.showEmpty();
+                console.log('No collections found - showing empty state');
             } else {
                 this.renderCollections();
-                this.showList();
+                this.showList(); // ✅ Ensure we show the list
+                console.log(`Rendered ${this.collections.length} collections`);
             }
             
         } catch (error) {
@@ -821,19 +828,31 @@ class UniversalCollectionPicker {
         }
     }
     
+    // 🔧 FIXED: Enhanced renderCollections with debugging
     renderCollections() {
-        if (!this.collectionsList) return;
+        if (!this.collectionsList) {
+            console.error('Collections list element not found');
+            return;
+        }
         
+        console.log(`Rendering ${this.collections.length} collections`);
         this.collectionsList.innerHTML = '';
+        
+        if (this.collections.length === 0) {
+            console.log('No collections to render');
+            return;
+        }
         
         const recent = this.collections.slice(0, 3);
         const older = this.collections.slice(3);
         
+        // Render recent collections
         recent.forEach((collection, index) => {
             const item = this.createCollectionItem(collection, true);
             this.collectionsList.appendChild(item);
         });
         
+        // Render older collections with separator
         if (older.length > 0) {
             const separator = document.createElement('div');
             separator.className = 'border-top pt-2 mt-2 older-collections';
@@ -845,6 +864,8 @@ class UniversalCollectionPicker {
                 this.collectionsList.appendChild(item);
             });
         }
+        
+        console.log(`Successfully rendered collections to DOM`);
     }
     
     createCollectionItem(collection, isRecent) {
@@ -998,6 +1019,7 @@ class UniversalCollectionPicker {
         setTimeout(() => nameInput?.focus(), 300);
     }
     
+    // 🔧 FIXED: Enhanced createCollection method with proper state transitions
     async createCollection() {
         const nameInput = document.querySelector('.new-collection-name');
         const descInput = document.querySelector('.new-collection-description');
@@ -1040,12 +1062,18 @@ class UniversalCollectionPicker {
                 this.collections.unshift(result.collection);
                 this.currentSelections.add(result.collection.id);
                 
-                // Show main modal again and re-render
+                // ✅ CRITICAL FIX: Proper state transition
                 setTimeout(() => {
                     this.modal.show();
+                    
+                    // Re-render and ensure proper state
                     this.renderCollections();
+                    this.showList(); // ✅ CRITICAL: Switch from empty to list state
                     this.updateSaveButton();
+                    
+                    console.log('Collection created and modal updated');
                 }, 300);
+                
             } else {
                 throw new Error(result.error || 'Failed to create collection');
             }
@@ -1073,19 +1101,23 @@ class UniversalCollectionPicker {
         });
     }
     
+    // 🔧 FIXED: Enhanced state management methods with debugging
     showLoading() {
+        console.log('Switching to loading state');
         if (this.loadingEl) this.loadingEl.classList.remove('d-none');
         if (this.collectionsList) this.collectionsList.classList.add('d-none');
         if (this.emptyEl) this.emptyEl.classList.add('d-none');
     }
     
     showList() {
+        console.log('Switching to list state');
         if (this.loadingEl) this.loadingEl.classList.add('d-none');
         if (this.collectionsList) this.collectionsList.classList.remove('d-none');
         if (this.emptyEl) this.emptyEl.classList.add('d-none');
     }
     
     showEmpty() {
+        console.log('Switching to empty state');
         if (this.loadingEl) this.loadingEl.classList.add('d-none');
         if (this.collectionsList) this.collectionsList.classList.add('d-none');
         if (this.emptyEl) this.emptyEl.classList.remove('d-none');
@@ -1093,6 +1125,7 @@ class UniversalCollectionPicker {
     
     showError() {
         console.error('Error state in collection picker');
+        // Could show error message here
     }
     
     showSuccessMessage(added, removed) {
@@ -1116,7 +1149,7 @@ class UniversalCollectionPicker {
     }
     
     cleanupModal() {
-        // FIXED: Proper cleanup to prevent page freezing
+        // Proper cleanup to prevent page freezing
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
         

@@ -1,4 +1,4 @@
-# image_processing/views.py - Updated with fixed APIs and collection management
+# image_processing/views.py - Complete with alphabetical theme sorting
 
 import json
 import logging
@@ -49,7 +49,7 @@ def add_favorite_status_to_processed_images(user, processed_images):
 
 @login_required
 def wedding_studio(request):
-    """Main wedding venue transformation studio with preselected image support"""
+    """Main wedding venue transformation studio with preselected image support and alphabetical theme sorting"""
     
     # Handle image upload
     if request.method == 'POST':
@@ -102,7 +102,7 @@ def wedding_studio(request):
     # GET request - display the studio
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
     
-    # FIXED: Get specific image if image_id is provided
+    # Get specific image if image_id is provided
     preselected_image = None
     image_id = request.GET.get('image_id')
     if image_id:
@@ -134,30 +134,40 @@ def wedding_studio(request):
         for processed_image in job.processed_images.all():
             processed_image.is_favorited = processed_image.id in favorite_ids
     
-    # Pre-fill form parameters from URL if provided (for redo functionality)
+    # Pre-fill form parameters from URL with single user_instructions field
     initial_form_data = {}
-    for param in ['wedding_theme', 'space_type', 'season', 'lighting', 'color_scheme', 'user_instructions', 'custom_prompt']:
-        value = request.GET.get(param)
+    url_field_mapping = [
+        ('wedding_theme', 'wedding_theme'),
+        ('space_type', 'space_type'),
+        ('season', 'season'),
+        ('lighting', 'lighting_mood'),  # URL param 'lighting' maps to 'lighting_mood'
+        ('color_scheme', 'color_scheme'),
+        ('user_instructions', 'user_instructions'),  # Single instructions field
+        ('custom_prompt', 'custom_prompt')
+    ]
+    
+    for url_param, form_field in url_field_mapping:
+        value = request.GET.get(url_param)
         if value:
-            # Map 'lighting' URL param to 'lighting_mood' field
-            if param == 'lighting':
-                initial_form_data['lighting_mood'] = value
-            else:
-                initial_form_data[param] = value
+            initial_form_data[form_field] = value
     
     # Set prompt mode based on whether custom_prompt is provided
     if 'custom_prompt' in initial_form_data:
         initial_form_data['prompt_mode'] = 'custom'
+
+    # Sort choices alphabetically for template context
+    sorted_wedding_themes = sorted(WEDDING_THEMES, key=lambda x: x[1])
+    sorted_color_schemes = sorted(COLOR_SCHEMES, key=lambda x: x[1])
 
     context = {
         'recent_images': recent_images,
         'preselected_image': preselected_image,
         'usage_data': usage_data,
         'recent_jobs': recent_jobs,
-        # Core choices
-        'wedding_themes': WEDDING_THEMES,
-        'space_types': SPACE_TYPES,
-        'color_schemes': COLOR_SCHEMES,
+        # Core choices - wedding themes and color schemes now sorted alphabetically
+        'wedding_themes': sorted_wedding_themes,
+        'space_types': SPACE_TYPES,  # Keep space types in original order (logical flow)
+        'color_schemes': sorted_color_schemes,
         'season_choices': SEASON_CHOICES,
         'lighting_choices': LIGHTING_CHOICES,
         'prompt_mode_choices': PROMPT_MODE_CHOICES,
@@ -168,6 +178,9 @@ def wedding_studio(request):
         'gemini_model': 'gemini-2.5-flash-image-preview',
         'supports_custom_prompts': True,
         'processing_mode': 'real-time',
+        # Theme organization info for template
+        'theme_count': len(WEDDING_THEMES),
+        'theme_organization': 'alphabetical',
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
@@ -175,7 +188,7 @@ def wedding_studio(request):
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with real-time Gemini transformation"""
+    """Process wedding venue image with real-time Gemini transformation - Updated for single user_instructions field"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
@@ -204,7 +217,7 @@ def process_wedding_image(request, pk):
         # Determine processing mode
         prompt_mode = data.get('prompt_mode', 'guided')
         
-        # Get user instructions (applies to both modes)
+        # Get single user instructions field
         user_instructions = data.get('user_instructions', '').strip()
         
         # Validate and create job based on mode
@@ -295,6 +308,7 @@ def process_wedding_image(request, pk):
             else:
                 logger.info(f"Guided: {job.wedding_theme} + {job.space_type}")
             
+            # Log user instructions if provided
             if user_instructions:
                 logger.info(f"User instructions: {user_instructions[:100]}...")
         
@@ -366,7 +380,7 @@ def process_wedding_image(request, pk):
 
 
 def _get_job_details(job, prompt_mode):
-    """Helper to get job details for JSON response"""
+    """Helper to get job details for JSON response - Updated for single user_instructions field"""
     details = {
         'mode': prompt_mode,
         'model': 'gemini-2.5-flash-image-preview',
@@ -398,7 +412,7 @@ def _get_job_details(job, prompt_mode):
 
 @login_required
 def job_status(request, job_id):
-    """Get real-time status of a venue transformation job"""
+    """Get real-time status of a venue transformation job - Updated for single user_instructions field"""
     try:
         job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
         
@@ -435,7 +449,7 @@ def job_status(request, job_id):
                 data['color_scheme'] = job.color_scheme
                 data['color_display'] = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
         
-        # Add user instructions if present
+        # Add user instructions if provided
         if job.user_instructions:
             data['user_instructions'] = job.user_instructions
             data['user_instructions_preview'] = job.user_instructions[:100] + ('...' if len(job.user_instructions) > 100 else '')
@@ -474,37 +488,8 @@ def job_status(request, job_id):
 
 
 @login_required
-def test_gemini_api(request):
-    """Test endpoint for Gemini API connectivity"""
-    try:
-        from .services import test_gemini_service
-        
-        result = test_gemini_service()
-        
-        if result['success']:
-            return JsonResponse({
-                'success': True,
-                'message': 'Gemini 2.5 Flash Image Preview API connection successful!',
-                'model': result.get('model'),
-                'test_image_size': result.get('test_image_size', 0),
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': f"Gemini API test failed: {result.get('error')}"
-            }, status=500)
-            
-    except Exception as e:
-        logger.error(f"Error testing Gemini API: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Gemini API test failed'
-        }, status=500)
-
-
-@login_required
 def redo_transformation_with_job(request, job_id):
-    """Redirect to wedding studio with job parameters pre-filled - UPDATED for all form fields"""
+    """Redirect to wedding studio with job parameters pre-filled - Updated for single user_instructions field"""
     job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
     
     # Build query parameters from the job settings
@@ -530,7 +515,7 @@ def redo_transformation_with_job(request, job_id):
         if job.color_scheme:
             params['color_scheme'] = job.color_scheme
     
-    # Add user instructions (applies to both modes)
+    # Add user instructions parameter (applies to both modes)
     if job.user_instructions:
         params['user_instructions'] = job.user_instructions
     
@@ -551,7 +536,62 @@ def redo_transformation_with_job(request, job_id):
     
     return redirect(redirect_url)
 
-# Additional view functions (favorites, collections, etc.) remain the same
+
+@login_required
+def processing_history(request):
+    """View all wedding venue transformation jobs - Updated for single user_instructions field"""
+    jobs = ImageProcessingJob.objects.filter(
+        user_image__user=request.user
+    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
+    
+    # Get favorite IDs once for efficiency
+    favorite_ids = set(
+        Favorite.objects.filter(user=request.user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    # Add display names and favorite status to jobs
+    for job in jobs:
+        # Handle both custom and guided modes
+        if job.custom_prompt:
+            job.mode_display = 'Custom Prompt'
+            job.theme_display = 'Custom Design'
+            job.space_display = 'Custom Space'
+            job.prompt_preview = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
+        else:
+            job.mode_display = 'Guided Design'
+            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Unknown'
+            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Unknown'
+        
+        # Add user instructions info
+        job.has_user_instructions = bool(job.user_instructions)
+        
+        if job.user_instructions:
+            job.user_instructions_preview = job.user_instructions[:50] + ('...' if len(job.user_instructions) > 50 else '')
+        
+        # Add optional field display names for guided mode
+        if job.lighting_mood:
+            job.lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
+        if job.color_scheme:
+            job.color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
+        
+        # Add favorite status to ALL processed images for this job
+        for processed_image in job.processed_images.all():
+            processed_image.is_favorited = processed_image.id in favorite_ids
+    
+    # Pagination
+    paginator = Paginator(jobs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'gemini_model': 'gemini-2.5-flash-image-preview',
+    }
+    
+    return render(request, 'image_processing/processing_history.html', context)
+
+
 @login_required
 @require_POST
 def toggle_favorite(request):
@@ -614,7 +654,6 @@ def get_usage_data(request):
         }, status=500)
 
 
-# Image management views
 @login_required
 def image_detail(request, pk):
     """View details of a user's image"""
@@ -633,7 +672,7 @@ def image_detail(request, pk):
 
 @login_required
 def image_gallery(request):
-    """UPDATED: View all user uploaded images with mobile-friendly design"""
+    """View all user uploaded images with mobile-friendly design"""
     # Get all user images
     images_list = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
@@ -684,60 +723,6 @@ def image_gallery(request):
 
 
 @login_required
-def processing_history(request):
-    """View all wedding venue transformation jobs"""
-    jobs = ImageProcessingJob.objects.filter(
-        user_image__user=request.user
-    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
-    
-    # Get favorite IDs once for efficiency
-    favorite_ids = set(
-        Favorite.objects.filter(user=request.user)
-        .values_list('processed_image_id', flat=True)
-    )
-    
-    # Add display names and favorite status to jobs
-    for job in jobs:
-        # Handle both custom and guided modes
-        if job.custom_prompt:
-            job.mode_display = 'Custom Prompt'
-            job.theme_display = 'Custom Design'
-            job.space_display = 'Custom Space'
-            job.prompt_preview = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
-        else:
-            job.mode_display = 'Guided Design'
-            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Unknown'
-            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Unknown'
-        
-        # Add user instructions info
-        job.has_user_instructions = bool(job.user_instructions)
-        if job.user_instructions:
-            job.user_instructions_preview = job.user_instructions[:50] + ('...' if len(job.user_instructions) > 50 else '')
-        
-        # Add optional field display names for guided mode
-        if job.lighting_mood:
-            job.lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
-        if job.color_scheme:
-            job.color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
-        
-        # Add favorite status to ALL processed images for this job
-        for processed_image in job.processed_images.all():
-            processed_image.is_favorited = processed_image.id in favorite_ids
-    
-    # Pagination
-    paginator = Paginator(jobs, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'gemini_model': 'gemini-2.5-flash-image-preview',
-    }
-    
-    return render(request, 'image_processing/processing_history.html', context)
-
-
-@login_required
 def processed_image_detail(request, pk):
     """View details of a processed image with proper theme/space display"""
     processed_image = get_object_or_404(
@@ -775,72 +760,23 @@ def processed_image_detail(request, pk):
     
     return render(request, 'image_processing/processed_image_detail.html', context)
 
-@login_required
-@require_POST
-def delete_processed_image(request, pk):
-    """Delete a processed image"""
-    try:
-        # Get the processed image, ensuring it belongs to the current user
-        processed_image = get_object_or_404(
-            ProcessedImage, 
-            id=pk, 
-            processing_job__user_image__user=request.user
-        )
-        
-        # Store details for response
-        image_title = processed_image.transformation_title
-        job_id = processed_image.processing_job.id
-        
-        # Delete the processed image (this will also remove the file)
-        processed_image.delete()
-        
-        logger.info(f"User {request.user.username} deleted processed image {pk}")
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Deleted "{image_title}" successfully',
-                'redirect_url': reverse('image_processing:processing_history')
-            })
-        else:
-            messages.success(request, f'Deleted "{image_title}" successfully')
-            return redirect('image_processing:processing_history')
-            
-    except ProcessedImage.DoesNotExist:
-        error_msg = 'Image not found or you do not have permission to delete it'
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': error_msg
-            }, status=404)
-        else:
-            messages.error(request, error_msg)
-            return redirect('image_processing:processing_history')
-            
-    except Exception as e:
-        logger.error(f"Error deleting processed image {pk}: {str(e)}")
-        error_msg = 'An error occurred while deleting the image'
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'message': error_msg
-            }, status=500)
-        else:
-            messages.error(request, error_msg)
-            return redirect('image_processing:processing_history')
-
 
 @login_required
 def favorites_list(request):
-    """List user's favorite images"""
+    """List user's favorite wedding venue transformations"""
     favorites = Favorite.objects.filter(user=request.user).select_related(
         'processed_image__processing_job__user_image'
     ).order_by('-created_at')
     
-    # Add favorited status (always True for this view)
+    # Add display names to jobs
     for favorite in favorites:
-        favorite.processed_image.is_favorited = True
+        job = favorite.processed_image.processing_job
+        if job.custom_prompt:
+            job.theme_display = "Custom Design"
+            job.space_display = "Custom Space"
+        else:
+            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme or 'Unknown')
+            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type or 'Unknown')
     
     # Pagination
     paginator = Paginator(favorites, 12)
@@ -849,18 +785,18 @@ def favorites_list(request):
     
     context = {
         'page_obj': page_obj,
+        'total_favorites': favorites.count(),
     }
     
     return render(request, 'image_processing/favorites_list.html', context)
 
 
 @login_required
+@require_POST
 def ajax_upload_image(request):
     """AJAX endpoint for image uploads"""
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid request method'})
-    
     form = ImageUploadForm(request.POST, request.FILES)
+    
     if form.is_valid():
         try:
             user_image = form.save(commit=False)
@@ -870,102 +806,292 @@ def ajax_upload_image(request):
             
             return JsonResponse({
                 'success': True,
-                'message': f'"{user_image.original_filename}" uploaded successfully!',
                 'image_id': user_image.id,
                 'image_url': user_image.image.url,
                 'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
                 'image_name': user_image.original_filename,
-                'venue_name': user_image.venue_name or '',
-                'venue_description': user_image.venue_description or '',
                 'width': user_image.width,
                 'height': user_image.height,
                 'file_size': user_image.file_size,
+                'message': f'"{user_image.original_filename}" uploaded successfully!'
             })
             
         except Exception as e:
-            logger.error(f"Error uploading image via AJAX: {str(e)}")
+            logger.error(f"Error in AJAX upload: {str(e)}")
             return JsonResponse({
                 'success': False,
-                'error': f'Failed to upload image: {str(e)}'
-            }, status=400)
-    else:
-        # Handle form errors
-        error_messages = []
-        for field, errors in form.errors.items():
-            for error in errors:
-                error_messages.append(str(error))
-        
-        return JsonResponse({
-            'success': False,
-            'error': '; '.join(error_messages)
-        }, status=400)
+                'error': f'Upload failed: {str(e)}'
+            }, status=500)
+    
+    # Handle form errors
+    errors = []
+    for field, field_errors in form.errors.items():
+        for error in field_errors:
+            errors.append(str(error))
+    
+    return JsonResponse({
+        'success': False,
+        'error': '; '.join(errors)
+    }, status=400)
 
 
-# Collection management views - UPDATED for improved API and mobile
+# Collection Management Views
 
 @login_required
 def collections_list(request):
-    """Display user's wedding inspiration collections"""
+    """List user's collections"""
     collections = Collection.objects.filter(user=request.user).order_by('-updated_at')
-    
-    recent_favorites = Favorite.objects.filter(user=request.user).select_related(
-        'processed_image__processing_job'
-    ).order_by('-created_at')[:6]
-    
-    for favorite in recent_favorites:
-        favorite.processed_image.is_favorited = True
     
     context = {
         'collections': collections,
-        'recent_favorites': recent_favorites,
+        'total_collections': collections.count(),
     }
     
     return render(request, 'image_processing/collections_list.html', context)
 
 
 @login_required
-def get_user_collections(request):
-    """FIXED API endpoint to get user's collections as JSON with better error handling"""
+def collection_detail(request, collection_id):
+    """View details of a collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    # Get collection items with favorite status
+    items = collection.items.select_related(
+        'user_image', 'processed_image__processing_job'
+    ).order_by('order', '-added_at')
+    
+    # Add favorite status to processed images
+    favorite_ids = set(
+        Favorite.objects.filter(user=request.user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    for item in items:
+        if item.processed_image:
+            item.processed_image.is_favorited = item.processed_image.id in favorite_ids
+    
+    context = {
+        'collection': collection,
+        'items': items,
+        'total_items': items.count(),
+    }
+    
+    return render(request, 'image_processing/collection_detail.html', context)
+
+
+@login_required
+@require_POST
+def create_collection_ajax(request):
+    """AJAX endpoint to create a new collection"""
     try:
-        # Get collections ordered by creation date (newest first), exclude default
-        collections = Collection.objects.filter(
-            user=request.user, 
-            is_default=False
-        ).order_by('-created_at')  # Changed to -created_at for newest first
+        data = json.loads(request.body)
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+        is_public = data.get('is_public', False)
+        
+        if not name:
+            return JsonResponse({
+                'success': False,
+                'error': 'Collection name is required'
+            }, status=400)
+        
+        # Check if collection with this name already exists
+        if Collection.objects.filter(user=request.user, name=name).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'A collection with this name already exists'
+            }, status=400)
+        
+        collection = Collection.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            is_public=is_public
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'collection': {
+                'id': collection.id,
+                'name': collection.name,
+                'description': collection.description,
+                'is_public': collection.is_public,
+                'item_count': 0,
+                'created_at': collection.created_at.isoformat()
+            },
+            'message': f'Collection "{name}" created successfully!'
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request data'
+        }, status=400)
+    except Exception as e:
+        logger.error(f"Error creating collection: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to create collection'
+        }, status=500)
+
+
+@login_required
+@require_POST
+def add_to_collection(request):
+    """Add an image to a collection"""
+    collection_id = request.POST.get('collection_id')
+    processed_image_id = request.POST.get('processed_image_id')
+    user_image_id = request.POST.get('user_image_id')
+    
+    if not collection_id:
+        return JsonResponse({'success': False, 'error': 'No collection specified'})
+    
+    if not processed_image_id and not user_image_id:
+        return JsonResponse({'success': False, 'error': 'No image specified'})
+    
+    try:
+        collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+        
+        # Determine which image to add
+        if processed_image_id:
+            processed_image = get_object_or_404(
+                ProcessedImage,
+                id=processed_image_id,
+                processing_job__user_image__user=request.user
+            )
+            
+            item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                processed_image=processed_image,
+                defaults={'order': collection.items.count()}
+            )
+        else:
+            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
+            
+            item, created = CollectionItem.objects.get_or_create(
+                collection=collection,
+                user_image=user_image,
+                defaults={'order': collection.items.count()}
+            )
+        
+        if created:
+            collection.updated_at = timezone.now()
+            collection.save(update_fields=['updated_at'])
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Added to "{collection.name}"'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': f'Already in "{collection.name}"'
+            })
+        
+    except Exception as e:
+        logger.error(f"Error adding to collection: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Error adding to collection'})
+
+
+@login_required
+@require_POST
+def remove_from_collection(request, collection_id, item_id):
+    """Remove an item from a collection by item ID"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    collection_item = get_object_or_404(CollectionItem, id=item_id, collection=collection)
+    
+    try:
+        collection_item.delete()
+        
+        collection.updated_at = timezone.now()
+        collection.save(update_fields=['updated_at'])
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Removed from "{collection.name}"'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error removing from collection: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Error removing from collection'})
+
+
+@login_required
+@require_POST
+def remove_image_from_collection(request, collection_id):
+    """Remove an image from a collection by image ID"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    processed_image_id = request.POST.get('processed_image_id')
+    user_image_id = request.POST.get('user_image_id')
+    
+    if not processed_image_id and not user_image_id:
+        return JsonResponse({'success': False, 'error': 'No image specified'})
+    
+    try:
+        if processed_image_id:
+            item = get_object_or_404(
+                CollectionItem,
+                collection=collection,
+                processed_image_id=processed_image_id
+            )
+        else:
+            item = get_object_or_404(
+                CollectionItem,
+                collection=collection,
+                user_image_id=user_image_id
+            )
+        
+        item.delete()
+        
+        collection.updated_at = timezone.now()
+        collection.save(update_fields=['updated_at'])
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Removed from "{collection.name}"'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error removing from collection: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Error removing from collection'})
+
+
+@login_required
+def get_user_collections(request):
+    """API endpoint to get user's collections"""
+    try:
+        collections = Collection.objects.filter(user=request.user).order_by('-updated_at')
         
         collections_data = []
         for collection in collections:
             collections_data.append({
                 'id': collection.id,
                 'name': collection.name,
-                'description': collection.description or '',
-                'item_count': collection.item_count,
-                'is_default': collection.is_default,
+                'description': collection.description,
                 'is_public': collection.is_public,
+                'is_default': collection.is_default,
+                'item_count': collection.item_count,
                 'created_at': collection.created_at.isoformat(),
-                'updated_at': collection.updated_at.isoformat(),
+                'updated_at': collection.updated_at.isoformat()
             })
-        
-        logger.info(f"Retrieved {len(collections_data)} collections for user {request.user.username}")
         
         return JsonResponse({
             'success': True,
-            'collections': collections_data,
-            'total_count': len(collections_data)
+            'collections': collections_data
         })
         
     except Exception as e:
-        logger.error(f"Error getting user collections: {str(e)}")
+        logger.error(f"Error getting collections: {str(e)}")
         return JsonResponse({
             'success': False,
-            'error': 'Unable to load collections',
-            'collections': []
+            'error': 'Unable to load collections'
         }, status=500)
 
 
 @login_required
 def get_processed_image_collections(request, processed_image_id):
-    """FIXED: Get collections that contain a specific processed image"""
+    """Get collections that contain a specific processed image"""
     try:
         # Verify the processed image belongs to the user
         processed_image = get_object_or_404(
@@ -981,360 +1107,17 @@ def get_processed_image_collections(request, processed_image_id):
             ).values_list('collection_id', flat=True)
         )
         
-        logger.info(f"Found {len(collection_ids)} collections containing processed image {processed_image_id}")
-        
         return JsonResponse({
             'success': True,
             'collection_ids': collection_ids
         })
         
-    except ProcessedImage.DoesNotExist:
-        logger.warning(f"Processed image {processed_image_id} not found for user {request.user.username}")
-        return JsonResponse({
-            'success': False,
-            'error': 'Image not found',
-            'collection_ids': []
-        }, status=404)
-        
     except Exception as e:
         logger.error(f"Error getting image collections: {str(e)}")
         return JsonResponse({
             'success': False,
-            'error': 'Error loading collections',
-            'collection_ids': []
+            'error': 'Error loading collections'
         }, status=500)
-
-
-@login_required
-@require_POST
-def add_to_collection(request):
-    """FIXED: Add an image to a collection with better error handling"""
-    collection_id = request.POST.get('collection_id')
-    processed_image_id = request.POST.get('processed_image_id')
-    user_image_id = request.POST.get('user_image_id')
-    
-    if not collection_id:
-        return JsonResponse({'success': False, 'message': 'No collection specified'})
-    
-    try:
-        # Verify collection belongs to user
-        collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-        
-        if processed_image_id:
-            # Verify processed image belongs to user
-            processed_image = get_object_or_404(
-                ProcessedImage,
-                id=processed_image_id,
-                processing_job__user_image__user=request.user
-            )
-            
-            collection_item, created = CollectionItem.objects.get_or_create(
-                collection=collection,
-                processed_image=processed_image,
-                defaults={'notes': f'Added on {timezone.now().strftime("%B %d, %Y")}'}
-            )
-            
-            if created:
-                logger.info(f"Added processed image {processed_image_id} to collection {collection_id}")
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Added to "{collection.name}"!'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Image already in this collection'
-                })
-                
-        elif user_image_id:
-            # Verify user image belongs to user
-            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
-            
-            collection_item, created = CollectionItem.objects.get_or_create(
-                collection=collection,
-                user_image=user_image,
-                defaults={'notes': f'Added on {timezone.now().strftime("%B %d, %Y")}'}
-            )
-            
-            if created:
-                logger.info(f"Added user image {user_image_id} to collection {collection_id}")
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Added to "{collection.name}"!'
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': 'Image already in this collection'
-                })
-        else:
-            return JsonResponse({'success': False, 'message': 'No image specified'})
-            
-    except Exception as e:
-        logger.error(f"Error adding to collection: {str(e)}")
-        return JsonResponse({'success': False, 'message': 'Error adding to collection'})
-
-
-@login_required
-@require_POST
-def remove_image_from_collection(request, collection_id):
-    """FIXED: Remove a specific processed image from a collection"""
-    try:
-        collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-        processed_image_id = request.POST.get('processed_image_id')
-        user_image_id = request.POST.get('user_image_id')
-        
-        if processed_image_id:
-            processed_image = get_object_or_404(
-                ProcessedImage,
-                id=processed_image_id,
-                processing_job__user_image__user=request.user
-            )
-            
-            collection_item = get_object_or_404(
-                CollectionItem,
-                collection=collection,
-                processed_image=processed_image
-            )
-            
-        elif user_image_id:
-            user_image = get_object_or_404(UserImage, id=user_image_id, user=request.user)
-            
-            collection_item = get_object_or_404(
-                CollectionItem,
-                collection=collection,
-                user_image=user_image
-            )
-        else:
-            return JsonResponse({'success': False, 'message': 'No image specified'})
-        
-        collection_item.delete()
-        
-        logger.info(f"Removed image from collection {collection_id}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Removed from "{collection.name}"'
-        })
-        
-    except Exception as e:
-        logger.error(f"Error removing from collection: {str(e)}")
-        return JsonResponse({
-            'success': False,
-            'message': 'Error removing from collection'
-        }, status=500)
-
-
-@login_required
-@require_POST  
-def create_collection(request):
-    """Create a new collection"""
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
-    is_public = request.POST.get('is_public') == 'on'
-    
-    if not name:
-        messages.error(request, 'Collection name is required')
-        return redirect('image_processing:collections_list')
-    
-    try:
-        collection = Collection.objects.create(
-            user=request.user,
-            name=name,
-            description=description,
-            is_public=is_public,
-            is_default=False
-        )
-        messages.success(request, f'Collection "{name}" created successfully!')
-    except Exception as e:
-        logger.error(f"Error creating collection: {str(e)}")
-        messages.error(request, 'Error creating collection')
-    
-    return redirect('image_processing:collections_list')
-
-
-@login_required
-@require_POST
-def create_collection_ajax(request):
-    """FIXED: Create a new collection via AJAX with better validation"""
-    try:
-        data = json.loads(request.body)
-        name = data.get('name', '').strip()
-        description = data.get('description', '').strip()
-        is_public = data.get('is_public', False)
-        
-        if not name:
-            return JsonResponse({'success': False, 'error': 'Collection name is required'})
-        
-        if len(name) > 100:
-            return JsonResponse({'success': False, 'error': 'Collection name too long (max 100 characters)'})
-        
-        # Check if collection name already exists for this user
-        if Collection.objects.filter(user=request.user, name=name).exists():
-            return JsonResponse({'success': False, 'error': 'A collection with this name already exists'})
-        
-        collection = Collection.objects.create(
-            user=request.user,
-            name=name,
-            description=description,
-            is_public=is_public,
-            is_default=False
-        )
-        
-        logger.info(f"Created collection '{name}' for user {request.user.username}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Collection "{name}" created successfully!',
-            'collection': {
-                'id': collection.id,
-                'name': collection.name,
-                'description': collection.description,
-                'is_public': collection.is_public,
-                'is_default': collection.is_default,
-                'item_count': 0,
-                'created_at': collection.created_at.isoformat(),
-                'updated_at': collection.updated_at.isoformat(),
-            }
-        })
-        
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid request data'})
-    except Exception as e:
-        logger.error(f"Error creating collection: {str(e)}")
-        return JsonResponse({'success': False, 'error': 'Error creating collection'})
-
-
-@login_required
-def collection_detail(request, collection_id):
-    """Display a specific collection"""
-    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-    
-    # Get all items in the collection
-    items = collection.items.select_related(
-        'user_image', 
-        'processed_image__processing_job'
-    ).order_by('order', '-added_at')
-    
-    # Add display information to each item
-    for item in items:
-        if item.processed_image:
-            job = item.processed_image.processing_job
-            item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, 'Unknown') if job.wedding_theme else 'Unknown'
-            item.space_display = dict(SPACE_TYPES).get(job.space_type, 'Unknown') if job.space_type else 'Unknown'
-            # Add favorite status
-            item.processed_image.is_favorited = Favorite.objects.filter(
-                user=request.user,
-                processed_image=item.processed_image
-            ).exists()
-    
-    context = {
-        'collection': collection,
-        'items': items,
-    }
-    
-    return render(request, 'image_processing/collection_detail.html', context)
-
-
-@login_required
-@require_POST  
-def edit_collection(request, collection_id):
-    """Edit an existing collection"""
-    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-    
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
-    is_public = request.POST.get('is_public') == 'on'
-    
-    if not name:
-        messages.error(request, 'Collection name is required')
-        return redirect('image_processing:collection_detail', collection_id=collection_id)
-    
-    try:
-        collection.name = name
-        collection.description = description
-        collection.is_public = is_public
-        collection.save()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Collection "{name}" updated successfully!'
-            })
-        
-        messages.success(request, f'Collection "{name}" updated successfully!')
-    except Exception as e:
-        logger.error(f"Error updating collection: {str(e)}")
-        error_msg = 'Error updating collection'
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'error': error_msg})
-        
-        messages.error(request, error_msg)
-    
-    return redirect('image_processing:collection_detail', collection_id=collection_id)
-
-
-@login_required
-@require_POST
-def delete_collection(request, collection_id):
-    """Delete a collection"""
-    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-    
-    try:
-        collection_name = collection.name
-        collection.delete()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Collection "{collection_name}" deleted successfully',
-                'redirect_url': reverse('image_processing:collections_list')
-            })
-        
-        messages.success(request, f'Collection "{collection_name}" deleted successfully')
-        return redirect('image_processing:collections_list')
-        
-    except Exception as e:
-        logger.error(f"Error deleting collection: {str(e)}")
-        error_msg = 'Error deleting collection'
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'error': error_msg})
-        
-        messages.error(request, error_msg)
-        return redirect('image_processing:collection_detail', collection_id=collection_id)
-
-
-@login_required
-@require_POST
-def remove_from_collection(request, collection_id, item_id):
-    """Remove an item from a collection"""
-    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
-    collection_item = get_object_or_404(CollectionItem, id=item_id, collection=collection)
-    
-    try:
-        item_title = collection_item.image_title
-        collection_item.delete()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'"{item_title}" removed from collection'
-            })
-        
-        messages.success(request, f'"{item_title}" removed from collection')
-        
-    except Exception as e:
-        logger.error(f"Error removing item from collection: {str(e)}")
-        error_msg = 'Error removing item from collection'
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'success': False, 'error': error_msg})
-        
-        messages.error(request, error_msg)
-    
-    return redirect('image_processing:collection_detail', collection_id=collection_id)
 
 
 @login_required
@@ -1371,13 +1154,7 @@ def add_to_multiple_collections(request):
         
         for collection_id in collection_ids:
             try:
-                # Only allow custom collections (no default)
-                collection = get_object_or_404(
-                    Collection, 
-                    id=collection_id, 
-                    user=request.user, 
-                    is_default=False
-                )
+                collection = get_object_or_404(Collection, id=collection_id, user=request.user)
                 
                 if image_type == 'processed':
                     collection_item, created = CollectionItem.objects.get_or_create(
@@ -1422,3 +1199,213 @@ def add_to_multiple_collections(request):
         return JsonResponse({'success': False, 'error': 'Error adding to collections'})
 
 
+@login_required
+@require_POST
+def create_collection(request):
+    """Create a new collection"""
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    is_public = request.POST.get('is_public') == 'on'
+    
+    if not name:
+        messages.error(request, 'Collection name is required')
+        return redirect('image_processing:collections_list')
+    
+    try:
+        collection = Collection.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            is_public=is_public
+        )
+        messages.success(request, f'Collection "{name}" created successfully!')
+    except Exception as e:
+        logger.error(f"Error creating collection: {str(e)}")
+        messages.error(request, 'Error creating collection')
+    
+    return redirect('image_processing:collections_list')
+
+
+@login_required
+@require_POST
+def edit_collection(request, collection_id):
+    """Edit an existing collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    is_public = request.POST.get('is_public') == 'on'
+    
+    if not name:
+        messages.error(request, 'Collection name is required')
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
+    
+    try:
+        collection.name = name
+        collection.description = description
+        collection.is_public = is_public
+        collection.save()
+        
+        messages.success(request, f'Collection "{name}" updated successfully!')
+    except Exception as e:
+        logger.error(f"Error updating collection: {str(e)}")
+        messages.error(request, 'Error updating collection')
+    
+    return redirect('image_processing:collection_detail', collection_id=collection_id)
+
+
+@login_required
+@require_POST
+def delete_collection(request, collection_id):
+    """Delete a collection"""
+    collection = get_object_or_404(Collection, id=collection_id, user=request.user)
+    
+    try:
+        collection_name = collection.name
+        collection.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Collection "{collection_name}" deleted successfully',
+                'redirect_url': reverse('image_processing:collections_list')
+            })
+        
+        messages.success(request, f'Collection "{collection_name}" deleted successfully')
+        return redirect('image_processing:collections_list')
+        
+    except Exception as e:
+        logger.error(f"Error deleting collection: {str(e)}")
+        error_msg = 'Error deleting collection'
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg})
+        
+        messages.error(request, error_msg)
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
+
+
+@login_required
+@require_POST
+def delete_processed_image(request, pk):
+    """Delete a processed image"""
+    try:
+        processed_image = get_object_or_404(
+            ProcessedImage,
+            id=pk,
+            processing_job__user_image__user=request.user
+        )
+        
+        # Remove from any collections first
+        CollectionItem.objects.filter(processed_image=processed_image).delete()
+        
+        # Remove from favorites
+        Favorite.objects.filter(processed_image=processed_image).delete()
+        
+        # Delete the image file
+        if processed_image.processed_image:
+            try:
+                processed_image.processed_image.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Could not delete image file: {str(e)}")
+        
+        # Delete the database record
+        processed_image.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': 'Image deleted successfully'
+            })
+        
+        messages.success(request, 'Image deleted successfully')
+        return redirect('image_processing:processing_history')
+        
+    except Exception as e:
+        logger.error(f"Error deleting processed image: {str(e)}")
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to delete image'
+            }, status=500)
+        
+        messages.error(request, 'Failed to delete image')
+        return redirect('image_processing:processing_history')
+
+
+@login_required
+@require_POST  
+def delete_user_image(request, pk):
+    """Delete a user uploaded image and all related processing jobs"""
+    try:
+        user_image = get_object_or_404(UserImage, id=pk, user=request.user)
+        
+        # This will cascade delete all processing jobs and processed images
+        original_filename = user_image.original_filename
+        
+        # Delete the image files
+        if user_image.image:
+            try:
+                user_image.image.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Could not delete image file: {str(e)}")
+        
+        if user_image.thumbnail:
+            try:
+                user_image.thumbnail.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Could not delete thumbnail file: {str(e)}")
+        
+        # Delete the database record (cascades to jobs and processed images)
+        user_image.delete()
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'"{original_filename}" deleted successfully'
+            })
+        
+        messages.success(request, f'"{original_filename}" deleted successfully')
+        return redirect('image_processing:image_gallery')
+        
+    except Exception as e:
+        logger.error(f"Error deleting user image: {str(e)}")
+        
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to delete image'
+            }, status=500)
+        
+        messages.error(request, 'Failed to delete image')
+        return redirect('image_processing:image_gallery')
+
+
+@login_required
+def test_gemini_api(request):
+    """Test endpoint for Gemini API connectivity"""
+    try:
+        from .services import test_gemini_service
+        
+        result = test_gemini_service()
+        
+        if result['success']:
+            return JsonResponse({
+                'success': True,
+                'message': 'Gemini 2.5 Flash Image Preview API connection successful!',
+                'model': result.get('model'),
+                'test_image_size': result.get('test_image_size', 0),
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': f"Gemini API test failed: {result.get('error')}"
+            }, status=500)
+            
+    except Exception as e:
+        logger.error(f"Error testing Gemini API: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Gemini API test failed'
+        }, status=500)

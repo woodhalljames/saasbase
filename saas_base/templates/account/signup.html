@@ -12,7 +12,7 @@
         <i class="bi bi-person-plus"></i>
       </div>
       <h2 class="fw-bold">Create Your Account</h2>
-      <p class="text-muted">Start transforming your wedding vision today</p>
+      <p class="text-muted">Start making your wedding you today</p>
     </div>
     
     <!-- Social Signup Buttons -->
@@ -24,13 +24,13 @@
             <i class="bi bi-google me-2"></i> Sign up with Google
           </a>
         {% elif provider.id == "facebook" %}
-          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-primary">
+          <!--a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-primary">
             <i class="bi bi-facebook me-2"></i> Sign up with Facebook
-          </a>
+          </a-->
         {% elif provider.id == "twitter" %}
-          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-info">
+          <!---a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-info">
             <i class="bi bi-twitter me-2"></i> Sign up with Twitter
-          </a>
+          </a--->
         {% endif %}
       {% endfor %}
     </div>

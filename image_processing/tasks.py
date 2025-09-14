@@ -1,4 +1,3 @@
-# image_processing/tasks.py - Simplified for real-time Gemini processing
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
@@ -6,14 +5,104 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 import logging
 import time
+import re
+import random
+import string
 from PIL import Image as PILImage
 from io import BytesIO
 
-from .models import ImageProcessingJob, ProcessedImage, UserImage
+from .models import ImageProcessingJob, ProcessedImage, UserImage, WEDDING_THEMES, SPACE_TYPES
 from usage_limits.usage_tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def generate_human_readable_filename(job, file_extension='png'):
+    """
+    Generate human-readable filename for processed wedding images.
+    
+    Format for guided mode: {Space}_{Theme}_{Date}_{RandomSuffix}.{ext}
+    Format for custom mode: Custom_Design_{Date}_{RandomSuffix}.{ext}
+    
+    Args:
+        job: ImageProcessingJob instance
+        file_extension: File extension (default: 'png')
+        
+    Returns:
+        str: Human-readable filename
+    """
+    try:
+        # Helper function to clean text for filename
+        def clean_for_filename(text):
+            if not text:
+                return ""
+            # Remove special characters, convert to title case, replace spaces with underscores
+            cleaned = re.sub(r'[^\w\s-]', '', str(text))
+            cleaned = re.sub(r'\s+', '_', cleaned.strip())
+            # Convert to title case but keep underscores
+            parts = cleaned.split('_')
+            cleaned = '_'.join(word.capitalize() for word in parts if word)
+            return cleaned
+        
+        # Generate date string
+        date_str = job.created_at.strftime('%Y-%m-%d')
+        
+        # Generate random suffix for uniqueness (4 characters)
+        random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+        
+        if job.custom_prompt:
+            # Custom prompt mode: Custom_Design_{Date}_{RandomSuffix}
+            filename_parts = ['Custom_Design', date_str, random_suffix]
+        else:
+            # Guided mode: {Space}_{Theme}_{Date}_{RandomSuffix}
+            theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Wedding'
+            space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Space'
+            
+            # Clean the main components
+            theme_clean = clean_for_filename(theme_display)
+            space_clean = clean_for_filename(space_display)
+            
+            # New format: Space_Theme_Date_RandomSuffix
+            filename_parts = [space_clean, theme_clean, date_str, random_suffix]
+        
+        # Join parts and create filename
+        base_name = '_'.join(part for part in filename_parts if part)
+        
+        # Ensure filename isn't too long (max 80 chars for base name)
+        if len(base_name) > 80:
+            # Keep date and random suffix, truncate the beginning parts
+            suffix_parts = [date_str, random_suffix]
+            suffix_length = len('_'.join(suffix_parts)) + 1  # +1 for underscore
+            max_base_length = 80 - suffix_length
+            
+            if job.custom_prompt:
+                # Truncate custom design part
+                truncated_base = base_name[:max_base_length]
+                base_name = f"{truncated_base}_{date_str}_{random_suffix}"
+            else:
+                # For guided mode, prioritize keeping theme, truncate space if needed
+                space_clean = clean_for_filename(space_display)
+                theme_clean = clean_for_filename(theme_display)
+                
+                available_length = max_base_length - len(theme_clean) - 1  # -1 for underscore
+                if len(space_clean) > available_length:
+                    space_clean = space_clean[:available_length]
+                
+                base_name = f"{space_clean}_{theme_clean}_{date_str}_{random_suffix}"
+        
+        # Final filename with extension
+        filename = f"{base_name}.{file_extension}"
+        
+        logger.info(f"Generated filename for job {job.id}: {filename}")
+        return filename
+        
+    except Exception as e:
+        logger.error(f"Error generating readable filename for job {job.id}: {str(e)}")
+        # Fallback to simple format
+        fallback_name = f"Wedding_Design_{job.created_at.strftime('%Y-%m-%d')}_{random.randint(1000, 9999)}.{file_extension}"
+        return fallback_name
+
 
 @shared_task(bind=True, max_retries=2)
 def process_venue_transformation(self, job_id):
@@ -97,6 +186,7 @@ def transform_venue_with_gemini(job):
     """
     Transform wedding venue using Gemini 2.5 Flash Image Preview.
     Direct API call with real-time processing.
+    Updated with simplified human-readable filename generation.
     """
     try:
         from .services import GeminiImageService
@@ -121,25 +211,28 @@ def transform_venue_with_gemini(job):
         )
         
         if result['success']:
-            # Create and save the transformed image
+            # Create and save the transformed image with human-readable filename
             processed_image = ProcessedImage(
                 processing_job=job,
                 gemini_model=result.get('model', 'gemini-2.5-flash-image-preview'),
                 finish_reason=result.get('finish_reason', 'STOP')
             )
             
-            # Save the generated image
-            image_content = ContentFile(result['image_data'])
-            filename = f"wedding_venue_{job.id}_{int(time.time())}.png"
-            processed_image.processed_image.save(filename, image_content, save=True)
+            # Generate simplified human-readable filename: Space_Theme_Date_RandomSuffix
+            readable_filename = generate_human_readable_filename(job, 'png')
             
-            logger.info(f"Successfully saved wedding venue transformation - Job {job.id}")
+            # Save the generated image with readable filename
+            image_content = ContentFile(result['image_data'])
+            processed_image.processed_image.save(readable_filename, image_content, save=True)
+            
+            logger.info(f"Successfully saved wedding venue transformation with filename: {readable_filename} - Job {job.id}")
             
             return {
                 'success': True,
                 'processed_image_id': processed_image.id,
                 'model': result.get('model', 'gemini-2.5-flash-image-preview'),
-                'finish_reason': result.get('finish_reason', 'STOP')
+                'finish_reason': result.get('finish_reason', 'STOP'),
+                'filename': readable_filename
             }
         else:
             logger.error(f"Gemini transformation failed for job {job.id}: {result.get('error')}")
@@ -186,7 +279,8 @@ def process_venue_realtime(job_id):
             return {
                 'success': True,
                 'job_id': job_id,
-                'processed_image_id': result['processed_image_id']
+                'processed_image_id': result['processed_image_id'],
+                'filename': result.get('filename', 'Wedding_Design.png')
             }
         else:
             # Mark as failed

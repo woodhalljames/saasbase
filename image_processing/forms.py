@@ -1,4 +1,4 @@
-# image_processing/forms.py - Updated for Gemini 2.5 Flash Image Preview
+# image_processing/forms.py - Updated with alphabetical wedding theme sorting
 
 from django import forms
 from django.core.exceptions import ValidationError
@@ -88,7 +88,7 @@ class ImageUploadForm(forms.ModelForm):
 
 
 class WeddingTransformForm(forms.ModelForm):
-    """Simplified wedding venue transformation form for Gemini 2.5"""
+    """Updated wedding venue transformation form with single user_instructions field and alphabetical theme sorting"""
     
     # Prompt mode selection
     prompt_mode = forms.ChoiceField(
@@ -137,7 +137,7 @@ class WeddingTransformForm(forms.ModelForm):
         fields = [
             'prompt_mode', 'custom_prompt',  # Prompt selection
             'wedding_theme', 'space_type', 'season', 'lighting_mood', 'color_scheme',  # Guided options
-            'user_instructions',  # Universal user input
+            'user_instructions',  # Single user instructions field
             'realtime_processing'  # Processing preference
         ]
         
@@ -162,22 +162,28 @@ class WeddingTransformForm(forms.ModelForm):
                 'placeholder': 'Describe your ideal wedding venue transformation in detail. Example: "Transform this space into a romantic garden ceremony with soft pink roses, flowing white drapes, and warm golden lighting. Add vintage wooden chairs and a floral arch..."',
                 'style': 'display: none;'  # Hidden by default
             }),
-            # Single user instructions field
+            # Single user instructions field with helpful placeholder
             'user_instructions': forms.Textarea(attrs={
                 'class': 'form-control',
                 'id': 'user-instructions',
                 'rows': 3,
-                'placeholder': 'Additional instructions (optional): "Include vintage chandeliers", "Use lots of greenery", "Avoid modern furniture", "Make it very romantic"...'
+                'placeholder': 'Additional instructions for your transformation... For example: "Include lots of white roses and avoid dark colors" or "Add fairy lights everywhere but no artificial flowers" or "Make it very romantic with candles"'
             })
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Add empty choices for required fields (guided mode)
-        self.fields['wedding_theme'].choices = [('', 'Choose your wedding style...')] + list(WEDDING_THEMES)
+        # Sort wedding themes alphabetically by display name (second element of tuple)
+        sorted_wedding_themes = sorted(WEDDING_THEMES, key=lambda x: x[1])
+        
+        # Add empty choices for required fields (guided mode) with alphabetically sorted themes
+        self.fields['wedding_theme'].choices = [('', 'Choose your wedding style...')] + list(sorted_wedding_themes)
         self.fields['space_type'].choices = [('', 'What will this space be?')] + list(SPACE_TYPES)
-        self.fields['color_scheme'].choices = [('', 'Theme default')] + list(COLOR_SCHEMES)
+        
+        # Sort color schemes alphabetically as well for consistency
+        sorted_color_schemes = sorted(COLOR_SCHEMES, key=lambda x: x[1])
+        self.fields['color_scheme'].choices = [('', 'Theme default')] + list(sorted_color_schemes)
         
         # Set field requirements (validated conditionally)
         self.fields['wedding_theme'].required = False
@@ -190,13 +196,15 @@ class WeddingTransformForm(forms.ModelForm):
             self.fields[field_name].required = False
         
         # Add enhanced help text for Gemini
-        self.fields['wedding_theme'].help_text = 'Choose the overall style - Gemini will create detailed wedding decor'
+        self.fields['wedding_theme'].help_text = 'Choose the overall style - Gemini will create detailed wedding decor (themes sorted A-Z)'
         self.fields['space_type'].help_text = 'What type of wedding area should this become?'
         self.fields['season'].help_text = 'Seasonal flowers and elements (optional)'
         self.fields['lighting_mood'].help_text = 'Lighting atmosphere (optional)'
-        self.fields['color_scheme'].help_text = 'Color palette preference (optional)'
+        self.fields['color_scheme'].help_text = 'Color palette preference (optional, sorted A-Z)'
         self.fields['custom_prompt'].help_text = 'Write a detailed description of your ideal venue transformation. Gemini works best with specific, descriptive prompts.'
-        self.fields['user_instructions'].help_text = 'Additional details to include in any transformation (guided or custom mode)'
+        
+        # Enhanced help text for single user instructions field
+        self.fields['user_instructions'].help_text = 'Add any specific requests, things to include or avoid. This will be added to your transformation prompt. Examples: "lots of fairy lights", "no artificial flowers", "make it very romantic", "include some greenery but avoid red colors"'
     
     def clean(self):
         cleaned_data = super().clean()
@@ -221,6 +229,12 @@ class WeddingTransformForm(forms.ModelForm):
             elif len(custom_prompt) < 20:
                 self.add_error('custom_prompt', 'Custom prompt is too short. Please provide more detail for better Gemini results.')
         
+        # Validate user instructions length if provided
+        user_instructions = cleaned_data.get('user_instructions', '').strip()
+        if user_instructions:
+            if len(user_instructions) > 1000:
+                self.add_error('user_instructions', 'Instructions are too long (max 1000 characters).')
+        
         return cleaned_data
 
 
@@ -240,15 +254,16 @@ class QuickTransformForm(forms.Form):
         max_length=500
     )
     
+    # Single user instructions field
     user_instructions = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-control form-control-sm',
             'rows': 2,
-            'placeholder': 'Any additional details or special requests...',
-            'id': 'quick-instructions'
+            'placeholder': 'Additional instructions or things to include/avoid...',
+            'id': 'quick-user-instructions'
         }),
-        help_text='Optional: specific elements to include or avoid',
+        help_text='Optional: any specific requests or things to avoid',
         max_length=300
     )
     
@@ -266,12 +281,13 @@ class QuickTransformForm(forms.Form):
 class SimpleInstructionsForm(forms.Form):
     """Simple form for additional instructions"""
     
+    # Single user instructions field
     user_instructions = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-control form-control-sm',
-            'rows': 2,
-            'placeholder': 'Additional instructions, special features, or elements to avoid...'
+            'rows': 3,
+            'placeholder': 'Additional instructions for transformations...'
         }),
         help_text='This will be added to any transformation prompt',
         max_length=500

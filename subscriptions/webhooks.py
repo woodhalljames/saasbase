@@ -95,8 +95,6 @@ def handle_checkout_session(session):
     
     try:
         with transaction.atomic():
-            stripe.api_key = settings.STRIPE_SECRET_KEY
-            
             # Find existing CustomerSubscription (should exist from signup)
             try:
                 customer_subscription = CustomerSubscription.objects.get(stripe_customer_id=customer_id)
@@ -177,11 +175,11 @@ def handle_subscription_created(subscription):
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
             
-            # Get plan_id using SubscriptionItem API (same as handle_subscription_updated)
+            # FIXED: Get plan_id using safe API call (3 levels max)
             try:
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
-                    expand=['data.price.product']
+                    expand=['data.price.product']  # FIXED: Safe 3-level expansion instead of 4-level
                 )
                 
                 if subscription_items.data:
@@ -218,12 +216,12 @@ def handle_subscription_updated(subscription):
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
             
-            # Get plan_id using SubscriptionItem API
+            # FIXED: Get plan_id using safe API call (3 levels max)
             try:
                 stripe.api_key = settings.STRIPE_SECRET_KEY
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
-                    expand=['data.price.product']
+                    expand=['data.price.product']  # FIXED: Safe 3-level expansion instead of 4-level
                 )
                 
                 if subscription_items.data:

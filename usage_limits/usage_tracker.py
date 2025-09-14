@@ -123,13 +123,13 @@ class UsageTracker:
     def get_user_limit(cls, user):
         """Get user's monthly limit based on subscription"""
         if not user or not user.is_authenticated:
-            return 3  # Free tier default
+            return 2  # Free tier default
         
         try:
             subscription = cls._get_user_subscription(user.id)
             
             if not subscription or not subscription.subscription_active:
-                return 3  # Free tier
+                return 2  # Free tier
             
             # Try to get limit from Product model first
             plan_id = subscription.plan_id
@@ -159,8 +159,8 @@ class UsageTracker:
         if not user or not user.is_authenticated:
             return {
                 'current': 0,
-                'limit': 3,
-                'remaining': 3,
+                'limit': 2,
+                'remaining': 2,
                 'percentage': 0,
                 'subscription_type': 'free'
             }

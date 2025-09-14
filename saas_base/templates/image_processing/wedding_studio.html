@@ -47,23 +47,12 @@
               </select>
             </div>
             
-            <!-- Smart Suggestions -->
-            <div id="smartSuggestions" class="mb-3 d-none">
-              <div class="alert alert-info border-0 py-2 px-3 small">
-                <div class="d-flex align-items-start">
-                  <i class="bi bi-lightbulb text-info me-2 mt-1"></i>
-                  <div>
-                    <div class="fw-bold">Suggested:</div>
-                    <div id="suggestionText" class="mt-1"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Optional Details Section - Simplified -->
             <div class="border-top pt-3 mt-3">
               <div class="d-flex align-items-center justify-content-between mb-3">
-                <h6 class="mb-0 text-muted">Style Customization</h6>
+                <h6 class="mb-0 text-muted">More Options</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleOptional">
                   <i class="bi bi-chevron-down" id="toggleIcon"></i>
                 </button>
@@ -104,30 +93,16 @@
                   <div class="form-text small">Preferred color palette</div>
                 </div>
 
-                <!-- Special Features -->
+                <!-- User Instructions - Single field -->
                 <div class="mb-3">
-                  <label for="special-features" class="form-label small">
-                    Special Features 
+                  <label for="user-instructions" class="form-label small">
+                    Additional Instructions 
                     <i class="bi bi-question-circle" 
-                       title="Highlight architectural features to enhance"
+                       title="Add any specific requests or things to include/avoid"
                        data-bs-toggle="tooltip"></i>
                   </label>
-                  <textarea class="form-control form-control-sm" id="special-features" name="special_features" 
-                            rows="2" placeholder="e.g., cathedral ceilings, fireplace, historic details"></textarea>
-                  <div class="form-text small">Features to highlight or incorporate</div>
-                </div>
-
-                <!-- Things to Avoid -->
-                <div class="mb-3">
-                  <label for="avoid" class="form-label small">
-                    Things to Avoid 
-                    <i class="bi bi-question-circle" 
-                       title="Specify elements you don't want in your transformation"
-                       data-bs-toggle="tooltip"></i>
-                  </label>
-                  <textarea class="form-control form-control-sm" id="avoid" name="avoid" 
-                            rows="2" placeholder="e.g., dark colors, modern furniture, artificial flowers"></textarea>
-                  <div class="form-text small">Elements to exclude from the transformation</div>
+                  <textarea class="form-control form-control-sm" id="user-instructions" name="user_instructions" 
+                            rows="3" placeholder='For example: "Include lots of white roses and fairy lights but avoid dark colors" or "Make it very romantic with candles, no artificial flowers"'></textarea>
                 </div>
               </div>
             </div>
@@ -204,6 +179,13 @@
 
           <!-- Selected Image Preview -->
           <div id="imagePreview" class="text-center w-100 d-none">
+            <!-- Clear Selection Button -->
+            <div class="d-flex justify-content-end mb-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSelectionBtn" title="Clear selection and choose different image">
+                <i class="bi bi-x-circle me-1"></i>
+              </button>
+            </div>
+            
             <img id="selectedImage" 
                  class="img-fluid rounded shadow mb-3" 
                  style="max-height: 400px; max-width: 100%; object-fit: contain;"
@@ -212,6 +194,9 @@
               <h6 id="selectedImageName" class="mb-1 fw-bold">Selected Image</h6>
               <small class="text-muted" id="selectedImageDetails">Ready for transformation</small>
             </div>
+            
+    
+           
           </div>
         </div>
       </div>
@@ -288,37 +273,69 @@
             {% endif %}
           </div>
 
-          <!-- Recent Transformations Tab -->
+          <!-- Recent Transformations Tab - UPDATED VERSION -->
           <div id="recentTransformsTab" class="d-none">
             {% if recent_jobs %}
               <div class="row g-3">
                 {% for job in recent_jobs|slice:":6" %}
-                  <div class="col-md-6 col-lg-4">
-                    <div class="d-flex align-items-center p-3 rounded border">
-                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                           class="rounded me-3" 
-                           style="width: 50px; height: 40px; object-fit: cover;" 
-                           alt="Venue">
-                      <div class="flex-grow-1 min-w-0">
-                        <div class="fw-bold small text-truncate">{{ job.user_image.original_filename }}</div>
-                        <div class="d-flex align-items-center justify-content-between mt-1">
-                          <small class="text-muted">{{ job.created_at|timesince }} ago</small>
-                          <span class="badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning{% else %}bg-secondary{% endif %} small">
-                            {{ job.get_status_display }}
-                          </span>
-                        </div>
-                       
-                      </div>
-                    </div>
-                  </div>
+                  {% if job.status == 'completed' %}
+                    {% with processed_images=job.processed_images.all %}
+                      {% if processed_images %}
+                        {% with first_result=processed_images.0 %}
+                          <div class="col-md-6 col-lg-4">
+                            <a href="{% url 'image_processing:processed_image_detail' first_result.pk %}" 
+                               class="text-decoration-none text-dark result-card-link">
+                              <div class="d-flex align-items-center p-3 rounded border result-card">
+                                <!-- Keep original image thumbnail -->
+                                <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                                     class="rounded me-3" 
+                                     style="width: 50px; height: 40px; object-fit: cover;" 
+                                     alt="Original venue">
+                                
+                                <!-- Updated content: Space/Theme + timing -->
+                                <div class="flex-grow-1 min-w-0">
+                                  <div class="fw-bold small text-truncate">
+                                    {% if job.custom_prompt %}
+                                      Custom Design
+                                    {% elif job.wedding_theme and job.space_type %}
+                                      {% for value, label in wedding_themes %}
+                                        {% if value == job.wedding_theme %}{{ label }}{% endif %}
+                                      {% endfor %}
+                                      •
+                                      {% for value, label in space_types %}
+                                        {% if value == job.space_type %}{{ label }}{% endif %}
+                                      {% endfor %}
+                                    {% else %}
+                                      Wedding Transformation
+                                    {% endif %}
+                                  </div>
+                                  <div class="mt-1">
+                                    <small class="text-muted">{{ job.created_at|timesince }} ago</small>
+                                  </div>
+                                </div>
+                                
+                                <!-- Visual indicator that it's clickable -->
+                                <div class="ms-2 text-muted">
+                                  <i class="bi bi-arrow-right"></i>
+                                </div>
+                              </div>
+                            </a>
+                          </div>
+                        {% endwith %}
+                      {% endif %}
+                    {% endwith %}
+                  {% endif %}
                 {% endfor %}
               </div>
+              
+              <!-- Keep existing "View All Results" link -->
               <div class="text-center mt-3">
                 <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">
                   View All Results
                 </a>
               </div>
             {% else %}
+              <!-- Keep existing empty state -->
               <div class="text-center py-4">
                 <i class="bi bi-magic text-muted fs-4"></i>
                 <p class="text-muted mb-0 mt-2">No transformations yet</p>
@@ -416,6 +433,35 @@
   color: #6c757d;
 }
 
+/* Result card styles - NEW */
+.result-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border-color: #0d6efd !important;
+}
+
+.result-card-link:hover {
+  text-decoration: none !important;
+}
+
+.result-card-link:hover .result-card {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.result-card-link:hover .bi-arrow-right {
+  color: #0d6efd !important;
+  transform: translateX(2px);
+}
+
+.bi-arrow-right {
+  transition: all 0.2s ease;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .upload-btn {
@@ -479,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeWeddingStudio() {
     console.log('🎬 Initializing Wedding Studio...');
     
-    // Wedding Studio Manager Class - FIXED VERSION
+    // Wedding Studio Manager Class - UPDATED VERSION
     class WeddingStudioManager {
         constructor() {
             this.selectedImageId = null;
@@ -498,10 +544,11 @@ function initializeWeddingStudio() {
             this.setupTabs();
             this.setupOptionalFields();
             this.setupTooltips();
+            this.setupClearSelection();
             
-            // FIXED: Call these methods in the correct order
+            // Call these methods in the correct order
             this.handlePreselectedImage();
-            this.handleURLParameters();  // This was being called but had issues
+            this.handleURLParameters();
             
             console.log('✅ Wedding Studio Manager ready!');
         }
@@ -561,13 +608,14 @@ function initializeWeddingStudio() {
                 }
             }
             
-            // FIXED: Handle guided mode form fields with proper mapping
+            // UPDATED: Handle guided mode form fields with single user_instructions
             const formFields = [
                 { param: 'wedding_theme', elementId: 'wedding-theme' },
                 { param: 'space_type', elementId: 'space-type' },
                 { param: 'season', elementId: 'season' },
-                { param: 'lighting', elementId: 'lighting' }, // URL param is 'lighting', form field is also 'lighting'
-                { param: 'color_scheme', elementId: 'color-scheme' }
+                { param: 'lighting', elementId: 'lighting' },
+                { param: 'color_scheme', elementId: 'color-scheme' },
+                { param: 'user_instructions', elementId: 'user-instructions' }  // UPDATED: Single field
             ];
             
             formFields.forEach(field => {
@@ -577,34 +625,25 @@ function initializeWeddingStudio() {
                     if (element) {
                         element.value = value;
                         settingsApplied = true;
-                        console.log(`📝 Set ${field.param}:`, value);
+                        console.log(`🔧 Set ${field.param}:`, value);
                     }
                 }
             });
             
-            // Handle special features and avoid fields
-            const specialFeatures = urlParams.get('special_features');
-            if (specialFeatures) {
-                const specialFeaturesField = document.getElementById('special-features');
-                if (specialFeaturesField) {
-                    specialFeaturesField.value = specialFeatures;
-                    settingsApplied = true;
-                }
-            }
-            
-            const avoid = urlParams.get('avoid');
-            if (avoid) {
-                const avoidField = document.getElementById('avoid');
-                if (avoidField) {
-                    avoidField.value = avoid;
+            // Handle custom_prompt field
+            const customPrompt = urlParams.get('custom_prompt');
+            if (customPrompt) {
+                const customPromptField = document.getElementById('custom-prompt');
+                if (customPromptField) {
+                    customPromptField.value = customPrompt;
                     settingsApplied = true;
                 }
             }
             
             if (settingsApplied) {
-                // FIXED: Show optional fields if any optional parameters were set
+                // UPDATED: Show optional fields if any optional parameters were set
                 if (urlParams.get('season') || urlParams.get('lighting') || urlParams.get('color_scheme') || 
-                    urlParams.get('special_features') || urlParams.get('avoid')) {
+                    urlParams.get('user_instructions')) {  // UPDATED: Single field check
                     const optionalFields = document.getElementById('optionalFields');
                     const toggleIcon = document.getElementById('toggleIcon');
                     if (optionalFields && optionalFields.classList.contains('d-none')) {
@@ -612,9 +651,7 @@ function initializeWeddingStudio() {
                         if (toggleIcon) toggleIcon.className = 'bi bi-chevron-up';
                     }
                 }
-                
-                // FIXED: Update suggestions and transform button after parameters are loaded
-                this.showSuggestions();
+              
                 this.updateTransformButton();
                 
                 this.showAlert('Settings loaded from previous transformation', 'success');
@@ -635,6 +672,54 @@ function initializeWeddingStudio() {
             const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
+        }
+
+        setupClearSelection() {
+            console.log('🗑️ Setting up clear selection...');
+            
+            const clearBtn = document.getElementById('clearSelectionBtn');
+            const uploadDifferentBtn = document.getElementById('uploadDifferentBtn');
+            const fileInput = document.getElementById('fileInput');
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('🗑️ Clear selection clicked');
+                    this.clearSelection();
+                });
+            }
+
+           
+
+            console.log('✅ Clear selection setup complete');
+        }
+
+        clearSelection() {
+            console.log('🗑️ Clearing image selection...');
+            
+            // Clear selected image data
+            this.selectedImageId = null;
+            
+            // Clear thumbnail selections
+            document.querySelectorAll('.venue-thumbnail').forEach(t => {
+                t.classList.remove('selected');
+            });
+            
+            // Reset to upload area
+            this.showUploadArea();
+            
+            // Update transform button
+            this.updateTransformButton();
+            
+            // Clear file inputs
+            const fileInput = document.getElementById('fileInput');
+            const cameraInput = document.getElementById('cameraInput');
+            if (fileInput) fileInput.value = '';
+            if (cameraInput) cameraInput.value = '';
+            
+            this.showAlert('Selection cleared - ready to upload new image', 'info');
+            
+            console.log('✅ Selection cleared successfully');
         }
 
         setupOptionalFields() {
@@ -659,19 +744,13 @@ function initializeWeddingStudio() {
                 });
             }
 
-            if (themeSelect && spaceSelect) {
-                const updateSuggestions = () => {
-                    this.showSuggestions();
-                };
-                themeSelect.addEventListener('change', updateSuggestions);
-                spaceSelect.addEventListener('change', updateSuggestions);
-            }
+           
 
             console.log('✅ Optional fields setup complete');
         }
 
         setupUploadButtons() {
-            console.log('📘 Setting up upload buttons...');
+            console.log('🔘 Setting up upload buttons...');
             
             const uploadBtn = document.getElementById('uploadBtn');
             const cameraBtn = document.getElementById('cameraBtn');
@@ -808,7 +887,7 @@ function initializeWeddingStudio() {
                 themeSelect.addEventListener('change', () => {
                     console.log('🎨 Theme changed:', themeSelect.value);
                     this.updateTransformButton();
-                    this.showSuggestions();
+                    
                 });
             }
 
@@ -816,7 +895,7 @@ function initializeWeddingStudio() {
                 spaceSelect.addEventListener('change', () => {
                     console.log('🏠 Space changed:', spaceSelect.value);
                     this.updateTransformButton();
-                    this.showSuggestions();
+                  
                 });
             }
 
@@ -824,7 +903,7 @@ function initializeWeddingStudio() {
         }
 
         setupTabs() {
-            console.log('📑 Setting up tabs...');
+            console.log('🗂️ Setting up tabs...');
             
             const showImages = document.getElementById('showImages');
             const showTransforms = document.getElementById('showTransforms');
@@ -1039,46 +1118,14 @@ function initializeWeddingStudio() {
             
             if (canTransform) {
                 btn.className = 'btn btn-primary py-2';
-                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform with AI</span>';
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform</span>';
             } else {
                 btn.className = 'btn btn-secondary py-2';
                 btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>';
             }
         }
 
-        showSuggestions() {
-            const theme = document.getElementById('wedding-theme')?.value;
-            const space = document.getElementById('space-type')?.value;
-            const suggestions = document.getElementById('smartSuggestions');
-            const text = document.getElementById('suggestionText');
-            
-            if (!theme || !space) {
-                suggestions?.classList.add('d-none');
-                return;
-            }
-            
-            const suggestionMap = {
-                'rustic_wedding_ceremony': 'Outdoor ceremony with natural lighting and wildflower decorations',
-                'rustic_dining_area': 'Farm table setup with mason jar centerpieces and string lighting',
-                'modern_dining_area': 'Clean lines with minimalist centerpieces and geometric lighting',
-                'vintage_lounge_area': 'Antique furniture with romantic lighting and lace details',
-                'beach_wedding_ceremony': 'Sunset ceremony with flowing fabrics and coastal elements',
-                'garden_wedding_ceremony': 'Natural garden setting with floral arches and romantic ambiance',
-                'glamorous_dance_floor': 'Luxury party space with crystal and dramatic lighting',
-                'industrial_cocktail_hour': 'Urban loft vibes with Edison bulbs and metal accents'
-            };
-            
-            const key = `${theme}_${space}`;
-            const suggestion = suggestionMap[key];
-            
-            if (suggestion && suggestions && text) {
-                text.textContent = suggestion;
-                suggestions.classList.remove('d-none');
-            } else if (suggestions) {
-                suggestions.classList.add('d-none');
-            }
-        }
-
+      
         getFormData() {
             const form = document.getElementById('transformForm');
             const formData = new FormData(form);
@@ -1126,7 +1173,7 @@ function initializeWeddingStudio() {
                 });
 
                 const result = await response.json();
-                console.log('📄 Processing response:', result);
+                console.log('🔄 Processing response:', result);
                 
                 if (result.success) {
                     this.currentJobId = result.job_id;

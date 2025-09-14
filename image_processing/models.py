@@ -1,4 +1,4 @@
-# image_processing/models.py - Simplified for Gemini 2.5 real-time processing
+# image_processing/models.py - Simplified for Gemini 2.5 real-time processing with single user_instructions
 
 import os
 import uuid
@@ -219,85 +219,24 @@ def generate_wedding_venue_prompt(wedding_theme, space_type, season=None, lighti
             user_instructions=user_instructions
         )
     except ImportError as e:
-        logger.warning(f"Could not import WeddingVenuePromptGenerator: {e}")
-        return generate_fallback_prompt(
-            wedding_theme, space_type, season, lighting_mood,
-            color_scheme, custom_prompt, user_instructions
-        )
-
-
-def generate_fallback_prompt(wedding_theme, space_type, season=None, lighting_mood=None,
-                           color_scheme=None, custom_prompt=None, user_instructions=None):
-    """Enhanced fallback prompt generation with narrative descriptions"""
-    
-    # If custom prompt provided, use it with user instructions
-    if custom_prompt and custom_prompt.strip():
-        prompt = custom_prompt.strip()
+        logger.error(f"Could not import WeddingVenuePromptGenerator: {e}")
+        # Simple fallback if prompt generator is not available
+        if custom_prompt and custom_prompt.strip():
+            prompt = custom_prompt.strip()
+            if user_instructions and user_instructions.strip():
+                prompt += f" {user_instructions.strip()}"
+            return prompt
+        
+        # Basic fallback for guided mode
+        theme_name = dict(WEDDING_THEMES).get(wedding_theme, wedding_theme) if wedding_theme else "elegant"
+        space_name = dict(SPACE_TYPES).get(space_type, space_type) if space_type else "wedding space"
+        prompt = f"Transform this venue into a beautiful {space_name.lower()} with {theme_name.lower()} wedding styling and decorations."
+        
         if user_instructions and user_instructions.strip():
             prompt += f" {user_instructions.strip()}"
-        # Ensure no people
-        if 'no people' not in prompt.lower() and 'without people' not in prompt.lower():
-            prompt += " Transform this space without any people visible."
+        
+        prompt += " Show the space without any people visible."
         return prompt
-    
-    # Build enhanced guided prompt with narrative flow
-    theme_display = dict(WEDDING_THEMES).get(wedding_theme, wedding_theme.replace('_', ' '))
-    space_display = dict(SPACE_TYPES).get(space_type, space_type.replace('_', ' '))
-    
-    # Start with a more descriptive base
-    prompt = f"Transform this venue into a breathtaking {space_display.lower()} with elegant {theme_display.lower()} wedding styling, "
-    
-    # Add theme-specific decorative details
-    theme_details = {
-        'rustic': 'featuring weathered wood accents, mason jar centerpieces with wildflowers, burlap and lace details, vintage farm elements, and warm Edison bulb lighting',
-        'modern': 'incorporating sleek geometric designs, minimalist white orchid arrangements, metallic accents, clean lines, and contemporary lighting fixtures',
-        'vintage': 'showcasing antique lace overlays, vintage china and crystal, soft pastel roses in mercury glass vessels, pearl details, and romantic chandelier lighting',
-        'bohemian': 'with eclectic tapestries, macrame installations, mixed pattern textiles, pampas grass arrangements, layered rugs, and warm lantern lighting',
-        'garden': 'featuring abundant fresh flowers and greenery, natural wood elements, potted plants as centerpieces, ivy garlands, and soft natural lighting',
-        'beach': 'incorporating driftwood accents, flowing white fabrics, nautical rope details, coastal flowers, seashell decorations, and breezy ambient lighting',
-        'glamorous': 'with crystal chandeliers, sequined linens, metallic gold accents, dramatic floral arrangements, mirror details, and theatrical lighting',
-    }
-    
-    if wedding_theme in theme_details:
-        prompt += theme_details[wedding_theme] + ". "
-    else:
-        prompt += "with beautiful thematic decorations and styling. "
-    
-    # Add seasonal elements with specific flowers and decorations
-    if season:
-        seasonal_touches = {
-            'spring': 'Include fresh spring elements with tulips, daffodils, cherry blossoms, and delicate green foliage creating a renewal atmosphere.',
-            'summer': 'Feature abundant summer blooms including hydrangeas, peonies, garden roses, and lush greenery in full bloom.',
-            'fall': 'Incorporate rich autumn elements with maple leaves, chrysanthemums, wheat stalks, and warm golden tones throughout.',
-            'winter': 'Add elegant winter touches with evergreen garlands, white roses, silver accents, and crystalline decorative elements.'
-        }
-        prompt += seasonal_touches.get(season, '')
-    
-    # Add detailed lighting descriptions
-    if lighting_mood:
-        lighting_touches = {
-            'romantic': ' Create intimate romance with warm candlelight from multiple sources, soft string lights, and golden ambient lighting.',
-            'bright': ' Ensure bright, cheerful illumination with abundant white lights, clear uplighting, and well-lit focal points.',
-            'dim': ' Establish cozy intimacy with scattered tea lights, hurricane lanterns, and warm low-level lighting.',
-            'dramatic': ' Add bold dramatic effects with spotlights on key features, colored uplighting, and dynamic shadow play.',
-            'natural': ' Maximize natural daylight with sheer fabrics, reflective surfaces, and minimal artificial lighting.',
-            'golden': ' Capture golden hour warmth with amber-toned lighting, honey-colored candles, and sunset-inspired illumination.',
-        }
-        prompt += lighting_touches.get(lighting_mood, '')
-    
-    # Add color scheme with specific applications
-    if color_scheme:
-        color_display = dict(COLOR_SCHEMES).get(color_scheme, color_scheme.replace('_', ' '))
-        prompt += f" Apply a {color_display.lower()} color palette throughout the floral arrangements, fabric draping, and decorative accents."
-    
-    # Add user instructions
-    if user_instructions and user_instructions.strip():
-        prompt += f" {user_instructions.strip()}"
-    
-    # Ensure no people and emphasize decoration
-    prompt += " The beautifully decorated space should be empty with no people visible, showcasing only the stunning wedding decorations and ambiance."
-    
-    return prompt
 
 
 class UserImage(models.Model):
@@ -400,9 +339,9 @@ class ImageProcessingJob(models.Model):
     custom_prompt = models.TextField(blank=True, null=True,
                                    help_text="Custom prompt (overrides theme/style settings)")
     
-    # User instructions - appended to ALL prompts
+    # Single user instructions field - appended to ALL prompts
     user_instructions = models.TextField(blank=True, null=True,
-                                       help_text="Additional instructions for any prompt mode")
+                                       help_text="Additional instructions for the transformation")
     
     # Generated final prompt (cached)
     generated_prompt = models.TextField(blank=True, null=True)

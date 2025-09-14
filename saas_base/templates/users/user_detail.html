@@ -233,19 +233,21 @@
                   {{ subscription_details.amount }} / {{ subscription_details.interval }}
                 </p>
                 
-                <!-- Usage Progress -->
+                <!-- Usage Progress for Paid Plans -->
                 {% with usage_data=object.subscription.get_usage_data %}
-                  <div class="mb-3">
-                    <div class="d-flex justify-content-between small mb-1">
-                      <span>Usage this month</span>
-                      <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
+                  {% if usage_data %}
+                    <div class="mb-3">
+                      <div class="d-flex justify-content-between small mb-1">
+                        <span>Usage this month</span>
+                        <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
+                      </div>
+                      <div class="progress">
+                        <div class="progress-bar {% if usage_data.percentage > 80 %}bg-warning{% elif usage_data.percentage > 95 %}bg-danger{% else %}bg-primary{% endif %}" 
+                             style="width: {{ usage_data.percentage }}%"></div>
+                      </div>
+                      <small class="text-muted">{{ usage_data.remaining }} transformations remaining</small>
                     </div>
-                    <div class="progress">
-                      <div class="progress-bar {% if usage_data.percentage > 80 %}bg-warning{% elif usage_data.percentage > 95 %}bg-danger{% else %}bg-primary{% endif %}" 
-                           style="width: {{ usage_data.percentage }}%"></div>
-                    </div>
-                    <small class="text-muted">{{ usage_data.remaining }} transformations remaining</small>
-                  </div>
+                  {% endif %}
                 {% endwith %}
               {% endif %}
               
@@ -257,39 +259,37 @@
               </div>
             {% endwith %}
           {% else %}
-            <!-- No Active Subscription -->
+            <!-- Free Tier - Simplified Display -->
             <div class="text-center">
-              <span class="badge bg-warning fs-6 px-3 py-2 mb-3">
-                <i class="bi bi-exclamation-triangle"></i> Free Plan
-              </span>
-              <p class="text-muted small mb-3">
-                You're using the free plan with limited one time transformations.
-              </p>
-              
-              <!-- Free Usage Progress -->
-              {% with usage_data=object.subscription.get_usage_data %}
-                <div class="mb-3">
-                  <div class="d-flex justify-content-between small mb-1">
-                    <span>Free usage</span>
-                    <span>{{ usage_data.current }} / {{ usage_data.limit }}</span>
+              <div class="mb-4">
+                <span class="badge bg-gradient-secondary fs-5 px-4 py-3 mb-3">
+                  <i class="bi bi-gift"></i> Free Tier
+                </span>
+                
+                <div class="alert alert-info mb-3" role="alert">
+                  <div class="d-flex align-items-start">
+                    <i class="bi bi-info-circle-fill me-2 mt-1 text-primary"></i>
+                    <div class="text-start">
+                      <strong>Welcome to DreamWedAI!</strong>
+                      <p class="mb-2 small">You're currently on the free plan with limited transformations.</p>
+                      <p class="mb-0 small text-muted">Upgrade to get unlimited transformations and premium features.</p>
+                    </div>
                   </div>
-                  <div class="progress">
-                    <div class="progress-bar bg-secondary" 
-                         style="width: {{ usage_data.percentage }}%"></div>
-                  </div>
-                  <small class="text-muted">{{ usage_data.remaining }} transformations remaining</small>
                 </div>
-              {% endwith %}
-              
-                  <div class="d-grid gap-2">
-                <a href="{% url 'subscriptions:pricing' %}" 
-                   class="btn btn-gradient-rose">
-                  <i class="bi bi-arrow-up-circle"></i> Upgrade Now
-                </a>
+                
+                <div class="d-grid gap-2">
+                  <a href="{% url 'subscriptions:pricing' %}" 
+                     class="btn btn-gradient-rose btn-lg">
+                    <i class="bi bi-arrow-up-circle me-2"></i>Upgrade Now
+                  </a>
+                 
+                </div>
               </div>
             </div>
           {% endif %}
-      
+
+          <!-- Account Settings section -->
+          <div class="d-grid gap-2 mt-3">
             <a href="{% url 'users:update' %}" 
                class="btn btn-outline-primary">
               <i class="bi bi-person-gear"></i> Edit Profile
@@ -319,9 +319,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Account Settings -->
-      
     </div>
   </div>
 </div>
@@ -355,8 +352,33 @@
   font-size: 1.5rem;
 }
 
-.dashboard-usage-progress {
-  height: 8px;
+/* Free tier styling */
+.bg-gradient-secondary {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+.alert-info {
+  background-color: #e3f2fd;
+  border-color: #bbdefb;
+  color: #0277bd;
+}
+
+.alert-info .text-primary {
+  color: #0277bd !important;
+}
+
+/* Upgrade button enhancement */
+.btn-gradient-rose.btn-lg {
+  font-weight: 600;
+  padding: 12px 24px;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-rose.btn-lg:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
 }
 </style>
 {% endblock content %}

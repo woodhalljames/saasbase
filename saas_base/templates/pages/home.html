@@ -16,7 +16,7 @@
             <span class="text-gradient">Dream Wedding</span>
           </h1>
           <p class="lead mb-4 text-white-75">
-            Visualize your perfect wedding celebration before the big day. Upload any venue photo and watch our AI transform it into your dream wedding space in seconds.
+            Visualize your perfect wedding celebration before the big day. Upload any indoor or outdoor space and watch wedding designer AI transform it into your dream wedding space in seconds.
           </p>
           <div class="hero-buttons mb-4">
             {% if user.is_authenticated %}
@@ -206,7 +206,7 @@
       <div class="row">
         <div class="col-12 text-center mb-5">
           <h2 class="section-title text-dark">Wedding Designer Included</h2>
-          <p class="section-subtitle text-muted">Themes by real wedding designers give you everything to plan and visualize the perfect wedding day</p>
+          <p class="section-subtitle text-muted">Guidance by wedding designers give you everything to plan and visualize your perfect wedding day</p>
         </div>
       </div>
       <div class="tool-grid">
@@ -231,7 +231,7 @@
             <i class="bi bi-people"></i>
           </div>
           <h4 class="mb-3">Wedding Day Satisfaction</h4>
-          <p class="text-muted">Increase wedding day satisfaction with organization & visualization tools for a perfect wedding day.</p>
+          <p class="text-muted">Increase wedding day satisfaction with visualization tools for a perfect wedding day.</p>
         </div>
         <div class="tool-card">
           <div class="tool-icon">
@@ -383,8 +383,8 @@
              
             {% else %}
            
-            <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-secondary">
-              <i class="bi bi-info-circle"></i> Subscribe!
+            <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-2">
+               Subscribe
             </a>
             {% endif %}
           </div>

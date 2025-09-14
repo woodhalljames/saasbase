@@ -24,13 +24,13 @@
             <i class="bi bi-google me-2"></i> Continue with Google
           </a>
         {% elif provider.id == "facebook" %}
-          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-primary">
+          <!--a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-primary">
             <i class="bi bi-facebook me-2"></i> Continue with Facebook
-          </a>
+          </a-->
         {% elif provider.id == "twitter" %}
-          <a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-info">
+          <!---a href="{% provider_login_url provider.id process='login' %}" class="btn btn-outline-info">
             <i class="bi bi-twitter me-2"></i> Continue with Twitter
-          </a>
+          </a-->
         {% endif %}
       {% endfor %}
     </div>

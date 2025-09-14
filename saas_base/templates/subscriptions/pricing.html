@@ -271,19 +271,37 @@ document.addEventListener('DOMContentLoaded', function() {
   monthlyRadio?.addEventListener('change', () => togglePricing(false));
   yearlyRadio?.addEventListener('change', () => togglePricing(true));
   
+  // FIXED: Prevent duplicate submissions with proper tracking
+  let isSubmitting = false;
+  
   // Handle checkout form submissions
   const checkoutForms = document.querySelectorAll('.checkout-form');
   checkoutForms.forEach(form => {
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       
+      // FIXED: Prevent duplicate submissions
+      if (isSubmitting) {
+        console.log('Form submission already in progress, ignoring duplicate request');
+        return;
+      }
+      
+      isSubmitting = true;
       const submitButton = form.querySelector('button[type="submit"]');
       const originalText = submitButton.innerHTML;
       submitButton.disabled = true;
       submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
       
+      // Add visual feedback
+      form.classList.add('submitting');
+      
       try {
         const formData = new FormData(form);
+        
+        // ADDED: Debug logging for price_id
+        const priceId = formData.get('price_id');
+        console.log('Submitting checkout with price_id:', priceId);
+        
         const response = await fetch(form.action, {
           method: 'POST',
           body: formData,
@@ -295,39 +313,66 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = await response.json();
         
         if (data.sessionId) {
+          console.log('Redirecting to Stripe checkout with session:', data.sessionId);
           // Redirect to Stripe Checkout
           const result = await stripe.redirectToCheckout({
             sessionId: data.sessionId
           });
           
           if (result.error) {
+            console.error('Stripe redirect error:', result.error);
             alert(result.error.message);
-            submitButton.disabled = false;
-            submitButton.innerHTML = originalText;
+            resetFormState();
           }
+          // If successful, user will be redirected away, no need to reset
         } else if (data.error) {
+          console.error('Checkout creation error:', data.error);
           alert('Error: ' + data.error);
-          submitButton.disabled = false;
-          submitButton.innerHTML = originalText;
+          resetFormState();
+        } else {
+          console.error('Unexpected response format:', data);
+          alert('Unexpected response from server. Please try again.');
+          resetFormState();
         }
       } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        console.error('Network/fetch error:', error);
+        alert('Network error occurred. Please check your connection and try again.');
+        resetFormState();
+      }
+      
+      function resetFormState() {
+        isSubmitting = false;
         submitButton.disabled = false;
         submitButton.innerHTML = originalText;
+        form.classList.remove('submitting');
       }
     });
   });
 
-  // Handle auto-checkout for new users
-  {% if is_new_user and auto_checkout_price_id %}
-  setTimeout(function() {
-    const form = document.querySelector(`form input[value="{{ auto_checkout_price_id }}"]`);
-    if (form) {
-      form.closest('form').submit();
-    }
-  }, 500);
+  // REMOVED: Problematic auto-checkout logic that caused race conditions
+  // Old problematic code:
+  // {% if is_new_user and auto_checkout_price_id %}
+  // setTimeout(function() {
+  //   const form = document.querySelector(`form input[value="{{ auto_checkout_price_id }}"]`);
+  //   if (form) {
+  //     form.closest('form').submit();
+  //   }
+  // }, 500);
+  // {% endif %}
+  
+  // ADDED: Debug logging for context
+  {% if auto_checkout_price_id %}
+  console.log('Auto-checkout price ID available (but auto-submit disabled):', '{{ auto_checkout_price_id }}');
   {% endif %}
+  
+  {% if is_new_user %}
+  console.log('New user detected - simplified behavior (no session dependency)');
+  {% endif %}
+  
+  // Log navigation source for debugging
+  const urlParams = new URLSearchParams(window.location.search);
+  const source = urlParams.get('source') || 'direct';
+  console.log('Navigation source:', source);
 });
 </script>
 
@@ -401,6 +446,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .bg-gradient-to-b {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+/* ADDED: Visual feedback for form submission states */
+.checkout-form.submitting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.checkout-form button[disabled] {
+  pointer-events: none;
+}
+
+/* ADDED: Better visual feedback for disabled state */
+.checkout-form.submitting .card {
+  position: relative;
+}
+
+.checkout-form.submitting .card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: inherit;
+  z-index: 1;
 }
 </style>
 {% endblock %}
