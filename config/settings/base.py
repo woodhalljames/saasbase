@@ -352,7 +352,14 @@ ACCOUNT_ADAPTER = "saas_base.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
 ACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSignupForm"}
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
+# Enable email verification resending
+ACCOUNT_EMAIL_VERIFICATION_SUPPORTS_RESEND = True
 
+# Allow email confirmation via GET request (clicking link)
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
+# Optional: Add cooldown between resend requests (3 minutes)
+ACCOUNT_EMAIL_CONFIRMATION_COOLDOWN = 180
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for social accounts

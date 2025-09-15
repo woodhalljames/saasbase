@@ -1,0 +1,34 @@
+{% extends "allauth/layouts/entrance.html" %}
+{% load i18n %}
+
+{% block head_title %}{% trans "Email Sent" %}{% endblock head_title %}
+
+{% block content %}
+<div class="card shadow-lg">
+  <div class="card-body p-4 text-center">
+    <div class="mb-4">
+      <div class="feature-icon bg-gradient-cyan mx-auto mb-3">
+        <i class="bi bi-envelope-check"></i>
+      </div>
+      <h2 class="text-gradient fw-bold">Verification Email Sent</h2>
+      <p class="text-muted">We've sent a new verification email to your address</p>
+    </div>
+
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      Please check your email and click the verification link to confirm your email address.
+      <br><small class="text-muted">Don't forget to check your spam folder!</small>
+    </div>
+
+    <div class="d-grid gap-2 d-md-block">
+      <a href="{% url 'account_email' %}" class="btn btn-outline-primary">
+        <i class="bi bi-envelope-gear me-2"></i>Manage Email Addresses
+      </a>
+      
+      <a href="{% url 'users:redirect' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-house me-2"></i>Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock content %}

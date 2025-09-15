@@ -61,7 +61,7 @@ class WeddingVenuePromptGenerator:
         theme_styling = cls._get_theme_styling(wedding_theme, space_type)
         
         # Start with specific decoration prompt
-        prompt = f"Transform this space into a stunning {cls._get_space_description(space_type)} decorated with {theme_styling}"
+        prompt = f"Utilizing this space stage it into a stunning {cls._get_space_description(space_type)} decorated with {theme_styling}"
         
         # Add seasonal decorative elements
         if season:
@@ -86,7 +86,7 @@ class WeddingVenuePromptGenerator:
             prompt += f" {user_instructions.strip()}"
         
         # Ensure focus on decoration and empty space
-        prompt += ". Show absolutely no people or text in the image."
+        prompt += "Remove and show absolutely no people or text in this image."
         
         return prompt
     
@@ -97,17 +97,17 @@ class WeddingVenuePromptGenerator:
         # Theme-specific styling with consistent detail level (50-80 words each)
         theme_base = {
             # Classic Traditional Themes
-            'rustic': 'rustic barn wedding featuring weathered wood farm tables with burlap runners and white lace overlays, mason jar centerpieces filled with wildflowers and baby\'s breath, galvanized metal buckets with sunflowers, vintage milk bottles, cross-back wooden chairs with burlap bow ties, wagon wheel decorations, hay bale seating areas with plaid blankets, suspended Edison bulb string lights on black wire, wooden crate displays, hand-painted wooden signs, antique farm tools as wall decor, checkered gingham ribbons, and wine barrel cocktail tables',
+            'rustic': 'rustic barn wedding featuring weathered wood farm aethetics, tables with burlap runners and white lace overlays, mason jar centerpieces filled with wildflowers and baby\'s breath, galvanized metal buckets with sunflowers, vintage bottles, cross-back wooden chairs with burlap bow ties, wagon wheel decorations, checkered gingham ribbons, and wine barrel cocktail tables',
             
-            'modern': 'contemporary minimalist celebration with clear acrylic ghost chairs, tall cylinder vases holding single white orchids, geometric metal centerpieces in gold or copper, crisp white linens with silver chargers, LED light strips in clean lines, mirror-top tables, monochromatic white flower arrangements, lucite table numbers, chrome bar setups, geometric backdrop panels, clear glass vessels, metallic balloon installations, sleek white dance floor with patterns, modern sculptural elements, and precisely arranged minimalist decor',
+            'modern': 'contemporary minimalist celebration with clear acrylic ghost aethetics, tall cylinder vases holding single white orchids, metal centerpieces in gold or copper, crisp white linens with silver chargers, LED light strips in clean lines, monochromatic white flower arrangements, chrome, geometric backdrop panels, clear glass vessels, metallic balloon installations, sleek white flooring with modern sculptural elements, and precisely arranged minimalist decor',
             
-            'vintage': 'nostalgic vintage romance with antique brass candelabras, mixed china place settings in pastels, lace doily overlays on tables, pearl strand garlands, vintage suitcase card holders, old typewriters as guest book stations, antique picture frames with sepia photos, mercury glass vases with roses and peonies, velvet furniture in dusty rose, vintage book centerpieces, cameo brooch napkin rings, pocket watch displays, crystal punch bowls, Victorian parasols, and aged brass fixtures',
+            'vintage': 'nostalgic vintage aethetics with antique brass candelabras, lace doily overlays, pearl strand garlands, mercury glass vases with roses and peonies, velvet furniture in dusty rose, crystal punch bowls, Victorian parasols, and aged brass fixtures',
             
-            'classic': 'timeless traditional elegance featuring gold Chiavari chairs with ivory cushions, tall crystal candelabras with white taper candles, white rose and lily arrangements in silver pedestal vases, pristine white tablecloths with gold-rimmed china, crystal stemware, symmetrical floral arrangements, ivory silk draping with swags, formal place cards in gold script, silver charger plates, traditional wedding cake display, damask napkins, pearl accents, and refined crystal chandelier installations',
+            'classic': 'timeless traditional elegance featuring gold & ivory, tall crystal candelabras with white taper candles, white rose and lily arrangements, crystal stemware, symmetrical floral arrangements, ivory silk draping with swag, pearl accents',
             
-            'garden': 'enchanted garden party with wrought iron furniture, overflowing English garden flowers including roses peonies and delphinium in aged terracotta pots, moss table runners, bird cage decorations, vintage watering cans as vases, climbing ivy on white trellises, potted topiaries, wooden garden signs, butterfly decorations, stone garden statues, wicker baskets with flowers, garden tool displays, paper parasols, natural wood elements, and market string lights between poles',
+            'garden': 'enchanted garden theme with wrought iron, overflowing English garden flowers including roses peonies and delphinium in aged terracotta pots, moss table runners, bird cage decorations, vintage watering cans as vases, climbing ivy on white trellises, potted topiaries, wooden garden signs, stone garden statues, wicker baskets with flowers, garden tool displays, natural wood elements',
             
-            'beach': 'coastal celebration featuring driftwood centerpieces with air plants, nautical rope wrapped details, starfish and shell scatter, hurricane lanterns with sand and candles, flowing white fabric panels, fishing net backdrops with lights, sea glass vessels, coral displays, ship wheels, anchor decorations, striped navy and white patterns, bamboo chairs, tropical flowers, message in bottle place cards, and weathered wood signs',
+            'beach': 'coastal beach theme featuring driftwood centerpieces with air plants, nautical rope wrapped details, starfish and shell scatter, hurricane lanterns with sand and candles, flowing white fabric panels, sea glass vessels, coral displays, ship wheels, anchor decorations, striped navy and white patterns, bamboo chairs, tropical flowers, and weathered wood signs',
             
             'industrial': 'urban warehouse chic with exposed Edison bulb installations, concrete planter centerpieces with succulents, metal pipe structures, raw wood and metal tables, geometric copper centerpieces, leather seating elements, gear and pulley decorations, distressed metal signage, black metal chairs, minimalist protea arrangements, wire basket displays, vintage factory carts as bars, concrete and metal vessels, exposed brick backdrops, and industrial pendant lighting',
             
@@ -252,12 +252,12 @@ class WeddingVenuePromptGenerator:
         
         # Add consistent space-specific enhancements
         space_enhancements = {
-            'wedding_ceremony': ', arranged for a sacred ceremony space with decorated altar, guest seating with aisle decorations, and processional pathway style',
-            'dining_area': ', configured as an elegant dining space with head table prominence, guest table arrangements, centerpiece displays, and coordinated place settings',
+            'wedding_ceremony': ', arranged for a sacred ceremony space with decorated altar, guest seating with aisle decorations, with processional pathway',
+            'dining_area': ', configured as an elegant dining space with head table prominence, guest table arrangements, centerpiece displays',
             'dance_floor': ', designed as a celebration space with defined dance area, perimeter social seating, DJ or band platform, and dynamic lighting effects',
-            'cocktail_hour': ', styled for sophisticated mingling with high-top tables, bar station setups, appetizer displays, and comfortable conversation areas',
-            'bridal_suite': ', created as a luxurious preparation sanctuary with vanity stations, relaxation seating, photo-worthy backdrops, and personal touches',
-            'entrance_area': ', designed as a grand arrival experience with welcome signage, guest reception elements, gift table setup, and memorable first impressions',
+            'cocktail_hour': ', styled for socializing with high-top tables, bar station setups, appetizer displays, and comfortable conversation atmosphere',
+            'bridal_suite': ', as a bridal preparation suite with vanity stations, relaxation seating, and privacy',
+            'entrance_area': ', designed as a grand arrival experience with guest reception elements, gift table setup, and memorable first impression',
         }
         
         return base_styling + space_enhancements.get(space_type, '')
@@ -266,10 +266,10 @@ class WeddingVenuePromptGenerator:
     def _get_seasonal_decor(cls, season):
         """Get seasonal landscape/environment alterations for the venue"""
         seasonal_elements = {
-            'spring': 'The landscape shows fresh spring conditions with blooming trees, bright green new grass growth, budding flowers beginning to emerge, clear blue skies with soft white clouds.',
-            'summer': 'The environment displays full summer conditions with lush deep green foliage on all trees and plants, fully mature landscapes, deep blue skies, and vibrant natural colors.',
+            'spring': 'landscape shows fresh spring conditions with blooming or budding trees, bright green healthy grass growth, budding flowers beginning to emerge, clear blue skies with soft white clouds.',
+            'summer': 'environment displays full summer conditions with lush deep green foliage on all trees and plants, fully mature landscapes, blue skies, and vibrant natural colors.',
             'fall': 'The landscape exhibits autumn transformation with trees showing golden, orange, and red foliage, some fallen leaves on the ground, crisp clear atmosphere, and natural environment in seasonal transition.',
-            'winter': 'The environment shows winter conditions with bare tree branches or evergreens, potential frost or snow on the ground and surfaces, crisp cold overcast or pale blue winter sky, and dormant landscape elements.',
+            'winter': 'The environment shows winter conditions with bare tree branches or evergreens, potential frost or snow on the ground and surfaces, crisp cold overcast or pale winter sky, and dormant landscape elements.',
         }
         
         return seasonal_elements.get(season, '')
@@ -280,19 +280,18 @@ class WeddingVenuePromptGenerator:
         lighting_designs = {
             'dawn': 'Illuminated with soft dawn lighting featuring pale pink and golden hues, minimal candles just being lit, gentle ambient glow, and fresh morning atmosphere.',
             'morning': 'Brightened with clear morning light using white candles, bright ambient lighting, crystal-clear visibility, and fresh daytime energy.',
-            'midday': 'Lit with full midday brightness featuring minimal decorative lighting, clear visibility throughout, bright white accents, and natural daylight simulation.',
-            'golden_hour': 'Bathed in golden hour warmth with amber-toned lighting, warm candles throughout, honeyed glow on all surfaces, and sunset-inspired ambiance.',
-            'golden': 'Bathed in golden hour warmth with amber-toned lighting, warm candles throughout, honeyed glow on all surfaces, and sunset-inspired ambiance.',
-            'dusk': 'Enhanced with dusk magic featuring purple and pink lighting transitions, candles being lit throughout, twilight color washes, and romantic evening approach.',
-            'evening': 'Illuminated for evening elegance with full candlelight displays, warm string lights overhead, lanterns glowing softly, and intimate lighting throughout.',
-            'night': 'Transformed for nighttime magic with abundant candles, string light canopies, lanterns at every level, uplighting on key features, and complete artificial illumination.',
-            'bright': 'Energized with bright celebration lighting using white LED strings, clear bulbs throughout, bright uplighting, and maximum visibility.',
-            'dim': 'Softened with intimate dim lighting featuring scattered candles, low-wattage bulbs, gentle amber glow, and cozy atmosphere.',
-            'romantic': 'Enchanted with romantic lighting through hundreds of candles, soft string lights, gentle shadows, warm golden tones, and dreamy ambiance.',
+            'midday': 'Lit with full midday brightness featuring minimal decorative lighting and shadows, clear visibility throughout, bright white accents, and natural daylight.',
+            'golden_hour': 'Bathed in golden hour warmth with amber-toned lighting, honeyed glow on all surfaces, and sunset-inspired ambiance.',
+            'dusk': 'Enhanced with dusk magic featuring purple and pink lighting transitions, twilight color washes, and romantic evening approach.',
+            'evening': 'Illuminated for evening elegance with warm string lights overhead, lights glowing softly, and intimate lighting throughout.',
+            'night': 'Transformed for nighttime magic, uplighting on key light features, and complete artificial illumination.',
+            'bright': 'Energized with bright celebration lighting, clear bulbs throughout, bright uplighting, and maximum visibility.',
+            'dim': 'Softened with intimate dim lighting featuring low-wattage bulbs, gentle amber glow, and cozy atmosphere.',
+            'romantic': 'Enchanted with romantic lighting, soft lights, gentle shadows, warm golden tones, and dreamy ambiance.',
             'candlelit': 'Glowing with pure candlelight featuring pillar candles, votives, floating candles, candelabras, and flickering flame ambiance throughout.',
             'natural': 'Utilizing natural light emphasis with minimal artificial additions, light-colored decorations to maximize brightness, strategic mirror placements, and organic illumination.',
             'fluorescent': 'Lit with clean fluorescent brightness featuring cool white tones, even distribution, modern clarity, and professional venue lighting.',
-            'rainy': 'Adapted for overcast conditions with extra warm lighting to counter gray skies, abundant candles for coziness, string lights for cheerfulness, and weather-proof illumination.',
+            'rainy': 'Adapted for overcast conditions with extra warm lighting to counter gray skies and weather-proof illumination.',
             'dramatic': 'Enhanced with dramatic lighting effects featuring bold contrasts, spotlighting on key features, dynamic shadows, theatrical presentations, and impactful illumination.',
         }
         
@@ -303,44 +302,44 @@ class WeddingVenuePromptGenerator:
         """Get detailed color application descriptions"""
         color_applications = {
             # Primary Colors
-            'red': 'Dominated by passionate red with crimson roses, burgundy dahlias, red linens, ruby glass accents, and red uplighting creating bold energy.',
-            'pink': 'Enhanced with romantic pink through blush roses, pink peonies, rose-colored fabrics, pink glass elements, and soft pink lighting creating romantic energy.',
-            'coral': 'Energized with vibrant coral through coral roses, peach dahlias, coral fabrics, sunset glass accents, and warm coral lighting creating tropical energy.',
-            'orange': 'Energized with vibrant orange through marigolds, orange roses, tangerine fabrics, copper vessels, and warm orange lighting.',
-            'yellow': 'Brightened with sunny yellow featuring sunflowers, yellow roses, golden linens, amber glass, and warm yellow lighting.',
-            'green': 'Refreshed with natural green using abundant foliage, green hydrangeas, sage linens, emerald accents, and forest lighting.',
-            'blue': 'Cooled with serene blue through hydrangeas, delphiniums, navy linens, cobalt glass, and ocean-inspired lighting.',
-            'purple': 'Enriched with royal purple featuring orchids, lavender, plum fabrics, amethyst accents, and deep purple lighting.',
-            'white': 'Purified with elegant white through white roses, white linens, crystal accents, silver elements, and bright white lighting creating pure elegance.',
-            'black': 'Dramatized with sophisticated black through black accents, dark linens, silver contrasts, crystal elements, and dramatic lighting creating elegant sophistication.',
+            'red': 'Dominated by red with crimson roses, burgundy dahlias, red linens, ruby glass accents.',
+            'pink': 'Enhanced with pink through blush roses, pink peonies, rose-colored fabrics, pink glass elements.',
+            'coral': 'Energized with coral through coral roses, peach dahlias, coral fabrics, sunset glass accents.',
+            'orange': 'Energized with orange through marigolds, orange roses, tangerine fabrics, copper vessels.',
+            'yellow': 'Brightened with yellow featuring sunflowers, yellow roses, golden linens, amber glass.',
+            'green': 'Refreshed with natural green using abundant foliage, green hydrangeas, sage linens, emerald accents.',
+            'blue': 'Cool blues through hydrangeas, delphiniums, navy linens, cobalt glass.',
+            'purple': 'Enriched with royal purple featuring orchids, lavender, plum fabrics, amethyst accents.',
+            'white': 'Purified with elegant white through white roses, white linens, crystal accents, silver elements.',
+            'black': 'Dramatized with sophisticated black through black accents, dark linens, silver contrasts, crystal elements.',
             
             # Pastels
-            'pastel_pink': 'Softened with blush pink through pale roses, pink peonies, rose fabrics, pearl accents, and gentle pink lighting.',
-            'pastel_peach': 'Warmed with soft peach using garden roses, peach ranunculus, coral fabrics, champagne metals, and sunset lighting.',
-            'pastel_yellow': 'Brightened with soft yellow through pale yellow roses, butter-colored fabrics, cream accents, gold elements, and gentle yellow lighting.',
-            'pastel_mint': 'Freshened with mint green using eucalyptus, white flowers, sage fabrics, silver details, and cool lighting.',
-            'pastel_blue': 'Soothed with powder blue through pale hydrangeas, forget-me-nots, sky fabrics, white accents, and soft blue washes.',
-            'pastel_lavender': 'Calmed with gentle lavender featuring sweet peas, lilac blooms, purple fabrics, silver accents, and ethereal lighting.',
-            'pastel_sage': 'Refreshed with sage green through eucalyptus, sage-colored fabrics, natural elements, wood accents, and natural lighting.',
-            'pastel_cream': 'Warmed with cream tones through cream roses, ivory fabrics, champagne accents, gold elements, and warm lighting.',
+            'pastel_pink': 'Softened with blush pink through pale roses, pink peonies, rose fabrics, pearl accents.',
+            'pastel_peach': 'Warmed with soft peach using garden roses, peach ranunculus, coral fabrics, champagne metals.',
+            'pastel_yellow': 'Brightened with soft yellow through pale yellow roses, butter-colored fabrics, cream accents, gold elements.',
+            'pastel_mint': 'Freshened with mint green using eucalyptus, white flowers, sage fabrics, silver details.',
+            'pastel_blue': 'Soothed with powder blue through pale hydrangeas, forget-me-nots, sky fabrics, white accents.',
+            'pastel_lavender': 'Calmed with gentle lavender featuring sweet peas, lilac blooms, purple fabrics, silver accents.',
+            'pastel_sage': 'Refreshed with sage green through eucalyptus, sage-colored fabrics, natural elements, wood accents.',
+            'pastel_cream': 'Warmed with cream tones through cream roses, ivory fabrics, champagne accents, gold elements.',
             
             # Earth Tones
-            'earth_brown': 'Grounded with rich brown through chocolate accents, wood elements, brown fabrics, copper details, and warm earth lighting.',
+            'earth_brown': 'With rich brown through chocolate accents, wood elements, brown fabrics, copper details.',
             'earth_rust': 'Warmed with rust tones through terracotta elements, rust-colored fabrics, copper accents, earth details',
-            'earth_forest': 'Enhanced with forest elements through deep green foliage, wood accents, natural fabrics, earth tones, and forest lighting.',
-            'earth_desert': 'Warmed with desert tones through sand-colored elements, copper accents, earth fabrics, natural details, and desert lighting.',
-            'earth_autumn': 'Enriched with autumn colors through fall foliage, orange accents, brown fabrics, copper elements, and autumn lighting.',
-            'earth_moss': 'Refreshed with moss green through natural moss elements, green fabrics, stone accents, earth details, and natural lighting.',
+            'earth_forest': 'Enhanced with forest elements through deep green foliage, wood accents, natural fabrics, earth tones.',
+            'earth_desert': 'Warmed with desert tones through sand-colored elements, copper accents, earth fabrics, natural details.',
+            'earth_autumn': 'Enriched with autumn colors through fall foliage, orange accents, brown fabrics, copper elements.',
+            'earth_moss': 'Refreshed with moss green through natural moss elements, green fabrics, stone accents, earth details.',
             
             # Popular Combinations
-            'black_white': 'Contrasted with classic black and white through monochrome elements, dramatic contrasts, elegant simplicity, crystal accents, and sophisticated lighting.',
-            'pink_gold': 'Romanticized with pink and gold through blush roses, golden accents, rose fabrics, champagne elements, and romantic lighting.',
-            'blue_white': 'Freshened with blue and white through blue flowers, white linens, navy accents, crystal elements, and fresh lighting.',
-            'red_white': 'Energized with red and white through red roses, white linens, bold contrasts, crystal accents, and dramatic lighting.',
-            'sage_cream': 'Softened with sage and cream through sage foliage, cream fabrics, natural elements, champagne accents, and gentle lighting.',
-            'blush_gold': 'Enhanced with blush and gold through blush roses, golden accents, soft fabrics, champagne elements, and romantic lighting.',
-            'navy_gold': 'Sophisticated with navy and gold through navy linens, golden accents, elegant contrasts, brass elements, and refined lighting.',
-            'burgundy_gold': 'Enriched with burgundy and gold through deep red flowers, golden accents, rich fabrics, brass elements, and luxurious lighting.',
+            'black_white': 'Contrasted with classic black and white through monochrome elements, dramatic contrasts, elegant simplicity, crystal accents.',
+            'pink_gold': 'Romanticized with pink and gold through blush roses, golden accents, rose fabrics, champagne elements.',
+            'blue_white': 'Freshened with blue and white through blue flowers, white linens, navy accents, crystal elements.',
+            'red_white': 'Energized with red and white through red roses, white linens, bold contrasts, crystal accents.',
+            'sage_cream': 'Softened with sage and cream through sage foliage, cream fabrics, natural elements, champagne accents.',
+            'blush_gold': 'Enhanced with blush and gold through blush roses, golden accents, soft fabrics, champagne elements.',
+            'navy_gold': 'Sophisticated with navy and gold through navy linens, golden accents, elegant contrasts, brass elements.',
+            'burgundy_gold': 'Enriched with burgundy and gold through deep red flowers, golden accents, rich fabrics, brass elements.',
             
             # Seasonal
             'spring_fresh': 'Refreshed with spring colors including pink tulips, green foliage, yellow daffodils, and pastel elements.',
@@ -355,10 +354,10 @@ class WeddingVenuePromptGenerator:
     def _get_space_description(cls, space_type):
         """Get concise space type descriptions"""
         space_descriptions = {
-            'wedding_ceremony': 'wedding ceremony staging area',
+            'wedding_ceremony': 'wedding ceremony',
             'dance_floor': 'dance floor celebration area',
-            'dining_area': 'reception dining area',
-            'cocktail_hour': 'cocktail reception area',
+            'dining_area': 'reception and dining area',
+            'cocktail_hour': 'cocktail and lounge area',
             'bridal_suite': 'bridal preparation suite',
             'entrance_area': 'entrance-way and welcome area',
         }

@@ -121,8 +121,7 @@ def reset_single_user(self, user_id):
 
 def get_yearly_subscribers():
     """
-    Get all active yearly subscribers with their current data.
-    Internal helper function used by the reset tasks.
+    FIXED: Get all active yearly subscribers without the items() method conflict.
     """
     subscriptions = CustomerSubscription.objects.filter(
         subscription_active=True,
@@ -136,11 +135,15 @@ def get_yearly_subscribers():
             continue
         
         try:
-            stripe_sub = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
+            # FIXED: Use safe method to check if subscription is yearly
+            is_yearly = check_subscription_yearly_safe(subscription.stripe_subscription_id)
             
-            # Check if yearly subscription
-            if not (stripe_sub.items.data and stripe_sub.items.data[0].plan.interval == 'year'):
+            if not is_yearly:
+                logger.debug(f"User {subscription.user.username} not yearly")
                 continue
+            
+            # Get subscription start date
+            stripe_sub = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
             
             # Calculate subscription periods
             start_date = datetime.fromtimestamp(stripe_sub.created)
@@ -165,11 +168,58 @@ def get_yearly_subscribers():
                 'stripe_sub_id': subscription.stripe_subscription_id
             })
             
+            logger.info(f"Found yearly subscriber: {subscription.user.username} (period {period})")
+            
         except Exception as e:
             logger.error(f"Error processing subscription for {subscription.user.username}: {str(e)}")
             continue
     
     return yearly_subscribers
+
+def check_subscription_yearly_safe(stripe_subscription_id):
+    """
+    FIXED: Safely check if a subscription is yearly without the items() method conflict.
+    """
+    try:
+        # Method 1: Use separate SubscriptionItem.list call (most reliable)
+        try:
+            items = stripe.SubscriptionItem.list(
+                subscription=stripe_subscription_id,
+                expand=['data.price']
+            )
+            
+            if items.data:
+                item = items.data[0]
+                if hasattr(item.price, 'recurring') and item.price.recurring:
+                    interval = item.price.recurring.interval
+                    logger.debug(f"Subscription {stripe_subscription_id} interval: {interval}")
+                    return interval == 'year'
+            
+        except Exception as e:
+            logger.debug(f"SubscriptionItem.list failed for {stripe_subscription_id}: {str(e)}")
+        
+        # Method 2: Use bracket notation to avoid items() method conflict
+        try:
+            stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
+            items_data = stripe_sub['items']['data']  # FIXED: Use bracket notation instead of .items.data
+            
+            if items_data:
+                item = items_data[0]
+                if 'price' in item and 'recurring' in item['price']:
+                    interval = item['price']['recurring']['interval']
+                    logger.debug(f"Subscription {stripe_subscription_id} interval (bracket): {interval}")
+                    return interval == 'year'
+            
+        except Exception as e:
+            logger.debug(f"Bracket notation failed for {stripe_subscription_id}: {str(e)}")
+        
+        # All methods failed
+        return False
+        
+    except Exception as e:
+        logger.error(f"All methods failed for subscription {stripe_subscription_id}: {str(e)}")
+        return False
+
 
 @shared_task(bind=True)
 def cleanup_usage_system(self):

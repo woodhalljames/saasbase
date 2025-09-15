@@ -24,10 +24,21 @@ def user_image_upload_path(instance, filename):
 
 
 def processed_image_upload_path(instance, filename):
-    """Generate upload path for processed images"""
-    ext = filename.split('.')[-1]
-    filename = f"gemini_{uuid.uuid4().hex}.{ext}"
-    return f"processed_images/{instance.processing_job.user_image.user.id}/{filename}"
+    """Generate upload path for processed images - preserves human-readable filename"""
+    import os
+    import re
+    
+    # Use the human-readable filename that was passed in
+    base_filename = os.path.basename(filename)
+    
+    # Sanitize for filesystem safety
+    safe_filename = re.sub(r'[<>:"/\\|?*]', '_', base_filename)
+    
+    # Ensure extension exists
+    if '.' not in safe_filename:
+        safe_filename += '.png'
+    
+    return f"processed_images/{instance.processing_job.user_image.user.id}/{safe_filename}"
 
 
 # Wedding Theme Choices - Same as before with enhanced descriptions
@@ -106,8 +117,7 @@ WEDDING_THEMES = [
     ('brooklyn_loft', 'Brooklyn Loft'),
     ('rooftop_garden', 'Rooftop Garden'),
     ('art_deco_glam', 'Art Deco Glam'),
-    ('scandinavian_simple', 'Scandinavian Simple'),
-    ('modern_monochrome', 'Modern Monochrome'),
+   ('modern_monochrome', 'Modern Monochrome'),
     ('concrete_jungle', 'Concrete Jungle'),
     ('glass_house', 'Glass House'),
     

@@ -209,7 +209,7 @@ class UsageTracker:
     
     @classmethod
     def check_yearly_reset_eligible(cls, user):
-        """Check if yearly subscriber is eligible for reset"""
+        """FIXED: Check if yearly subscriber is eligible for reset"""
         try:
             subscription = cls._get_user_subscription(user.id)
             if not subscription or not subscription.subscription_active:
@@ -221,10 +221,15 @@ class UsageTracker:
             import stripe
             from django.conf import settings
             stripe.api_key = settings.STRIPE_SECRET_KEY
-            stripe_sub = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
             
-            if not (stripe_sub.items.data and stripe_sub.items.data[0].plan.interval == 'year'):
+            # Use the FIXED method to check if subscription is yearly
+            is_yearly = cls._check_subscription_yearly_safe(subscription.stripe_subscription_id)
+            
+            if not is_yearly:
                 return False, "Not a yearly subscription"
+            
+            # Get subscription start date
+            stripe_sub = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
             
             # Calculate subscription periods (11 resets after initial)
             start_date = datetime.fromtimestamp(stripe_sub.created)
@@ -252,7 +257,50 @@ class UsageTracker:
         except Exception as e:
             logger.error(f"Error checking yearly reset eligibility for user {user.id}: {str(e)}")
             return False, f"Error: {str(e)}"
-    
+
+    @classmethod
+    def _check_subscription_yearly_safe(cls, stripe_subscription_id):
+        """FIXED: Safely check if subscription is yearly"""
+        try:
+            import stripe
+            from django.conf import settings
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            
+            # Method 1: Use separate SubscriptionItem.list call (most reliable)
+            try:
+                items = stripe.SubscriptionItem.list(
+                    subscription=stripe_subscription_id,
+                    expand=['data.price']
+                )
+                
+                if items.data:
+                    item = items.data[0]
+                    if hasattr(item.price, 'recurring') and item.price.recurring:
+                        return item.price.recurring.interval == 'year'
+                
+            except Exception as e:
+                logger.debug(f"SubscriptionItem.list failed for {stripe_subscription_id}: {str(e)}")
+            
+            # Method 2: Use bracket notation to avoid items() method conflict
+            try:
+                stripe_sub = stripe.Subscription.retrieve(stripe_subscription_id)
+                items_data = stripe_sub['items']['data']  # FIXED: bracket notation
+                
+                if items_data:
+                    item = items_data[0]
+                    if 'price' in item and 'recurring' in item['price']:
+                        return item['price']['recurring']['interval'] == 'year'
+                
+            except Exception as e:
+                logger.debug(f"Bracket notation failed for {stripe_subscription_id}: {str(e)}")
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"All methods failed for subscription {stripe_subscription_id}: {str(e)}")
+            return False
+
+
     @classmethod
     def mark_yearly_reset_complete(cls, user, period):
         """Mark yearly reset as completed for a period"""
