@@ -17,11 +17,19 @@
       </p>
     </div>
 
- 
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>
+      Please check your email and click the verification link to confirm your email address.
+      <br><small class="text-muted">Don't forget to check your spam folder!</small>
+    </div>
 
-    <a href="{% url 'users:detail' request.user.username %}" class="btn btn-outline-primary">
-      <i class="bi bi-house me-2"></i>Dashboard
-    </a>
+    <!-- FIXED: Only show dashboard link if username exists -->
+    {% if request.user.username %}
+      <a href="{% url 'users:detail' request.user.username %}" class="btn btn-outline-primary">
+        <i class="bi bi-house me-2"></i>Dashboard
+      </a>
+
+    {% endif %}
   </div>
 </div>
 {% endblock content %}

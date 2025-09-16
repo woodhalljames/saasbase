@@ -25,13 +25,10 @@ class AccountAdapter(DefaultAccountAdapter):
         if hasattr(user, 'subscription') and user.has_active_subscription():
             return reverse("users:detail", kwargs={"username": user.username})
         
-        # Check if there's a specific price_id from signup
-        price_id = request.session.pop('subscription_price_id', None)
-        if price_id:
-            return f"{reverse('subscriptions:pricing')}?checkout={price_id}"
+    
         
-        # New user without subscription, go to pricing page
-        return reverse("subscriptions:pricing")
+        # New user without subscription, go to dashboard
+        return reverse("users:detail", kwargs={"username": user.username})
 
 
 

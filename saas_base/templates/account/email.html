@@ -7,8 +7,7 @@
 <div class="card shadow-lg">
   <div class="card-body p-4">
     <div class="text-center mb-4">
-      <div class="feature-icon bg-gradient-cyan mx-auto mb-3">
-        <i class="bi bi-envelope-gear"></i>
+      
       </div>
       <h2 class="text-gradient fw-bold">Manage Email Addresses</h2>
       <p class="text-muted">Manage and verify your email addresses</p>
@@ -18,43 +17,44 @@
       <div class="mb-4">
         <h5>Your Email Addresses:</h5>
         
-        <form method="post" action="{% url 'account_email' %}">
-          {% csrf_token %}
-          
-          {% for emailaddress in emailaddresses %}
-            <div class="card mb-2">
-              <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>{{ emailaddress.email }}</strong>
-                    {% if emailaddress.verified %}
-                      <span class="badge bg-success ms-2">
-                        <i class="bi bi-check-circle me-1"></i>Verified
-                      </span>
-                    {% else %}
-                      <span class="badge bg-warning ms-2">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Unverified
-                      </span>
-                    {% endif %}
-                    
-                    {% if emailaddress.primary %}
-                      <span class="badge bg-primary ms-2">Primary</span>
-                    {% endif %}
-                  </div>
+        {% for emailaddress in emailaddresses %}
+          <div class="card mb-2">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{{ emailaddress.email }}</strong>
+                  {% if emailaddress.verified %}
+                    <span class="badge bg-success ms-2">
+                      <i class="bi bi-check-circle me-1"></i>Verified
+                    </span>
+                  {% else %}
+                    <span class="badge bg-warning ms-2">
+                      <i class="bi bi-exclamation-triangle me-1"></i>Unverified
+                    </span>
+                  {% endif %}
                   
-                  <div>
-                    {% if not emailaddress.verified %}
+                  {% if emailaddress.primary %}
+                    <span class="badge bg-primary ms-2">Primary</span>
+                  {% endif %}
+                </div>
+                
+                <div>
+                  {% if not emailaddress.verified %}
+                    <!-- FIXED: Individual form for each resend action -->
+                    <form method="post" action="{% url 'account_email' %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="email" value="{{ emailaddress.email }}">
                       <button type="submit" name="action_send" value="{{ emailaddress.email }}" 
                               class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-envelope me-1"></i>Resend Verification
                       </button>
-                    {% endif %}
-                  </div>
+                    </form>
+                  {% endif %}
                 </div>
               </div>
             </div>
-          {% endfor %}
-        </form>
+          </div>
+        {% endfor %}
       </div>
     {% else %}
       <div class="alert alert-info">

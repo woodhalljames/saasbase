@@ -94,12 +94,8 @@ class UserRedirectView(LoginRequiredMixin, RedirectView):
         if hasattr(self.request.user, 'subscription') and self.request.user.has_active_subscription():
             return reverse("users:detail", kwargs={"username": self.request.user.username})
         
-        # Check if there's a specific price_id from signup
-        price_id = self.request.session.pop('subscription_price_id', None)
-        if price_id:
-            return f"{reverse('subscriptions:pricing')}?checkout={price_id}"
-        
-        return reverse("subscriptions:pricing")
+       
+        return reverse("users:detail", kwargs={"username": self.request.user.username})
 
 
 user_redirect_view = UserRedirectView.as_view()
