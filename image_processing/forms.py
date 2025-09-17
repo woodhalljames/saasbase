@@ -238,61 +238,6 @@ class WeddingTransformForm(forms.ModelForm):
         return cleaned_data
 
 
-class QuickTransformForm(forms.Form):
-    """Quick transformation form for simple prompts"""
-    
-    quick_prompt = forms.CharField(
-        required=True,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Describe how you want to transform this venue for your wedding...',
-            'id': 'quick-prompt'
-        }),
-        help_text='Example: "Make this into a romantic ceremony space with soft pink flowers and candlelight"',
-        min_length=10,
-        max_length=500
-    )
-    
-    # Single user instructions field
-    user_instructions = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control form-control-sm',
-            'rows': 2,
-            'placeholder': 'Additional instructions or things to include/avoid...',
-            'id': 'quick-user-instructions'
-        }),
-        help_text='Optional: any specific requests or things to avoid',
-        max_length=300
-    )
-    
-    realtime = forms.BooleanField(
-        required=False,
-        initial=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input',
-            'id': 'quick-realtime',
-        }),
-        help_text='Process immediately instead of in background'
-    )
-
-
-class SimpleInstructionsForm(forms.Form):
-    """Simple form for additional instructions"""
-    
-    # Single user instructions field
-    user_instructions = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={
-            'class': 'form-control form-control-sm',
-            'rows': 3,
-            'placeholder': 'Additional instructions for transformations...'
-        }),
-        help_text='This will be added to any transformation prompt',
-        max_length=500
-    )
-
 
 # Export choices for use in other modules
 __all__ = [

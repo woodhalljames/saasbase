@@ -43,19 +43,18 @@ def processed_image_upload_path(instance, filename):
 
 # Wedding Theme Choices - Same as before with enhanced descriptions
 WEDDING_THEMES = [
-    # Core Popular Themes
+    # Classic Traditional Themes
     ('rustic', 'Rustic Farmhouse'),
     ('modern', 'Modern Contemporary'),
     ('vintage', 'Vintage Romance'),
-    ('bohemian', 'Bohemian Chic'),
     ('classic', 'Classic Traditional'),
     ('garden', 'Garden Natural'),
     ('beach', 'Beach Coastal'),
     ('industrial', 'Industrial Urban'),
+    ('bohemian', 'Bohemian Chic'),
     ('glamorous', 'Glamorous Luxury'),
     ('tropical', 'Tropical Paradise'),
     ('fairy_tale', 'Fairy Tale Enchanted'),
-    ('cultural_fusion', 'Cultural Fusion'),
     
     # Core Basic Styles
     ('minimalist', 'Minimalist Clean'),
@@ -83,7 +82,7 @@ WEDDING_THEMES = [
     ('soft_dreamy', 'Soft Dreamy'),
     ('luxury', 'Luxury Premium'),
     
-    # Cultural & Traditional Themes - Enhanced with authentic details
+    # Cultural & Traditional Themes
     ('japanese_zen', 'Japanese Zen'),
     ('chinese_dynasty', 'Chinese Dynasty'),
     ('indian_palace', 'Indian Palace'),
@@ -117,7 +116,6 @@ WEDDING_THEMES = [
     ('brooklyn_loft', 'Brooklyn Loft'),
     ('rooftop_garden', 'Rooftop Garden'),
     ('art_deco_glam', 'Art Deco Glam'),
-   ('modern_monochrome', 'Modern Monochrome'),
     ('concrete_jungle', 'Concrete Jungle'),
     ('glass_house', 'Glass House'),
     
@@ -131,7 +129,6 @@ WEDDING_THEMES = [
     ('art_nouveau', 'Art Nouveau'),
     ('great_gatsby', 'Great Gatsby'),
 ]
-
 
 # Space Types for wedding venues
 SPACE_TYPES = [

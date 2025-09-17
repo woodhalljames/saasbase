@@ -1,7 +1,8 @@
-# image_processing/views.py - Complete with alphabetical theme sorting
+# image_processing/views.py - Complete with EXIF orientation correction
 
 import json
 import logging
+import io
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -13,6 +14,8 @@ from urllib.parse import urlencode
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.core.files.base import ContentFile
+from PIL import Image, ImageOps
 
 from usage_limits.decorators import usage_limit_required
 from .models import (
@@ -26,6 +29,68 @@ from .forms import (
 from .tasks import process_venue_transformation, process_venue_realtime
 
 logger = logging.getLogger(__name__)
+
+
+def apply_exif_correction(uploaded_file):
+    """
+    Apply EXIF orientation correction to uploaded image file.
+    Returns the corrected file or original if no correction needed.
+    """
+    try:
+        # Open the image
+        image = Image.open(uploaded_file)
+        
+        # Check if image has EXIF orientation data
+        if hasattr(image, '_getexif') and image._getexif() is not None:
+            # Apply EXIF orientation correction
+            corrected_image = ImageOps.exif_transpose(image)
+            
+            # Check if correction was actually applied
+            if corrected_image is not image:
+                logger.info(f"Applied EXIF orientation correction to {uploaded_file.name}")
+                
+                # Convert corrected image back to file format
+                output = io.BytesIO()
+                
+                # Preserve original format
+                image_format = image.format or 'JPEG'
+                if image_format.upper() == 'JPEG':
+                    # For JPEG, ensure RGB mode and good quality
+                    if corrected_image.mode in ('RGBA', 'LA', 'P'):
+                        background = Image.new('RGB', corrected_image.size, (255, 255, 255))
+                        if corrected_image.mode == 'P':
+                            corrected_image = corrected_image.convert('RGBA')
+                        background.paste(corrected_image, mask=corrected_image.split()[-1] if corrected_image.mode == 'RGBA' else None)
+                        corrected_image = background
+                    
+                    corrected_image.save(output, format='JPEG', quality=95, optimize=True)
+                else:
+                    # For other formats, save as-is
+                    corrected_image.save(output, format=image_format)
+                
+                output.seek(0)
+                
+                # Create new ContentFile with corrected image data
+                corrected_file = ContentFile(
+                    output.getvalue(),
+                    name=uploaded_file.name
+                )
+                
+                # Copy important attributes
+                corrected_file.content_type = uploaded_file.content_type
+                
+                return corrected_file
+            else:
+                logger.info(f"No EXIF correction needed for {uploaded_file.name}")
+                return uploaded_file
+        else:
+            logger.info(f"No EXIF data found in {uploaded_file.name}")
+            return uploaded_file
+            
+    except Exception as e:
+        logger.warning(f"Error applying EXIF correction to {uploaded_file.name}: {str(e)}")
+        # Return original file if correction fails
+        return uploaded_file
 
 
 # HELPER FUNCTION - Add favorite status to processed images
@@ -49,16 +114,25 @@ def add_favorite_status_to_processed_images(user, processed_images):
 
 @login_required
 def wedding_studio(request):
-    """Main wedding venue transformation studio with preselected image support and alphabetical theme sorting"""
+    """Main wedding venue transformation studio with EXIF-corrected image uploads"""
     
     # Handle image upload
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
+                # Apply EXIF correction to uploaded image
+                original_file = form.cleaned_data['image']
+                corrected_file = apply_exif_correction(original_file)
+                
+                # Create user image with corrected file
                 user_image = form.save(commit=False)
                 user_image.user = request.user
-                user_image.original_filename = form.cleaned_data['image'].name
+                user_image.original_filename = original_file.name
+                
+                # Replace the image with corrected version
+                user_image.image = corrected_file
+                
                 user_image.save()
                 
                 # Handle AJAX requests
@@ -184,6 +258,63 @@ def wedding_studio(request):
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
+
+
+@login_required
+@require_POST
+def ajax_upload_image(request):
+    """AJAX endpoint for image uploads with EXIF correction"""
+    form = ImageUploadForm(request.POST, request.FILES)
+    
+    if form.is_valid():
+        try:
+            # Apply EXIF correction to uploaded image
+            original_file = form.cleaned_data['image']
+            corrected_file = apply_exif_correction(original_file)
+            
+            # Create user image with corrected file
+            user_image = form.save(commit=False)
+            user_image.user = request.user
+            user_image.original_filename = original_file.name
+            
+            # Replace the image with corrected version
+            user_image.image = corrected_file
+            
+            user_image.save()
+            
+            return JsonResponse({
+                'success': True,
+                'image_id': user_image.id,
+                'image_url': user_image.image.url,
+                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
+                'image_name': user_image.original_filename,
+                'width': user_image.width,
+                'height': user_image.height,
+                'file_size': user_image.file_size,
+                'message': f'"{user_image.original_filename}" uploaded successfully!'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error in AJAX upload: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Upload failed: {str(e)}'
+            }, status=500)
+    
+    # Handle form errors
+    errors = []
+    for field, field_errors in form.errors.items():
+        for error in field_errors:
+            errors.append(str(error))
+    
+    return JsonResponse({
+        'success': False,
+        'error': '; '.join(errors)
+    }, status=400)
+
+
+# All the other view functions remain exactly the same - no changes needed
+# Since EXIF correction happens at upload time, all other views just work with corrected images
 
 @login_required
 @require_http_methods(["POST"])
@@ -409,6 +540,8 @@ def _get_job_details(job, prompt_mode):
     
     return details
 
+
+# All remaining view functions stay exactly the same - no changes needed since they work with already corrected images
 
 @login_required
 def job_status(request, job_id):
@@ -789,50 +922,6 @@ def favorites_list(request):
     }
     
     return render(request, 'image_processing/favorites_list.html', context)
-
-
-@login_required
-@require_POST
-def ajax_upload_image(request):
-    """AJAX endpoint for image uploads"""
-    form = ImageUploadForm(request.POST, request.FILES)
-    
-    if form.is_valid():
-        try:
-            user_image = form.save(commit=False)
-            user_image.user = request.user
-            user_image.original_filename = form.cleaned_data['image'].name
-            user_image.save()
-            
-            return JsonResponse({
-                'success': True,
-                'image_id': user_image.id,
-                'image_url': user_image.image.url,
-                'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
-                'image_name': user_image.original_filename,
-                'width': user_image.width,
-                'height': user_image.height,
-                'file_size': user_image.file_size,
-                'message': f'"{user_image.original_filename}" uploaded successfully!'
-            })
-            
-        except Exception as e:
-            logger.error(f"Error in AJAX upload: {str(e)}")
-            return JsonResponse({
-                'success': False,
-                'error': f'Upload failed: {str(e)}'
-            }, status=500)
-    
-    # Handle form errors
-    errors = []
-    for field, field_errors in form.errors.items():
-        for error in field_errors:
-            errors.append(str(error))
-    
-    return JsonResponse({
-        'success': False,
-        'error': '; '.join(errors)
-    }, status=400)
 
 
 # Collection Management Views
