@@ -36,7 +36,7 @@ services:
     env_file:
       - ./.envs/.production/.postgres
 
-  traefik:
+   traefik:
     build:
       context: .
       dockerfile: ./compose/production/traefik/Dockerfile
@@ -47,7 +47,7 @@ services:
       - production_traefik:/etc/traefik/acme
     ports:
       - '0.0.0.0:80:80'
-      - '0.0.0.0:443:443'
+      - '0.0.0.0:443:443'    # THIS LINE IS CRITICAL!
       - '0.0.0.0:5555:5555'
 
   redis:
@@ -81,19 +81,3 @@ services:
       - django
     volumes:
       - production_django_media:/usr/share/nginx/media:ro
-
-django:
-  deploy:
-    resources:
-      limits:
-        memory: 1G        
-      reservations:
-        memory: 512M 
-
-postgres:
-  deploy:
-    resources:
-      limits:
-        memory: 1.5G    
-      reservations:
-        memory: 1G
