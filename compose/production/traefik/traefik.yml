@@ -30,8 +30,10 @@ certificatesResolvers:
 
 http:
   routers:
+
+  
     web-secure-router:
-      rule: 'Host(`example.com`) || Host(`www.example.com`)'
+      rule: 'Host(`dreamwedai.com`) || Host(`www.dreamwedai.com`)'
       entryPoints:
         - web-secure
       middlewares:
@@ -42,7 +44,7 @@ http:
         certResolver: letsencrypt
 
     flower-secure-router:
-      rule: 'Host(`example.com`)'
+      rule: 'Host(`dreamwedai.com`)'
       entryPoints:
         - flower
       service: flower
@@ -51,7 +53,7 @@ http:
         certResolver: letsencrypt
 
     web-media-router:
-      rule: '(Host(`example.com`) || Host(`www.example.com`)) && PathPrefix(`/media/`)'
+      rule: '(Host(`dreamwedai.com`) || Host(`www.dreamwedai.com`)) && PathPrefix(`/media/`)'
       entryPoints:
         - web-secure
       middlewares:

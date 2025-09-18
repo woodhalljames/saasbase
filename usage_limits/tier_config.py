@@ -4,7 +4,7 @@ class TierLimits:
     """Define usage limits for wedding venue visualization"""
     TIERS = {
         'free': {
-            'monthly_limit': 1,  # 1 images per month
+            'monthly_limit': 2,  # 1 images per month
             'stripe_price_ids': [],
         },
         'basic': {
@@ -102,18 +102,4 @@ class TierLimits:
         else:
             return "enterprise"
 
-    @classmethod
-    def initialize_from_db(cls):
-        """Initialize price IDs from the database when the app starts"""
-        try:
-            from subscriptions.models import Price
-            prices = Price.objects.filter(active=True).select_related('product')
-            
-            for price in prices:
-                tier_name = cls.determine_tier(price)
-                if tier_name in cls.TIERS:
-                    if price.stripe_id not in cls.TIERS[tier_name]['stripe_price_ids']:
-                        cls.TIERS[tier_name]['stripe_price_ids'].append(price.stripe_id)
-        except Exception as e:
-            import logging
-            logging.error(f"Error initializing tier config: {str(e)}")
+   

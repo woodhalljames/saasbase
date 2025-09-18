@@ -86,7 +86,7 @@ class WeddingLinkForm(forms.ModelForm):
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://example.com/your-link'
+                'placeholder': 'https://dreamwedai.com/your-link'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
