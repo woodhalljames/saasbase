@@ -36,7 +36,7 @@ services:
     env_file:
       - ./.envs/.production/.postgres
 
-   traefik:
+traefik:
     build:
       context: .
       dockerfile: ./compose/production/traefik/Dockerfile
