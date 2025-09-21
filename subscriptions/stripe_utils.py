@@ -3,8 +3,8 @@ import stripe
 from django.conf import settings
 
 # Configure Stripe API key
-stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-stripe.api_version = '2023-10-16'  # Use a specific API version for stability
+stripe.api_key = settings.STRIPE_SECRET_KEY
+stripe.api_version = '2024-10-28'  # Use a specific API version for stability
 
 def get_or_create_customer(user):
     """Create or retrieve a Stripe customer for the user"""

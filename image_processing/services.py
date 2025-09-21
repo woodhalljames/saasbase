@@ -27,7 +27,7 @@ class GeminiImageService:
             # Initialize the client with API key
             self.client = genai.Client(api_key=api_key)
             # Try the correct model name format
-            self.model = getattr(settings, 'GEMINI_MODEL', 'gemini-2.5-flash')
+            self.model = getattr(settings, 'GEMINI_MODEL')
             
             logger.info(f"Gemini service initialized with model: {self.model}")
             

@@ -13,7 +13,6 @@ class Command(BaseCommand):
         # Sync products
         products = stripe.Product.list(active=True)
         self.stdout.write(f"Found {len(products.data)} active products")
-        
         for stripe_product in products.data:
             # Check if product already exists
             try:
