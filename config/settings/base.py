@@ -40,6 +40,11 @@ LANGUAGE_CODE = "en-us"
 # ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
+SITE_NAME = "DreamWedAI"
+SITE_DOMAIN = "dreamwedai.com"
+DEFAULT_META_DESCRIPTION = "Transform any space into your dream wedding with AI-powered visualization. Create stunning wedding pages and plan your perfect day."
+
+
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n
 USE_I18N = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-tz
@@ -74,6 +79,7 @@ DJANGO_APPS = [
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
     "django.forms",
+    "django.contrib.sitemaps",
 ]
 THIRD_PARTY_APPS = [
     "crispy_forms",
@@ -87,6 +93,8 @@ THIRD_PARTY_APPS = [
     "allauth.socialaccount.providers.facebook",
     "allauth.socialaccount.providers.twitter",
     "django_celery_beat",
+    
+    
 ]
 
 LOCAL_APPS = [

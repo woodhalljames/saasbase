@@ -17,14 +17,14 @@
            Get the tools needed for the perfect wedding.
           </p>
           
-          <!-- Billing Toggle -->
+          <!-- Billing Toggle with Rose Styling -->
           <div class="billing-toggle mb-5">
             <div class="btn-group" role="group" aria-label="Billing period">
               <input type="radio" class="btn-check" name="billing" id="monthly" checked>
-              <label class="btn btn-outline-primary" for="monthly">Monthly Billing</label>
+              <label class="btn btn-outline-rose" for="monthly">Monthly Billing</label>
               
               <input type="radio" class="btn-check" name="billing" id="yearly">
-              <label class="btn btn-outline-primary" for="yearly">Yearly Billing <span class="badge bg-success ms-2">Save!</span></label>
+              <label class="btn btn-outline-rose" for="yearly">Yearly Billing <span class="badge bg-success ms-2">6 Months Free</span></label>
             </div>
           </div>
         </div>
@@ -77,6 +77,7 @@
                     <span class="h1 fw-bold">{{ product.prices.monthly.amount|floatformat:0 }}</span>
                     <span class="period text-muted">/month</span>
                   </div>
+                  <small class="text-muted d-block">Taxes included</small>
                   {% if product.prices.monthly.display_name %}
                   <small class="text-muted">{{ product.prices.monthly.display_name }}</small>
                   {% endif %}
@@ -93,13 +94,11 @@
                     <span class="h1 fw-bold">{{ product.prices.yearly.amount|floatformat:0 }}</span>
                     <span class="period text-muted">/year</span>
                   </div>
+                  <small class="text-muted d-block">Taxes included</small>
                   {% if product.prices.yearly.display_name %}
                   <small class="text-muted">{{ product.prices.yearly.display_name }}</small>
                   {% elif product.prices.monthly %}
-                  <small class="text-success">
-                    <i class="bi bi-tag-fill me-1"></i>
-                    Save with annual billing
-                  </small>
+                 
                   {% endif %}
                   {% else %}
                   <div class="text-muted">Yearly not available</div>
@@ -107,15 +106,6 @@
                 </div>
               </div>
               
-              <!-- Tokens/Usage Limit -->
-              {% if product.tokens %}
-              <div class="text-center mb-4">
-                <div class="badge bg-gradient-cyan text-white px-3 py-2">
-                  <i class="bi bi-magic me-1"></i>
-                  <strong>{{ product.tokens }}</strong> transformations/month
-                </div>
-              </div>
-              {% endif %}
               
               <!-- Features List -->
               {% if product.features_list %}
@@ -216,28 +206,177 @@
         </div>
         <div class="col-md-3 col-6">
           <div class="trust-badge">
-            <i class="bi bi-arrow-repeat fs-2 text-rose mb-2"></i>
-            <h6 class="fw-semibold">Public Wedding Page</h6>
-            <small class="text-muted">Share important details with friends & family.</small>
+            <i class="bi bi-lightning fs-2 text-rose mb-2"></i>
+            <h6 class="fw-semibold">Smart Visualization</h6>
+            <small class="text-muted">Up to date with the best AI technology for stunning results</small>
           </div>
         </div>
         <div class="col-md-3 col-6">
           <div class="trust-badge">
-            <i class="bi bi-headset fs-2 text-cyan mb-2"></i>
-            <h6 class="fw-semibold">Designed by Wedding Planners</h6>
-            <small class="text-muted">Get designer help and inspiration</small>
+            <i class="bi bi-heart-fill fs-2 text-cyan mb-2"></i>
+           <h6 class="fw-semibold">Professional Wedding Design</h6>
+            <small class="text-muted">Wedding designer inspiration & styling</small>
           </div>
         </div>
         <div class="col-md-3 col-6">
           <div class="trust-badge">
-            <i class="bi bi-heart-fill fs-2 text-rose mb-2"></i>
-            <h6 class="fw-semibold">Made with Love</h6>
-            <small class="text-muted">For couples everywhere</small>
+            <i class="bi bi-clipboard-check fs-2 text-rose mb-2"></i>
+            <h6 class="fw-semibold">Built for Wedding Pros</h6>
+            <small class="text-muted">Impress with powerful visualization, sharing & organization tools</small>
           </div>
         </div>
       </div>
     </div>
   </section>
+
+
+  <!-- FAQ Section -->
+  <section class="faq-section py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <!-- Section Header -->
+          <div class="text-center mb-5">
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <p class="section-subtitle">
+              Everything you need to know about our plans and policies
+            </p>
+          </div>
+
+          <!-- FAQ Accordion -->
+          <div class="accordion" id="pricingFAQ">
+            
+            <!-- FAQ Item 1: Cancellation Policy -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-cancellation">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse-cancellation" aria-expanded="false" 
+                        aria-controls="collapse-cancellation">
+                  Can I cancel my subscription anytime?
+                </button>
+              </h3>
+              <div id="collapse-cancellation" class="accordion-collapse collapse" 
+                   aria-labelledby="faq-cancellation" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  <p><strong>Yes, you can cancel anytime with no questions asked.</strong> We believe in complete flexibility for our users.</p>
+                  
+                  <p>When you cancel:</p>
+                  <ul>
+                    <li>Cancel instantly from your account dashboard</li>
+                    <li><strong>Keep all your remaining transformations</strong> - they don't expire when you cancel</li>
+                    <li>Continue using any unused tokens until they're gone</li>
+                    <li>Reactivate anytime to get fresh monthly tokens</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 2: Free Wedding Page -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-wedding-page">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse-wedding-page" aria-expanded="false" 
+                        aria-controls="collapse-wedding-page">
+                  Do I need a subscription for a wedding page?
+                </button>
+              </h3>
+              <div id="collapse-wedding-page" class="accordion-collapse collapse" 
+                   aria-labelledby="faq-wedding-page" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  <p><strong>No subscription required!</strong> Your beautiful wedding page is completely free to create, customize, and maintain forever.</p>
+                  
+                  <p><strong>Free Forever:</strong> Custom wedding website, RSVP management, photo sharing, link management, and more.</p>
+                  
+                  <p><strong>Subscription Adds:</strong> AI venue transformations, professional designer styling tools, access wedding designer support.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 3: Refund Policy -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-refunds">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse-refunds" aria-expanded="false" 
+                        aria-controls="collapse-refunds">
+                  What's your refund policy?
+                </button>
+              </h3>
+              <div id="collapse-refunds" class="accordion-collapse collapse" 
+                   aria-labelledby="faq-refunds" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  <p>Due to the immediate costs of AI processing and cloud computing resources, we operate on a <strong>no-refund policy</strong>.</p>
+                  
+                  <p><strong>Why no refunds?</strong> Every transformation uses expensive GPU compute time and advanced AI models. Your tokens are converted to images immediately upon use, creating real costs that can't be reversed.</p>
+                  
+                  <p><strong>Fair Alternative:</strong> Since we can't offer refunds, we let you cancel anytime and keep all unused transformations. Plus, try our service risk-free with a free trial!</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 4: How Billing Works -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-billing">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse-billing" aria-expanded="false" 
+                        aria-controls="collapse-billing">
+                  How does billing work?
+                </button>
+              </h3>
+              <div id="collapse-billing" class="accordion-collapse collapse" 
+                   aria-labelledby="faq-billing" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  <p><strong>Monthly Plans:</strong> Charged every month on your signup date. Fresh transformations added monthly. Cancel anytime before next billing.</p>
+                  
+                  <p><strong>Annual Plans:</strong> Charged once per year. Transformations reset each month for a year. Cancel anytime before next annual bill.</p>
+                  
+                  <p>All billing is secure and processed by Stripe. We never store your payment information.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Item 5: Token Usage -->
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="faq-tokens">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#collapse-tokens" aria-expanded="false" 
+                        aria-controls="collapse-tokens">
+                  How do transformation tokens work?
+                </button>
+              </h3>
+              <div id="collapse-tokens" class="accordion-collapse collapse" 
+                   aria-labelledby="faq-tokens" data-bs-parent="#pricingFAQ">
+                <div class="accordion-body">
+                  <p>Think of tokens like credits for prompt transformations. Each token = one venue transformation.</p>
+                  
+                  <p><strong>How it works:</strong> Upload your venue photo, choose several styles (garden theme, reception, morning, etc.), and transform. Each transformation uses 1 token.</p>
+                  
+                  <p><strong>Important:</strong></p>
+                  <ul>
+                    <li>Tokens never expire, even after cancellation</li>
+                    <li>Failed transformations don't use tokens</li>
+                    <li>You can download and save all your transformed images</li>
+                    <li>Active subscribers get fresh tokens each billing cycle</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- CTA After FAQ -->
+          <div class="text-center mt-5">
+            <p class="text-muted mb-3">Still have questions?</p>
+            <a href="mailto:hello@dreamwedai.com" class="btn btn-outline-primary">Contact Support</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+
 </div>
 
 <!-- Stripe JS -->
@@ -349,16 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // REMOVED: Problematic auto-checkout logic that caused race conditions
-  // Old problematic code:
-  // {% if is_new_user and auto_checkout_price_id %}
-  // setTimeout(function() {
-  //   const form = document.querySelector(`form input[value="{{ auto_checkout_price_id }}"]`);
-  //   if (form) {
-  //     form.closest('form').submit();
-  //   }
-  // }, 500);
-  // {% endif %}
+
   
   // ADDED: Debug logging for context
   {% if auto_checkout_price_id %}
@@ -426,9 +556,26 @@ document.addEventListener('DOMContentLoaded', function() {
   font-size: 0.95rem;
 }
 
-.billing-toggle .btn-check:checked + .btn {
-  background: var(--bs-primary);
+/* Updated Billing Toggle to Use Rose */
+.billing-toggle .btn-check:checked + .btn-outline-rose {
+  background: var(--electric-rose);
+  border-color: var(--electric-rose);
   color: white;
+}
+
+.btn-outline-rose {
+  border-color: var(--electric-rose);
+  color: var(--electric-rose);
+  font-weight: 600;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-rose:hover {
+  background: var(--electric-rose);
+  border-color: var(--electric-rose);
+  color: white;
+  transform: translateY(-2px);
 }
 
 .trust-badge {
