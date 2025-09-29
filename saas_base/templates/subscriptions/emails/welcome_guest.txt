@@ -1,0 +1,37 @@
+Welcome to DreamWedAI!
+
+Hi there!
+
+Thank you for subscribing to DreamWedAI! Your payment has been processed successfully, and we've created your account using this email address.
+
+🔐 COMPLETE YOUR ACCOUNT SETUP
+Set up your password and customize your account to get started:
+{{ account_setup_url }}
+
+(This link works for 30 days. After setup, you can connect Google or other social accounts for easy login.)
+
+YOUR ACCOUNT DETAILS:
+• Email: {{ user.email }}
+• Username: {{ user.username }}
+• Account Status: Active Subscriber ✅
+
+WHAT YOU CAN DO:
+🎨 AI Studio - Transform any venue into your dream wedding setting
+💕 Wedding Page - Create a beautiful, free wedding website
+📱 Easy Sharing - Share your vision with vendors and guests
+
+🎉 WHAT YOU CAN DO NEXT:
+• Set up a password for secure login
+• Connect Google account for quick access
+• Start creating AI-powered wedding transformations
+• Build your wedding page and share with loved ones
+
+NEED HELP?
+Our team is here to help you create the perfect wedding vision. Don't hesitate to reach out!
+
+Support: {{ support_email }}
+
+Thank you for choosing DreamWedAI for your special day!
+
+DreamWedAI Team
+https://dreamwedai.com

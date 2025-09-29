@@ -11,5 +11,6 @@ urlpatterns = [
     path("portal/", views.customer_portal, name="customer_portal"),
     path("", views.pricing_page, name="pricing"),
     path("webhook/", webhooks.stripe_webhook, name="webhook"),
-
+    # Account setup for guest users (30-day expiry) - simplified single link
+    path("account-setup/<str:token>/", views.account_setup, name="account_setup"),
 ]

@@ -41,7 +41,7 @@ LANGUAGE_CODE = "en-us"
 # https://docs.djangoproject.com/en/dev/ref/settings/#site-id
 SITE_ID = 1
 SITE_NAME = "DreamWedAI"
-SITE_DOMAIN = "dreamwedai.com"
+SITE_URL = env("SITE_URL", default="https://dreamwedai.com")
 DEFAULT_META_DESCRIPTION = "Transform any space into your dream wedding with AI-powered visualization. Create stunning wedding pages and plan your perfect day."
 
 
@@ -95,6 +95,7 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     
     
+    
 ]
 
 LOCAL_APPS = [
@@ -103,6 +104,7 @@ LOCAL_APPS = [
     "usage_limits",
     "image_processing",
     "wedding_shopping",
+    "taggit",
     "newsletter",
     # Your stuff: custom apps go here
 ]
@@ -354,7 +356,7 @@ ACCOUNT_LOGIN_METHODS = {"username", "email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_ADAPTER = "saas_base.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html

@@ -136,11 +136,11 @@
                   </a>
                 </li>
                 <li>
-                  <li>
                   <a class="dropdown-item" href="{% url 'image_processing:image_gallery' %}">
                     <i class="bi bi-images text-cyan me-2"></i> My Images
                   </a>
                 </li>
+                <li>
                   <a class="dropdown-item" href="{% url 'image_processing:favorites_list' %}">
                     <i class="bi bi-heart text-rose me-2"></i> Favorites
                   </a>
@@ -153,17 +153,20 @@
               </ul>
             </li>
             
-            <!-- Wedding Pages -->
+            
             
           </ul>
           
           <ul class="navbar-nav ms-auto">
-            <!-- Usage Indicator -->
+            <!-- Clickable Usage Indicator -->
             <li class="navbar-text me-3">
-              <span class="badge bg-gradient-rose" id="usage-badge">
+              <a href="{% url 'subscriptions:pricing' %}" 
+                 class="badge bg-gradient-rose text-decoration-none usage-indicator-link" 
+                 id="usage-badge"
+                 title="Click to upgrade your plan">
                 <i class="bi bi-lightning-fill me-1"></i>
                 <span id="usage-indicator">Loading...</span> remaining
-              </span>
+              </a>
             </li>
             
             <!-- User Dropdown -->
@@ -195,16 +198,13 @@
         {% else %}
           <!-- Guest User Navigation -->
           <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-              <a class="nav-link text-white-nav" href="{% url 'wedding_shopping:public_couples_list' %}">
-                <i class="bi bi-globe2 me-1 text-rose"></i>Discover Weddings
-              </a>
-            </li>
+          
             <li class="nav-item">
               <a class="nav-link text-white-nav" href="{% url 'subscriptions:pricing' %}">
                 <i class="bi bi-tag me-1"></i>Subscribe
               </a>
             </li>
+          
             
           </ul>
           
@@ -253,11 +253,11 @@
                   
                   // Update badge color based on remaining usage
                   if (data.remaining <= 0) {
-                      badge.className = 'badge bg-danger';
+                      badge.className = 'badge bg-danger text-decoration-none usage-indicator-link';
                   } else if (data.remaining <= 5) {
-                      badge.className = 'badge bg-warning';
+                      badge.className = 'badge bg-warning text-decoration-none usage-indicator-link';
                   } else {
-                      badge.className = 'badge bg-gradient-rose';
+                      badge.className = 'badge bg-gradient-rose text-decoration-none usage-indicator-link';
                   }
               }
           })
@@ -354,7 +354,7 @@
 
         <!-- Product Column -->
         <div class="col-lg-2 col-md-6 mb-4">
-          <h6 class="fw-bold text-white mb-3">Offerings</h6>
+          <h6 class="fw-bold text-white mb-3">Services</h6>
           <ul class="list-unstyled">
             {% if request.user.is_authenticated %}
               <li class="mb-2">
@@ -364,19 +364,24 @@
               </li>
               <li class="mb-2">
                 <a href="{% url 'wedding_shopping:dashboard' %}" class="text-white-75 text-decoration-none footer-link">
-                  <i class="bi bi-heart me-2 text-rose"></i>Wedding Page
+                  <i class="bi bi-cursor me-2 text-rose"></i>Wedding Page
                 </a>
               </li>
              {% endif %}
               <li class="mb-2">
+                <a href="{% url 'newsletter:resources_list' %}" class="text-white-75 text-decoration-none footer-link">
+                  <i class="bi bi-journal-bookmark me-2 text-cyan"></i>Resources
+                </a>
+              </li>
+              <li class="mb-2">
                 <a href="{% url 'subscriptions:pricing' %}" class="text-white-75 text-decoration-none footer-link">
-                  <i class="bi bi-tag me-2 text-cyan"></i>Subscribe
+                  <i class="bi bi-tag me-2 text-rose"></i>Subscribe
                 </a>
               </li>
            
             <li class="mb-2">
               <a href="{% url 'wedding_shopping:public_couples_list' %}" class="text-white-75 text-decoration-none footer-link">
-                <i class="bi bi-globe2 me-2 text-rose"></i>Discover Weddings
+                <i class="bi bi-globe2 me-2 text-cyan"></i>Discover Weddings
               </a>
             </li>
           </ul>
@@ -423,7 +428,12 @@
             <!-- Messages Area -->
             <div id="newsletter-messages" class="mb-2"></div>
             
-            <small class="text-white-50 d-block">We respect your privacy. Unsubscribe anytime.</small>
+            <small class="text-white-50 d-block">
+              We respect your privacy. 
+              <a href="{% url 'newsletter:general_unsubscribe' %}" class="text-white-50" style="text-decoration: underline;">
+                Unsubscribe anytime here
+              </a>
+            </small>
           </form>
         </div>
       </div>
@@ -1372,6 +1382,40 @@ body.modal-open {
     100% { transform: scale(1); }
 }
 
+/* Usage indicator clickable styles */
+.usage-indicator-link {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.usage-indicator-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    text-decoration: none !important;
+    color: white !important;
+}
+
+.usage-indicator-link:active {
+    transform: translateY(0);
+}
+
+.usage-indicator-link:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+
+/* Add a subtle pulse animation for low usage */
+.bg-warning.usage-indicator-link,
+.bg-danger.usage-indicator-link {
+    animation: usagePulse 2s ease-in-out infinite;
+}
+
+@keyframes usagePulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
 /* Responsive design */
 @media (max-width: 576px) {
     .modal-dialog {
@@ -1384,6 +1428,11 @@ body.modal-open {
     
     .collection-item {
         padding: 0.75rem 0.5rem;
+    }
+    
+    .usage-indicator-link {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
     }
 }
 

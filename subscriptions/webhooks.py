@@ -4,12 +4,18 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils.crypto import get_random_string
 import stripe
 import json
 
-from .models import CustomerSubscription, Product, Price
+from .models import CustomerSubscription, Product, Price, AccountSetupToken
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 @csrf_exempt
 @require_POST
@@ -65,7 +71,6 @@ def get_customer_subscription_by_stripe_id(customer_id):
             customer = stripe.Customer.retrieve(customer_id)
             
             if customer.metadata and 'user_id' in customer.metadata:
-                from saas_base.users.models import User
                 user = User.objects.get(id=customer.metadata['user_id'])
                 
                 # Create the missing CustomerSubscription
@@ -83,36 +88,133 @@ def get_customer_subscription_by_stripe_id(customer_id):
         return None
 
 def handle_checkout_session(session):
-    """Process checkout.session.completed event"""
+    """Process checkout.session.completed event with simplified account setup"""
     customer_id = session.customer
     subscription_id = session.subscription
+    customer_email = session.customer_details.email if session.customer_details else None
     
     if not customer_id:
         logger.warning("Checkout session has no customer ID")
         return
     
-    logger.info(f"Processing checkout session for customer {customer_id}, subscription {subscription_id}")
+    logger.info(f"Processing checkout session for customer {customer_id}, subscription {subscription_id}, email {customer_email}")
     
     try:
         with transaction.atomic():
-            # Find existing CustomerSubscription (should exist from signup)
+            # Check if customer already exists
+            customer_subscription = None
+            user_created = False
+            
             try:
                 customer_subscription = CustomerSubscription.objects.get(stripe_customer_id=customer_id)
                 logger.info(f"Found existing CustomerSubscription for checkout")
             except CustomerSubscription.DoesNotExist:
-                logger.error(f"No CustomerSubscription found for {customer_id} during checkout")
-                return
+                # This could be a guest checkout - create user account
+                if customer_email:
+                    user, user_created = create_or_get_user_from_email(customer_email)
+                    customer_subscription = CustomerSubscription.objects.create(
+                        user=user,
+                        stripe_customer_id=customer_id,
+                        subscription_active=False
+                    )
+                    logger.info(f"Created new user and subscription for {customer_email}")
+                else:
+                    logger.error(f"No email found for customer {customer_id}")
+                    return
             
             # Update with subscription details if available
-            if subscription_id:
+            if subscription_id and customer_subscription:
                 customer_subscription.stripe_subscription_id = subscription_id
                 customer_subscription.save()
                 logger.info(f"Updated checkout session with subscription {subscription_id}")
             else:
                 logger.warning(f"Checkout session {session.id} has no subscription_id - waiting for subscription.created")
+            
+            # Send welcome email with account setup link if new user
+            if user_created and customer_subscription:
+                send_welcome_email_with_setup_link(customer_subscription.user)
                 
     except Exception as e:
         logger.error(f"Error processing checkout session: {str(e)}", exc_info=True)
+
+def create_or_get_user_from_email(email):
+    """Create or retrieve user account from email"""
+    try:
+        # Check if user already exists
+        user = User.objects.get(email=email)
+        logger.info(f"Found existing user for {email}")
+        return user, False
+    except User.DoesNotExist:
+        # Create new user
+        username = generate_username_from_email(email)
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=None,  # No password initially
+        )
+        logger.info(f"Created new user {username} for {email}")
+        return user, True
+
+def generate_username_from_email(email):
+    """Generate a unique username from email"""
+    base_username = email.split('@')[0]
+    # Clean username to meet Django requirements
+    import re
+    base_username = re.sub(r'[^a-zA-Z0-9._-]', '', base_username)
+    
+    # Ensure uniqueness
+    username = base_username
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}{counter}"
+        counter += 1
+    
+    return username
+
+def generate_account_setup_link(user):
+    """Generate an account setup link for a user (30-day expiry)"""
+    # Create setup token
+    setup_token = AccountSetupToken.create_for_user(user)
+    
+    # Build the URL
+    base_url = getattr(settings, 'SITE_URL', 'https://dreamwedai.com')
+    setup_url = f"{base_url}/subscriptions/account-setup/{setup_token.token}/"
+    
+    return setup_url
+
+def send_welcome_email_with_setup_link(user):
+    """Send welcome email with account setup link only"""
+    try:
+        # Generate account setup link
+        setup_url = generate_account_setup_link(user)
+        
+        subject = "Welcome to DreamWedAI - Complete Your Account Setup"
+        
+        context = {
+            'user': user,
+            'account_setup_url': setup_url,
+            'login_url': f"{getattr(settings, 'SITE_URL', 'https://dreamwedai.com')}/accounts/login/",
+            'support_email': 'hello@dreamwedai.com',
+        }
+        
+        # Render email templates
+        html_message = render_to_string('subscriptions/emails/welcome_guest.html', context)
+        text_message = render_to_string('subscriptions/emails/welcome_guest.txt', context)
+        
+        # Send email
+        send_mail(
+            subject=subject,
+            message=text_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        
+        logger.info(f"Sent welcome email with setup link to {user.email}")
+        
+    except Exception as e:
+        logger.error(f"Error sending welcome email: {str(e)}")
 
 def sync_product_and_price(stripe_price):
     """Sync a Stripe price and its product to local database"""
@@ -175,11 +277,11 @@ def handle_subscription_created(subscription):
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
             
-            # FIXED: Get plan_id using safe API call (3 levels max)
+            # Get plan_id using safe API call
             try:
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
-                    expand=['data.price.product']  # FIXED: Safe 3-level expansion instead of 4-level
+                    expand=['data.price.product']
                 )
                 
                 if subscription_items.data:
@@ -216,12 +318,12 @@ def handle_subscription_updated(subscription):
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
             
-            # FIXED: Get plan_id using safe API call (3 levels max)
+            # Get plan_id using safe API call
             try:
                 stripe.api_key = settings.STRIPE_SECRET_KEY
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
-                    expand=['data.price.product']  # FIXED: Safe 3-level expansion instead of 4-level
+                    expand=['data.price.product']
                 )
                 
                 if subscription_items.data:

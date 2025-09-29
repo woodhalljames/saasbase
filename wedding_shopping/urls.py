@@ -5,24 +5,18 @@ app_name = 'wedding_shopping'
 
 urlpatterns = [
     # Management pages (login required)
-    path('', views.couple_dashboard, name='dashboard'),
-    path('manage/', views.CoupleProfileManageView.as_view(), name='manage_wedding_page'),
-    path('create/', views.CoupleProfileManageView.as_view(), name='couple_create'),
+    path('wedding/dashboard/', views.couple_dashboard, name='dashboard'),
+    path('wedding/manage/', views.CoupleProfileManageView.as_view(), name='manage_wedding_page'),
+    path('wedding/create/', views.CoupleProfileManageView.as_view(), name='couple_create'),
     
-    # Discovery page (must come before slug pattern)
+    # Discovery page 
     path('discover/', views.public_couples_list, name='public_couples_list'),
     
-    # Tracking and redirects
-    path('link/<int:pk>/', views.wedding_link_redirect, name='wedding_link_redirect'), 
+    # Link tracking
+    path('link/<int:pk>/', views.wedding_link_redirect, name='wedding_link_redirect'),
     
-   
-    # Fallback token-based URL (for sharing before custom URL is set)
-    path('token/<uuid:share_token>/', views.PublicCoupleDetailView.as_view(), name='wedding_page_token'),
+    # Token-based URL (for sharing private pages)
+    path('w/<uuid:share_token>/', views.PublicCoupleDetailView.as_view(), name='wedding_page_token'),
     
-    # Legacy URLs for backwards compatibility
-    path('couple/<slug:slug>/', views.legacy_couple_redirect, name='legacy_couple_redirect'),
-    path('couple/<uuid:share_token>/', views.legacy_couple_redirect, name='legacy_couple_token_redirect'),
-    
-    # Custom wedding pages - FORMAT: /wedding/name1name2MMDDYY/ (must be last due to slug pattern)
-    path('<slug:slug>/', views.PublicCoupleDetailView.as_view(), name='wedding_page'),
+    # Note: Root-level slug URLs are handled in main urls.py
 ]

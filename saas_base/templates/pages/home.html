@@ -284,9 +284,9 @@
             <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Manage registries, RSVPs, and more</li>
           </ul>
           <div>
-            <a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary-rose me-2">
+            <!--a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary-rose me-2">
               <i class="bi bi-eye"></i> See Examples
-            </a>
+            </a-->
             <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
               <i class="bi bi-heart"></i> Create Your Free Page
             </a>

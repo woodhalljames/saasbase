@@ -1,9 +1,8 @@
 from django.db import models
-
-# Create your models here.
-# saas_base/subscriptions/models.py
-from django.db import models
 from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
 
 class CustomerSubscription(models.Model):
     """Store minimal subscription data - Stripe is the source of truth"""
@@ -71,10 +70,7 @@ class CustomerSubscription(models.Model):
             )
         except Exception:
             return None
-        
 
-
-        # Add to subscriptions/models.py
     def get_tier_name(self):
         """Get the subscription tier name based on the plan_id"""
         from usage_limits.tier_config import TierLimits
@@ -87,15 +83,55 @@ class CustomerSubscription(models.Model):
         from usage_limits.tier_config import TierLimits
         return TierLimits.get_limit_for_tier(self.get_tier_name())
 
-   
-    
-
-    
-
     def __str__(self):
         return f"{self.user.username}'s subscription"
-    
 
+class AccountSetupToken(models.Model):
+    """Store longer-lasting tokens for account setup completion"""
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='setup_tokens'
+    )
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = get_random_string(64)
+        if not self.expires_at:
+            # Set to expire in 30 days
+            self.expires_at = timezone.now() + timedelta(days=30)
+        super().save(*args, **kwargs)
+    
+    def is_valid(self):
+        """Check if token is still valid (not used and not expired)"""
+        return not self.used_at and timezone.now() < self.expires_at
+    
+    def mark_used(self):
+        """Mark token as used"""
+        self.used_at = timezone.now()
+        self.save()
+    
+    @classmethod
+    def create_for_user(cls, user):
+        """Create a new setup token for a user"""
+        # Invalidate any existing unused tokens
+        cls.objects.filter(user=user, used_at__isnull=True).update(
+            used_at=timezone.now()
+        )
+        
+        # Create new token
+        return cls.objects.create(user=user)
+    
+    def __str__(self):
+        return f"Setup token for {self.user.username}"
 
 class Product(models.Model):
     """Store Stripe product information locally with additional customization fields"""
@@ -170,4 +206,3 @@ class Price(models.Model):
     
     class Meta:
         ordering = ['product__display_order', 'interval', 'amount']
-    

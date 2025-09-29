@@ -14,19 +14,49 @@
           
           <h1 class="h2 mb-4 text-dark">Couldn't Have Happened to Better People!</h1>
           <p class="lead text-success mb-4">Your subscription has been successfully processed.</p>
-          <p class="text-muted mb-4">
-            <i class="bi bi-envelope-check me-2"></i>
-            Stripe will be sending you an e-mail.
-          </p>
           
-          <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
-            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-gradient-rose">
-              <i class="bi bi-magic me-2"></i>Use the studio
-            </a>
-            <a href="{% url 'users:detail' request.user.username %}" class="btn btn-outline-primary">
-              <i class="bi bi-person-circle me-2"></i>Visit Account Dashboard
-            </a>
-          </div>
+          {% if request.user.is_authenticated %}
+            <!-- Authenticated User Messages -->
+            <p class="text-muted mb-4">
+              <i class="bi bi-envelope-check me-2"></i>
+              Stripe will be sending you an e-mail.
+            </p>
+            
+            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+              <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-gradient-rose">
+                <i class="bi bi-magic me-2"></i>Use the studio
+              </a>
+              <a href="{% url 'users:detail' request.user.username %}" class="btn btn-outline-primary">
+                <i class="bi bi-person-circle me-2"></i>Visit Account Dashboard
+              </a>
+            </div>
+          {% else %}
+            <!-- Guest User Messages -->
+            <p class="text-muted mb-4">
+              <i class="bi bi-envelope-check me-2"></i>
+              Check your email for account setup instructions!
+            </p>
+            
+            <div class="alert alert-info border-0 mb-4">
+              <div class="d-flex align-items-start">
+                <i class="bi bi-info-circle-fill me-2 mt-1 text-primary"></i>
+                <div class="text-start">
+                  <strong>Account Created!</strong>
+                  <p class="mb-2 small">We've created your account automatically. Check your email for sign-in instructions.</p>
+                  <p class="mb-0 small text-muted">You can start using DreamWedAI immediately after signing in.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
+              <a href="{% url 'account_login' %}" class="btn btn-gradient-rose">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Sign In Now
+              </a>
+              <a href="{% url 'account_signup' %}" class="btn btn-outline-primary">
+                <i class="bi bi-person-plus me-2"></i>Create Password
+              </a>
+            </div>
+          {% endif %}
           
           <div class="bg-light rounded p-3">
             <small class="text-muted">

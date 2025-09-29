@@ -1,4 +1,3 @@
-# wedding_shopping/models.py - Updated with venue_location as address field
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -81,6 +80,7 @@ class CoupleProfile(models.Model):
         return base_slug
     
     def save(self, *args, **kwargs):
+        # Generate slug if needed
         if not self.slug or self._should_regenerate_slug():
             base_slug = self._generate_wedding_slug()
             counter = 1
@@ -93,8 +93,29 @@ class CoupleProfile(models.Model):
                     self.slug = f"{base_slug}{uuid.uuid4().hex[:4]}"
                     break
         
+        # Check if images are new or changed
+        if self.pk:
+            try:
+                old_instance = CoupleProfile.objects.get(pk=self.pk)
+                couple_photo_changed = old_instance.couple_photo != self.couple_photo
+                venue_photo_changed = old_instance.venue_photo != self.venue_photo
+            except CoupleProfile.DoesNotExist:
+                couple_photo_changed = bool(self.couple_photo)
+                venue_photo_changed = bool(self.venue_photo)
+        else:
+            couple_photo_changed = bool(self.couple_photo)
+            venue_photo_changed = bool(self.venue_photo)
+        
+        # Automatically optimize images on upload
+        if self.couple_photo and couple_photo_changed:
+            self.optimize_image('couple_photo')
+        
+        if self.venue_photo and venue_photo_changed:
+            self.optimize_image('venue_photo')
+        
         super().save(*args, **kwargs)
     
+   
     def _should_regenerate_slug(self):
         if not self.pk:
             return True
@@ -110,7 +131,8 @@ class CoupleProfile(models.Model):
             return True
     
     def get_absolute_url(self):
-        return reverse('wedding_shopping:wedding_page', kwargs={'slug': self.slug})
+        """Return the root-level URL for this wedding page"""
+        return f"/{self.slug}/"
     
     def get_public_url(self):
         return self.get_absolute_url()
@@ -124,7 +146,8 @@ class CoupleProfile(models.Model):
     
     @property
     def wedding_url_preview(self):
-        return f"/wedding/{self.slug}/" if self.slug else "/wedding/[will-be-generated]/"
+        """Updated for new URL structure"""
+        return f"/{self.slug}/" if self.slug else "/[will-be-generated]/"
     
     @property
     def address_map_url(self):

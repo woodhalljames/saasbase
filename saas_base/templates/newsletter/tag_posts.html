@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Posts Tagged "{{ tag.name }}" | DreamWedAI Blog{% endblock %}
+{% block meta_description %}Browse all wedding articles tagged with {{ tag.name }} on DreamWedAI blog{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Tag Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">#{{ tag.name }}</h1>
+        <p class="lead text-muted">All posts tagged with "{{ tag.name }}"</p>
+    </div>
+
+    <!-- Posts Grid -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            {% if posts %}
+                <div class="row g-4">
+                    {% for post in posts %}
+                    <div class="col-md-6 col-lg-4">
+                        <article class="card h-100 shadow-sm">
+                            {% if post.featured_image %}
+                                <img src="{{ post.featured_image.url }}" 
+                                     alt="{{ post.title }}" 
+                                     class="card-img-top" style="height: 200px; object-fit: cover;">
+                            {% else %}
+                                <div class="card-img-top bg-gradient-rose d-flex align-items-center justify-content-center" 
+                                     style="height: 200px;">
+                                    <i class="bi bi-heart-fill text-white" style="font-size: 3rem;"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                {% if post.category %}
+                                    <small class="badge bg-gradient-cyan mb-2">{{ post.category.name }}</small>
+                                {% endif %}
+                                
+                                <h2 class="h6 card-title">
+                                    <a href="{{ post.get_absolute_url }}" class="text-decoration-none text-dark">
+                                        {{ post.title }}
+                                    </a>
+                                </h2>
+                                
+                                <p class="card-text text-muted small">{{ post.excerpt|truncatewords:15 }}</p>
+                                
+                                <div class="text-muted small">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ post.published_at|date:"M d, Y" }}
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                <nav aria-label="Tag pagination" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <p class="text-muted">No posts with this tag yet.</p>
+                    <a href="{% url 'newsletter:blog_list' %}" class="btn btn-gradient-rose">
+                        View All Posts
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Popular Tags Cloud -->
+    {% if popular_tags %}
+    <div class="text-center mt-5 pt-5 border-top">
+        <h3 class="mb-4">Explore Other Tags</h3>
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+            {% for other_tag in popular_tags %}
+            {% if other_tag.slug != tag.slug %}
+            <a href="{% url 'newsletter:tag_posts' other_tag.slug %}" 
+               class="badge bg-light text-dark text-decoration-none fs-6 p-2">
+                #{{ other_tag.name }}
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

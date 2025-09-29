@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% load socialaccount %}
+
+{% block title %}Complete Your Account Setup - DreamWedAI{% endblock title %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-gradient-cyan text-white text-center py-4">
+          <h4 class="mb-0">
+            <i class="bi bi-person-check"></i> Complete Your Account Setup
+          </h4>
+        </div>
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <div class="feature-icon mx-auto mb-3 bg-gradient-rose">
+              <i class="bi bi-heart-fill"></i>
+            </div>
+            <h5 class="fw-bold">Welcome to DreamWedAI!</h5>
+            <p class="text-muted">Your subscription is active. Let's secure your account with a password.</p>
+          </div>
+
+          <div class="alert alert-success border-0 mb-4">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-check-circle-fill me-2 text-success"></i>
+              <div>
+                <strong>Account Details:</strong><br>
+                <small>Email: {{ user.email }}</small><br>
+                <small>Username: {{ user.username }}</small><br>
+                <small>Status: Active Subscriber ✅</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password Setup Form -->
+          <div class="card border mb-4">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div class="feature-icon me-3" style="width: 50px; height: 50px; background: linear-gradient(45deg, #4caf50, #66bb6a);">
+                  <i class="bi bi-key"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-1">Set Up Your Password</h6>
+                  <small class="text-muted">Create a secure password for your account</small>
+                </div>
+              </div>
+
+              <form method="post" id="password-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="set_password">
+                
+                <div class="mb-3">
+                  <label for="{{ form.new_password1.id_for_label }}" class="form-label">New Password</label>
+                  <input type="password" 
+                         class="form-control {% if form.new_password1.errors %}is-invalid{% endif %}" 
+                         id="{{ form.new_password1.id_for_label }}"
+                         name="{{ form.new_password1.name }}"
+                         placeholder="Choose a strong password"
+                         required>
+                  {% if form.new_password1.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.new_password1.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                  <div class="form-text">At least 8 characters</div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="{{ form.new_password2.id_for_label }}" class="form-label">Confirm Password</label>
+                  <input type="password" 
+                         class="form-control {% if form.new_password2.errors %}is-invalid{% endif %}" 
+                         id="{{ form.new_password2.id_for_label }}"
+                         name="{{ form.new_password2.name }}"
+                         placeholder="Confirm your password"
+                         required>
+                  {% if form.new_password2.errors %}
+                    <div class="invalid-feedback">
+                      {% for error in form.new_password2.errors %}{{ error }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+
+                <div class="d-grid">
+                  <button type="submit" class="btn btn-gradient-cyan">
+                    <i class="bi bi-shield-check me-2"></i>Set Password & Continue
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Social Connect Option -->
+          <div class="card border">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div class="feature-icon me-3" style="width: 50px; height: 50px; background: linear-gradient(45deg, #4285f4, #64b5f6);">
+                  <i class="bi bi-google"></i>
+                </div>
+                <div>
+                  <h6 class="fw-bold mb-1">Connect Google Account</h6>
+                  <small class="text-muted">Quick login option for the future</small>
+                </div>
+              </div>
+
+              <p class="text-muted mb-3">
+                After setting up your password, you can connect your Google account for quick and easy login.
+              </p>
+
+              <div class="alert alert-info border-0">
+                <small>
+                  <i class="bi bi-info-circle me-1"></i>
+                  <strong>What's Next?</strong> Once you set your password, you'll be taken to your dashboard where you can connect social accounts and start using all premium features.
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center mt-4">
+            <small class="text-muted">
+              Having trouble? <a href="mailto:hello@dreamwedai.com">Contact our support team</a>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- What You Can Do Next -->
+      <div class="card mt-4">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">
+            <i class="bi bi-magic text-gradient"></i> What You Can Do Next
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-camera text-primary me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>AI Studio</strong><br>
+                  <small class="text-muted">Transform venue photos</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-heart text-rose me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Wedding Page</strong><br>
+                  <small class="text-muted">Create your wedding website</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-collection text-cyan me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Collections</strong><br>
+                  <small class="text-muted">Organize your designs</small>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-share text-success me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Share & Plan</strong><br>
+                  <small class="text-muted">Collaborate with vendors</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Account setup specific styles */
+.feature-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.btn-gradient-cyan {
+  background: linear-gradient(45deg, #00bcd4, #4dd0e1);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient-cyan:hover {
+  background: linear-gradient(45deg, #0097a7, #00bcd4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 188, 212, 0.3);
+  color: white;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  color: #2e7d32;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+}
+
+/* Form validation styling */
+.form-control:focus {
+  border-color: #00bcd4;
+  box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+}
+
+.is-invalid {
+  border-color: #dc3545;
+}
+
+.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .card-body {
+    padding: 2rem !important;
+  }
+  
+  .feature-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+  }
+}
+</style>
+{% endblock content %}

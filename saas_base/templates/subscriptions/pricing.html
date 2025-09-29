@@ -135,47 +135,58 @@
               </ul>
               {% endif %}
               
-              <!-- CTA Buttons -->
+              <!-- CTA Buttons - UPDATED FOR GUEST CHECKOUT -->
               <div class="mt-auto">
-                {% if user_authenticated %}
-                  <!-- Monthly Subscribe Button -->
-                  <div class="monthly-button" data-product-id="{{ product.id }}">
-                    {% if product.prices.monthly %}
-                    <form method="post" action="{% url 'subscriptions:checkout' %}" class="checkout-form">
-                      {% csrf_token %}
-                      <input type="hidden" name="price_id" value="{{ product.prices.monthly.id }}">
-                      <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
+                <!-- Monthly Subscribe Button -->
+                <div class="monthly-button" data-product-id="{{ product.id }}">
+                  {% if product.prices.monthly %}
+                  <form method="post" action="{% url 'subscriptions:checkout' %}" class="checkout-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="price_id" value="{{ product.prices.monthly.id }}">
+                    <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
+                      {% if user_authenticated %}
                         Get Started
-                      </button>
-                    </form>
-                    {% else %}
-                    <button class="btn btn-secondary w-100 py-3" disabled>
-                      Not Available Monthly
+                      {% else %}
+                        Subscribe Now
+                      {% endif %}
                     </button>
-                    {% endif %}
-                  </div>
-                  
-                  <!-- Yearly Subscribe Button (Hidden by default) -->
-                  <div class="yearly-button d-none" data-product-id="{{ product.id }}">
-                    {% if product.prices.yearly %}
-                    <form method="post" action="{% url 'subscriptions:checkout' %}" class="checkout-form">
-                      {% csrf_token %}
-                      <input type="hidden" name="price_id" value="{{ product.prices.yearly.id }}">
-                      <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
+                  </form>
+                  {% else %}
+                  <button class="btn btn-secondary w-100 py-3" disabled>
+                    Not Available Monthly
+                  </button>
+                  {% endif %}
+                </div>
+                
+                <!-- Yearly Subscribe Button (Hidden by default) -->
+                <div class="yearly-button d-none" data-product-id="{{ product.id }}">
+                  {% if product.prices.yearly %}
+                  <form method="post" action="{% url 'subscriptions:checkout' %}" class="checkout-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="price_id" value="{{ product.prices.yearly.id }}">
+                    <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
+                      {% if user_authenticated %}
                         Get Started - Best Value
-                      </button>
-                    </form>
-                    {% else %}
-                    <button class="btn btn-secondary w-100 py-3" disabled>
-                      Not Available Yearly
+                      {% else %}
+                        Subscribe Now - Best Value
+                      {% endif %}
                     </button>
-                    {% endif %}
-                  </div>
-                {% else %}
-                  <a href="{% url 'account_signup' %}?next={% url 'subscriptions:pricing' %}" 
-                     class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
-                    Sign Up to Get Started
-                  </a>
+                  </form>
+                  {% else %}
+                  <button class="btn btn-secondary w-100 py-3" disabled>
+                    Not Available Yearly
+                  </button>
+                  {% endif %}
+                </div>
+                
+                <!-- Guest Checkout Info -->
+                {% if not user_authenticated %}
+                <div class="text-center mt-2">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    No account needed - we'll create one for you!
+                  </small>
+                </div>
                 {% endif %}
               </div>
             </div>
@@ -229,6 +240,51 @@
     </div>
   </section>
 
+  <!-- Guest Checkout Benefits -->
+  {% if not user_authenticated %}
+  <section class="guest-benefits py-5">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <h3 class="fw-bold mb-4">Subscribe in Seconds</h3>
+          <p class="lead text-muted mb-4">
+            No account creation required. Start your subscription instantly and we'll set up your account automatically.
+          </p>
+          
+          <div class="row g-4 mt-4">
+            <div class="col-md-4">
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="bi bi-lightning-charge"></i>
+                </div>
+                <h6 class="fw-bold">Instant Access</h6>
+                <p class="text-muted small">Subscribe and start creating immediately</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="bi bi-envelope-check"></i>
+                </div>
+                <h6 class="fw-bold">Email Setup</h6>
+                <p class="text-muted small">We'll email you login instructions</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="bi bi-gear"></i>
+                </div>
+                <h6 class="fw-bold">Complete Control</h6>
+                <p class="text-muted small">Full account access and customization</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- FAQ Section -->
   <section class="faq-section py-5">
@@ -373,9 +429,6 @@
       </div>
     </div>
   </section>
-
-
-
 
 </div>
 
@@ -620,6 +673,40 @@ document.addEventListener('DOMContentLoaded', function() {
   background: rgba(255, 255, 255, 0.8);
   border-radius: inherit;
   z-index: 1;
+}
+
+/* Guest checkout benefits styling */
+.guest-benefits {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.benefit-item {
+  text-align: center;
+  padding: 20px;
+}
+
+.benefit-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(45deg, var(--electric-rose), var(--bright-cyan));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  margin: 0 auto 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+/* Enhanced guest checkout styling */
+.checkout-form.submitting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.checkout-form button[disabled] {
+  pointer-events: none;
 }
 </style>
 {% endblock %}
