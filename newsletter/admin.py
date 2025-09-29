@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django_summernote.admin import SummernoteModelAdmin
 from .models import NewsletterSubscription, BlogPost, BlogComment
 
 
@@ -27,7 +28,12 @@ class NewsletterSubscriptionAdmin(admin.ModelAdmin):
 
 
 @admin.register(BlogPost)
-class BlogPostAdmin(admin.ModelAdmin):
+class BlogPostAdmin(SummernoteModelAdmin):
+    """Blog post admin with Summernote WYSIWYG editor"""
+    
+    # Summernote configuration
+    summernote_fields = ('content',)
+    
     list_display = [
         'title', 'status', 'author', 'published_at', 
         'view_count', 'comment_count', 'tag_list'
@@ -42,11 +48,12 @@ class BlogPostAdmin(admin.ModelAdmin):
             'fields': ('title', 'slug', 'author', 'excerpt')
         }),
         ('Content', {
-            'fields': ('content',)
+            'fields': ('content',),
+            'description': 'Use the rich text editor below to write your post. You can drag & drop images directly into the editor.'
         }),
-        ('Images', {
+        ('Featured Image', {
             'fields': ('featured_image', 'featured_image_alt'),
-            'classes': ('collapse',)
+            'description': 'Upload a hero image for the top of your post. Recommended size: 1920x1080px'
         }),
         ('SEO & Metadata', {
             'fields': ('meta_description', 'meta_keywords', 'tags'),

@@ -26,7 +26,11 @@ class LatestPostsFeed(Feed):
         return item.published_at
     
     def item_author_name(self, item):
-        return item.author.get_display_name() if item.author else "DreamWedAI"
+        if item.author:
+            if hasattr(item.author, 'get_display_name'):
+                return item.author.get_display_name()
+            return item.author.username or item.author.email
+        return "DreamWedAI"
     
     def item_categories(self, item):
         categories = []

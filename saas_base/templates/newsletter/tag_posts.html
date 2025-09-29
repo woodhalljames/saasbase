@@ -1,115 +1,516 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static newsletter_tags %}
 
-{% block title %}Posts Tagged "{{ tag.name }}" | DreamWedAI Blog{% endblock %}
+{% block title %}Posts Tagged "{{ tag.name }}" | DreamWedAI Resources{% endblock %}
 {% block meta_description %}Browse all wedding articles tagged with {{ tag.name }} on DreamWedAI blog{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<!-- Blog-specific fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+<style>
+/* Blog page variables */
+:root {
+  --blog-charcoal: #2d3748;
+  --blog-gray: #4a5568;
+  --blog-light-gray: #a0aec0;
+  --blog-off-white: #fafafa;
+  --blog-card-bg: #f8f8f8;
+  --blog-white: #ffffff;
+  --blog-border: #e2e8f0;
+  --blog-text: #2d3748;
+  --blog-text-light: #718096;
+  --blog-accent: #4299e1;
+  --blog-tag: #e1f5fe;
+  --blog-tag-text: #0277bd;
+}
+
+.blog-page {
+  background: var(--blog-off-white);
+  font-family: 'Lora', serif;
+  min-height: 100vh;
+}
+
+.blog-script {
+  font-family: 'Dancing Script', cursive;
+  font-weight: 600;
+}
+
+.blog-elegant {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Tag Header */
+.tag-header {
+  background: var(--blog-white);
+  padding: 4rem 0 3rem;
+  text-align: center;
+  border-bottom: 1px solid var(--blog-border);
+}
+
+.tag-title {
+  font-size: 3.5rem;
+  color: var(--blog-charcoal);
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.tag-subtitle {
+  font-size: 1.2rem;
+  color: var(--blog-text-light);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tag-count {
+  display: inline-block;
+  background: var(--blog-tag);
+  color: var(--blog-tag-text);
+  padding: 0.5rem 1.5rem;
+  border-radius: 25px;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  font-weight: 600;
+}
+
+/* Posts Grid - matching blog_list.html */
+.posts-section {
+  padding: 3rem 0;
+}
+
+.posts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+}
+
+.post-card {
+  background: var(--blog-card-bg);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 6px 25px rgba(0,0,0,0.1);
+  border: 1px solid var(--blog-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.post-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-image-wrapper {
+  height: 220px;
+  overflow: hidden;
+  position: relative;
+  background: var(--blog-white);
+}
+
+.post-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+
+.post-card:hover .post-image {
+  transform: scale(1.05);
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--blog-card-bg), var(--blog-border));
+  color: var(--blog-light-gray);
+  font-size: 3rem;
+}
+
+.post-info {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--blog-white);
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: var(--blog-text-light);
+}
+
+.post-date {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reading-time {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.post-title {
+  font-size: 1.4rem;
+  color: var(--blog-charcoal);
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  flex-grow: 1;
+}
+
+.post-card:hover .post-title {
+  color: var(--blog-accent);
+}
+
+.post-excerpt {
+  color: var(--blog-text-light);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Pagination */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 4rem;
+}
+
+.pagination {
+  background: var(--blog-white);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  border: 1px solid var(--blog-border);
+}
+
+.pagination .page-link {
+  color: var(--blog-text);
+  border: none;
+  background: none;
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  margin: 0 0.25rem;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.pagination .page-link:hover {
+  background: var(--blog-card-bg);
+  color: var(--blog-charcoal);
+  transform: translateY(-1px);
+}
+
+.pagination .page-item.active .page-link {
+  background: var(--blog-charcoal);
+  color: white;
+  box-shadow: 0 3px 10px rgba(45, 55, 72, 0.2);
+}
+
+/* Popular Tags Cloud */
+.tags-cloud-section {
+  background: var(--blog-white);
+  padding: 4rem 0;
+  margin-top: 4rem;
+  border-top: 1px solid var(--blog-border);
+}
+
+.tags-cloud-title {
+  font-size: 2rem;
+  color: var(--blog-charcoal);
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.tags-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.tag-cloud-link {
+  background: var(--blog-tag);
+  color: var(--blog-tag-text);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.tag-cloud-link:hover {
+  background: var(--blog-tag-text);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 119, 189, 0.3);
+  text-decoration: none;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--blog-text-light);
+  background: var(--blog-white);
+  border-radius: 20px;
+  margin: 3rem auto;
+  max-width: 700px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.empty-state-icon {
+  font-size: 5rem;
+  color: var(--blog-charcoal);
+  margin-bottom: 2rem;
+}
+
+.empty-state h3 {
+  font-size: 2.5rem;
+  color: var(--blog-charcoal);
+  margin-bottom: 1.5rem;
+}
+
+.empty-state p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1200px) {
+  .posts-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    max-width: 900px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tag-title {
+    font-size: 2.5rem;
+  }
+  
+  .posts-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    max-width: 500px;
+  }
+  
+  .post-card {
+    height: 380px;
+  }
+  
+  .post-image-wrapper {
+    height: 180px;
+  }
+}
+
+@media (max-width: 576px) {
+  .tag-title {
+    font-size: 2rem;
+  }
+  
+  .post-title {
+    font-size: 1.25rem;
+  }
+  
+  .post-image-wrapper {
+    height: 160px;
+  }
+  
+  .post-card {
+    height: 360px;
+  }
+  
+  .posts-grid {
+    padding: 0 0.5rem;
+    gap: 1rem;
+  }
+  
+  .post-info {
+    padding: 1rem;
+  }
+}
+</style>
+{% endblock %}
+
+{% block bodyclass %}blog-page{% endblock %}
+
 {% block content %}
-<div class="container py-5">
-    <!-- Tag Header -->
-    <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold">#{{ tag.name }}</h1>
-        <p class="lead text-muted">All posts tagged with "{{ tag.name }}"</p>
-    </div>
+<header class="tag-header">
+  <div class="container">
+    <h1 class="tag-title blog-script">#{{ tag.name }}</h1>
+    <p class="tag-subtitle blog-elegant">
+      Discover all wedding posts about {{ tag.name|lower }}
+    </p>
+    <span class="tag-count">{{ posts|length }} Post{{ posts|length|pluralize }}</span>
+  </div>
+</header>
 
-    <!-- Posts Grid -->
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            {% if posts %}
-                <div class="row g-4">
-                    {% for post in posts %}
-                    <div class="col-md-6 col-lg-4">
-                        <article class="card h-100 shadow-sm">
-                            {% if post.featured_image %}
-                                <img src="{{ post.featured_image.url }}" 
-                                     alt="{{ post.title }}" 
-                                     class="card-img-top" style="height: 200px; object-fit: cover;">
-                            {% else %}
-                                <div class="card-img-top bg-gradient-rose d-flex align-items-center justify-content-center" 
-                                     style="height: 200px;">
-                                    <i class="bi bi-heart-fill text-white" style="font-size: 3rem;"></i>
-                                </div>
-                            {% endif %}
-                            
-                            <div class="card-body">
-                                {% if post.category %}
-                                    <small class="badge bg-gradient-cyan mb-2">{{ post.category.name }}</small>
-                                {% endif %}
-                                
-                                <h2 class="h6 card-title">
-                                    <a href="{{ post.get_absolute_url }}" class="text-decoration-none text-dark">
-                                        {{ post.title }}
-                                    </a>
-                                </h2>
-                                
-                                <p class="card-text text-muted small">{{ post.excerpt|truncatewords:15 }}</p>
-                                
-                                <div class="text-muted small">
-                                    <i class="bi bi-calendar me-1"></i>
-                                    {{ post.published_at|date:"M d, Y" }}
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                    {% endfor %}
+<main class="posts-section">
+  <div class="container">
+    
+    {% if posts %}
+      <section class="posts-grid" role="main" aria-label="Tagged posts">
+        {% for post in posts %}
+          <article class="post-card" 
+                   role="link" 
+                   tabindex="0" 
+                   onclick="window.location.href='{{ post.get_absolute_url }}'"
+                   onkeydown="if(event.key==='Enter'||event.key===' '){window.location.href='{{ post.get_absolute_url }}'}"
+                   aria-label="Read {{ post.title }}">
+            
+            <div class="post-image-wrapper">
+              {% if post.featured_image %}
+                <img src="{{ post.featured_image.url }}" 
+                     alt="{{ post.featured_image_alt|default:post.title }}" 
+                     class="post-image"
+                     loading="lazy">
+              {% else %}
+                <div class="image-placeholder" role="img" aria-label="Blog post placeholder">
+                  <i class="bi bi-journal-text blog-script" aria-hidden="true"></i>
                 </div>
-
-                <!-- Pagination -->
-                {% if is_paginated %}
-                <nav aria-label="Tag pagination" class="mt-5">
-                    <ul class="pagination justify-content-center">
-                        {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                            </li>
-                        {% endif %}
-                        
-                        {% for num in page_obj.paginator.page_range %}
-                            {% if page_obj.number == num %}
-                                <li class="page-item active">
-                                    <span class="page-link">{{ num }}</span>
-                                </li>
-                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-                {% endif %}
-            {% else %}
-                <div class="text-center py-5">
-                    <p class="text-muted">No posts with this tag yet.</p>
-                    <a href="{% url 'newsletter:blog_list' %}" class="btn btn-gradient-rose">
-                        View All Posts
-                    </a>
-                </div>
+              {% endif %}
+            </div>
+            
+            <div class="post-info">
+              <div class="post-meta">
+                <time class="post-date" datetime="{{ post.published_at|date:'c' }}">
+                  <i class="bi bi-calendar3" aria-hidden="true"></i>
+                  {{ post.published_at|date:"M j, Y" }}
+                </time>
+                <span class="reading-time">
+                  <i class="bi bi-clock" aria-hidden="true"></i>
+                  {{ post.reading_time }} min read
+                </span>
+              </div>
+              
+              <h2 class="post-title blog-elegant">{{ post.title }}</h2>
+              
+              <p class="post-excerpt">{{ post.excerpt|truncatechars:120 }}</p>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+      
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <nav class="pagination-wrapper" aria-label="Tag pagination">
+          <ul class="pagination">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="Go to first page">
+                  <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Go to previous page">
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                </a>
+              </li>
             {% endif %}
-        </div>
-    </div>
-
-    <!-- Popular Tags Cloud -->
-    {% if popular_tags %}
-    <div class="text-center mt-5 pt-5 border-top">
-        <h3 class="mb-4">Explore Other Tags</h3>
-        <div class="d-flex flex-wrap gap-2 justify-content-center">
-            {% for other_tag in popular_tags %}
-            {% if other_tag.slug != tag.slug %}
-            <a href="{% url 'newsletter:tag_posts' other_tag.slug %}" 
-               class="badge bg-light text-dark text-decoration-none fs-6 p-2">
-                #{{ other_tag.name }}
-            </a>
-            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <li class="page-item active" aria-current="page">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}" aria-label="Go to page {{ num }}">{{ num }}</a>
+                </li>
+              {% endif %}
             {% endfor %}
+            
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Go to next page">
+                  <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Go to last page">
+                  <i class="bi bi-chevron-double-right" aria-hidden="true"></i>
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      {% endif %}
+      
+    {% else %}
+      <!-- Empty State -->
+      <section class="empty-state" role="main">
+        <div class="empty-state-icon" role="img" aria-label="Journal icon">
+          <i class="bi bi-journal-text blog-script" aria-hidden="true"></i>
         </div>
-    </div>
+        <h3 class="blog-script">No Posts Found</h3>
+        <p class="blog-elegant">
+          We don't have any posts tagged with "{{ tag.name }}" yet. 
+          Check back soon or explore other topics!
+        </p>
+        <a href="{% url 'newsletter:resources_list' %}" class="btn btn-gradient-rose">
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          View All Posts
+        </a>
+      </section>
     {% endif %}
-</div>
+    
+  </div>
+</main>
+
+<!-- Popular Tags Cloud -->
+{% if popular_tags %}
+<section class="tags-cloud-section">
+  <div class="container">
+    <h3 class="tags-cloud-title blog-script">Explore Other Topics</h3>
+    <div class="tags-cloud">
+      {% for other_tag in popular_tags %}
+        {% if other_tag.slug != tag.slug %}
+          <a href="{% tag_url other_tag %}" class="tag-cloud-link">
+            {{ other_tag.name }}
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

@@ -47,6 +47,7 @@ urlpatterns = [
     
     # Wedding pages (includes management pages under /wedding/)
     path("", include("wedding_shopping.urls", namespace="wedding_shopping")),
+    path('summernote/', include('django_summernote.urls')),
     
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),

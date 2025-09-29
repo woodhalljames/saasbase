@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static newsletter_tags %}
 
 {% block title %}DreamWedAI Resources - Planning Tips & Inspiration{% endblock %}
 
@@ -575,7 +575,7 @@
     <div class="tags-container">
       <span class="tags-label blog-elegant">Popular Topics:</span>
       {% for tag in popular_tags %}
-        <a href="{{ tag.get_absolute_url }}" class="tag-link">
+        <a href="{% tag_url tag %}" class="tag-link">
           {{ tag.name }}
         </a>
       {% endfor %}
@@ -634,7 +634,7 @@
               {% if post.tags.all %}
                 <div class="post-tags">
                   {% for tag in post.tags.all|slice:":3" %}
-                    <a href="{{ tag.get_absolute_url }}" class="post-tag">{{ tag.name }}</a>
+                    <a href="{% tag_url tag %}" class="post-tag">{{ tag.name }}</a>
                   {% endfor %}
                 </div>
               {% endif %}

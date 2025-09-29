@@ -47,12 +47,11 @@ class BlogPost(models.Model):
     
     # Content
     excerpt = models.TextField(max_length=500, help_text="Brief description for listings and SEO")
-    content = models.TextField(help_text="Main content (supports rich HTML via TinyMCE)")
+    content = models.TextField(help_text="Main content with rich text editor (Summernote)")
     
     # Images
     featured_image = models.ImageField(upload_to='blog/featured/', blank=True, null=True)
     featured_image_alt = models.CharField(max_length=200, blank=True, help_text="Alt text for featured image (SEO)")
-    featured_image_webp = models.ImageField(upload_to='blog/featured/webp/', blank=True, null=True, editable=False)
     
     # Tags using django-taggit
     tags = TaggableManager(blank=True, help_text="Add tags separated by commas")
@@ -120,7 +119,7 @@ class BlogPost(models.Model):
         if not self.meta_description and self.excerpt:
             self.meta_description = self.excerpt[:160]
         
-        # Check if featured image is new or changed
+        # Optimize featured image if changed
         if self.pk:
             try:
                 old_instance = BlogPost.objects.get(pk=self.pk)
@@ -130,10 +129,8 @@ class BlogPost(models.Model):
         else:
             image_changed = bool(self.featured_image)
         
-        # Automatically optimize and convert image if new/changed
         if self.featured_image and image_changed:
             self.optimize_featured_image()
-            self.convert_to_webp()
         
         super().save(*args, **kwargs)
         
@@ -179,34 +176,6 @@ class BlogPost(models.Model):
         except Exception as e:
             print(f"Error optimizing featured image: {e}")
     
-    def convert_to_webp(self):
-        """Convert featured image to WebP format for better performance"""
-        try:
-            img = Image.open(self.featured_image)
-            
-            # Convert RGBA to RGB if necessary
-            if img.mode in ('RGBA', 'LA', 'P'):
-                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
-                rgb_img.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                img = rgb_img
-            
-            # Resize if too large (max 1920px wide)
-            if img.width > 1920:
-                ratio = 1920 / img.width
-                new_height = int(img.height * ratio)
-                img = img.resize((1920, new_height), Image.Resampling.LANCZOS)
-            
-            # Save as WebP
-            webp_io = BytesIO()
-            img.save(webp_io, format='WEBP', quality=85, optimize=True)
-            
-            # Save WebP version
-            webp_name = f"{self.slug}-{uuid.uuid4().hex[:8]}.webp"
-            self.featured_image_webp.save(webp_name, ContentFile(webp_io.getvalue()), save=False)
-            
-        except Exception as e:
-            print(f"Error converting image to WebP: {e}")
-    
     def get_absolute_url(self):
         return reverse('newsletter:resource_detail', kwargs={'slug': self.slug})
     
@@ -248,6 +217,14 @@ class BlogPost(models.Model):
         if self.featured_image:
             social_image = self.featured_image.url
         
+        # Get author name safely
+        author_name = 'DreamWedAI'
+        if self.author:
+            if hasattr(self.author, 'get_display_name'):
+                author_name = self.author.get_display_name()
+            else:
+                author_name = self.author.username or self.author.email
+        
         return {
             'title': self.title,
             'description': description,
@@ -256,7 +233,7 @@ class BlogPost(models.Model):
             'canonical_url': absolute_url,
             'published_time': self.published_at,
             'modified_time': self.updated_at,
-            'author': self.author.get_display_name() if self.author else 'DreamWedAI',
+            'author': author_name,
             'reading_time': self.reading_time,
             'article_tags': [tag.name for tag in self.tags.all()],
         }
@@ -286,7 +263,9 @@ class BlogComment(models.Model):
         ]
     
     def __str__(self):
-        return f"Comment by {self.author.get_display_name()} on {self.post.title}"
+        # Safely get author name - check if get_display_name exists, otherwise use username
+        author_name = getattr(self.author, 'get_display_name', lambda: self.author.username)()
+        return f"Comment by {author_name} on {self.post.title}"
     
     @property
     def is_reply(self):

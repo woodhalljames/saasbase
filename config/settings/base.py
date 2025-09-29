@@ -105,6 +105,7 @@ LOCAL_APPS = [
     "image_processing",
     "wedding_shopping",
     "taggit",
+    'django_summernote',
     "newsletter",
     # Your stuff: custom apps go here
 ]
@@ -460,3 +461,27 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
+SUMMERNOTE_CONFIG = {
+    'summernote': {
+        'width': '100%',
+        'height': '600',
+        'toolbar': [
+            ['style', ['style']],
+            ['font', ['bold', 'italic', 'underline', 'clear']],
+            ['fontname', ['fontname']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link', 'picture', 'video']],
+            ['view', ['fullscreen', 'codeview', 'help']],
+        ],
+        'fontNames': ['Arial', 'Courier New', 'Georgia', 'Helvetica', 'Lora', 'Playfair Display', 'Times New Roman'],
+    },
+    'disable_upload': False,
+    'attachment_require_authentication': True,
+    'attachment_filesize_limit': 5 * 1024 * 1024,  # 5MB
+    'attachment_allowed_extensions': ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+    'iframe': True,
+    'airMode': False,
+    'lazy': True,
+}

@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.urls import reverse
 from taggit.models import Tag
 
 from .forms import NewsletterSignupForm
@@ -139,6 +140,35 @@ def unsubscribe(request, email):
         messages.info(request, "This email is not in our newsletter list.")
     
     return render(request, 'newsletter/unsubscribe.html', {'email': email})
+
+
+def general_unsubscribe(request):
+    """General unsubscribe page where users enter their email"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip().lower()
+        
+        if not email:
+            messages.error(request, "Please enter your email address.")
+            return render(request, 'newsletter/general_unsubscribe.html')
+        
+        try:
+            subscription = NewsletterSubscription.objects.get(email=email)
+            if subscription.is_active:
+                subscription.is_active = False
+                subscription.save()
+                messages.success(
+                    request, 
+                    f"You've been unsubscribed from our newsletter. "
+                    f"We're sorry to see you go! You can resubscribe anytime."
+                )
+            else:
+                messages.info(request, "This email is already unsubscribed from our newsletter.")
+        except NewsletterSubscription.DoesNotExist:
+            messages.info(request, "This email is not in our newsletter list.")
+        
+        return render(request, 'newsletter/general_unsubscribe.html')
+    
+    return render(request, 'newsletter/general_unsubscribe.html')
 
 
 # Blog Views
@@ -307,31 +337,3 @@ def add_comment(request, slug):
             messages.error(request, "Please enter a comment.")
     
     return redirect(post.get_absolute_url() + '#comments')
-
-def general_unsubscribe(request):
-    """General unsubscribe page where users enter their email"""
-    if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
-        
-        if not email:
-            messages.error(request, "Please enter your email address.")
-            return render(request, 'newsletter/general_unsubscribe.html')
-        
-        try:
-            subscription = NewsletterSubscription.objects.get(email=email)
-            if subscription.is_active:
-                subscription.is_active = False
-                subscription.save()
-                messages.success(
-                    request, 
-                    f"You've been unsubscribed from our newsletter. "
-                    f"We're sorry to see you go! You can resubscribe anytime."
-                )
-            else:
-                messages.info(request, "This email is already unsubscribed from our newsletter.")
-        except NewsletterSubscription.DoesNotExist:
-            messages.info(request, "This email is not in our newsletter list.")
-        
-        return render(request, 'newsletter/general_unsubscribe.html')
-    
-    return render(request, 'newsletter/general_unsubscribe.html')

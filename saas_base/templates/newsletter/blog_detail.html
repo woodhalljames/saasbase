@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static newsletter_tags %}
 
 {% block title %}{{ post.title }} - DreamWedAI{% endblock %}
 
@@ -9,7 +9,7 @@
 {% block css %}
 {{ block.super }}
 <meta name="keywords" content="{{ post.meta_keywords|default:'wedding planning, wedding tips, marriage advice' }}">
-<meta name="author" content="{{ post.author.get_display_name|default:'DreamWedAI' }}">
+<meta name="author" content="{{ post.author.username|default:'DreamWedAI' }}">
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="article">
@@ -22,7 +22,7 @@
 {% endif %}
 <meta property="article:published_time" content="{{ post.published_at|date:'c' }}">
 <meta property="article:modified_time" content="{{ post.updated_at|date:'c' }}">
-<meta property="article:author" content="{{ post.author.get_display_name|default:'DreamWedAI' }}">
+<meta property="article:author" content="{{ post.author.username|default:'DreamWedAI' }}">
 {% for tag in post.tags.all %}
 <meta property="article:tag" content="{{ tag.name }}">
 {% endfor %}
@@ -38,13 +38,13 @@
 <!-- Canonical URL -->
 <link rel="canonical" href="{{ request.build_absolute_uri }}">
 
-<!-- Blog-specific fonts matching wedding page -->
+<!-- Blog-specific fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* Blog content styling matching wedding page */
+/* Blog content styling */
 .blog-content {
   font-family: 'Lora', serif;
   line-height: 1.7;
@@ -61,7 +61,7 @@
   font-family: 'Playfair Display', serif;
 }
 
-/* Blog page variables matching wedding page */
+/* Blog page variables */
 :root {
   --blog-charcoal: #2d3748;
   --blog-gray: #4a5568;
@@ -74,110 +74,118 @@
   --blog-accent: #4299e1;
 }
 
-/* Hero Section with Large Photo - matching wedding page */
+/* Hero Section - Full width image, no overlay */
 .blog-hero {
   position: relative;
   width: 100%;
-  height: 65vh;
-  min-height: 400px;
+  max-height: 600px;
   overflow: hidden;
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
+  background: var(--blog-charcoal);
 }
 
 .hero-image {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
+  max-height: 600px;
   object-fit: cover;
-  object-position: center center;
-  z-index: 1;
+  object-position: center;
+  display: block;
 }
 
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to top, rgba(0,0,0,0.15), rgba(0,0,0,0));
-  z-index: 2;
+/* Title Section - Below hero image - COMPACT VERSION */
+.article-header {
+  background: var(--blog-white);
+  padding: 2rem 0 1.5rem;
+  border-bottom: 1px solid var(--blog-border);
 }
 
-.hero-content {
-  position: relative;
-  z-index: 3;
-  color: white;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-  padding: 3rem;
-  max-width: 800px;
-}
-
-.hero-title {
-  font-size: 3.5rem;
-  margin: 0 0 1rem 0;
-  text-align: left;
+.article-title {
+  font-size: 2.5rem;
+  color: var(--blog-charcoal);
+  margin-bottom: 1rem;
   line-height: 1.2;
+  font-weight: 700;
 }
 
-.hero-excerpt {
-  font-size: 1.3rem;
-  margin: 0;
-  text-align: left;
-  opacity: 0.95;
+.article-excerpt {
+  font-size: 1.2rem;
+  color: var(--blog-text-light);
+  margin-bottom: 1.25rem;
   line-height: 1.4;
 }
 
-/* Article meta section - matching wedding page style */
+/* Article Meta - COMPACT VERSION */
 .article-meta-section {
-  padding: 3rem 0 2rem;
-  background: var(--blog-off-white);
-  text-align: center;
-}
-
-.article-meta-content {
   display: flex;
   flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
   justify-content: center;
-  gap: 2rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
   color: var(--blog-text-light);
 }
 
 .meta-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--blog-white);
-  padding: 0.75rem 1.25rem;
-  border-radius: 25px;
+  gap: 0.4rem;
+  background: var(--blog-off-white);
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
   border: 1px solid var(--blog-border);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .meta-item i {
   color: var(--blog-accent);
+  font-size: 0.9rem;
+}
+
+.author-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--blog-off-white);
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--blog-border);
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--blog-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--blog-charcoal);
+  font-size: 0.85rem;
 }
 
 .article-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.5rem;
   justify-content: center;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .article-tag {
-  background: var(--blog-white);
+  background: var(--blog-off-white);
   color: var(--blog-accent);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 15px;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 500;
   transition: all 0.3s ease;
   border: 1px solid var(--blog-border);
@@ -191,50 +199,120 @@
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }
 
-/* Paper-like Content Layout - matching wedding page */
+/* Compact Social Share Buttons - Top of Page */
+.social-share-compact {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.share-label {
+  font-size: 0.8rem;
+  color: var(--blog-text-light);
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.share-btn-compact {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: white;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.share-btn-compact:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  color: white;
+  text-decoration: none;
+}
+
+.share-facebook { background: #1877f2; }
+.share-twitter { background: #1da1f2; }
+.share-pinterest { background: #bd081c; }
+.share-linkedin { background: #0077b5; }
+
+/* Content Layout */
 .blog-page-content {
   background: var(--blog-off-white);
   padding: 2rem 0;
 }
 
 .paper-container {
-  max-width: 1040px;
+  max-width: 900px;
   margin: 0 auto;
-  background: var(--blog-off-white);
-  padding: 2rem 1rem;
+  padding: 0 1rem;
 }
 
 .content-section {
-  margin-bottom: 3rem;
   background: var(--blog-white);
   border-radius: 15px;
   padding: 3rem;
   box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  margin-bottom: 3rem;
 }
 
+/* Article Content Styling */
 .article-content {
   font-size: 1.2rem;
   line-height: 1.8;
   color: var(--blog-text);
-  text-align: left;
 }
 
+.article-content h1,
 .article-content h2 {
+  font-family: 'Playfair Display', serif;
   font-size: 2.2rem;
   color: var(--blog-charcoal);
-  margin: 2.5rem 0 1rem;
-  font-weight: 600;
+  margin: 2.5rem 0 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .article-content h3 {
+  font-family: 'Playfair Display', serif;
   font-size: 1.8rem;
   color: var(--blog-charcoal);
   margin: 2rem 0 1rem;
   font-weight: 600;
 }
 
+.article-content h4 {
+  font-size: 1.5rem;
+  color: var(--blog-charcoal);
+  margin: 1.5rem 0 1rem;
+  font-weight: 600;
+}
+
 .article-content p {
   margin-bottom: 1.5rem;
+}
+
+.article-content strong {
+  font-weight: 600;
+  color: var(--blog-charcoal);
+}
+
+.article-content em {
+  font-style: italic;
+}
+
+.article-content a {
+  color: var(--blog-accent);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+}
+
+.article-content a:hover {
+  color: var(--blog-charcoal);
 }
 
 .article-content blockquote {
@@ -244,26 +322,80 @@
   margin: 2rem 0;
   font-style: italic;
   border-radius: 0 10px 10px 0;
+  font-size: 1.15rem;
 }
 
-.article-content ul, .article-content ol {
+.article-content ul,
+.article-content ol {
   margin: 1.5rem 0;
   padding-left: 2rem;
 }
 
 .article-content li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.7;
+}
+
+.article-content ul li {
+  list-style-type: disc;
+}
+
+.article-content ol li {
+  list-style-type: decimal;
 }
 
 .article-content img {
   max-width: 100%;
   height: auto;
   border-radius: 10px;
-  margin: 2rem 0;
+  margin: 2rem auto;
+  display: block;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-/* Elegant Dividers - matching wedding page */
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+.article-content table th,
+.article-content table td {
+  border: 1px solid var(--blog-border);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.article-content table th {
+  background: var(--blog-off-white);
+  font-weight: 600;
+}
+
+.article-content code {
+  background: var(--blog-off-white);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: var(--blog-charcoal);
+}
+
+.article-content pre {
+  background: var(--blog-charcoal);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 2rem 0;
+}
+
+.article-content pre code {
+  background: none;
+  padding: 0;
+  color: white;
+}
+
+/* Divider */
 .section-divider {
   width: 200px;
   height: 1px;
@@ -284,51 +416,7 @@
   font-size: 1rem;
 }
 
-/* Compact Social Share */
-.social-share-section {
-  text-align: center;
-  padding: 2rem 0;
-}
-
-.share-title {
-  font-size: 1.5rem;
-  color: var(--blog-charcoal);
-  margin-bottom: 1rem;
-  font-weight: 600;
-}
-
-.share-buttons {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.share-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.85rem;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: white;
-}
-
-.share-btn:hover {
-  transform: translateY(-2px);
-  text-decoration: none;
-  color: white;
-}
-
-.share-facebook { background: #1877f2; }
-.share-twitter { background: #1da1f2; }
-.share-pinterest { background: #bd081c; }
-.share-linkedin { background: #0077b5; }
-
-/* Related posts cards - keeping existing design */
+/* Related Posts */
 .related-posts {
   max-width: 1200px;
   margin: 4rem auto;
@@ -390,9 +478,9 @@
   line-height: 1.5;
 }
 
-/* Comments matching wedding page style */
+/* Comments */
 .comments-section {
-  max-width: 1040px;
+  max-width: 900px;
   margin: 4rem auto;
   padding: 0 1rem;
 }
@@ -413,6 +501,23 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+.comment-author {
+  font-weight: 600;
+  color: var(--blog-charcoal);
+  margin-bottom: 0.5rem;
+}
+
+.comment-date {
+  color: var(--blog-text-light);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.comment-content {
+  color: var(--blog-text);
+  line-height: 1.6;
+}
+
 .comment-form {
   background: var(--blog-white);
   border-radius: 15px;
@@ -424,26 +529,23 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .blog-hero {
-    height: 60vh;
-    min-height: 350px;
+    max-height: 400px;
   }
   
-  .hero-content {
-    padding: 2rem;
+  .article-title {
+    font-size: 2rem;
   }
   
-  .hero-title {
-    font-size: 2.5rem;
-  }
-  
-  .hero-excerpt {
+  .article-excerpt {
     font-size: 1.1rem;
   }
   
+  .article-header {
+    padding: 1.5rem 0 1rem;
+  }
+  
   .paper-container {
-    padding: 2rem 1.5rem;
-    margin: 0 1rem;
-    max-width: calc(100% - 2rem);
+    padding: 0 1rem;
   }
   
   .content-section {
@@ -454,53 +556,54 @@
     font-size: 1.1rem;
   }
   
-  .article-meta-content {
-    gap: 1rem;
+  .article-meta-section {
+    gap: 0.75rem;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
   }
   
-  .share-buttons {
+  .meta-item,
+  .author-meta {
     justify-content: center;
+  }
+  
+  .social-share-compact {
+    flex-wrap: wrap;
   }
 }
 
 @media (max-width: 576px) {
   .blog-hero {
-    height: 55vh;
-    min-height: 300px;
+    max-height: 300px;
   }
   
-  .hero-title {
-    font-size: 2rem;
+  .article-title {
+    font-size: 1.75rem;
   }
   
-  .hero-excerpt {
+  .article-excerpt {
     font-size: 1rem;
   }
   
-  .hero-content {
-    padding: 1.5rem;
-  }
-  
-  .paper-container {
-    padding: 1.5rem 1rem;
-    margin: 0 0.5rem;
-    max-width: calc(100% - 1rem);
+  .article-header {
+    padding: 1.25rem 0 1rem;
   }
   
   .content-section {
     padding: 1.5rem;
   }
   
-  .share-buttons {
-    flex-direction: column;
-    align-items: center;
+  .article-content {
+    font-size: 1.05rem;
   }
   
-  .share-btn {
-    width: 150px;
-    justify-content: center;
+  .article-content h1,
+  .article-content h2 {
+    font-size: 1.8rem;
+  }
+  
+  .article-content h3 {
+    font-size: 1.5rem;
   }
 }
 </style>
@@ -521,7 +624,7 @@
   "dateModified": "{{ post.updated_at|date:'c' }}",
   "author": {
     "@type": "Person",
-    "name": "{{ post.author.get_display_name|default:'DreamWedAI'|escape }}"
+    "name": "{{ post.author.username|default:'DreamWedAI'|escape }}"
   },
   "publisher": {
     "@type": "Organization",
@@ -548,65 +651,110 @@
 </script>
 
 <div class="blog-content">
-  <!-- Hero Section with Large Photo -->
+  <!-- Hero Section - Clean image, no text overlay -->
   <div class="blog-hero">
     {% if post.featured_image %}
       <img src="{{ post.featured_image.url }}" 
            alt="{{ post.featured_image_alt|default:post.title }}" 
-           class="hero-image">
-      <div class="hero-overlay"></div>
+           class="hero-image"
+           itemprop="image">
     {% else %}
-      <!-- Fallback gradient background if no image -->
-      <div style="background: linear-gradient(135deg, var(--blog-charcoal) 0%, var(--blog-gray) 100%); width: 100%; height: 100%; position: absolute; z-index: 1;"></div>
+      <!-- Fallback gradient if no image -->
+      <div style="background: linear-gradient(135deg, var(--blog-charcoal) 0%, var(--blog-gray) 100%); width: 100%; height: 400px;"></div>
     {% endif %}
-    
-    <div class="hero-content">
-      <h1 class="hero-title blog-script">{{ post.title }}</h1>
-      <p class="hero-excerpt blog-elegant">{{ post.excerpt }}</p>
-    </div>
   </div>
 
-  <!-- Article Meta Section -->
-  <div class="article-meta-section">
+  <!-- Article Header - Compact Version -->
+  <header class="article-header">
     <div class="container">
-      <div class="article-meta-content">
-        <div class="meta-item">
-          <i class="bi bi-calendar3" aria-hidden="true"></i>
-          <time itemprop="datePublished" datetime="{{ post.published_at|date:'c' }}">
-            {{ post.published_at|date:"F j, Y" }}
-          </time>
+      <div class="text-center">
+        <h1 class="article-title blog-script" itemprop="headline">{{ post.title }}</h1>
+        <p class="article-excerpt blog-elegant" itemprop="description">{{ post.excerpt }}</p>
+        
+        <div class="article-meta-section">
+          <!-- Author with avatar -->
+          <div class="author-meta" itemprop="author" itemscope itemtype="https://schema.org/Person">
+            <div class="author-avatar">
+              {{ post.author.username|default:'D'|first|upper }}
+            </div>
+            <span class="author-name" itemprop="name">
+              {% if post.author %}{{ post.author.username }}{% else %}DreamWedAI{% endif %}
+            </span>
+          </div>
+          
+          <div class="meta-item">
+            <i class="bi bi-calendar3" aria-hidden="true"></i>
+            <time itemprop="datePublished" datetime="{{ post.published_at|date:'c' }}">
+              {{ post.published_at|date:"M j, Y" }}
+            </time>
+          </div>
+          
+          <div class="meta-item">
+            <i class="bi bi-clock" aria-hidden="true"></i>
+            <span>{{ post.reading_time }} min</span>
+          </div>
+          
+          <div class="meta-item">
+            <i class="bi bi-eye" aria-hidden="true"></i>
+            <span>{{ post.view_count }} view{{ post.view_count|pluralize }}</span>
+          </div>
         </div>
-        <div class="meta-item">
-          <i class="bi bi-person" aria-hidden="true"></i>
-          <span itemprop="author" itemscope itemtype="https://schema.org/Person">
-            <span itemprop="name">{{ post.author.get_display_name|default:'DreamWedAI' }}</span>
-          </span>
-        </div>
-        <div class="meta-item">
-          <i class="bi bi-clock" aria-hidden="true"></i>
-          <span>{{ post.reading_time }} min read</span>
-        </div>
-        <div class="meta-item">
-          <i class="bi bi-eye" aria-hidden="true"></i>
-          <span>{{ post.view_count }} view{{ post.view_count|pluralize }}</span>
+        
+        {% if post.tags.all %}
+          <div class="article-tags">
+            {% for tag in post.tags.all %}
+              <a href="{% tag_url tag %}" class="article-tag" itemprop="keywords">
+                #{{ tag.name }}
+              </a>
+            {% endfor %}
+          </div>
+        {% endif %}
+        
+        <!-- Compact Social Share Buttons -->
+        <div class="social-share-compact">
+          <span class="share-label">Share:</span>
+          <a href="{{ social_share.facebook }}" 
+             class="share-btn-compact share-facebook"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Facebook"
+             title="Share on Facebook">
+            <i class="bi bi-facebook" aria-hidden="true"></i>
+          </a>
+          <a href="{{ social_share.twitter }}" 
+             class="share-btn-compact share-twitter"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Twitter"
+             title="Share on Twitter">
+            <i class="bi bi-twitter" aria-hidden="true"></i>
+          </a>
+          <a href="{{ social_share.pinterest }}" 
+             class="share-btn-compact share-pinterest"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Pinterest"
+             title="Share on Pinterest">
+            <i class="bi bi-pinterest" aria-hidden="true"></i>
+          </a>
+          <a href="{{ social_share.linkedin }}" 
+             class="share-btn-compact share-linkedin"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on LinkedIn"
+             title="Share on LinkedIn">
+            <i class="bi bi-linkedin" aria-hidden="true"></i>
+          </a>
         </div>
       </div>
-      
-      {% if post.tags.all %}
-        <div class="article-tags">
-          {% for tag in post.tags.all %}
-            <a href="{{ tag.get_absolute_url }}" class="article-tag" itemprop="keywords">{{ tag.name }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
     </div>
-  </div>
+  </header>
 
   <div class="blog-page-content">
     <div class="paper-container">
       
       <!-- Article Content -->
-      <div class="content-section">
+      <article class="content-section">
         <div class="article-content" itemprop="articleBody">
           {{ post.content|safe }}
         </div>
@@ -615,48 +763,7 @@
         <meta itemprop="dateModified" content="{{ post.updated_at|date:'c' }}">
         <meta itemprop="wordCount" content="{{ post.content|wordcount }}">
         <link itemprop="mainEntityOfPage" href="{{ request.build_absolute_uri }}">
-      </div>
-      
-      <div class="section-divider"></div>
-      
-      <!-- Compact Social Sharing -->
-      <div class="social-share-section">
-        <h3 class="share-title blog-script">Share This Post</h3>
-        <div class="share-buttons">
-          <a href="{{ social_share.facebook }}" 
-             class="share-btn share-facebook"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Share on Facebook">
-            <i class="bi bi-facebook" aria-hidden="true"></i>
-            Facebook
-          </a>
-          <a href="{{ social_share.twitter }}" 
-             class="share-btn share-twitter"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Share on Twitter">
-            <i class="bi bi-twitter" aria-hidden="true"></i>
-            Twitter
-          </a>
-          <a href="{{ social_share.pinterest }}" 
-             class="share-btn share-pinterest"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Share on Pinterest">
-            <i class="bi bi-pinterest" aria-hidden="true"></i>
-            Pinterest
-          </a>
-          <a href="{{ social_share.linkedin }}" 
-             class="share-btn share-linkedin"
-             target="_blank"
-             rel="noopener noreferrer"
-             aria-label="Share on LinkedIn">
-            <i class="bi bi-linkedin" aria-hidden="true"></i>
-            LinkedIn
-          </a>
-        </div>
-      </div>
+      </article>
       
     </div>
   </div>
@@ -698,7 +805,7 @@
       {% if comments %}
         {% for comment in comments %}
           <div class="comment">
-            <div class="comment-author">{{ comment.author.get_display_name }}</div>
+            <div class="comment-author">{{ comment.author.username }}</div>
             <div class="comment-date">{{ comment.created_at|date:"F j, Y \a\t g:i A" }}</div>
             <div class="comment-content">{{ comment.content|linebreaks }}</div>
           </div>
