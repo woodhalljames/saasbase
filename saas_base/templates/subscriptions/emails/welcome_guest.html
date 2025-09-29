@@ -1,4 +1,4 @@
-<!-- subscriptions/emails/welcome_guest.html - Simplified single link -->
+<!-- subscriptions/emails/welcome_guest.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,6 +113,15 @@
             font-size: 24px;
             margin-bottom: 10px;
         }
+        .account-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .account-details p {
+            margin: 5px 0;
+        }
         @media (max-width: 600px) {
             .features {
                 flex-direction: column;
@@ -127,7 +136,7 @@
 <body>
     <div class="email-container">
         <div class="logo">
-            <h1>💕 DreamWedAI</h1>
+            <h1>DreamWedAI</h1>
         </div>
         
         <div class="hero">
@@ -138,7 +147,7 @@
         <div class="content">
             <p>Hi there!</p>
             
-            <p>Thank you for subscribing to DreamWedAI! Your payment has been processed successfully, and we've created your account using this email address.</p>
+            <p>Thank you for subscribing to DreamWedAI! Your payment has been processed successfully, and we've created your account.</p>
             
             <div class="setup-box">
                 <h4>🔐 Complete Your Account Setup</h4>
@@ -170,15 +179,15 @@
         
         <div class="content">
             <p><strong>Your Account Details:</strong></p>
-            <ul>
-                <li>Email: {{ user.email }}</li>
-                <li>Username: {{ user.username }}</li>
-                <li>Account Status: Active Subscriber ✅</li>
-            </ul>
+            <div class="account-details">
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Account Status:</strong> Active Subscriber ✅</p>
+                <p><small style="color: #666;">You can set your own username during account setup.</small></p>
+            </div>
             
             <div class="info-box">
                 <h4>🎉 What You Can Do Next</h4>
-                <ul>
+                <ul style="text-align: left; margin: 10px 0;">
                     <li><strong>Set up a password</strong> for secure login</li>
                     <li><strong>Connect Google account</strong> for quick access</li>
                     <li><strong>Start creating</strong> AI-powered wedding transformations</li>

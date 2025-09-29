@@ -28,33 +28,33 @@
         </div>
         <div class="card-body p-4">
           <div class="row g-3">
-            {% for base_account in form.accounts %}
+            {% for social_account in form.accounts %}
             <div class="col-md-6">
               <div class="social-connection-card connected">
                 <div class="d-flex align-items-center justify-content-between">
                   <div class="d-flex align-items-center">
-                    <div class="social-provider-icon {{ base_account.account.provider }}">
-                      {% if base_account.account.provider == "google" %}
+                    <div class="social-provider-icon {{ social_account.provider }}">
+                      {% if social_account.provider == "google" %}
                         <i class="bi bi-google"></i>
-                      {% elif base_account.account.provider == "facebook" %}
+                      {% elif social_account.provider == "facebook" %}
                         <i class="bi bi-facebook"></i>
-                      {% elif base_account.account.provider == "github" %}
+                      {% elif social_account.provider == "github" %}
                         <i class="bi bi-github"></i>
                       {% else %}
                         <i class="bi bi-person-circle"></i>
                       {% endif %}
                     </div>
                     <div class="ms-3">
-                      <h6 class="mb-1 fw-bold">{{ base_account.account.get_provider.name }}</h6>
-                      <small class="text-muted">{{ base_account.account.extra_data.name|default:base_account.account.uid }}</small>
+                      <h6 class="mb-1 fw-bold">{{ social_account.get_provider.name }}</h6>
+                      <small class="text-muted">{{ social_account.extra_data.name|default:social_account.uid }}</small>
                     </div>
                   </div>
                   
                   <!-- Disconnect Button -->
-                  {% if base_account.account.provider != "openid_connect" %}
+                  {% if social_account.provider != "openid_connect" %}
                   <button type="button" class="btn btn-sm btn-outline-danger disconnect-btn" 
-                          data-account-id="{{ base_account.account.id }}"
-                          data-provider="{{ base_account.account.get_provider.name }}">
+                          data-account-id="{{ social_account.id }}"
+                          data-provider="{{ social_account.get_provider.name }}">
                     <i class="bi bi-x-circle me-1"></i>Disconnect
                   </button>
                   {% endif %}
@@ -107,11 +107,7 @@
                   </a>
                 </div>
                 
-                <div class="connection-status mt-2">
-                  <span class="badge bg-secondary">
-                    <i class="bi bi-circle me-1"></i>Not Connected
-                  </span>
-                </div>
+             
               </div>
             </div>
             

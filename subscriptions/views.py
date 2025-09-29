@@ -138,10 +138,9 @@ def checkout_success(request):
         except Exception as e:
             logger.error(f"Error syncing subscription: {str(e)}")
     else:
-        # Guest user - show generic success message
-        # Account creation and email will be handled by webhook
-        messages.info(request, 
-            "Thanks for subscribing! Check your email for account setup instructions.")
+        # Guest user - generic message for both new and existing users
+        # Template will handle both scenarios with dual options
+        pass
     
     return render(request, 'subscriptions/checkout_success.html')
 
@@ -162,6 +161,13 @@ def account_setup(request, token):
         return redirect('account_login')
     
     user = setup_token.user
+    
+    # NEW: If user already has a password, redirect them to login
+    if user.has_usable_password():
+        setup_token.mark_used()
+        messages.info(request,
+            "Your account is already set up! Please login below.")
+        return redirect('account_login')
     
     if request.method == 'POST':
         # Handle password setup form submission

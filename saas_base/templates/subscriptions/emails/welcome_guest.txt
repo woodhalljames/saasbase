@@ -2,7 +2,7 @@ Welcome to DreamWedAI!
 
 Hi there!
 
-Thank you for subscribing to DreamWedAI! Your payment has been processed successfully, and we've created your account using this email address.
+Thank you for subscribing to DreamWedAI! Your payment has been processed successfully, and we've created your account.
 
 🔐 COMPLETE YOUR ACCOUNT SETUP
 Set up your password and customize your account to get started:
@@ -12,8 +12,8 @@ Set up your password and customize your account to get started:
 
 YOUR ACCOUNT DETAILS:
 • Email: {{ user.email }}
-• Username: {{ user.username }}
 • Account Status: Active Subscriber ✅
+• You can set your own username during account setup
 
 WHAT YOU CAN DO:
 🎨 AI Studio - Transform any venue into your dream wedding setting

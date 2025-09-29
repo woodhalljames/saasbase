@@ -5,69 +5,143 @@
 
 {% block content %}
 <div class="card shadow-lg">
+  <div class="card-header bg-gradient-cyan text-white">
+    <h4 class="mb-0">
+      <i class="bi bi-envelope-gear me-2"></i>Manage Email Addresses
+    </h4>
+  </div>
+  
   <div class="card-body p-4">
-    <div class="text-center mb-4">
-      
-      </div>
-      <h2 class="text-gradient fw-bold">Manage Email Addresses</h2>
-      <p class="text-muted">Manage and verify your email addresses</p>
-    </div>
+    <p class="text-muted mb-4">
+      <i class="bi bi-info-circle me-2"></i>
+      Manage and verify your email addresses. You can use any verified email to sign in.
+    </p>
 
     {% if emailaddresses %}
-      <div class="mb-4">
-        <h5>Your Email Addresses:</h5>
+      <div class="email-list">
+        <h5 class="fw-bold mb-3">Your Email Addresses</h5>
         
         {% for emailaddress in emailaddresses %}
-          <div class="card mb-2">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
+          <div class="email-item {% if emailaddress.primary %}primary{% endif %} mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="email-info">
+                <div class="email-address">
+                  <i class="bi bi-envelope me-2"></i>
                   <strong>{{ emailaddress.email }}</strong>
+                </div>
+                
+                <div class="email-badges mt-2">
                   {% if emailaddress.verified %}
-                    <span class="badge bg-success ms-2">
+                    <span class="badge bg-success">
                       <i class="bi bi-check-circle me-1"></i>Verified
                     </span>
                   {% else %}
-                    <span class="badge bg-warning ms-2">
+                    <span class="badge bg-warning text-dark">
                       <i class="bi bi-exclamation-triangle me-1"></i>Unverified
                     </span>
                   {% endif %}
                   
                   {% if emailaddress.primary %}
-                    <span class="badge bg-primary ms-2">Primary</span>
+                    <span class="badge bg-primary ms-2">
+                      <i class="bi bi-star-fill me-1"></i>Primary
+                    </span>
                   {% endif %}
                 </div>
-                
-                <div>
-                  {% if not emailaddress.verified %}
-                    <!-- FIXED: Individual form for each resend action -->
-                    <form method="post" action="{% url 'account_email' %}" class="d-inline">
-                      {% csrf_token %}
-                      <input type="hidden" name="email" value="{{ emailaddress.email }}">
-                      <button type="submit" name="action_send" value="{{ emailaddress.email }}" 
-                              class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-envelope me-1"></i>Resend Verification
-                      </button>
-                    </form>
-                  {% endif %}
-                </div>
+              </div>
+              
+              <div class="email-actions">
+                {% if not emailaddress.verified %}
+                  <form method="post" action="{% url 'account_email' %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                    <button type="submit" name="action_send" value="{{ emailaddress.email }}" 
+                            class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-envelope me-1"></i>Resend Verification
+                    </button>
+                  </form>
+                {% endif %}
               </div>
             </div>
           </div>
         {% endfor %}
       </div>
     {% else %}
-      <div class="alert alert-info">
+      <div class="alert alert-info border-0">
         <i class="bi bi-info-circle me-2"></i>
         No email addresses found for your account.
       </div>
     {% endif %}
 
-    <div class="text-center">
+    <div class="text-center mt-4 pt-4 border-top">
       <a href="{% url 'users:redirect' %}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
       </a>
     </div>
   </div>
 </div>
+
+<style>
+.email-item {
+  padding: 1.25rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.email-item:hover {
+  border-color: var(--bright-cyan);
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.15);
+}
+
+.email-item.primary {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border-color: #2196f3;
+}
+
+.email-item.primary:hover {
+  border-color: var(--bright-cyan);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.email-address {
+  font-size: 1.05rem;
+  color: var(--primary-navy);
+}
+
+.email-badges .badge {
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+
+.email-actions .btn {
+  transition: all 0.2s ease;
+}
+
+.email-actions .btn:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .email-item {
+    padding: 1rem;
+  }
+  
+  .email-item .d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  
+  .email-actions {
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+  
+  .email-actions .btn {
+    width: 100%;
+  }
+}
+</style>
 {% endblock content %}

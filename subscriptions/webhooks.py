@@ -156,13 +156,19 @@ def create_or_get_user_from_email(email):
         return user, True
 
 def generate_username_from_email(email):
-    """Generate a unique username from email"""
+    """Generate a unique username from email - simplified version"""
+    # Take the part before @ and clean it
     base_username = email.split('@')[0]
-    # Clean username to meet Django requirements
+    
+    # Clean username to meet Django requirements (letters, numbers, @, ., +, -, _)
     import re
     base_username = re.sub(r'[^a-zA-Z0-9._-]', '', base_username)
     
-    # Ensure uniqueness
+    # Ensure it's at least 3 characters
+    if len(base_username) < 3:
+        base_username = 'user_' + base_username
+    
+    # Ensure uniqueness by appending numbers
     username = base_username
     counter = 1
     while User.objects.filter(username=username).exists():
