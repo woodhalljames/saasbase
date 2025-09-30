@@ -107,12 +107,6 @@ class CoupleProfile(models.Model):
             venue_photo_changed = bool(self.venue_photo)
         
         # Automatically optimize images on upload
-        if self.couple_photo and couple_photo_changed:
-            self.optimize_image('couple_photo')
-        
-        if self.venue_photo and venue_photo_changed:
-            self.optimize_image('venue_photo')
-        
         super().save(*args, **kwargs)
     
    

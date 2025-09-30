@@ -3,9 +3,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from PIL import Image
-from io import BytesIO
-from django.core.files.base import ContentFile
 from taggit.managers import TaggableManager
 import uuid
 
@@ -119,62 +116,12 @@ class BlogPost(models.Model):
         if not self.meta_description and self.excerpt:
             self.meta_description = self.excerpt[:160]
         
-        # Optimize featured image if changed
-        if self.pk:
-            try:
-                old_instance = BlogPost.objects.get(pk=self.pk)
-                image_changed = old_instance.featured_image != self.featured_image
-            except BlogPost.DoesNotExist:
-                image_changed = True
-        else:
-            image_changed = bool(self.featured_image)
-        
-        if self.featured_image and image_changed:
-            self.optimize_featured_image()
-        
         super().save(*args, **kwargs)
         
         # Trigger newsletter email if newly published
         if is_newly_published and not self.email_sent:
             from .tasks import send_blog_post_email
             send_blog_post_email.delay(self.pk)
-    
-    def optimize_featured_image(self):
-        """Automatically optimize the featured image on upload"""
-        try:
-            from PIL import Image
-            from io import BytesIO
-            from django.core.files.base import ContentFile
-            
-            # Open the image
-            img = Image.open(self.featured_image)
-            
-            # Convert RGBA to RGB if necessary
-            if img.mode in ('RGBA', 'LA', 'P'):
-                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
-                rgb_img.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                img = rgb_img
-            
-            # Resize if too large (max 1920px wide)
-            if img.width > 1920:
-                ratio = 1920 / img.width
-                new_height = int(img.height * ratio)
-                img = img.resize((1920, new_height), Image.Resampling.LANCZOS)
-            
-            # Save optimized version back to featured_image
-            output = BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
-            output.seek(0)
-            
-            # Update the featured_image field without triggering another save
-            self.featured_image.save(
-                self.featured_image.name,
-                ContentFile(output.getvalue()),
-                save=False
-            )
-            
-        except Exception as e:
-            print(f"Error optimizing featured image: {e}")
     
     def get_absolute_url(self):
         return reverse('newsletter:resource_detail', kwargs={'slug': self.slug})
