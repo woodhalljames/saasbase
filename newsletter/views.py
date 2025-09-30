@@ -14,6 +14,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.urls import reverse
+from saas_base.utils.social_sharing import generate_social_share_urls
 from taggit.models import Tag
 
 from .forms import NewsletterSignupForm
@@ -214,65 +215,54 @@ class BlogListView(ListView):
 
 
 class BlogDetailView(DetailView):
-    """Individual blog post page with enhanced SEO"""
     model = BlogPost
     template_name = 'newsletter/blog_detail.html'
     context_object_name = 'post'
-    slug_field = 'slug'
     
     def get_queryset(self):
-        return BlogPost.objects.select_related('author').prefetch_related('tags', 'comments')
+        queryset = super().get_queryset()
+        # Only show published posts to non-staff users
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(status='published')
+        return queryset
     
-    def get_object(self):
-        obj = super().get_object()
-        # Only show published posts to non-staff
-        if not obj.is_published and not self.request.user.is_staff:
-            from django.http import Http404
-            raise Http404("Blog post not found")
-        
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
         # Increment view count
-        obj.increment_views()
+        obj.view_count += 1
+        obj.save(update_fields=['view_count'])
         return obj
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         post = self.object
         
-        # Get approved comments
-        comments = post.comments.filter(
-            is_approved=True,
-            parent=None
-        ).select_related('author').prefetch_related('replies')
-        
-        context['comments'] = comments
-        context['comment_count'] = post.comments.filter(is_approved=True).count()
-        
-        # Related posts by tags using django-taggit
-        related_posts = BlogPost.published_posts().exclude(pk=post.pk)
-        
-        if post.tags.exists():
-            # Get posts that share tags with this post
-            related_posts = related_posts.filter(
-                tags__in=post.tags.all()
-            ).distinct().order_by('-published_at')[:3]
-        else:
-            # Fallback to recent posts
-            related_posts = related_posts.order_by('-published_at')[:3]
+        # Get related posts (same tags, exclude current post)
+        related_posts = BlogPost.published_posts().filter(
+            tags__in=post.tags.all()
+        ).exclude(pk=post.pk).distinct()[:3]
         
         context['related_posts'] = related_posts
         
-        # Social sharing URLs
-        from urllib.parse import quote
-        share_url = self.request.build_absolute_uri()
-        context['social_share'] = {
-            'facebook': f"https://www.facebook.com/sharer/sharer.php?u={quote(share_url)}",
-            'twitter': f"https://twitter.com/intent/tweet?url={quote(share_url)}&text={quote(post.title)}",
-            'pinterest': f"https://pinterest.com/pin/create/button/?url={quote(share_url)}&description={quote(post.title)}",
-            'linkedin': f"https://www.linkedin.com/shareArticle?url={quote(share_url)}&title={quote(post.title)}",
-        }
+        # Get comments if allowed
+        if post.allow_comments:
+            comments = post.comments.filter(is_approved=True).order_by('-created_at')
+            context['comments'] = comments
+            context['comment_count'] = comments.count()
+        
+        # Generate social share URLs
+        image_url = None
+        if post.featured_image:
+            image_url = self.request.build_absolute_uri(post.featured_image.url)
+        
+        context['social_share'] = generate_social_share_urls(
+            request=self.request,
+            title=post.title,
+            description=post.meta_description or post.excerpt,
+            image_url=image_url
+        )
         
         return context
-
 
 class TagPostsView(ListView):
     """Posts filtered by tag using django-taggit"""
@@ -337,3 +327,5 @@ def add_comment(request, slug):
             messages.error(request, "Please enter a comment.")
     
     return redirect(post.get_absolute_url() + '#comments')
+
+

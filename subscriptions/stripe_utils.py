@@ -1,6 +1,9 @@
 # saas_base/subscriptions/stripe_utils.py
 import stripe
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Configure Stripe API key
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -34,21 +37,41 @@ def get_or_create_customer(user):
     
     return customer
 
-def create_checkout_session(user, price_id, success_url, cancel_url):
-    """Create a Stripe Checkout Session for subscription"""
+def create_checkout_session(user, price_id, success_url, cancel_url, referral=None):
+    """
+    Create a Stripe Checkout Session for subscription with optional Rewardful referral tracking
+    
+    Args:
+        user: Django user object
+        price_id: Stripe price ID
+        success_url: URL to redirect after successful payment
+        cancel_url: URL to redirect after cancelled payment
+        referral: Optional Rewardful referral ID (UUID string)
+    """
     customer = get_or_create_customer(user)
     
-    checkout_session = stripe.checkout.Session.create(
-        customer=customer.id,
-        payment_method_types=['card'],
-        line_items=[{
+    # Build session parameters
+    session_params = {
+        'customer': customer.id,
+        'payment_method_types': ['card'],
+        'line_items': [{
             'price': price_id,
             'quantity': 1,
         }],
-        mode='subscription',
-        success_url=success_url,
-        cancel_url=cancel_url,
-    )
+        'mode': 'subscription',
+        'success_url': success_url,
+        'cancel_url': cancel_url,
+    }
+    
+    # Add client_reference_id for Rewardful tracking if referral exists
+    # CRITICAL: Only set if not empty, as Stripe will error on blank values
+    if referral:
+        session_params['client_reference_id'] = referral
+        logger.info(f"Creating checkout session with Rewardful referral: {referral[:8]}... for user {user.username}")
+    else:
+        logger.info(f"Creating checkout session without referral for user {user.username}")
+    
+    checkout_session = stripe.checkout.Session.create(**session_params)
     
     return checkout_session
 

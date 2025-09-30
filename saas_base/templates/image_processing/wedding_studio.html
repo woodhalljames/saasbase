@@ -2,7 +2,10 @@
 {% load static %}
 
 {% block title %}Wedding Visualizer{% endblock %}
-
+{% block css %}
+{{ block.super }}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'image_processing:wedding_studio' %}">
+{% endblock %}
 {% block content %}
 <div class="container-fluid py-3" style="max-width: 1400px;">
   <!-- Header -->

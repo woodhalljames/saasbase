@@ -12,20 +12,31 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.contrib.auth.forms import SetPasswordForm
 import stripe
+import logging
 
 from .stripe_utils import create_checkout_session, create_customer_portal_session
 from .models import AccountSetupToken
+
+logger = logging.getLogger(__name__)
 
 def subscription_checkout(request):
     """
     Handle POST checkout requests - NO LOGIN REQUIRED
     Supports both authenticated and guest users
+    WITH REWARDFUL TRACKING
     """
     if request.method == 'POST':
         price_id = request.POST.get('price_id')
+        referral = request.POST.get('referral', '').strip()  # Get Rewardful referral ID
         
         if not price_id:
             return JsonResponse({'error': 'No price ID provided'}, status=400)
+        
+        # Log referral tracking
+        if referral:
+            logger.info(f"Checkout with Rewardful referral: {referral[:8]}...")
+        else:
+            logger.info("Checkout without referral")
         
         success_url = request.build_absolute_uri(
             reverse('subscriptions:checkout_success')
@@ -36,46 +47,57 @@ def subscription_checkout(request):
         
         try:
             if request.user.is_authenticated:
-                # Existing flow for logged-in users
+                # Existing flow for logged-in users with referral tracking
                 checkout_session = create_checkout_session(
                     request.user, 
                     price_id, 
                     success_url, 
-                    cancel_url
+                    cancel_url,
+                    referral=referral  # Pass referral to Stripe
                 )
             else:
-                # Guest checkout - create session without user
+                # Guest checkout with referral tracking
                 checkout_session = create_guest_checkout_session(
                     price_id,
                     success_url,
-                    cancel_url
+                    cancel_url,
+                    referral=referral  # Pass referral to Stripe
                 )
             
             return JsonResponse({'sessionId': checkout_session.id})
         except Exception as e:
+            logger.error(f"Checkout error: {str(e)}", exc_info=True)
             return JsonResponse({'error': str(e)}, status=400)
     
     # Redirect GET requests to the pricing page
     return redirect('subscriptions:pricing')
 
-def create_guest_checkout_session(price_id, success_url, cancel_url):
-    """Create a Stripe Checkout Session for guest users"""
+def create_guest_checkout_session(price_id, success_url, cancel_url, referral=None):
+    """Create a Stripe Checkout Session for guest users with optional referral tracking"""
     import stripe
     
     stripe.api_key = settings.STRIPE_SECRET_KEY
     
-    checkout_session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[{
+    # Build session parameters
+    session_params = {
+        'payment_method_types': ['card'],
+        'line_items': [{
             'price': price_id,
             'quantity': 1,
         }],
-        mode='subscription',
-        success_url=success_url,
-        cancel_url=cancel_url,
-        # Allow Stripe to collect customer email
-        customer_email=None,
-    )
+        'mode': 'subscription',
+        'success_url': success_url,
+        'cancel_url': cancel_url,
+        'customer_email': None,  # Allow Stripe to collect customer email
+    }
+    
+    # Add client_reference_id for Rewardful tracking if referral exists
+    # IMPORTANT: Only set if not empty, as Stripe will error on blank values
+    if referral:
+        session_params['client_reference_id'] = referral
+        logger.info(f"Setting client_reference_id for guest checkout: {referral[:8]}...")
+    
+    checkout_session = stripe.checkout.Session.create(**session_params)
     
     return checkout_session
 

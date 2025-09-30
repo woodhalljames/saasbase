@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Pricing - DreamWedAI{% endblock %}
+{% block title %}Subscriptions - DreamWedAI{% endblock %}
 
+{% block css %}
+{{ block.super }}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'subscriptions:pricing' %}">
+{% endblock %}
 {% block content %}
 <div class="pricing-page">
   <!-- Hero Section -->

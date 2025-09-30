@@ -2,7 +2,10 @@
 {% load static %}
 
 {% block title %}My Images{% endblock %}
-
+{% block css %}
+{{ block.super }}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'image_processing:image_gallery' %}">
+{% endblock %}
 {% block content %}
 {% csrf_token %}
 <div class="container py-4">

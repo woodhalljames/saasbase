@@ -7,29 +7,63 @@
 
 {% block og_title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
 {% block og_description %}Join {{ couple.couple_names }} as they celebrate their wedding{% if couple.wedding_date %} on {{ couple.wedding_date|date:"F j, Y" }}{% endif %}.{% endblock %}
+{% block og_image %}{% if couple.couple_photo %}{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ couple.couple_names }} - Wedding Celebration{% endblock %}
+{% block twitter_description %}Join {{ couple.couple_names }} as they celebrate their wedding{% if couple.wedding_date %} on {{ couple.wedding_date|date:"F j, Y" }}{% endif %}.{% endblock %}
+{% block twitter_image %}{% if couple.couple_photo %}{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
 
 {% block css %}
 {{ block.super }}
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+
+<!-- Open Graph / Facebook - Enhanced for Weddings -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DreamWedAI">
+<meta property="og:title" content="{{ couple.couple_names }} - Wedding Celebration">
+<meta property="og:description" content="Join {{ couple.couple_names }} as they celebrate their wedding{% if couple.wedding_date %} on {{ couple.wedding_date|date:'F j, Y' }}{% endif %}{% if couple.venue_location %} in {{ couple.venue_location }}{% endif %}.">
+<meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% if couple.couple_photo %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}">
+<meta property="og:image:secure_url" content="{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}">
+<meta property="og:image:alt" content="{{ couple.couple_names }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% else %}
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
+<meta property="og:locale" content="en_US">
+
+<!-- Pinterest -->
+<meta name="pinterest-rich-pin" content="true">
+{% if couple.couple_photo %}
+<meta name="pinterest:image" content="{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}">
+{% endif %}
+
 <!-- Wedding-specific fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* Paper-like Wedding Page Styles */
-.wedding-content {
+/* Paper-like Wedding Page Styles - SCOPED to .wedding-content-wrapper */
+.wedding-content-wrapper {
   font-family: 'Lora', serif;
   line-height: 1.7;
   background: #fafafa;
   min-height: 100vh;
 }
 
-.wedding-content .wedding-script {
+.wedding-content-wrapper .wedding-script {
   font-family: 'Dancing Script', cursive;
   font-weight: 600;
 }
 
-.wedding-content .wedding-elegant {
+.wedding-content-wrapper .wedding-elegant {
   font-family: 'Playfair Display', serif;
 }
 
@@ -47,8 +81,68 @@
   --wedding-table-border: #e5e7eb;
 }
 
+/* Social Share Bar - Floating at top */
+.wedding-share-bar {
+  position: sticky;
+  top: 60px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--wedding-border);
+  padding: 0.75rem 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.wedding-share-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.wedding-share-label {
+  font-size: 0.85rem;
+  color: var(--wedding-text-light);
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.wedding-share-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: white;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+}
+
+.wedding-share-btn:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  color: white;
+  text-decoration: none;
+}
+
+.share-facebook { background: #1877f2; }
+.share-twitter { background: #1da1f2; }
+.share-pinterest { background: #bd081c; }
+.share-whatsapp { background: #25d366; }
+.share-email { background: #6c757d; }
+.share-copy { background: #495057; }
+
+.share-copy.copied {
+  background: #28a745;
+}
+
 /* Hero Section - Better Mobile Handling */
-.wedding-hero {
+.wedding-content-wrapper .wedding-hero {
   position: relative;
   width: 100%;
   height: 65vh;
@@ -59,7 +153,7 @@
   justify-content: flex-start;
 }
 
-.hero-image {
+.wedding-content-wrapper .hero-image {
   position: absolute;
   top: 0;
   left: 0;
@@ -70,7 +164,7 @@
   z-index: 1;
 }
 
-.hero-overlay {
+.wedding-content-wrapper .hero-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -80,7 +174,7 @@
   z-index: 2;
 }
 
-.hero-content {
+.wedding-content-wrapper .hero-content {
   position: relative;
   z-index: 3;
   color: white;
@@ -89,20 +183,20 @@
   max-width: 600px;
 }
 
-.hero-title {
+.wedding-content-wrapper .hero-title {
   font-size: 3.5rem;
   margin: 0;
   text-align: left;
 }
 
 /* Countdown Section - Enhanced with Save the Date */
-.countdown-section {
+.wedding-content-wrapper .countdown-section {
   padding: 3rem 0;
   background: var(--wedding-off-white);
   text-align: center;
 }
 
-.save-the-date {
+.wedding-content-wrapper .save-the-date {
   font-size: 1.4rem;
   color: var(--wedding-charcoal);
   margin-bottom: 1.5rem;
@@ -110,7 +204,7 @@
   letter-spacing: 0.5px;
 }
 
-.countdown-simple {
+.wedding-content-wrapper .countdown-simple {
   display: inline-block;
   background: var(--wedding-white);
   border-radius: 12px;
@@ -119,14 +213,14 @@
   border: 1px solid var(--wedding-border);
 }
 
-.countdown-number {
+.wedding-content-wrapper .countdown-number {
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--wedding-charcoal);
   margin: 0;
 }
 
-.countdown-label {
+.wedding-content-wrapper .countdown-label {
   font-size: 1rem;
   color: var(--wedding-text-light);
   margin: 0;
@@ -135,7 +229,7 @@
 }
 
 /* Special Messages */
-.special-message {
+.wedding-content-wrapper .special-message {
   background: var(--wedding-charcoal);
   color: white;
   border-radius: 15px;
@@ -145,40 +239,40 @@
   margin: 0 auto;
 }
 
-.special-message h2 {
+.wedding-content-wrapper .special-message h2 {
   font-size: 2.5rem;
   margin: 0;
 }
 
-.special-message p {
+.wedding-content-wrapper .special-message p {
   margin: 0.5rem 0 0 0;
   font-size: 1.1rem;
 }
 
 /* Paper-like Content Layout - Widened by 30% */
-.wedding-page-content {
+.wedding-content-wrapper .wedding-page-content {
   background: var(--wedding-off-white);
   padding: 2rem 0;
 }
 
-.paper-container {
-  max-width: 1040px; /* Increased from 800px (30% wider) */
+.wedding-content-wrapper .paper-container {
+  max-width: 1040px;
   margin: 0 auto;
   background: var(--wedding-off-white);
   padding: 2rem 1rem;
 }
 
 /* Section Styling - No Cards, Minimal Padding */
-.content-section {
+.wedding-content-wrapper .content-section {
   margin-bottom: 3rem;
   text-align: center;
 }
 
-.content-section:last-child {
+.wedding-content-wrapper .content-section:last-child {
   margin-bottom: 0;
 }
 
-.section-title {
+.wedding-content-wrapper .section-title {
   font-size: 2.8rem;
   color: var(--wedding-charcoal);
   text-align: center;
@@ -186,7 +280,7 @@
 }
 
 /* Elegant Dividers */
-.section-divider {
+.wedding-content-wrapper .section-divider {
   width: 200px;
   height: 1px;
   background: linear-gradient(to right, transparent, var(--wedding-border), transparent);
@@ -194,7 +288,7 @@
   position: relative;
 }
 
-.section-divider::before {
+.wedding-content-wrapper .section-divider::before {
   content: '♥';
   position: absolute;
   top: -8px;
@@ -207,7 +301,7 @@
 }
 
 /* Love Story Section */
-.love-story {
+.wedding-content-wrapper .love-story {
   font-size: 1.2rem;
   line-height: 1.8;
   color: var(--wedding-text);
@@ -219,8 +313,8 @@
   padding: 2rem 0;
 }
 
-.love-story::before,
-.love-story::after {
+.wedding-content-wrapper .love-story::before,
+.wedding-content-wrapper .love-story::after {
   content: '"';
   font-size: 3rem;
   color: var(--wedding-light-gray);
@@ -228,18 +322,18 @@
   position: absolute;
 }
 
-.love-story::before {
+.wedding-content-wrapper .love-story::before {
   top: 0;
   left: -2rem;
 }
 
-.love-story::after {
+.wedding-content-wrapper .love-story::after {
   bottom: 0;
   right: -2rem;
 }
 
-/* UPDATED: Venue Section - Desktop Layout with Image Left, Details Right */
-.venue-section {
+/* Venue Section - Desktop Layout with Image Left, Details Right */
+.wedding-content-wrapper .venue-section {
   display: grid;
   grid-template-columns: 60% 40%;
   gap: 3rem;
@@ -249,7 +343,7 @@
   margin: 0 auto;
 }
 
-.venue-image {
+.wedding-content-wrapper .venue-image {
   width: 100%;
   height: 350px;
   object-fit: cover;
@@ -257,34 +351,34 @@
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-.venue-details {
+.wedding-content-wrapper .venue-details {
   padding-left: 0;
 }
 
-.venue-name {
+.wedding-content-wrapper .venue-name {
   font-size: 2.2rem;
   color: var(--wedding-charcoal);
   margin-bottom: 1rem;
 }
 
-.venue-location {
+.wedding-content-wrapper .venue-location {
   font-size: 1.3rem;
   color: var(--wedding-text-light);
   margin-bottom: 0.5rem;
 }
 
-.venue-date {
+.wedding-content-wrapper .venue-date {
   font-size: 1.2rem;
   color: var(--wedding-text);
   margin-bottom: 1.5rem;
 }
 
-.venue-address {
+.wedding-content-wrapper .venue-address {
   font-size: 1.1rem;
   margin-bottom: 1.5rem;
 }
 
-.address-link {
+.wedding-content-wrapper .address-link {
   color: var(--wedding-charcoal);
   text-decoration: none;
   transition: all 0.3s ease;
@@ -297,22 +391,22 @@
   gap: 0.5rem;
 }
 
-.address-link:hover {
+.wedding-content-wrapper .address-link:hover {
   color: var(--wedding-accent);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.address-link i {
+.wedding-content-wrapper .address-link i {
   color: var(--wedding-accent);
 }
 
-/* UPDATED: Enhanced Links Table with Borders */
-.links-section {
+/* Enhanced Links Table with Borders */
+.wedding-content-wrapper .links-section {
   text-align: left;
 }
 
-.links-table {
+.wedding-content-wrapper .links-table {
   width: 100%;
   background: var(--wedding-white);
   border: 1px solid var(--wedding-table-border);
@@ -321,7 +415,7 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.links-table th {
+.wedding-content-wrapper .links-table th {
   background: var(--wedding-off-white);
   color: var(--wedding-charcoal);
   padding: 1.25rem 1.5rem;
@@ -333,23 +427,23 @@
   letter-spacing: 0.5px;
 }
 
-.links-table td {
+.wedding-content-wrapper .links-table td {
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--wedding-table-border);
   vertical-align: middle;
   background: var(--wedding-white);
 }
 
-.links-table tr:last-child td {
+.wedding-content-wrapper .links-table tr:last-child td {
   border-bottom: none;
 }
 
-.links-table tr:hover td {
+.wedding-content-wrapper .links-table tr:hover td {
   background: var(--wedding-off-white);
   transition: background-color 0.2s ease;
 }
 
-.link-title {
+.wedding-content-wrapper .link-title {
   font-weight: 600;
   color: var(--wedding-charcoal);
   font-size: 1.1rem;
@@ -360,22 +454,22 @@
   gap: 0.5rem;
 }
 
-.link-title:hover {
+.wedding-content-wrapper .link-title:hover {
   color: var(--wedding-accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.link-title i {
+.wedding-content-wrapper .link-title i {
   font-size: 0.9rem;
   transition: transform 0.3s ease;
 }
 
-.link-title:hover i {
+.wedding-content-wrapper .link-title:hover i {
   transform: translateX(2px);
 }
 
-.link-description {
+.wedding-content-wrapper .link-description {
   color: var(--wedding-text-light);
   font-size: 0.95rem;
   margin-top: 0.5rem;
@@ -383,24 +477,24 @@
 }
 
 /* Wedding Footer */
-.wedding-footer {
+.wedding-content-wrapper .wedding-footer {
   background: var(--wedding-off-white);
   padding: 3rem 0;
   text-align: center;
 }
 
-.footer-signature {
+.wedding-content-wrapper .footer-signature {
   font-size: 2.2rem;
   color: var(--wedding-charcoal);
   margin-bottom: 0.5rem;
 }
 
-.footer-date {
+.wedding-content-wrapper .footer-date {
   font-size: 1rem;
   color: var(--wedding-text-light);
 }
 
-.decorative-line {
+.wedding-content-wrapper .decorative-line {
   width: 100px;
   height: 1px;
   background: var(--wedding-border);
@@ -409,145 +503,255 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .wedding-hero {
-    height: 65vh; /* Increased from 50vh to show more image */
+  .wedding-content-wrapper .wedding-hero {
+    height: 65vh;
     min-height: 350px;
   }
   
-  .hero-content {
+  .wedding-content-wrapper .hero-content {
     padding: 2rem;
   }
   
-  .hero-title {
+  .wedding-content-wrapper .hero-title {
     font-size: 2.5rem;
   }
   
-  .paper-container {
+  .wedding-content-wrapper .paper-container {
     padding: 2rem 1.5rem;
     margin: 0 1rem;
     box-shadow: none;
     border-radius: 8px;
-    max-width: calc(100% - 2rem); /* Responsive width on mobile */
+    max-width: calc(100% - 2rem);
   }
   
-  .section-title {
+  .wedding-content-wrapper .section-title {
     font-size: 2.2rem;
   }
   
-  .save-the-date {
+  .wedding-content-wrapper .save-the-date {
     font-size: 1.2rem;
   }
   
-  .love-story {
+  .wedding-content-wrapper .love-story {
     font-size: 1.1rem;
     padding: 1rem 0;
   }
   
-  .love-story::before,
-  .love-story::after {
+  .wedding-content-wrapper .love-story::before,
+  .wedding-content-wrapper .love-story::after {
     display: none;
   }
   
-  /* UPDATED: Mobile venue layout - stack vertically */
-  .venue-section {
+  .wedding-content-wrapper .venue-section {
     grid-template-columns: 1fr;
     gap: 2rem;
     text-align: center;
   }
   
-  .venue-details {
+  .wedding-content-wrapper .venue-details {
     padding-left: 0;
   }
   
-  .venue-name {
+  .wedding-content-wrapper .venue-name {
     font-size: 1.8rem;
   }
   
-  .venue-location {
+  .wedding-content-wrapper .venue-location {
     font-size: 1.2rem;
   }
   
-  .venue-date {
+  .wedding-content-wrapper .venue-date {
     font-size: 1.1rem;
   }
   
-  .venue-image {
+  .wedding-content-wrapper .venue-image {
     height: 250px;
   }
   
-  .links-table th,
-  .links-table td {
+  .wedding-content-wrapper .links-table th,
+  .wedding-content-wrapper .links-table td {
     padding: 1rem;
   }
   
-  .links-table th {
+  .wedding-content-wrapper .links-table th {
     font-size: 1rem;
   }
   
-  .section-divider {
+  .wedding-content-wrapper .section-divider {
     width: 150px;
+  }
+  
+  .wedding-share-bar {
+    top: 56px;
+  }
+  
+  .wedding-share-buttons {
+    gap: 0.4rem;
+  }
+  
+  .wedding-share-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
   }
 }
 
 @media (max-width: 576px) {
-  .wedding-hero {
-    height: 60vh; /* Still increased from original 50vh */
+  .wedding-content-wrapper .wedding-hero {
+    height: 60vh;
     min-height: 300px;
   }
   
-  .hero-title {
+  .wedding-content-wrapper .hero-title {
     font-size: 2rem;
   }
   
-  .hero-content {
+  .wedding-content-wrapper .hero-content {
     padding: 1.5rem;
   }
   
-  .paper-container {
+  .wedding-content-wrapper .paper-container {
     padding: 1.5rem 1rem;
     margin: 0 0.5rem;
     max-width: calc(100% - 1rem);
   }
   
-  .venue-image {
+  .wedding-content-wrapper .venue-image {
     height: 200px;
   }
   
-  .countdown-simple {
+  .wedding-content-wrapper .countdown-simple {
     padding: 0.75rem 1.5rem;
   }
   
-  .countdown-number {
+  .wedding-content-wrapper .countdown-number {
     font-size: 2rem;
   }
   
-  .save-the-date {
+  .wedding-content-wrapper .save-the-date {
     font-size: 1.1rem;
   }
   
-  .links-table {
+  .wedding-content-wrapper .links-table {
     font-size: 0.9rem;
   }
   
-  .links-table th,
-  .links-table td {
+  .wedding-content-wrapper .links-table th,
+  .wedding-content-wrapper .links-table td {
     padding: 0.75rem;
   }
   
-  .link-title {
+  .wedding-content-wrapper .link-title {
     font-size: 1rem;
   }
   
-  .address-link {
+  .wedding-content-wrapper .address-link {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
+  }
+  
+  .wedding-share-label {
+    font-size: 0.75rem;
   }
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="wedding-content">
+<!-- Structured Data for Wedding Event -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "{{ couple.couple_names|escapejs }} Wedding",
+  "description": "{{ couple.couple_story|striptags|truncatewords:30|escapejs|default:'Wedding celebration' }}",
+  {% if couple.couple_photo %}
+  "image": "{{ request.scheme }}://{{ request.get_host }}{{ couple.couple_photo.url }}",
+  {% endif %}
+  {% if couple.wedding_date %}
+  "startDate": "{{ couple.wedding_date|date:'c' }}",
+  {% endif %}
+  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  {% if couple.venue_name or couple.venue_location %}
+  "location": {
+    "@type": "Place",
+    {% if couple.venue_name %}"name": "{{ couple.venue_name|escapejs }}",{% endif %}
+    {% if couple.venue_location %}
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "{{ couple.venue_location|escapejs }}"
+    }
+    {% endif %}
+  },
+  {% endif %}
+  "organizer": {
+    "@type": "Person",
+    "name": "{{ couple.couple_names|escapejs }}"
+  }
+}
+</script>
+
+<!-- Social Share Bar -->
+<div class="wedding-share-bar">
+  <div class="container">
+    <div class="wedding-share-buttons">
+      <span class="wedding-share-label">Share this wedding:</span>
+      
+      <a href="{{ social_share.facebook }}" 
+         class="wedding-share-btn share-facebook"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Share on Facebook"
+         title="Share on Facebook">
+        <i class="bi bi-facebook" aria-hidden="true"></i>
+      </a>
+      
+      <a href="{{ social_share.twitter }}" 
+         class="wedding-share-btn share-twitter"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Share on Twitter"
+         title="Share on Twitter">
+        <i class="bi bi-twitter" aria-hidden="true"></i>
+      </a>
+      
+      <a href="{{ social_share.pinterest }}" 
+         class="wedding-share-btn share-pinterest"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Share on Pinterest"
+         title="Share on Pinterest">
+        <i class="bi bi-pinterest" aria-hidden="true"></i>
+      </a>
+      
+      <a href="{{ social_share.whatsapp }}" 
+         class="wedding-share-btn share-whatsapp"
+         target="_blank"
+         rel="noopener noreferrer"
+         aria-label="Share on WhatsApp"
+         title="Share on WhatsApp">
+        <i class="bi bi-whatsapp" aria-hidden="true"></i>
+      </a>
+      
+      <a href="{{ social_share.email }}" 
+         class="wedding-share-btn share-email"
+         aria-label="Share via Email"
+         title="Share via Email">
+        <i class="bi bi-envelope-fill" aria-hidden="true"></i>
+      </a>
+      
+      <button class="wedding-share-btn share-copy"
+              onclick="copyWeddingLink('{{ social_share.copy_link }}')"
+              aria-label="Copy link"
+              title="Copy link">
+        <i class="bi bi-link-45deg" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="wedding-content-wrapper">
   <!-- Hero Section with Large Photo -->
   <div class="wedding-hero">
     {% if couple.couple_photo %}
@@ -572,14 +776,13 @@
         {% elif wedding_passed %}
           <div class="special-message">
             <h2 class="wedding-script">Happily Married!</h2>
-         </div>
+          </div>
         {% else %}
-         
           <div class="countdown-simple">
             <div class="countdown-number wedding-elegant">{{ days_until_wedding }}</div>
             <div class="countdown-label">Day{{ days_until_wedding|pluralize }}</div>
-          
-           <div class="save-the-date wedding-elegant">
+          </div>
+          <div class="save-the-date wedding-elegant">
             {{ couple.wedding_date|date:"F j, Y" }}
           </div>
         {% endif %}
@@ -699,14 +902,34 @@ function updateCountdown() {
             labelEl.textContent = `Day${days !== 1 ? 's' : ''}`;
         }
     } else {
-        // Wedding day has arrived
         location.reload();
     }
 }
 
-// Update countdown every hour (since we only show days)
 setInterval(updateCountdown, 3600000);
-updateCountdown(); // Initial call
+updateCountdown();
 </script>
 {% endif %}
+
+<script>
+// Copy wedding link to clipboard
+function copyWeddingLink(url) {
+  navigator.clipboard.writeText(url).then(function() {
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    const originalClass = icon.className;
+    
+    icon.className = 'bi bi-check2';
+    btn.classList.add('copied');
+    
+    setTimeout(function() {
+      icon.className = originalClass;
+      btn.classList.remove('copied');
+    }, 2000);
+  }, function(err) {
+    console.error('Could not copy text: ', err);
+    alert('Failed to copy link. Please try again.');
+  });
+}
+</script>
 {% endblock %}

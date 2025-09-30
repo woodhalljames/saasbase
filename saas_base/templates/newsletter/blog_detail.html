@@ -5,38 +5,43 @@
 
 {% block meta_description %}{{ post.meta_description|default:post.excerpt }}{% endblock %}
 
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.meta_description|default:post.excerpt }}{% endblock %}
+{% block og_image %}{% if post.featured_image %}{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.meta_description|default:post.excerpt }}{% endblock %}
+{% block twitter_image %}{% if post.featured_image %}{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}{% else %}{% static 'images/og-image.jpg' %}{% endif %}{% endblock %}
+
 <!-- Dynamic SEO Meta Tags -->
 {% block css %}
 {{ block.super }}
+
+<!-- Canonical URL -->
+<link rel="canonical" href="{{ request.build_absolute_uri }}">
+
 <meta name="keywords" content="{{ post.meta_keywords|default:'wedding planning, wedding tips, marriage advice' }}">
 <meta name="author" content="{{ post.author.username|default:'DreamWedAI' }}">
 
-<!-- Open Graph / Facebook -->
+<!-- Open Graph / Facebook - Additional -->
 <meta property="og:type" content="article">
-<meta property="og:title" content="{{ post.title }}">
-<meta property="og:description" content="{{ post.meta_description|default:post.excerpt }}">
-<meta property="og:url" content="{{ request.build_absolute_uri }}">
-{% if post.featured_image %}
-<meta property="og:image" content="{{ request.build_absolute_uri }}{{ post.featured_image.url }}">
-<meta property="og:image:alt" content="{{ post.featured_image_alt|default:post.title }}">
-{% endif %}
 <meta property="article:published_time" content="{{ post.published_at|date:'c' }}">
 <meta property="article:modified_time" content="{{ post.updated_at|date:'c' }}">
 <meta property="article:author" content="{{ post.author.username|default:'DreamWedAI' }}">
+{% if post.featured_image %}
+<meta property="og:image:alt" content="{{ post.featured_image_alt|default:post.title }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
 {% for tag in post.tags.all %}
 <meta property="article:tag" content="{{ tag.name }}">
 {% endfor %}
 
-<!-- Twitter -->
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:title" content="{{ post.title }}">
-<meta property="twitter:description" content="{{ post.meta_description|default:post.excerpt }}">
+<!-- Pinterest -->
+<meta name="pinterest-rich-pin" content="true">
 {% if post.featured_image %}
-<meta property="twitter:image" content="{{ request.build_absolute_uri }}{{ post.featured_image.url }}">
+<meta property="og:image:secure_url" content="{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}">
 {% endif %}
-
-<!-- Canonical URL -->
-<link rel="canonical" href="{{ request.build_absolute_uri }}">
 
 <!-- Blog-specific fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,20 +49,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
 <style>
-/* Blog content styling */
-.blog-content {
+/* Blog content styling - SCOPED to .blog-content-wrapper */
+.blog-content-wrapper {
   font-family: 'Lora', serif;
   line-height: 1.7;
   background: #fafafa;
   min-height: 100vh;
 }
 
-.blog-content .blog-script {
+.blog-content-wrapper .blog-script {
   font-family: 'Dancing Script', cursive;
   font-weight: 600;
 }
 
-.blog-content .blog-elegant {
+.blog-content-wrapper .blog-elegant {
   font-family: 'Playfair Display', serif;
 }
 
@@ -75,7 +80,7 @@
 }
 
 /* Hero Section - Full width image, no overlay */
-.blog-hero {
+.blog-content-wrapper .blog-hero {
   position: relative;
   width: 100%;
   max-height: 600px;
@@ -83,7 +88,7 @@
   background: var(--blog-charcoal);
 }
 
-.hero-image {
+.blog-content-wrapper .hero-image {
   width: 100%;
   height: 100%;
   max-height: 600px;
@@ -93,13 +98,13 @@
 }
 
 /* Title Section - Below hero image - COMPACT VERSION */
-.article-header {
+.blog-content-wrapper .article-header {
   background: var(--blog-white);
   padding: 2rem 0 1.5rem;
   border-bottom: 1px solid var(--blog-border);
 }
 
-.article-title {
+.blog-content-wrapper .article-title {
   font-size: 2.5rem;
   color: var(--blog-charcoal);
   margin-bottom: 1rem;
@@ -107,7 +112,7 @@
   font-weight: 700;
 }
 
-.article-excerpt {
+.blog-content-wrapper .article-excerpt {
   font-size: 1.2rem;
   color: var(--blog-text-light);
   margin-bottom: 1.25rem;
@@ -115,7 +120,7 @@
 }
 
 /* Article Meta - COMPACT VERSION */
-.article-meta-section {
+.blog-content-wrapper .article-meta-section {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -126,7 +131,7 @@
   color: var(--blog-text-light);
 }
 
-.meta-item {
+.blog-content-wrapper .meta-item {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -136,12 +141,12 @@
   border: 1px solid var(--blog-border);
 }
 
-.meta-item i {
+.blog-content-wrapper .meta-item i {
   color: var(--blog-accent);
   font-size: 0.9rem;
 }
 
-.author-meta {
+.blog-content-wrapper .author-meta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -151,7 +156,7 @@
   border: 1px solid var(--blog-border);
 }
 
-.author-avatar {
+.blog-content-wrapper .author-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -164,13 +169,13 @@
   font-size: 0.75rem;
 }
 
-.author-name {
+.blog-content-wrapper .author-name {
   font-weight: 600;
   color: var(--blog-charcoal);
   font-size: 0.85rem;
 }
 
-.article-tags {
+.blog-content-wrapper .article-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -179,7 +184,7 @@
   margin-bottom: 0.75rem;
 }
 
-.article-tag {
+.blog-content-wrapper .article-tag {
   background: var(--blog-off-white);
   color: var(--blog-accent);
   padding: 0.35rem 0.75rem;
@@ -191,7 +196,7 @@
   border: 1px solid var(--blog-border);
 }
 
-.article-tag:hover {
+.blog-content-wrapper .article-tag:hover {
   background: var(--blog-accent);
   color: white;
   text-decoration: none;
@@ -199,25 +204,26 @@
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
 }
 
-/* Compact Social Share Buttons - Top of Page */
-.social-share-compact {
+/* Enhanced Social Share Buttons - Top of Page */
+.blog-content-wrapper .social-share-compact {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
   align-items: center;
   margin-top: 0.75rem;
+  flex-wrap: wrap;
 }
 
-.share-label {
+.blog-content-wrapper .share-label {
   font-size: 0.8rem;
   color: var(--blog-text-light);
   font-weight: 500;
   margin-right: 0.25rem;
 }
 
-.share-btn-compact {
-  width: 32px;
-  height: 32px;
+.blog-content-wrapper .share-btn-compact {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -225,34 +231,42 @@
   text-decoration: none;
   color: white;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
 }
 
-.share-btn-compact:hover {
+.blog-content-wrapper .share-btn-compact:hover {
   transform: translateY(-2px) scale(1.1);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   color: white;
   text-decoration: none;
 }
 
-.share-facebook { background: #1877f2; }
-.share-twitter { background: #1da1f2; }
-.share-pinterest { background: #bd081c; }
-.share-linkedin { background: #0077b5; }
+.blog-content-wrapper .share-facebook { background: #1877f2; }
+.blog-content-wrapper .share-twitter { background: #1da1f2; }
+.blog-content-wrapper .share-pinterest { background: #bd081c; }
+.blog-content-wrapper .share-whatsapp { background: #25d366; }
+.blog-content-wrapper .share-email { background: #6c757d; }
+.blog-content-wrapper .share-copy { background: #495057; }
+
+.blog-content-wrapper .share-copy.copied {
+  background: #28a745;
+}
 
 /* Content Layout */
-.blog-page-content {
+.blog-content-wrapper .blog-page-content {
   background: var(--blog-off-white);
   padding: 2rem 0;
 }
 
-.paper-container {
+.blog-content-wrapper .paper-container {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 1rem;
 }
 
-.content-section {
+.blog-content-wrapper .content-section {
   background: var(--blog-white);
   border-radius: 15px;
   padding: 3rem;
@@ -261,14 +275,14 @@
 }
 
 /* Article Content Styling */
-.article-content {
+.blog-content-wrapper .article-content {
   font-size: 1.2rem;
   line-height: 1.8;
   color: var(--blog-text);
 }
 
-.article-content h1,
-.article-content h2 {
+.blog-content-wrapper .article-content h1,
+.blog-content-wrapper .article-content h2 {
   font-family: 'Playfair Display', serif;
   font-size: 2.2rem;
   color: var(--blog-charcoal);
@@ -277,7 +291,7 @@
   line-height: 1.3;
 }
 
-.article-content h3 {
+.blog-content-wrapper .article-content h3 {
   font-family: 'Playfair Display', serif;
   font-size: 1.8rem;
   color: var(--blog-charcoal);
@@ -285,37 +299,37 @@
   font-weight: 600;
 }
 
-.article-content h4 {
+.blog-content-wrapper .article-content h4 {
   font-size: 1.5rem;
   color: var(--blog-charcoal);
   margin: 1.5rem 0 1rem;
   font-weight: 600;
 }
 
-.article-content p {
+.blog-content-wrapper .article-content p {
   margin-bottom: 1.5rem;
 }
 
-.article-content strong {
+.blog-content-wrapper .article-content strong {
   font-weight: 600;
   color: var(--blog-charcoal);
 }
 
-.article-content em {
+.blog-content-wrapper .article-content em {
   font-style: italic;
 }
 
-.article-content a {
+.blog-content-wrapper .article-content a {
   color: var(--blog-accent);
   text-decoration: underline;
   transition: color 0.3s ease;
 }
 
-.article-content a:hover {
+.blog-content-wrapper .article-content a:hover {
   color: var(--blog-charcoal);
 }
 
-.article-content blockquote {
+.blog-content-wrapper .article-content blockquote {
   border-left: 4px solid var(--blog-accent);
   background: var(--blog-off-white);
   padding: 1.5rem 2rem;
@@ -325,26 +339,26 @@
   font-size: 1.15rem;
 }
 
-.article-content ul,
-.article-content ol {
+.blog-content-wrapper .article-content ul,
+.blog-content-wrapper .article-content ol {
   margin: 1.5rem 0;
   padding-left: 2rem;
 }
 
-.article-content li {
+.blog-content-wrapper .article-content li {
   margin-bottom: 0.75rem;
   line-height: 1.7;
 }
 
-.article-content ul li {
+.blog-content-wrapper .article-content ul li {
   list-style-type: disc;
 }
 
-.article-content ol li {
+.blog-content-wrapper .article-content ol li {
   list-style-type: decimal;
 }
 
-.article-content img {
+.blog-content-wrapper .article-content img {
   max-width: 100%;
   height: auto;
   border-radius: 10px;
@@ -353,25 +367,25 @@
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.article-content table {
+.blog-content-wrapper .article-content table {
   width: 100%;
   border-collapse: collapse;
   margin: 2rem 0;
 }
 
-.article-content table th,
-.article-content table td {
+.blog-content-wrapper .article-content table th,
+.blog-content-wrapper .article-content table td {
   border: 1px solid var(--blog-border);
   padding: 0.75rem;
   text-align: left;
 }
 
-.article-content table th {
+.blog-content-wrapper .article-content table th {
   background: var(--blog-off-white);
   font-weight: 600;
 }
 
-.article-content code {
+.blog-content-wrapper .article-content code {
   background: var(--blog-off-white);
   padding: 0.2rem 0.4rem;
   border-radius: 4px;
@@ -380,7 +394,7 @@
   color: var(--blog-charcoal);
 }
 
-.article-content pre {
+.blog-content-wrapper .article-content pre {
   background: var(--blog-charcoal);
   color: white;
   padding: 1.5rem;
@@ -389,14 +403,14 @@
   margin: 2rem 0;
 }
 
-.article-content pre code {
+.blog-content-wrapper .article-content pre code {
   background: none;
   padding: 0;
   color: white;
 }
 
 /* Divider */
-.section-divider {
+.blog-content-wrapper .section-divider {
   width: 200px;
   height: 1px;
   background: linear-gradient(to right, transparent, var(--blog-border), transparent);
@@ -404,7 +418,7 @@
   position: relative;
 }
 
-.section-divider::before {
+.blog-content-wrapper .section-divider::before {
   content: '♥';
   position: absolute;
   top: -8px;
@@ -417,13 +431,13 @@
 }
 
 /* Related Posts */
-.related-posts {
+.blog-content-wrapper .related-posts {
   max-width: 1200px;
   margin: 4rem auto;
   padding: 0 1rem;
 }
 
-.related-title {
+.blog-content-wrapper .related-title {
   font-size: 2.5rem;
   color: var(--blog-charcoal);
   text-align: center;
@@ -431,13 +445,13 @@
   font-weight: 700;
 }
 
-.related-grid {
+.blog-content-wrapper .related-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 2rem;
 }
 
-.related-card {
+.blog-content-wrapper .related-card {
   background: white;
   border-radius: 15px;
   overflow: hidden;
@@ -447,24 +461,24 @@
   color: inherit;
 }
 
-.related-card:hover {
+.blog-content-wrapper .related-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 15px 40px rgba(0,0,0,0.15);
   text-decoration: none;
   color: inherit;
 }
 
-.related-image {
+.blog-content-wrapper .related-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
 }
 
-.related-info {
+.blog-content-wrapper .related-info {
   padding: 1.5rem;
 }
 
-.related-post-title {
+.blog-content-wrapper .related-post-title {
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--blog-charcoal);
@@ -472,20 +486,20 @@
   line-height: 1.3;
 }
 
-.related-excerpt {
+.blog-content-wrapper .related-excerpt {
   color: var(--blog-text-light);
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
 /* Comments */
-.comments-section {
+.blog-content-wrapper .comments-section {
   max-width: 900px;
   margin: 4rem auto;
   padding: 0 1rem;
 }
 
-.comments-title {
+.blog-content-wrapper .comments-title {
   font-size: 2rem;
   color: var(--blog-charcoal);
   margin-bottom: 2rem;
@@ -493,7 +507,7 @@
   font-weight: 600;
 }
 
-.comment {
+.blog-content-wrapper .comment {
   background: var(--blog-white);
   border-radius: 10px;
   padding: 1.5rem;
@@ -501,24 +515,24 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-.comment-author {
+.blog-content-wrapper .comment-author {
   font-weight: 600;
   color: var(--blog-charcoal);
   margin-bottom: 0.5rem;
 }
 
-.comment-date {
+.blog-content-wrapper .comment-date {
   color: var(--blog-text-light);
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
 }
 
-.comment-content {
+.blog-content-wrapper .comment-content {
   color: var(--blog-text);
   line-height: 1.6;
 }
 
-.comment-form {
+.blog-content-wrapper .comment-form {
   background: var(--blog-white);
   border-radius: 15px;
   padding: 2rem;
@@ -526,90 +540,125 @@
   margin-top: 2rem;
 }
 
+/* Toast Notification */
+.copy-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #28a745;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+}
+
+.copy-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.copy-toast i {
+  font-size: 1.2rem;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .blog-hero {
+  .blog-content-wrapper .blog-hero {
     max-height: 400px;
   }
   
-  .article-title {
+  .copy-toast {
+    bottom: 1rem;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .blog-content-wrapper .article-title {
     font-size: 2rem;
   }
   
-  .article-excerpt {
+  .blog-content-wrapper .article-excerpt {
     font-size: 1.1rem;
   }
   
-  .article-header {
+  .blog-content-wrapper .article-header {
     padding: 1.5rem 0 1rem;
   }
   
-  .paper-container {
+  .blog-content-wrapper .paper-container {
     padding: 0 1rem;
   }
   
-  .content-section {
+  .blog-content-wrapper .content-section {
     padding: 2rem;
   }
   
-  .article-content {
+  .blog-content-wrapper .article-content {
     font-size: 1.1rem;
   }
   
-  .article-meta-section {
+  .blog-content-wrapper .article-meta-section {
     gap: 0.75rem;
     flex-direction: column;
     align-items: stretch;
   }
   
-  .meta-item,
-  .author-meta {
+  .blog-content-wrapper .meta-item,
+  .blog-content-wrapper .author-meta {
     justify-content: center;
   }
   
-  .social-share-compact {
+  .blog-content-wrapper .social-share-compact {
     flex-wrap: wrap;
   }
 }
 
 @media (max-width: 576px) {
-  .blog-hero {
+  .blog-content-wrapper .blog-hero {
     max-height: 300px;
   }
   
-  .article-title {
+  .blog-content-wrapper .article-title {
     font-size: 1.75rem;
   }
   
-  .article-excerpt {
+  .blog-content-wrapper .article-excerpt {
     font-size: 1rem;
   }
   
-  .article-header {
+  .blog-content-wrapper .article-header {
     padding: 1.25rem 0 1rem;
   }
   
-  .content-section {
+  .blog-content-wrapper .content-section {
     padding: 1.5rem;
   }
   
-  .article-content {
+  .blog-content-wrapper .article-content {
     font-size: 1.05rem;
   }
   
-  .article-content h1,
-  .article-content h2 {
+  .blog-content-wrapper .article-content h1,
+  .blog-content-wrapper .article-content h2 {
     font-size: 1.8rem;
   }
   
-  .article-content h3 {
+  .blog-content-wrapper .article-content h3 {
     font-size: 1.5rem;
   }
 }
 </style>
 {% endblock %}
-
-{% block bodyclass %}blog-content{% endblock %}
 
 {% block content %}
 <!-- Structured Data for SEO -->
@@ -617,21 +666,21 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "{{ post.title|escape }}",
-  "description": "{{ post.excerpt|escape }}",
-  "image": {% if post.featured_image %}"{{ request.build_absolute_uri }}{{ post.featured_image.url }}"{% else %}null{% endif %},
+  "headline": "{{ post.title|escapejs }}",
+  "description": "{{ post.excerpt|escapejs }}",
+  "image": {% if post.featured_image %}"{{ request.scheme }}://{{ request.get_host }}{{ post.featured_image.url }}"{% else %}"{{ request.scheme }}://{{ request.get_host }}{% static 'images/og-image.jpg' %}"{% endif %},
   "datePublished": "{{ post.published_at|date:'c' }}",
   "dateModified": "{{ post.updated_at|date:'c' }}",
   "author": {
     "@type": "Person",
-    "name": "{{ post.author.username|default:'DreamWedAI'|escape }}"
+    "name": "{{ post.author.username|default:'DreamWedAI'|escapejs }}"
   },
   "publisher": {
     "@type": "Organization",
     "name": "DreamWedAI",
     "logo": {
       "@type": "ImageObject",
-      "url": "{{ request.build_absolute_uri }}{% static 'images/logo.png' %}"
+      "url": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo.png' %}"
     }
   },
   "mainEntityOfPage": {
@@ -642,15 +691,15 @@
   "timeRequired": "PT{{ post.reading_time }}M",
   "keywords": [
     {% for tag in post.tags.all %}
-    "{{ tag.name|escape }}"{% if not forloop.last %},{% endif %}
+    "{{ tag.name|escapejs }}"{% if not forloop.last %},{% endif %}
     {% endfor %}
   ],
   "articleSection": "Wedding Planning",
-  "articleBody": "{{ post.content|striptags|escape }}"
+  "articleBody": "{{ post.content|striptags|truncatewords:50|escapejs }}"
 }
 </script>
 
-<div class="blog-content">
+<div class="blog-content-wrapper">
   <!-- Hero Section - Clean image, no text overlay -->
   <div class="blog-hero">
     {% if post.featured_image %}
@@ -710,9 +759,10 @@
           </div>
         {% endif %}
         
-        <!-- Compact Social Share Buttons -->
+        <!-- Enhanced Social Share Buttons -->
         <div class="social-share-compact">
           <span class="share-label">Share:</span>
+          
           <a href="{{ social_share.facebook }}" 
              class="share-btn-compact share-facebook"
              target="_blank"
@@ -721,6 +771,7 @@
              title="Share on Facebook">
             <i class="bi bi-facebook" aria-hidden="true"></i>
           </a>
+          
           <a href="{{ social_share.twitter }}" 
              class="share-btn-compact share-twitter"
              target="_blank"
@@ -729,6 +780,7 @@
              title="Share on Twitter">
             <i class="bi bi-twitter" aria-hidden="true"></i>
           </a>
+          
           <a href="{{ social_share.pinterest }}" 
              class="share-btn-compact share-pinterest"
              target="_blank"
@@ -737,14 +789,29 @@
              title="Share on Pinterest">
             <i class="bi bi-pinterest" aria-hidden="true"></i>
           </a>
-          <a href="{{ social_share.linkedin }}" 
-             class="share-btn-compact share-linkedin"
+          
+          <a href="{{ social_share.whatsapp }}" 
+             class="share-btn-compact share-whatsapp"
              target="_blank"
              rel="noopener noreferrer"
-             aria-label="Share on LinkedIn"
-             title="Share on LinkedIn">
-            <i class="bi bi-linkedin" aria-hidden="true"></i>
+             aria-label="Share on WhatsApp"
+             title="Share on WhatsApp">
+            <i class="bi bi-whatsapp" aria-hidden="true"></i>
           </a>
+          
+          <a href="{{ social_share.email }}" 
+             class="share-btn-compact share-email"
+             aria-label="Share via Email"
+             title="Share via Email">
+            <i class="bi bi-envelope-fill" aria-hidden="true"></i>
+          </a>
+          
+          <button class="share-btn-compact share-copy"
+                  onclick="copyLinkToClipboard('{{ social_share.copy_link }}')"
+                  aria-label="Copy link"
+                  title="Copy link">
+            <i class="bi bi-link-45deg" aria-hidden="true"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -845,4 +912,43 @@
     </section>
   {% endif %}
 </div>
+
+<!-- Copy Toast Notification -->
+<div class="copy-toast" id="copyToast">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>Link copied to clipboard!</span>
+</div>
+
+<script>
+// Copy link to clipboard function with toast notification
+function copyLinkToClipboard(url) {
+  navigator.clipboard.writeText(url).then(function() {
+    const btn = event.currentTarget;
+    const icon = btn.querySelector('i');
+    const originalClass = icon.className;
+    const toast = document.getElementById('copyToast');
+    
+    // Change button icon to check
+    icon.className = 'bi bi-check2';
+    btn.classList.add('copied');
+    
+    // Show toast notification
+    toast.classList.add('show');
+    
+    // Reset button after 2 seconds
+    setTimeout(function() {
+      icon.className = originalClass;
+      btn.classList.remove('copied');
+    }, 2000);
+    
+    // Hide toast after 3 seconds
+    setTimeout(function() {
+      toast.classList.remove('show');
+    }, 3000);
+  }, function(err) {
+    console.error('Could not copy text: ', err);
+    alert('Failed to copy link. Please try again.');
+  });
+}
+</script>
 {% endblock %}

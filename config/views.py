@@ -1,4 +1,3 @@
-# config/views.py
 from django.http import HttpResponse
 from django.conf import settings
 
@@ -36,9 +35,9 @@ def robots_txt(request):
         "Disallow: /static/admin/",
     ])
     
-    # Add sitemap reference
-    domain = getattr(settings, 'SITE_DOMAIN', 'dreamwedai.com')
-    protocol = 'https' if not settings.DEBUG else 'http'
+    # Add sitemap reference - FIXED to use request.get_host()
+    domain = request.get_host()
+    protocol = request.scheme
     lines.extend([
         "",
         f"Sitemap: {protocol}://{domain}/sitemap.xml"

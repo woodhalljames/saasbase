@@ -32,23 +32,23 @@
   <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
   <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicons/apple-touch-icon.png' %}" />
   
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="og:title" content="{% block og_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
-  <meta property="og:description" content="{% block og_description %}Say Yes to Your Wedding Before The Big Day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
-  <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="{{ request.build_absolute_uri }}" />
+<meta property="og:title" content="{% block og_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
+<meta property="og:description" content="{% block og_description %}Transform anywhere into the perfect wedding celebration. Create FREE beautiful wedding page to share with friends and family.  Wedding designer inspiration in your pocket.{% endblock %}" />
+<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
-  <meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
-  <meta property="twitter:description" content="{% block twitter_description %}Say Yes to Your Wedding Before The Big Day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
-  <meta property="twitter:image" content="{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
-  
+<!-- Twitter -->
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
+<meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
+<meta property="twitter:description" content="{% block twitter_description %}Transform anywhere into the perfect wedding celebration. Create FREE beautiful wedding page to share with friends and family. Wedding designer inspiration in your pocket.{% endblock %}" />
+<meta property="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
+
   <!-- CSRF Token for AJAX requests -->
   <meta name="csrf-token" content="{{ csrf_token }}">
-  
+  {% block robots_meta %}{% endblock %}
   {% block css %}
   <!-- Latest compiled and minified Bootstrap CSS -->
   <link rel="stylesheet"
@@ -72,7 +72,8 @@
   <link href="{% static 'css/project.css' %}" rel="stylesheet" />
   {% endblock css %}
 
-  
+  <script>(function(w,r){w._rwq=r;w[r]=w[r]||function(){(w[r].q=w[r].q||[]).push(arguments)}})(window,'rewardful');</script>
+<script async src='https://r.wdfl.co/rw.js' data-rewardful='d94ec7'></script>
 
   {% block javascript %}
   <!-- Bootstrap JS -->

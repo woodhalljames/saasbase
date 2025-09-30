@@ -5,8 +5,10 @@
 
 {% block meta_description %}"Latest wedding planning resources, tips, and real wedding stories from DreamWedAI{% endblock %}
 
+
 {% block css %}
 {{ block.super }}
+<link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'newsletter:blog_list' %}">
 <!-- Blog-specific fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

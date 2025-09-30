@@ -14,51 +14,52 @@ from .forms import CoupleProfileForm, WeddingLinkFormSet
 
 
 class PublicCoupleDetailView(DetailView):
-    """Public view of a couple's wedding page - enhanced with dynamic SEO"""
     model = CoupleProfile
     template_name = 'wedding_shopping/public_couple_detail.html'
     context_object_name = 'couple'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
     
-    def get_object(self):
-        """Get couple by custom slug or share_token"""
-        share_token = self.kwargs.get('share_token')
-        slug = self.kwargs.get('slug')
-        
-        if share_token:
-            return get_object_or_404(CoupleProfile, share_token=share_token)
-        elif slug:
-            couple = get_object_or_404(CoupleProfile, slug=slug)
-            
-            # Allow viewing private pages via direct slug if user owns it
-            if not couple.is_public and self.request.user != couple.user:
-                # Redirect to token-based URL for private pages
-                return redirect('wedding_shopping:wedding_page_token', 
-                              share_token=couple.share_token)
-            
-            return couple
-        else:
-            raise Http404("Wedding page not found")
+    def get_queryset(self):
+        # Only show public profiles
+        return CoupleProfile.objects.filter(is_public=True)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         couple = self.object
         
-        # Calculate days until wedding
+        # Get wedding links
+        wedding_links = couple.wedding_links.all().order_by('order', 'created_at')
+        context['wedding_links'] = wedding_links
+        
+        # Calculate countdown
         if couple.wedding_date:
-            today = timezone.now().date()
-            if couple.wedding_date > today:
-                context['days_until_wedding'] = (couple.wedding_date - today).days
-            elif couple.wedding_date == today:
-                context['is_wedding_day'] = True
-            else:
-                context['wedding_passed'] = True
-                context['days_since_wedding'] = (today - couple.wedding_date).days
+            from datetime import date
+            today = date.today()
+            days_until = (couple.wedding_date - today).days
+            
+            context['days_until_wedding'] = days_until
+            context['is_wedding_day'] = days_until == 0
+            context['wedding_passed'] = days_until < 0
         
-        # Get all wedding links
-        context['wedding_links'] = couple.wedding_links.all().order_by('id')
+        # Generate social share URLs
+        image_url = None
+        if couple.couple_photo:
+            image_url = self.request.build_absolute_uri(couple.couple_photo.url)
         
-        # Enhanced SEO Meta Tags
-        context['seo_data'] = self.get_enhanced_seo_data(couple)
+        description = f"Join {couple.couple_names} as they celebrate their wedding"
+        if couple.wedding_date:
+            description += f" on {couple.wedding_date.strftime('%B %d, %Y')}"
+        if couple.venue_location:
+            description += f" in {couple.venue_location}"
+        description += "."
+        
+        context['social_share'] = generate_social_share_urls(
+            request=self.request,
+            title=f"{couple.couple_names} - Wedding Celebration",
+            description=description,
+            image_url=image_url
+        )
         
         return context
     
