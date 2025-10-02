@@ -358,13 +358,36 @@
   list-style-type: decimal;
 }
 
+/* CRITICAL FIX: Force responsive images in blog content */
 .blog-content-wrapper .article-content img {
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
+  width: auto !important;
   border-radius: 10px;
   margin: 2rem auto;
-  display: block;
+  display: block !important;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  object-fit: contain;
+}
+
+/* Fix for images with inline width/height attributes */
+.blog-content-wrapper .article-content img[style*="width"] {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Fix for Summernote inserted images */
+.blog-content-wrapper .article-content figure,
+.blog-content-wrapper .article-content .note-image {
+  max-width: 100% !important;
+  margin: 2rem auto !important;
+}
+
+.blog-content-wrapper .article-content figure img,
+.blog-content-wrapper .article-content .note-image img {
+  max-width: 100% !important;
+  width: 100% !important;
+  height: auto !important;
 }
 
 .blog-content-wrapper .article-content table {
@@ -620,6 +643,22 @@
   
   .blog-content-wrapper .social-share-compact {
     flex-wrap: wrap;
+  }
+  
+  /* Mobile image fixes */
+  .blog-content-wrapper .article-content img {
+    margin: 1.5rem auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+  
+  .blog-content-wrapper .article-content p img,
+  .blog-content-wrapper .article-content div img,
+  .blog-content-wrapper .article-content figure img {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
   }
 }
 
@@ -950,5 +989,42 @@ function copyLinkToClipboard(url) {
     alert('Failed to copy link. Please try again.');
   });
 }
+
+// Fix images for mobile display - CRITICAL FIX
+document.addEventListener('DOMContentLoaded', function() {
+    const articleImages = document.querySelectorAll('.article-content img');
+    
+    articleImages.forEach(function(img) {
+        // Remove inline width/height that might cause issues
+        img.removeAttribute('width');
+        img.removeAttribute('height');
+        
+        // Force responsive styles
+        img.style.maxWidth = '100%';
+        img.style.width = 'auto';
+        img.style.height = 'auto';
+        img.style.display = 'block';
+        img.style.margin = '2rem auto';
+        
+        // Handle loading errors gracefully
+        img.addEventListener('error', function() {
+            console.error('Failed to load image:', img.src);
+            // Show placeholder instead
+            const placeholder = document.createElement('div');
+            placeholder.style.cssText = 'background: #f0f0f0; padding: 2rem; text-align: center; border-radius: 10px; margin: 2rem auto;';
+            placeholder.innerHTML = '<i class="bi bi-image" style="font-size: 3rem; color: #999;"></i><p style="color: #999; margin-top: 1rem;">Image temporarily unavailable</p>';
+            img.parentNode.insertBefore(placeholder, img);
+            img.style.display = 'none';
+        });
+    });
+    
+    // Fix parent containers that might constrain images
+    document.querySelectorAll('.article-content p, .article-content div, .article-content figure').forEach(function(container) {
+        if (container.querySelector('img')) {
+            container.style.maxWidth = '100%';
+            container.style.overflow = 'visible';
+        }
+    });
+});
 </script>
 {% endblock %}

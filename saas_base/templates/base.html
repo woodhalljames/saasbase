@@ -154,7 +154,12 @@
               </ul>
             </li>
             
-            
+            <!-- Resources Link (Authenticated) -->
+            <li class="nav-item">
+              <a class="nav-link text-white-nav" href="{% url 'newsletter:resources_list' %}">
+                <i class="bi bi-journal-bookmark me-1"></i>Resources
+              </a>
+            </li>
             
           </ul>
           
@@ -199,6 +204,13 @@
         {% else %}
           <!-- Guest User Navigation -->
           <ul class="navbar-nav me-auto">
+            
+            <!-- Resources Link (Guest) -->
+            <li class="nav-item">
+              <a class="nav-link text-white-nav" href="{% url 'newsletter:resources_list' %}">
+                <i class="bi bi-journal-bookmark me-1"></i>Resources
+              </a>
+            </li>
           
             <li class="nav-item">
               <a class="nav-link text-white-nav" href="{% url 'subscriptions:pricing' %}">
@@ -380,11 +392,11 @@
                 </a>
               </li>
            
-            <li class="mb-2">
+            <!---li class="mb-2">
               <a href="{% url 'wedding_shopping:public_couples_list' %}" class="text-white-75 text-decoration-none footer-link">
                 <i class="bi bi-globe2 me-2 text-cyan"></i>Discover Weddings
               </a>
-            </li>
+            </li--->
           </ul>
         </div>
 
@@ -395,6 +407,15 @@
             <li class="mb-2">
               <a href="{% url 'about' %}" class="text-white-75 text-decoration-none footer-link">
                 About Us
+              </a>
+            </li>
+            <li class="mb-2">
+              <a href="https://dreamwedai.getrewardful.com" 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 class="text-white-75 text-decoration-none footer-link"
+                 onclick="trackAffiliateFooterClick()">
+               Affiliates
               </a>
             </li>
             <li class="mb-2">
@@ -737,7 +758,6 @@ class UniversalCollectionPicker {
         });
     }
     
-    // 🔧 FIXED: Enhanced openForButton method
     async openForButton(button) {
         console.log('Opening collection picker for button:', button);
         
@@ -771,7 +791,6 @@ class UniversalCollectionPicker {
         }
     }
     
-    // 🔧 FIXED: Improved loadData method with proper state management
     async loadData() {
         try {
             this.showLoading();
@@ -788,7 +807,7 @@ class UniversalCollectionPicker {
                 console.log('No collections found - showing empty state');
             } else {
                 this.renderCollections();
-                this.showList(); // ✅ Ensure we show the list
+                this.showList();
                 console.log(`Rendered ${this.collections.length} collections`);
             }
             
@@ -842,7 +861,6 @@ class UniversalCollectionPicker {
         }
     }
     
-    // 🔧 FIXED: Enhanced renderCollections with debugging
     renderCollections() {
         if (!this.collectionsList) {
             console.error('Collections list element not found');
@@ -1033,7 +1051,6 @@ class UniversalCollectionPicker {
         setTimeout(() => nameInput?.focus(), 300);
     }
     
-    // 🔧 FIXED: Enhanced createCollection method with proper state transitions
     async createCollection() {
         const nameInput = document.querySelector('.new-collection-name');
         const descInput = document.querySelector('.new-collection-description');
@@ -1076,13 +1093,12 @@ class UniversalCollectionPicker {
                 this.collections.unshift(result.collection);
                 this.currentSelections.add(result.collection.id);
                 
-                // ✅ CRITICAL FIX: Proper state transition
                 setTimeout(() => {
                     this.modal.show();
                     
                     // Re-render and ensure proper state
                     this.renderCollections();
-                    this.showList(); // ✅ CRITICAL: Switch from empty to list state
+                    this.showList();
                     this.updateSaveButton();
                     
                     console.log('Collection created and modal updated');
@@ -1115,7 +1131,6 @@ class UniversalCollectionPicker {
         });
     }
     
-    // 🔧 FIXED: Enhanced state management methods with debugging
     showLoading() {
         console.log('Switching to loading state');
         if (this.loadingEl) this.loadingEl.classList.remove('d-none');
@@ -1139,7 +1154,6 @@ class UniversalCollectionPicker {
     
     showError() {
         console.error('Error state in collection picker');
-        // Could show error message here
     }
     
     showSuccessMessage(added, removed) {
@@ -1196,6 +1210,16 @@ document.addEventListener('DOMContentLoaded', function() {
 // Global function for backward compatibility
 window.initializeSimpleCollectionPickers = function() {
     console.log('Collection pickers already initialized globally');
+};
+
+// Track affiliate footer clicks
+window.trackAffiliateFooterClick = function() {
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'affiliate_signup_click', {
+            'event_category': 'affiliate',
+            'event_label': 'footer_link'
+        });
+    }
 };
 
 </script>

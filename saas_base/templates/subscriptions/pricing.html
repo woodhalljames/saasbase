@@ -6,9 +6,46 @@
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'subscriptions:pricing' %}">
+<style>
+/* Original price styling - grey with strikethrough */
+.original-price {
+  position: relative;
+  display: inline-block;
+  color: #999;
+  font-size: 2rem;
+  margin-right: 0;
+  font-weight: 400;
+}
+
+.original-price::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  background: #ff0000;
+  transform: rotate(-5deg);
+}
+
+/* Keep 6 months free badge */
+.savings-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+</style>
 {% endblock %}
+
 {% block content %}
 <div class="pricing-page">
+
   <!-- Hero Section -->
   <section class="pricing-hero py-5 bg-gradient-to-b from-white to-light">
     <div class="container">
@@ -28,7 +65,10 @@
               <label class="btn btn-outline-rose" for="monthly">Monthly Billing</label>
               
               <input type="radio" class="btn-check" name="billing" id="yearly">
-              <label class="btn btn-outline-rose" for="yearly">Yearly Billing <span class="badge bg-success ms-2">6 Months Free</span></label>
+              <label class="btn btn-outline-rose" for="yearly">
+                Yearly Billing 
+                <span class="badge bg-success ms-2">6 Months Free!</span>
+              </label>
             </div>
           </div>
         </div>
@@ -53,7 +93,8 @@
       <div class="row g-4 align-items-stretch">
         {% for product in products %}
         <div class="col-lg-4 col-md-6">
-          <div class="card h-100 pricing-card {% if product.highlight %}featured-card shadow-lg{% else %}shadow{% endif %}">
+          <div class="card h-100 pricing-card {% if product.highlight %}featured-card shadow-lg{% else %}shadow{% endif %} position-relative">
+            
             {% if product.highlight %}
             <div class="card-header bg-gradient-rose text-white text-center py-2">
               <small class="text-uppercase fw-bold letter-spacing-1">
@@ -71,17 +112,36 @@
                 {% endif %}
               </div>
               
-              <!-- Pricing Display -->
+              <!-- Pricing Display with Enhanced Styling -->
               <div class="pricing-display text-center mb-4">
                 <!-- Monthly Pricing -->
                 <div class="monthly-price" data-product-id="{{ product.id }}">
                   {% if product.prices.monthly %}
                   <div class="price-amount">
-                    <span class="currency">$</span>
-                    <span class="h1 fw-bold">{{ product.prices.monthly.amount|floatformat:0 }}</span>
-                    <span class="period text-muted">/month</span>
+                    {% with monthly_amount=product.prices.monthly.amount|floatformat:0 %}
+                      <!-- Compact price display -->
+                      <div class="price-stack">
+                        <!-- Show original higher price crossed out based on tier -->
+                        {% if monthly_amount == "29" %}
+                          <div class="original-price mb-1">$49</div>
+                        {% elif monthly_amount == "99" %}
+                          <div class="original-price mb-1">$199</div>
+                        {% elif monthly_amount == "299" %}
+                          <div class="original-price mb-1">$499</div>
+                        {% else %}
+                          <div class="original-price mb-1">${{ product.prices.monthly.amount|floatformat:0|add:"30" }}</div>
+                        {% endif %}
+                        
+                        <!-- Real price display - LARGER -->
+                        <div class="d-flex align-items-baseline justify-content-center">
+                          <span class="currency-large">$</span>
+                          <span class="price-large fw-bold">{{ product.prices.monthly.amount|floatformat:0 }}</span>
+                          <span class="period-large text-muted">/month</span>
+                        </div>
+                      </div>
+                    {% endwith %}
                   </div>
-                  <small class="text-muted d-block">Taxes included</small>
+                  <small class="text-muted d-block mt-3">Taxes included • Cancel anytime</small>
                   {% if product.prices.monthly.display_name %}
                   <small class="text-muted">{{ product.prices.monthly.display_name }}</small>
                   {% endif %}
@@ -94,15 +154,38 @@
                 <div class="yearly-price d-none" data-product-id="{{ product.id }}">
                   {% if product.prices.yearly %}
                   <div class="price-amount">
-                    <span class="currency">$</span>
-                    <span class="h1 fw-bold">{{ product.prices.yearly.amount|floatformat:0 }}</span>
-                    <span class="period text-muted">/year</span>
+                    {% with yearly_amount=product.prices.yearly.amount|floatformat:0 %}
+                      <!-- Compact price display -->
+                      <div class="price-stack">
+                        <!-- Show much higher original price crossed out for yearly -->
+                        {% if yearly_amount == "174" %}
+                          <div class="original-price mb-1">$294</div>
+                        {% elif yearly_amount == "594" %}
+                          <div class="original-price mb-1">$1194</div>
+                        {% elif yearly_amount == "1794" %}
+                          <div class="original-price mb-1">$2994</div>
+                        {% else %}
+                          <div class="original-price mb-1">${{ product.prices.yearly.amount|floatformat:0|add:"200" }}</div>
+                        {% endif %}
+                        
+                        <!-- Real price display - LARGER -->
+                        <div class="d-flex align-items-baseline justify-content-center">
+                          <span class="currency-large">$</span>
+                          <span class="price-large fw-bold">{{ product.prices.yearly.amount|floatformat:0 }}</span>
+                          <span class="period-large text-muted">/year</span>
+                        </div>
+                        
+                        <!-- 6 MONTHS FREE badge below price -->
+                        <div class="badge bg-success fw-bold px-3 py-2 mt-2">
+                          <i class="bi bi-gift-fill me-1"></i>
+                          6 MONTHS FREE!
+                        </div>
+                      </div>
+                    {% endwith %}
                   </div>
-                  <small class="text-muted d-block">Taxes included</small>
+                  <small class="text-muted d-block mt-3">Taxes included • Best value</small>
                   {% if product.prices.yearly.display_name %}
                   <small class="text-muted">{{ product.prices.yearly.display_name }}</small>
-                  {% elif product.prices.monthly %}
-                 
                   {% endif %}
                   {% else %}
                   <div class="text-muted">Yearly not available</div>
@@ -139,7 +222,7 @@
               </ul>
               {% endif %}
               
-              <!-- CTA Buttons - UPDATED FOR GUEST CHECKOUT -->
+              <!-- CTA Buttons -->
               <div class="mt-auto">
                 <!-- Monthly Subscribe Button -->
                 <div class="monthly-button" data-product-id="{{ product.id }}">
@@ -149,9 +232,9 @@
                     <input type="hidden" name="price_id" value="{{ product.prices.monthly.id }}">
                     <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
                       {% if user_authenticated %}
-                        Get Started
+                        <i class="bi bi-lightning-charge-fill me-1"></i>Subscribe Now
                       {% else %}
-                        Subscribe Now
+                        <i class="bi bi-lightning-charge-fill me-1"></i>Get Started
                       {% endif %}
                     </button>
                   </form>
@@ -170,9 +253,9 @@
                     <input type="hidden" name="price_id" value="{{ product.prices.yearly.id }}">
                     <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
                       {% if user_authenticated %}
-                        Get Started - Best Value
+                        <i class="bi bi-trophy-fill me-1"></i>Get 6 Months FREE
                       {% else %}
-                        Subscribe Now - Best Value
+                        <i class="bi bi-trophy-fill me-1"></i>Best Deal - Subscribe Now
                       {% endif %}
                     </button>
                   </form>
@@ -188,7 +271,7 @@
                 <div class="text-center mt-2">
                   <small class="text-muted">
                     <i class="bi bi-info-circle me-1"></i>
-                    No account needed - we'll create one for you!
+                    No account needed - we'll email you!
                   </small>
                 </div>
                 {% endif %}
@@ -467,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
   monthlyRadio?.addEventListener('change', () => togglePricing(false));
   yearlyRadio?.addEventListener('change', () => togglePricing(true));
   
-  // FIXED: Prevent duplicate submissions with proper tracking
+  // Prevent duplicate submissions
   let isSubmitting = false;
   
   // Handle checkout form submissions
@@ -476,7 +559,6 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      // FIXED: Prevent duplicate submissions
       if (isSubmitting) {
         console.log('Form submission already in progress, ignoring duplicate request');
         return;
@@ -488,13 +570,10 @@ document.addEventListener('DOMContentLoaded', function() {
       submitButton.disabled = true;
       submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
       
-      // Add visual feedback
       form.classList.add('submitting');
       
       try {
         const formData = new FormData(form);
-        
-        // ADDED: Debug logging for price_id
         const priceId = formData.get('price_id');
         console.log('Submitting checkout with price_id:', priceId);
         
@@ -510,7 +589,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (data.sessionId) {
           console.log('Redirecting to Stripe checkout with session:', data.sessionId);
-          // Redirect to Stripe Checkout
           const result = await stripe.redirectToCheckout({
             sessionId: data.sessionId
           });
@@ -520,7 +598,6 @@ document.addEventListener('DOMContentLoaded', function() {
             alert(result.error.message);
             resetFormState();
           }
-          // If successful, user will be redirected away, no need to reset
         } else if (data.error) {
           console.error('Checkout creation error:', data.error);
           alert('Error: ' + data.error);
@@ -544,22 +621,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
-
-
-  
-  // ADDED: Debug logging for context
-  {% if auto_checkout_price_id %}
-  console.log('Auto-checkout price ID available (but auto-submit disabled):', '{{ auto_checkout_price_id }}');
-  {% endif %}
-  
-  {% if is_new_user %}
-  console.log('New user detected - simplified behavior (no session dependency)');
-  {% endif %}
-  
-  // Log navigation source for debugging
-  const urlParams = new URLSearchParams(window.location.search);
-  const source = urlParams.get('source') || 'direct';
-  console.log('Navigation source:', source);
 });
 </script>
 
@@ -591,29 +652,39 @@ document.addEventListener('DOMContentLoaded', function() {
   background: linear-gradient(90deg, var(--bs-cyan), var(--bs-primary), var(--bs-rose));
 }
 
-.price-amount {
+/* NEW PRICE STYLING - LARGER AND LOOMING */
+.price-stack {
   display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 0;
 }
 
-.currency {
-  font-size: 1.5rem;
-  font-weight: 500;
-  opacity: 0.7;
+.currency-large {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-right: 0.25rem;
 }
 
-.period {
-  font-size: 1rem;
-  margin-left: 4px;
+.price-large {
+  font-size: 4.5rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.period-large {
+  font-size: 1.25rem;
+  margin-left: 0.25rem;
+  align-self: flex-end;
+  margin-bottom: 0.5rem;
 }
 
 .feature-list li {
   font-size: 0.95rem;
 }
 
-/* Updated Billing Toggle to Use Rose */
+/* Billing Toggle */
 .billing-toggle .btn-check:checked + .btn-outline-rose {
   background: var(--electric-rose);
   border-color: var(--electric-rose);
@@ -652,7 +723,6 @@ document.addEventListener('DOMContentLoaded', function() {
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
 }
 
-/* ADDED: Visual feedback for form submission states */
 .checkout-form.submitting {
   opacity: 0.7;
   pointer-events: none;
@@ -662,7 +732,6 @@ document.addEventListener('DOMContentLoaded', function() {
   pointer-events: none;
 }
 
-/* ADDED: Better visual feedback for disabled state */
 .checkout-form.submitting .card {
   position: relative;
 }
@@ -701,16 +770,6 @@ document.addEventListener('DOMContentLoaded', function() {
   color: white;
   margin: 0 auto 15px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-/* Enhanced guest checkout styling */
-.checkout-form.submitting {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.checkout-form button[disabled] {
-  pointer-events: none;
 }
 </style>
 {% endblock %}

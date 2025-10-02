@@ -5,8 +5,173 @@
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}">
+<style>
+/* Affiliate Banner Styles */
+.affiliate-banner {
+  background: linear-gradient(135deg, var(--electric-rose), var(--bright-cyan));
+  color: white;
+  padding: 0.75rem 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.affiliate-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.affiliate-banner.hidden {
+  display: none;
+}
+
+.commission-badge-banner {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  font-size: 1.2rem;
+  font-weight: 900;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  white-space: nowrap;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.affiliate-banner .btn-light {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.affiliate-banner .btn-light:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.affiliate-banner .btn-link {
+  color: #000;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+  font-size: 1.2rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.affiliate-banner .btn-link:hover {
+  opacity: 1;
+  color: #000;
+}
+
+@media (max-width: 768px) {
+  .affiliate-banner {
+    padding: 0.5rem 0;
+  }
+  
+  .commission-badge-banner {
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .affiliate-banner .fs-5 {
+    font-size: 1rem !important;
+  }
+  
+  .affiliate-banner .small {
+    font-size: 0.8rem !important;
+  }
+  
+  .affiliate-banner .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .affiliate-banner .d-flex {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .commission-badge-banner {
+    margin-bottom: 0.75rem;
+  }
+  
+  .affiliate-banner .col-lg-4 {
+    text-align: center !important;
+  }
+}
+</style>
 {% endblock %}
+
 {% block content %}
+<!-- Affiliate Banner -->
+<div class="affiliate-banner" id="affiliateBanner">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-8 col-md-7">
+        <div class="d-flex align-items-center gap-2">
+          <div class="commission-badge-banner">
+            30% Commission
+          </div>
+          <div>
+            <div class="fw-bold mb-0" style="font-size: 1.1rem;">
+              <i class="bi bi-currency-dollar me-1"></i>
+              Earn Passive Income with Our Rewardful Affiliate Program
+            </div>
+            <p class="mb-0 small opacity-90">
+              Perfect for wedding photographers, planners & content creators!
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-5 text-md-end mt-2 mt-md-0">
+        <a href="https://dreamwedai.getrewardful.com" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="btn btn-light fw-bold px-3 py-2"
+           onclick="trackAffiliateClick()">
+          <i class="bi bi-rocket-takeoff me-2"></i>
+          Join Free
+        </a>
+        <button class="btn btn-link text-dark ms-1" onclick="closeAffiliateBanner()" title="Dismiss" aria-label="Dismiss banner">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="homepage">
   <!-- Hero Section - Enhanced with Real Image -->
   <section class="hero-section position-relative overflow-hidden">
@@ -19,15 +184,15 @@
             <span class="text-gradient">Dream Wedding</span>
           </h1>
           <p class="lead mb-4 text-white-75">
-         The world’s first wedding design software by wedding designers that lets you upload any indoor or outdoor space and instantly transform it into your dream wedding venue.  </p>
+         The world's first wedding design software by wedding designers that lets you upload any indoor or outdoor space and instantly transform it into your dream wedding venue.  </p>
           <div class="hero-buttons mb-4">
             {% if user.is_authenticated %}
               <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
-                <i class="bi bi-magic"></i> Start Dreaming
+                <i class="bi bi-magic"></i> Visit Studio
               </a>
             {% else %}
-              <a href="{% url 'account_signup' %}" class="hero-cta-primary me-3">
-                <i class="bi bi-heart-fill"></i> Get Started Free
+              <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-3">
+                 Subscribe!
               </a>
             {% endif %}
 
@@ -218,13 +383,13 @@
             <div class="theme-overlay">
               <div class="theme-overlay-content">
                 <i class="bi bi-house-fill fs-1 mb-2"></i>
-                <div class="theme-overlay-title">Traditional Reception</div>
+                <div class="theme-overlay-title">Home Reception</div>
               </div>
             </div>
           </div>
           <div class="theme-card-content">
             <span class="theme-tag garden-tag">Traditional</span>
-            <h4 class="mb-2">Home Decor</h4>
+            <h4 class="mb-2">Home Reception</h4>
             <p class="text-muted mb-3">Celebrate anywhere your people are.</p>
             <div class="theme-features">
               <span class="feature-tag">Classical Elements</span>
@@ -242,14 +407,14 @@
             <div class="theme-overlay">
               <div class="theme-overlay-content">
                 <i class="bi bi-gem fs-1 mb-2"></i>
-                <div class="theme-overlay-title">Classical Wedding</div>
+                <div class="theme-overlay-title">Traditional Wedding</div>
               </div>
             </div>
           </div>
           <div class="theme-card-content">
             <span class="theme-tag elegant-tag">Blue</span>
             <h4 class="mb-2">Something Blue</h4>
-            <p class="text-muted mb-3">Add your style and make it your day.</p>
+            <p class="text-muted mb-3">Thousands of wedding designer inspired designs.</p>
             <div class="theme-features">
               <span class="feature-tag">Fresh Flowers</span>
               <span class="feature-tag">Tradition</span>
@@ -260,7 +425,7 @@
       </div>
       
       <div class="text-center mt-5">
-        <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+        <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'subscriptions:pricing' %}{% endif %}" class="hero-cta-primary">
           <i class="bi bi-palette"></i> Explore All 50+ Themes
         </a>
         <p class="small text-muted mt-2 mb-0">
@@ -286,9 +451,6 @@
             <li class="mb-2"><i class="bi bi-check-circle me-2 text-cyan"></i>Manage registries, RSVPs, and more</li>
           </ul>
           <div>
-            <!--a href="{% url 'wedding_shopping:public_couples_list' %}" class="hero-cta-secondary-rose me-2">
-              <i class="bi bi-eye"></i> See Examples
-            </a-->
             <a href="{% if user.is_authenticated %}{% url 'wedding_shopping:dashboard' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
               <i class="bi bi-heart"></i> Create Your Free Page
             </a>
@@ -398,7 +560,7 @@
       <div class="row">
         <div class="col-12 text-center">
           <h2 class="section-title">Ready to See Your Wedding?</h2>
-          <p class="section-subtitle">Join thousands who have turned dreams into reality</p>
+          <p class="section-subtitle">Have fun planning and styling your perfect wedding without the wedding planner price tag.</p>
           <div class="mb-4">
             {% if user.is_authenticated %}
               <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-2">
@@ -408,7 +570,7 @@
             {% else %}
            
             <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-2">
-               Subscribe
+               Subscribe!
             </a>
             {% endif %}
           </div>
@@ -436,7 +598,55 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Smooth scroll for internal links
     initializeSmoothScroll();
+    
+    // Initialize affiliate banner
+    initializeAffiliateBanner();
 });
+
+function initializeAffiliateBanner() {
+    const banner = document.getElementById('affiliateBanner');
+    if (!banner) return;
+    
+    // Banner always shows on page load - no localStorage check
+    // User can dismiss it, but it will return on next page load
+}
+
+function closeAffiliateBanner() {
+    const banner = document.getElementById('affiliateBanner');
+    if (banner) {
+        banner.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+            banner.classList.add('hidden');
+            // No localStorage - banner returns on refresh
+        }, 300);
+    }
+}
+
+function trackAffiliateClick() {
+    // Track conversion for analytics
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'affiliate_signup_click', {
+            'event_category': 'affiliate',
+            'event_label': 'home_page_banner'
+        });
+    }
+}
+
+// Slide up animation
+const style = document.createElement('style');
+style.textContent = `
+@keyframes slideUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+`;
+document.head.appendChild(style);
 
 function initializeBeforeAfterSlider() {
     const slider = document.getElementById('beforeAfterSlider');
