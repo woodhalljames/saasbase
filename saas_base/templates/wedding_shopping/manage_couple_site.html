@@ -6,23 +6,69 @@
 {% block content %}
 {% csrf_token %}
 <div class="container py-4">
-  <!-- Header -->
+  <!-- Header with Status Badge -->
   <div class="row mb-4">
     <div class="col-md-8">
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="{% url 'wedding_shopping:dashboard' %}">Wedding Dashboard</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'users:detail' request.user.username %}">My Profile</a></li>
           <li class="breadcrumb-item active">{% if is_new %}Create Wedding Page{% else %}Manage Wedding Page{% endif %}</li>
         </ol>
       </nav>
-      <h1 class="display-6 mb-2">{{ title }}</h1>
-      <p class="text-muted">{% if is_new %}Create your beautiful wedding page to share with family and friends{% else %}Update your wedding page details and settings{% endif %}</p>
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <h1 class="display-6 mb-0">{{ title }}</h1>
+        {% if not is_new %}
+          {% if object.is_public %}
+            <span class="badge bg-success fs-6">
+              <i class="bi bi-globe"></i> Published
+            </span>
+          {% else %}
+            <span class="badge bg-warning text-dark fs-6">
+              <i class="bi bi-eye-slash"></i> Draft
+            </span>
+          {% endif %}
+        {% endif %}
+      </div>
+      <p class="text-muted">
+        {% if is_new %}
+          Create your beautiful wedding page to share with family and friends
+        {% else %}
+          Update your wedding page details and settings
+        {% endif %}
+      </p>
     </div>
     <div class="col-md-4 text-end">
       {% if not is_new and object.slug %}
-        <a href="{{ object.get_absolute_url }}" class="btn btn-outline-success" target="_blank">
-          <i class="bi bi-eye"></i> Preview Wedding Page
+        <a href="{% url 'wedding_shopping:wedding_page_token' object.share_token %}" 
+           class="btn btn-outline-primary mb-2 w-100" 
+           target="_blank">
+          <i class="bi bi-eye"></i> Preview Your Page
         </a>
+        
+        {% if object.is_public %}
+          <!-- Page is Published - Show Public Link -->
+          <div class="input-group mb-2">
+            <input type="text" 
+                   class="form-control" 
+                   value="{{ page_url }}" 
+                   id="public-page-url" 
+                   readonly>
+            <button class="btn btn-outline-secondary" 
+                    onclick="copyToClipboard('public-page-url')"
+                    type="button">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+          <small class="text-muted d-block">Your public wedding page URL</small>
+        {% else %}
+          <!-- Page is Draft - Show How to Publish -->
+          <div class="alert alert-info p-2 mb-0">
+            <small>
+              <i class="bi bi-info-circle"></i>
+              Save your changes, then publish to make your page live!
+            </small>
+          </div>
+        {% endif %}
       {% endif %}
     </div>
   </div>
@@ -31,7 +77,7 @@
   <form method="post" enctype="multipart/form-data" id="wedding-form" novalidate>
     {% csrf_token %}
     
-    <!-- Basic Information Card with URL Preview -->
+    <!-- Basic Information Card -->
     <div class="card mb-4 border-0 shadow-sm">
       <div class="card-header header-rose text-white">
         <h5 class="mb-0"><i class="bi bi-heart-fill me-2"></i>Basic Information</h5>
@@ -75,11 +121,9 @@
             <div class="mb-3">
               <label class="form-label fw-medium">Your Wedding Page URL</label>
               <div class="input-group">
-                <span class="input-group-text">{{ request.get_host }}/wedding/</span>
-                <input type="text" class="form-control" id="url-preview" readonly value="{% if object.slug %}{{ object.slug }}{% else %}your-names-date{% endif %}">
-                <button type="button" class="btn btn-outline-secondary" onclick="copyUrl()">
-                  <i class="bi bi-clipboard"></i>
-                </button>
+                <span class="input-group-text">{{ request.get_host }}/</span>
+                <input type="text" class="form-control" id="url-preview" readonly 
+                       value="{% if object.slug %}{{ object.slug }}{% else %}your-names-date{% endif %}">
               </div>
               <small class="form-text text-muted">This URL will be generated automatically from your names and wedding date</small>
             </div>
@@ -106,24 +150,12 @@
           </div>
           <div class="col-md-6">
             <div class="mb-3">
-              <label for="{{ form.venue_location.id_for_label }}" class="form-label fw-medium">City, State/Country</label>
+              <label for="{{ form.venue_location.id_for_label }}" class="form-label fw-medium">Location</label>
               {{ form.venue_location }}
               {% if form.venue_location.errors %}
                 <div class="invalid-feedback d-block">{{ form.venue_location.errors.0 }}</div>
               {% endif %}
-              <small class="form-text text-muted">e.g., "San Francisco, California" or "Paris, France"</small>
-            </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            <div class="mb-3">
-              <label for="{{ form.venue_address.id_for_label }}" class="form-label fw-medium">Full Venue Address</label>
-              {{ form.venue_address }}
-              {% if form.venue_address.errors %}
-                <div class="invalid-feedback d-block">{{ form.venue_address.errors.0 }}</div>
-              {% endif %}
-              <small class="form-text text-muted">Provide your venues complete address for automated map directions (e.g., "123 Main Street, San Francisco, CA 94102")</small>
+              <small class="form-text text-muted">Full address for maps, or just "City, State"</small>
             </div>
           </div>
         </div>
@@ -210,7 +242,7 @@
       <div class="card-header header-rose text-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Wedding Links</h5>
         <button type="button" class="btn btn-light btn-sm" onclick="addWeddingLink()">
-          Add Link
+          <i class="bi bi-plus"></i> Add Link
         </button>
       </div>
       <div class="card-body">
@@ -299,46 +331,42 @@
       </div>
     </div>
 
-    <!-- Settings Card -->
-    <div class="card mb-4 border-0 shadow-sm">
-      <div class="card-header header-rose text-white">
-        <h5 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Page Settings</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-12">
-            <div class="mb-3">
-              <div class="form-check">
-                {{ form.is_public }}
-                <label class="form-check-label fw-medium" for="{{ form.is_public.id_for_label }}">
-                  Make this wedding page public
-                </label>
-              </div>
-              <small class="form-text text-muted">Allow others to discover your wedding page in our public gallery</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Action Buttons -->
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
+        <div class="row">
+          <!-- Left side - Delete button -->
+          <div class="col-md-6 mb-3 mb-md-0">
             {% if not is_new %}
               <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
                 <i class="bi bi-trash"></i> Delete Wedding Page
               </button>
             {% endif %}
           </div>
-          <div>
-            <a href="{% url 'wedding_shopping:dashboard' %}" class="btn btn-outline-secondary me-2">
-              Cancel
-            </a>
-            <button type="submit" class="btn btn-cyan">
-              <i class="bi bi-check-circle"></i> {% if is_new %}Create Wedding Page{% else %}Save Changes{% endif %}
-            </button>
+          
+          <!-- Right side - Save and Publish buttons -->
+          <div class="col-md-6 text-md-end">
+            <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+              <a href="{% url 'users:detail' request.user.username %}" class="btn btn-outline-secondary">
+                Cancel
+              </a>
+              
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Save Changes
+              </button>
+              
+              {% if not is_new %}
+                {% if object.is_public %}
+                  <button type="submit" name="unpublish_page" class="btn btn-warning">
+                    <i class="bi bi-eye-slash"></i> Make Private
+                  </button>
+                {% else %}
+                  <button type="submit" name="publish_page" class="btn btn-success">
+                    <i class="bi bi-globe"></i> Publish Page
+                  </button>
+                {% endif %}
+              {% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -396,34 +424,45 @@ document.addEventListener('DOMContentLoaded', function() {
     updateUrlPreview();
     
     // Add event listeners for real-time URL update
-    document.getElementById('{{ form.partner_1_name.id_for_label }}').addEventListener('input', updateUrlPreview);
-    document.getElementById('{{ form.partner_2_name.id_for_label }}').addEventListener('input', updateUrlPreview);
-    document.getElementById('{{ form.wedding_date.id_for_label }}').addEventListener('change', updateUrlPreview);
+    const name1Field = document.getElementById('{{ form.partner_1_name.id_for_label }}');
+    const name2Field = document.getElementById('{{ form.partner_2_name.id_for_label }}');
+    const dateField = document.getElementById('{{ form.wedding_date.id_for_label }}');
+    
+    if (name1Field) name1Field.addEventListener('input', updateUrlPreview);
+    if (name2Field) name2Field.addEventListener('input', updateUrlPreview);
+    if (dateField) dateField.addEventListener('change', updateUrlPreview);
     
     // Form validation
     const form = document.getElementById('wedding-form');
-    form.addEventListener('submit', validateForm);
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Skip validation for publish/unpublish actions
+            if (e.submitter && (e.submitter.name === 'publish_page' || e.submitter.name === 'unpublish_page')) {
+                return true;
+            }
+            return validateForm(e);
+        });
+    }
     
     // Initialize formset counter
     updateFormsetTotal();
 });
 
 function updateUrlPreview() {
-    const name1 = document.getElementById('{{ form.partner_1_name.id_for_label }}').value.trim();
-    const name2 = document.getElementById('{{ form.partner_2_name.id_for_label }}').value.trim();
-    const weddingDate = document.getElementById('{{ form.wedding_date.id_for_label }}').value;
+    const name1 = document.getElementById('{{ form.partner_1_name.id_for_label }}')?.value.trim() || '';
+    const name2 = document.getElementById('{{ form.partner_2_name.id_for_label }}')?.value.trim() || '';
+    const weddingDate = document.getElementById('{{ form.wedding_date.id_for_label }}')?.value || '';
     
     let slug = 'your-names-date';
     
     if (name1 && name2) {
-        // Clean names - remove special characters, keep only alphanumeric
+        // Clean names
         const cleanName1 = name1.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
         const cleanName2 = name2.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
         
         let dateStr = 'tbd';
         if (weddingDate) {
-            // FIXED: Proper date handling to avoid off-by-one error
-            const date = new Date(weddingDate + 'T00:00:00'); // Add time to avoid timezone issues
+            const date = new Date(weddingDate + 'T00:00:00');
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
             const year = String(date.getFullYear()).substring(2);
@@ -433,24 +472,26 @@ function updateUrlPreview() {
         slug = cleanName1 + cleanName2 + dateStr;
     }
     
-    document.getElementById('url-preview').value = slug;
+    const previewField = document.getElementById('url-preview');
+    if (previewField) {
+        previewField.value = slug;
+    }
 }
 
 function validateForm(event) {
     let isValid = true;
     
     // Check required fields
-    const requiredFields = ['{{ form.partner_1_name.id_for_label }}', '{{ form.partner_2_name.id_for_label }}'];
+    const name1Field = document.getElementById('{{ form.partner_1_name.id_for_label }}');
+    const name2Field = document.getElementById('{{ form.partner_2_name.id_for_label }}');
     
-    requiredFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        const value = field.value.trim();
-        
-        field.classList.remove('is-invalid');
-        
-        if (!value) {
-            field.classList.add('is-invalid');
-            isValid = false;
+    [name1Field, name2Field].forEach(field => {
+        if (field) {
+            field.classList.remove('is-invalid');
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            }
         }
     });
     
@@ -458,7 +499,7 @@ function validateForm(event) {
     const couplePhoto = document.getElementById('{{ form.couple_photo.id_for_label }}');
     const hasExistingCouplePhoto = {% if object.couple_photo %}true{% else %}false{% endif %};
     
-    if (!hasExistingCouplePhoto && !couplePhoto.files.length) {
+    if (couplePhoto && !hasExistingCouplePhoto && !couplePhoto.files.length) {
         couplePhoto.classList.add('is-invalid');
         showAlert('Please upload at least a couple photo', 'danger');
         isValid = false;
@@ -468,6 +509,8 @@ function validateForm(event) {
         event.preventDefault();
         showAlert('Please fill in all required fields', 'danger');
     }
+    
+    return isValid;
 }
 
 // Wedding Links Formset Management
@@ -477,23 +520,14 @@ function addWeddingLink() {
     const totalForms = document.querySelector('#id_weddinglink-TOTAL_FORMS');
     const formNum = parseInt(totalForms.value);
     
-    // Clone the empty form
     const newForm = emptyForm.querySelector('.wedding-link-form').cloneNode(true);
-    
-    // Update form attributes
     newForm.innerHTML = newForm.innerHTML.replace(/__prefix__/g, formNum);
     newForm.setAttribute('data-form-index', formNum);
-    
-    // Update the link number display
     newForm.querySelector('h6').textContent = `Link #${formNum + 1}`;
     
-    // Add to container
     container.appendChild(newForm);
-    
-    // Update total forms
     totalForms.value = formNum + 1;
     
-    // Show success message
     showAlert('New link added', 'success');
 }
 
@@ -502,11 +536,9 @@ function removeWeddingLink(button) {
     const deleteInput = linkForm.querySelector('input[name$="-DELETE"]');
     
     if (deleteInput) {
-        // Mark for deletion instead of removing immediately
         deleteInput.checked = true;
         linkForm.style.display = 'none';
     } else {
-        // Remove completely if it's a new form
         linkForm.remove();
         updateFormsetTotal();
     }
@@ -516,8 +548,10 @@ function removeWeddingLink(button) {
 
 function updateFormsetTotal() {
     const totalForms = document.querySelector('#id_weddinglink-TOTAL_FORMS');
-    const visibleForms = document.querySelectorAll('.wedding-link-form:not([style*="display: none"])').length;
-    totalForms.value = visibleForms;
+    if (totalForms) {
+        const visibleForms = document.querySelectorAll('.wedding-link-form:not([style*="display: none"])').length;
+        totalForms.value = visibleForms;
+    }
 }
 
 // Photo Management
@@ -529,9 +563,8 @@ function deletePhoto(photoType) {
     modal.show();
 }
 
-document.getElementById('confirmPhotoDelete').addEventListener('click', function() {
+document.getElementById('confirmPhotoDelete')?.addEventListener('click', function() {
     if (photoToDelete) {
-        // Create a hidden input to mark photo for deletion
         const form = document.getElementById('wedding-form');
         const deleteInput = document.createElement('input');
         deleteInput.type = 'hidden';
@@ -539,8 +572,7 @@ document.getElementById('confirmPhotoDelete').addEventListener('click', function
         deleteInput.value = '1';
         form.appendChild(deleteInput);
         
-        // Hide the current photo display
-        const photoContainer = document.querySelector(`[for="id_${photoToDelete}_photo"]`).parentElement.querySelector('.current-photo');
+        const photoContainer = document.querySelector(`[for="id_${photoToDelete}_photo"]`)?.parentElement.querySelector('.current-photo');
         if (photoContainer) {
             photoContainer.style.display = 'none';
         }
@@ -549,7 +581,7 @@ document.getElementById('confirmPhotoDelete').addEventListener('click', function
     }
     
     const modal = bootstrap.Modal.getInstance(document.getElementById('deletePhotoModal'));
-    modal.hide();
+    if (modal) modal.hide();
     photoToDelete = null;
 });
 
@@ -559,23 +591,18 @@ function confirmDelete() {
     modal.show();
 }
 
-// Utility Functions
-function copyUrl() {
-    const urlField = document.getElementById('url-preview');
-    const fullUrl = `{{ request.get_host }}/wedding/${urlField.value}/`;
-    
-    navigator.clipboard.writeText(fullUrl).then(() => {
-        showAlert('URL copied to clipboard!', 'success');
-    }).catch(() => {
-        // Fallback for older browsers
-        urlField.select();
+// Copy to clipboard
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.select();
         document.execCommand('copy');
         showAlert('URL copied to clipboard!', 'success');
-    });
+    }
 }
 
+// Alert helper
 function showAlert(message, type) {
-    // Remove existing alerts
     document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
     
     const alert = document.createElement('div');
@@ -595,13 +622,34 @@ function showAlert(message, type) {
 </script>
 
 <style>
-/* Enhanced form styling */
-.card-header {
+/* Card styling */
+.card-header.header-rose {
+    background: linear-gradient(135deg, #FF6B9D, #e91e63) !important;
+    color: white !important;
+}
+
+.card-header.header-rose * {
+    color: white !important;
+}
+
+.card-header .btn-light {
+    background: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    color: #FF6B9D !important;
     font-weight: 600;
 }
 
-.form-label.fw-medium {
-    color: #374151;
+.card-header .btn-light:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #e91e63 !important;
+    transform: translateY(-1px);
+}
+
+.current-photo {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
 }
 
 .wedding-link-form {
@@ -613,30 +661,6 @@ function showAlert(message, type) {
     background: #e9ecef;
 }
 
-.current-photo {
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    padding: 1rem;
-    background: #f8f9fa;
-}
-
-.input-group-text {
-    background: #e9ecef;
-    border-color: #ced4da;
-    color: #6c757d;
-    font-size: 0.875rem;
-}
-
-/* Form validation styles */
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-.invalid-feedback {
-    display: block !important;
-}
-
-/* Card hover effects */
 .card {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -646,74 +670,8 @@ function showAlert(message, type) {
     box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
 }
 
-/* Button enhancements */
-.btn {
-    border-radius: 6px;
-    font-weight: 500;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #007bff, #0056b3);
-    border: none;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #0056b3, #004085);
-}
-
-/* UPDATED: Cyan button for Save Changes */
-.btn-cyan {
-    background: linear-gradient(135deg, #17a2b8, #138496);
-    border: none;
-    color: white;
-}
-
-.btn-cyan:hover {
-    background: linear-gradient(135deg, #138496, #0f6674);
-    color: white;
-}
-
-/* UPDATED: Proper Electric Rose Color from App Theme */
-.card-header.header-rose {
-    background: linear-gradient(135deg, #FF6B9D, #e91e63) !important;
-    color: white !important;
-}
-
-.card-header.header-rose h5,
-.card-header.header-rose i,
-.card-header.header-rose * {
-    color: white !important;
-}
-
-/* UPDATED: Add Link Button - Rose Text on White Background */
-.card-header .btn-light {
-    background: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    color: #FF6B9D !important;
-    font-weight: 600;
-}
-
-.card-header .btn-light:hover {
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #e91e63 !important;
-    border-color: rgba(255, 255, 255, 0.9) !important;
-    transform: translateY(-1px);
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .container {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .wedding-link-form .row .col-md-4 {
-        margin-bottom: 0.5rem;
-    }
+.is-invalid {
+    border-color: #dc3545 !important;
 }
 </style>
 {% endblock %}

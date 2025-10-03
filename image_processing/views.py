@@ -968,15 +968,16 @@ def collection_detail(request, collection_id):
     return render(request, 'image_processing/collection_detail.html', context)
 
 
+
 @login_required
 @require_POST
 def create_collection_ajax(request):
-    """AJAX endpoint to create a new collection"""
+    """AJAX endpoint to create a new collection - Always public"""
     try:
         data = json.loads(request.body)
         name = data.get('name', '').strip()
         description = data.get('description', '').strip()
-        is_public = data.get('is_public', False)
+        # Removed is_public parameter - always True now
         
         if not name:
             return JsonResponse({
@@ -995,7 +996,7 @@ def create_collection_ajax(request):
             user=request.user,
             name=name,
             description=description,
-            is_public=is_public
+            is_public=True  # Always public now
         )
         
         return JsonResponse({
@@ -1004,12 +1005,12 @@ def create_collection_ajax(request):
                 'id': collection.id,
                 'name': collection.name,
                 'description': collection.description,
-                'is_public': collection.is_public,
+                'is_public': True,  # Always True
                 'item_count': 0,
                 'created_at': collection.created_at.isoformat()
             },
             'message': f'Collection "{name}" created successfully!'
-        })
+        })  # <-- This closing brace was missing!
         
     except json.JSONDecodeError:
         return JsonResponse({
@@ -1145,7 +1146,6 @@ def remove_image_from_collection(request, collection_id):
         logger.error(f"Error removing from collection: {str(e)}")
         return JsonResponse({'success': False, 'error': 'Error removing from collection'})
 
-
 @login_required
 def get_user_collections(request):
     """API endpoint to get user's collections"""
@@ -1176,6 +1176,7 @@ def get_user_collections(request):
             'success': False,
             'error': 'Unable to load collections'
         }, status=500)
+  
 
 
 @login_required
@@ -1288,13 +1289,14 @@ def add_to_multiple_collections(request):
         return JsonResponse({'success': False, 'error': 'Error adding to collections'})
 
 
+
 @login_required
 @require_POST
 def create_collection(request):
-    """Create a new collection"""
+    """Create a new collection - Always public"""
     name = request.POST.get('name', '').strip()
     description = request.POST.get('description', '').strip()
-    is_public = request.POST.get('is_public') == 'on'
+    # Removed is_public parameter
     
     if not name:
         messages.error(request, 'Collection name is required')
@@ -1305,7 +1307,7 @@ def create_collection(request):
             user=request.user,
             name=name,
             description=description,
-            is_public=is_public
+            is_public=True  # Always public
         )
         messages.success(request, f'Collection "{name}" created successfully!')
     except Exception as e:
@@ -1313,7 +1315,6 @@ def create_collection(request):
         messages.error(request, 'Error creating collection')
     
     return redirect('image_processing:collections_list')
-
 
 @login_required
 @require_POST

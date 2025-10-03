@@ -392,11 +392,6 @@
                 </a>
               </li>
            
-            <!---li class="mb-2">
-              <a href="{% url 'wedding_shopping:public_couples_list' %}" class="text-white-75 text-decoration-none footer-link">
-                <i class="bi bi-globe2 me-2 text-cyan"></i>Discover Weddings
-              </a>
-            </li--->
           </ul>
         </div>
 
@@ -509,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Newsletter form handling - FIXED VERSION
+    // Newsletter form handling
     const newsletterForm = document.getElementById('newsletter-form');
     if (newsletterForm) {
         newsletterForm.addEventListener('submit', function(e) {
@@ -583,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// FIXED CENTRALIZED COLLECTION SYSTEM - Works with ANY button class
+// FIXED CENTRALIZED COLLECTION SYSTEM
 class UniversalCollectionPicker {
     constructor() {
         this.collections = [];
@@ -674,16 +669,9 @@ class UniversalCollectionPicker {
                                     <label class="form-label">Description (Optional)</label>
                                     <textarea class="form-control new-collection-description" rows="2" placeholder="What this collection is for..." maxlength="500"></textarea>
                                 </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input new-collection-public" type="checkbox" id="newCollectionPublic">
-                                        <label class="form-check-label" for="newCollectionPublic">
-                                            Make this collection public
-                                        </label>
-                                        <small class="form-text text-muted d-block">
-                                            Public collections can be discovered by other users
-                                        </small>
-                                    </div>
+                                <div class="alert alert-info alert-sm">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    <small>All collections are public and can be shared with others.</small>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -711,7 +699,7 @@ class UniversalCollectionPicker {
     }
     
     bindGlobalEvents() {
-        // Listen for ANY collection button click (works with all naming conventions)
+        // Listen for ANY collection button click
         document.addEventListener('click', (e) => {
             const button = e.target.closest('[data-processed-image-id], [data-user-image-id]');
             if (button && (
@@ -774,11 +762,10 @@ class UniversalCollectionPicker {
         // Show modal immediately
         this.modal.show();
         
-        // Load data with better error handling
+        // Load data
         try {
             await this.loadData();
             
-            // Ensure proper focus after modal is fully shown
             setTimeout(() => {
                 if (this.searchInput && this.collections.length > 0) {
                     this.searchInput.focus();
@@ -795,20 +782,16 @@ class UniversalCollectionPicker {
         try {
             this.showLoading();
             
-            // Load both collections and current selections
             await Promise.all([
                 this.loadCollections(),
                 this.loadCurrentSelections()
             ]);
             
-            // CRITICAL: Proper state management
             if (this.collections.length === 0) {
                 this.showEmpty();
-                console.log('No collections found - showing empty state');
             } else {
                 this.renderCollections();
                 this.showList();
-                console.log(`Rendered ${this.collections.length} collections`);
             }
             
         } catch (error) {
@@ -834,8 +817,6 @@ class UniversalCollectionPicker {
         this.collections = data.collections
             .filter(c => !c.is_default)
             .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-            
-        console.log(`Loaded ${this.collections.length} collections`);
     }
     
     async loadCurrentSelections() {
@@ -854,7 +835,6 @@ class UniversalCollectionPicker {
                 const data = await response.json();
                 this.originalSelections = new Set(data.collection_ids || []);
                 this.currentSelections = new Set(this.originalSelections);
-                console.log(`Image is in ${this.originalSelections.size} collections`);
             }
         } catch (error) {
             console.error('Error loading current selections:', error);
@@ -862,29 +842,20 @@ class UniversalCollectionPicker {
     }
     
     renderCollections() {
-        if (!this.collectionsList) {
-            console.error('Collections list element not found');
-            return;
-        }
+        if (!this.collectionsList) return;
         
-        console.log(`Rendering ${this.collections.length} collections`);
         this.collectionsList.innerHTML = '';
         
-        if (this.collections.length === 0) {
-            console.log('No collections to render');
-            return;
-        }
+        if (this.collections.length === 0) return;
         
         const recent = this.collections.slice(0, 3);
         const older = this.collections.slice(3);
         
-        // Render recent collections
-        recent.forEach((collection, index) => {
+        recent.forEach((collection) => {
             const item = this.createCollectionItem(collection, true);
             this.collectionsList.appendChild(item);
         });
         
-        // Render older collections with separator
         if (older.length > 0) {
             const separator = document.createElement('div');
             separator.className = 'border-top pt-2 mt-2 older-collections';
@@ -896,8 +867,6 @@ class UniversalCollectionPicker {
                 this.collectionsList.appendChild(item);
             });
         }
-        
-        console.log(`Successfully rendered collections to DOM`);
     }
     
     createCollectionItem(collection, isRecent) {
@@ -913,12 +882,11 @@ class UniversalCollectionPicker {
         }
         
         const recentBadge = isRecent ? '<span class="badge bg-info text-dark ms-1" style="font-size: 0.7rem;">Recent</span>' : '';
-        const publicBadge = collection.is_public ? '<span class="badge bg-success ms-1" style="font-size: 0.7rem;">Public</span>' : '';
         
         item.innerHTML = `
             <input type="checkbox" class="form-check-input me-2" ${isSelected ? 'checked' : ''}>
             <div class="flex-grow-1">
-                <div class="fw-medium">${this.escapeHtml(collection.name)}${recentBadge}${publicBadge}</div>
+                <div class="fw-medium">${this.escapeHtml(collection.name)}${recentBadge}</div>
                 <small class="text-muted">${collection.item_count} image${collection.item_count !== 1 ? 's' : ''}</small>
             </div>
         `;
@@ -1033,20 +1001,14 @@ class UniversalCollectionPicker {
     }
     
     showCreateModal() {
-        // Hide main modal temporarily
         this.modal.hide();
-        
-        // Show create modal
         this.createModal.show();
         
-        // Reset form
         const nameInput = document.querySelector('.new-collection-name');
         const descInput = document.querySelector('.new-collection-description');
-        const publicCheckbox = document.querySelector('.new-collection-public');
         
         if (nameInput) nameInput.value = '';
         if (descInput) descInput.value = '';
-        if (publicCheckbox) publicCheckbox.checked = false;
         
         setTimeout(() => nameInput?.focus(), 300);
     }
@@ -1054,12 +1016,10 @@ class UniversalCollectionPicker {
     async createCollection() {
         const nameInput = document.querySelector('.new-collection-name');
         const descInput = document.querySelector('.new-collection-description');
-        const publicCheckbox = document.querySelector('.new-collection-public');
         const submitBtn = document.querySelector('.create-collection-submit');
         
         const name = nameInput?.value.trim();
         const description = descInput?.value.trim();
-        const isPublic = publicCheckbox?.checked || false;
         
         if (!name) {
             nameInput?.focus();
@@ -1079,8 +1039,7 @@ class UniversalCollectionPicker {
                 },
                 body: JSON.stringify({
                     name: name,
-                    description: description,
-                    is_public: isPublic
+                    description: description
                 })
             });
             
@@ -1089,19 +1048,14 @@ class UniversalCollectionPicker {
             if (result.success) {
                 this.createModal.hide();
                 
-                // Add to collections list and select it
                 this.collections.unshift(result.collection);
                 this.currentSelections.add(result.collection.id);
                 
                 setTimeout(() => {
                     this.modal.show();
-                    
-                    // Re-render and ensure proper state
                     this.renderCollections();
                     this.showList();
                     this.updateSaveButton();
-                    
-                    console.log('Collection created and modal updated');
                 }, 300);
                 
             } else {
@@ -1132,21 +1086,18 @@ class UniversalCollectionPicker {
     }
     
     showLoading() {
-        console.log('Switching to loading state');
         if (this.loadingEl) this.loadingEl.classList.remove('d-none');
         if (this.collectionsList) this.collectionsList.classList.add('d-none');
         if (this.emptyEl) this.emptyEl.classList.add('d-none');
     }
     
     showList() {
-        console.log('Switching to list state');
         if (this.loadingEl) this.loadingEl.classList.add('d-none');
         if (this.collectionsList) this.collectionsList.classList.remove('d-none');
         if (this.emptyEl) this.emptyEl.classList.add('d-none');
     }
     
     showEmpty() {
-        console.log('Switching to empty state');
         if (this.loadingEl) this.loadingEl.classList.add('d-none');
         if (this.collectionsList) this.collectionsList.classList.add('d-none');
         if (this.emptyEl) this.emptyEl.classList.remove('d-none');
@@ -1177,15 +1128,12 @@ class UniversalCollectionPicker {
     }
     
     cleanupModal() {
-        // Proper cleanup to prevent page freezing
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
         
         document.body.classList.remove('modal-open');
         document.body.style.paddingRight = '';
         document.body.style.overflow = '';
-        
-        console.log('Modal cleanup complete');
     }
     
     getCSRFToken() {
@@ -1200,19 +1148,17 @@ class UniversalCollectionPicker {
     }
 }
 
-// Initialize the universal collection picker
+// Initialize
 let universalCollectionPicker;
 
 document.addEventListener('DOMContentLoaded', function() {
     universalCollectionPicker = new UniversalCollectionPicker();
 });
 
-// Global function for backward compatibility
 window.initializeSimpleCollectionPickers = function() {
     console.log('Collection pickers already initialized globally');
 };
 
-// Track affiliate footer clicks
 window.trackAffiliateFooterClick = function() {
     if (typeof gtag !== 'undefined') {
         gtag('event', 'affiliate_signup_click', {
@@ -1251,94 +1197,16 @@ window.trackAffiliateFooterClick = function() {
     transform: translateY(0);
 }
 
-/* Collection modal buttons with enhanced feedback */
+/* Collection modal buttons */
 .collection-save-changes-btn,
 .create-collection-submit {
     transition: all 0.2s ease;
-    position: relative;
-    overflow: hidden;
 }
 
 .collection-save-changes-btn:hover,
 .create-collection-submit:hover {
     transform: translateY(-1px);
     box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-
-.collection-save-changes-btn:active,
-.create-collection-submit:active {
-    transform: scale(0.98);
-}
-
-/* Success state animation */
-.btn-success {
-    animation: successPulse 0.3s ease;
-}
-
-@keyframes successPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-/* Error shake animation */
-.btn-danger {
-    animation: errorShake 0.5s ease;
-}
-
-@keyframes errorShake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    75% { transform: translateX(3px); }
-}
-
-/* Loading state styling */
-.btn-warning {
-    background: linear-gradient(45deg, #ffc107, #ffb300);
-    border-color: #ffc107;
-    animation: loadingPulse 1s infinite;
-}
-
-@keyframes loadingPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-}
-
-/* Input error state */
-.form-control.error {
-    border-color: #dc3545;
-    animation: inputShake 0.3s ease;
-}
-
-@keyframes inputShake {
-    0%, 100% { transform: translateX(0); }
-    33% { transform: translateX(-2px); }
-    66% { transform: translateX(2px); }
-}
-
-/* Collection item selection animation */
-.collection-item.selecting {
-    background-color: #d4edda !important;
-    border-color: #28a745 !important;
-    animation: selectionFlash 0.3s ease;
-}
-
-.collection-item.deselecting {
-    background-color: #f8d7da !important;
-    border-color: #dc3545 !important;
-    animation: deselectionFlash 0.3s ease;
-}
-
-@keyframes selectionFlash {
-    0% { background-color: #d4edda; }
-    50% { background-color: #c3e6cb; }
-    100% { background-color: #f8f9fa; }
-}
-
-@keyframes deselectionFlash {
-    0% { background-color: #f8d7da; }
-    50% { background-color: #f5c6cb; }
-    100% { background-color: #ffffff; }
 }
 
 /* Modal backdrop fix */
@@ -1350,32 +1218,8 @@ window.trackAffiliateFooterClick = function() {
     z-index: 1050;
 }
 
-/* Prevent body scroll issues */
 body.modal-open {
     overflow: hidden;
-}
-
-/* Collection button hover effects */
-.collection-save-btn:hover,
-.collection-picker-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Loading animations */
-.collections-loading .spinner-border {
-    width: 1.5rem;
-    height: 1.5rem;
-}
-
-/* Recent and public badges */
-.badge {
-    font-size: 0.7rem;
-    transition: all 0.2s ease;
-}
-
-.badge:hover {
-    transform: scale(1.05);
 }
 
 /* Checkbox styling */
@@ -1386,32 +1230,12 @@ body.modal-open {
 .form-check-input:checked {
     background-color: #28a745;
     border-color: #28a745;
-    animation: checkboxPop 0.2s ease;
-}
-
-@keyframes checkboxPop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
-
-/* Create collection button pulse on hover */
-.create-first-collection-btn:hover,
-.create-new-collection-btn:hover {
-    animation: buttonPulse 0.3s ease;
-}
-
-@keyframes buttonPulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-    100% { transform: scale(1); }
 }
 
 /* Usage indicator clickable styles */
 .usage-indicator-link {
     cursor: pointer;
     transition: all 0.2s ease;
-    position: relative;
 }
 
 .usage-indicator-link:hover {
@@ -1419,26 +1243,6 @@ body.modal-open {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     text-decoration: none !important;
     color: white !important;
-}
-
-.usage-indicator-link:active {
-    transform: translateY(0);
-}
-
-.usage-indicator-link:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
-}
-
-/* Add a subtle pulse animation for low usage */
-.bg-warning.usage-indicator-link,
-.bg-danger.usage-indicator-link {
-    animation: usagePulse 2s ease-in-out infinite;
-}
-
-@keyframes usagePulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
 }
 
 /* Responsive design */
@@ -1454,32 +1258,14 @@ body.modal-open {
     .collection-item {
         padding: 0.75rem 0.5rem;
     }
-    
-    .usage-indicator-link {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-    }
 }
 
-/* Focus states for accessibility */
+/* Focus states */
 .btn:focus,
 .form-control:focus,
 .form-check-input:focus {
     box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
     outline: none;
-}
-
-/* Smooth transitions for all interactive elements */
-* {
-    box-sizing: border-box;
-}
-
-.collection-item,
-.btn,
-.form-control,
-.form-check-input,
-.badge {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
 </body>

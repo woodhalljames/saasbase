@@ -11,7 +11,8 @@ class CoupleProfileForm(forms.ModelForm):
         fields = [
             'partner_1_name', 'partner_2_name', 'wedding_date', 
             'venue_name', 'venue_location', 'couple_photo', 
-            'venue_photo', 'couple_story', 'is_public'
+            'venue_photo', 'couple_story'
+            # Note: is_public is NOT in the form - handled by publish/unpublish buttons
         ]
         widgets = {
             'partner_1_name': forms.TextInput(attrs={
@@ -34,7 +35,7 @@ class CoupleProfileForm(forms.ModelForm):
             }),
             'venue_location': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '123 Wedding Lane, Austin, TX 78701 or Austin, Texas'
+                'placeholder': '123 Main St, Austin, TX 78701 or just Austin, Texas'
             }),
             'couple_photo': forms.FileInput(attrs={
                 'class': 'form-control',
@@ -48,9 +49,6 @@ class CoupleProfileForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 5,
                 'placeholder': 'Tell your love story... How did you meet? When did you get engaged? What are you most excited about for your wedding day?'
-            }),
-            'is_public': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
             })
         }
     
@@ -67,10 +65,9 @@ class CoupleProfileForm(forms.ModelForm):
         return name.strip()
     
     def clean_couple_story(self):
+        """Couple story is now optional"""
         story = self.cleaned_data.get('couple_story', '')
-        if not story or len(story.strip()) < 10:
-            raise ValidationError("Please tell us a bit about your love story (at least 10 characters).")
-        return story.strip()
+        return story.strip() if story else ''
 
 
 class WeddingLinkForm(forms.ModelForm):
@@ -86,12 +83,12 @@ class WeddingLinkForm(forms.ModelForm):
             }),
             'url': forms.URLInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'https://dreamwedai.com/your-link'
+                'placeholder': 'https://yoursite.com/link'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Brief description of this link'
+                'placeholder': 'Brief description of this link (optional)'
             })
         }
     

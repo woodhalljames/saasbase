@@ -21,11 +21,6 @@
         <p class="text-muted">{{ collection.description }}</p>
       {% endif %}
       <div class="d-flex gap-3 flex-wrap">
-        {% if collection.is_public %}
-          <span class="badge bg-info"><i class="bi bi-globe"></i> Public</span>
-        {% else %}
-          <span class="badge bg-secondary"><i class="bi bi-lock"></i> Private</span>
-        {% endif %}
         <small class="text-muted">
           {{ collection.item_count }} item{{ collection.item_count|pluralize }} • 
           Updated {{ collection.updated_at|timesince }} ago
@@ -46,28 +41,17 @@
                href="#" 
                data-collection-id="{{ collection.id }}"
                data-collection-name="{{ collection.name }}"
-               data-collection-description="{{ collection.description }}"
-               data-collection-public="{{ collection.is_public|yesno:'true,false' }}">
+               data-collection-description="{{ collection.description }}">
               <i class="bi bi-pencil text-primary"></i> Edit Collection
             </a>
           </li>
-          {% if collection.is_public %}
-            <li>
-              <a class="dropdown-item share-collection-btn" 
-                 href="#" 
-                 data-collection-id="{{ collection.id }}">
-                <i class="bi bi-share text-info"></i> Share Collection
-              </a>
-            </li>
-          {% else %}
-            <li>
-              <a class="dropdown-item make-public-btn" 
-                 href="#" 
-                 data-collection-id="{{ collection.id }}">
-                <i class="bi bi-globe text-info"></i> Make Public
-              </a>
-            </li>
-          {% endif %}
+          <li>
+            <a class="dropdown-item share-collection-btn" 
+               href="#" 
+               data-collection-id="{{ collection.id }}">
+              <i class="bi bi-share text-info"></i> Share Collection
+            </a>
+          </li>
           <li><hr class="dropdown-divider"></li>
           <li>
             <a class="dropdown-item text-danger delete-collection-btn" 
@@ -329,7 +313,6 @@
             <label for="editCollectionDescription" class="form-label">Description (Optional)</label>
             <textarea class="form-control" id="editCollectionDescription" name="description" rows="3"></textarea>
           </div>
-         </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -376,7 +359,7 @@
             <i class="bi bi-clipboard"></i> Copy
           </button>
         </div>
-        <small class="text-muted">Anyone with this link can view your public collection.</small>
+        <small class="text-muted">Share this link to let others view your collection.</small>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -435,29 +418,6 @@
   background-color: rgba(220, 53, 69, 0.1);
 }
 
-/* Animation effects */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .card-body {
@@ -487,11 +447,11 @@
 </style>
 
 <script>
-// Collection Detail Management JavaScript - Simplified version
+// Collection Detail Management JavaScript - FIXED VERSION
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Setting up collection detail management...');
+    console.log('Setting up collection detail management...');
     
-    // Edit Collection
+    // Edit Collection - FIXED
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('edit-collection-btn') || e.target.closest('.edit-collection-btn')) {
             e.preventDefault();
@@ -515,15 +475,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Make Public Collection
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('make-public-btn') || e.target.closest('.make-public-btn')) {
-            e.preventDefault();
-            handleMakePublic(e.target.closest('.make-public-btn') || e.target);
-        }
-    });
-    
-    // Edit Collection Form Submit
+    // Edit Collection Form Submit - FIXED
     const editForm = document.getElementById('editCollectionForm');
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
@@ -572,7 +524,6 @@ async function redoTransformation(jobId) {
         const result = await response.json();
         
         if (result.success) {
-            // Redirect to studio with pre-filled parameters
             window.location.href = result.redirect_url;
         } else {
             showAlert('Failed to copy settings', 'danger');
@@ -584,10 +535,8 @@ async function redoTransformation(jobId) {
 }
 
 function showRemoveConfirmation(itemId, collectionId, itemTitle) {
-    // Update modal content
     document.getElementById('removeItemName').textContent = itemTitle;
     
-    // Set up confirm button
     const confirmBtn = document.getElementById('confirmRemoveBtn');
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
@@ -596,7 +545,6 @@ function showRemoveConfirmation(itemId, collectionId, itemTitle) {
         removeFromCollection(itemId, collectionId);
     });
     
-    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('removeFromCollectionModal'));
     modal.show();
 }
@@ -614,14 +562,11 @@ async function removeFromCollection(itemId, collectionId) {
         const result = await response.json();
         
         if (result.success) {
-            // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('removeFromCollectionModal'));
             modal.hide();
             
-            // Show success message
             showAlert(result.message, 'success');
             
-            // Remove the item from the grid with animation
             const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
             if (itemElement) {
                 itemElement.style.transition = 'all 0.3s ease';
@@ -631,10 +576,8 @@ async function removeFromCollection(itemId, collectionId) {
                 setTimeout(() => {
                     itemElement.remove();
                     
-                    // Check if collection is now empty
                     const remainingItems = document.querySelectorAll('.collection-item');
                     if (remainingItems.length === 0) {
-                        // Reload page to show empty state
                         setTimeout(() => {
                             window.location.reload();
                         }, 1000);
@@ -651,19 +594,17 @@ async function removeFromCollection(itemId, collectionId) {
 }
 
 function handleEditCollection(button) {
-    console.log('✏️ Edit collection clicked');
+    console.log('Edit collection clicked');
     
     const collectionId = button.dataset.collectionId;
     const collectionName = button.dataset.collectionName;
-    const collectionDescription = button.dataset.collectionDescription;
-    const isPublic = button.dataset.collectionPublic === 'true';
+    const collectionDescription = button.dataset.collectionDescription || '';
     
     currentCollectionId = collectionId;
     
     // Fill form
     document.getElementById('editCollectionName').value = collectionName;
-    document.getElementById('editCollectionDescription').value = collectionDescription || '';
-    document.getElementById('editIsPublic').checked = isPublic;
+    document.getElementById('editCollectionDescription').value = collectionDescription;
     
     // Update form action
     const form = document.getElementById('editCollectionForm');
@@ -675,17 +616,15 @@ function handleEditCollection(button) {
 }
 
 function handleDeleteCollection(button) {
-    console.log('🗑️ Delete collection clicked');
+    console.log('Delete collection clicked');
     
     const collectionId = button.dataset.collectionId;
     const collectionName = button.dataset.collectionName;
     
     currentCollectionId = collectionId;
     
-    // Update modal content
     document.getElementById('deleteCollectionName').textContent = collectionName;
     
-    // Set up confirm button
     const confirmBtn = document.getElementById('confirmDeleteCollectionBtn');
     const newConfirmBtn = confirmBtn.cloneNode(true);
     confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
@@ -694,71 +633,24 @@ function handleDeleteCollection(button) {
         executeDeleteCollection(collectionId);
     });
     
-    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('deleteCollectionModal'));
     modal.show();
 }
 
 function handleShareCollection(button) {
-    console.log('📤 Share collection clicked');
+    console.log('Share collection clicked');
     
     const collectionId = button.dataset.collectionId;
     
-    // Generate share URL
     const shareUrl = `${window.location.origin}/studio/collections/${collectionId}/`;
     document.getElementById('shareCollectionUrl').value = shareUrl;
     
-    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('shareCollectionModal'));
     modal.show();
 }
 
-function handleMakePublic(button) {
-    console.log('🌐 Make public clicked');
-    
-    const collectionId = button.dataset.collectionId;
-    
-    // Confirm action
-    if (confirm('Make this collection public? Anyone with the link will be able to view it.')) {
-        makeCollectionPublic(collectionId);
-    }
-}
-
-async function makeCollectionPublic(collectionId) {
-    try {
-        // Get current collection name
-        const collectionName = document.querySelector('h1').textContent.trim();
-        
-        const response = await fetch(`/studio/collections/${collectionId}/edit/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCSRFToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: `name=${encodeURIComponent(collectionName)}&is_public=on`
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showAlert(data.message, 'success');
-            
-            // Refresh the page to show updated collection
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            throw new Error(data.error || 'Error making collection public');
-        }
-    } catch (error) {
-        console.error('❌ Make public error:', error);
-        showAlert('Error making collection public: ' + error.message, 'error');
-    }
-}
-
 async function submitEditCollection() {
-    console.log('💾 Submitting collection edit...');
+    console.log('Submitting collection edit...');
     
     if (!currentCollectionId) return;
     
@@ -778,13 +670,11 @@ async function submitEditCollection() {
         const data = await response.json();
         
         if (data.success) {
-            // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('editCollectionModal'));
             modal.hide();
             
             showAlert(data.message, 'success');
             
-            // Refresh the page to show updated collection
             setTimeout(() => {
                 location.reload();
             }, 1500);
@@ -792,13 +682,13 @@ async function submitEditCollection() {
             throw new Error(data.error || 'Error updating collection');
         }
     } catch (error) {
-        console.error('❌ Edit collection error:', error);
+        console.error('Edit collection error:', error);
         showAlert('Error updating collection: ' + error.message, 'error');
     }
 }
 
 async function executeDeleteCollection(collectionId) {
-    console.log(`🗑️ Executing collection delete ${collectionId}...`);
+    console.log(`Executing collection delete ${collectionId}...`);
     
     try {
         const response = await fetch(`/studio/collections/${collectionId}/delete/`, {
@@ -812,13 +702,11 @@ async function executeDeleteCollection(collectionId) {
         const data = await response.json();
         
         if (data.success) {
-            // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteCollectionModal'));
             modal.hide();
             
             showAlert(data.message, 'success');
             
-            // Redirect to collections list
             setTimeout(() => {
                 window.location.href = '/studio/collections/';
             }, 1500);
@@ -826,7 +714,7 @@ async function executeDeleteCollection(collectionId) {
             throw new Error(data.error || 'Delete failed');
         }
     } catch (error) {
-        console.error('❌ Delete collection error:', error);
+        console.error('Delete collection error:', error);
         showAlert('Error deleting collection: ' + error.message, 'error');
     }
 }
@@ -837,7 +725,6 @@ function getCSRFToken() {
 }
 
 function showAlert(message, type) {
-    // Remove existing alerts
     document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
     
     const alert = document.createElement('div');

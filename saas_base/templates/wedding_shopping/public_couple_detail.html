@@ -81,16 +81,18 @@
   --wedding-table-border: #e5e7eb;
 }
 
-/* Social Share Bar - Floating at top */
-.wedding-share-bar {
-  position: sticky;
-  top: 60px;
-  z-index: 100;
+/* Social Share Bar - Footer Version */
+.wedding-share-footer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+.wedding-share-footer:hover {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--wedding-border);
-  padding: 0.75rem 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
 
 .wedding-share-buttons {
@@ -139,6 +141,37 @@
 
 .share-copy.copied {
   background: #28a745;
+}
+
+/* Copy Toast Notification */
+.copy-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #28a745;
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 9999;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: none;
+}
+
+.copy-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.copy-toast i {
+  font-size: 1.2rem;
 }
 
 /* Hero Section - Better Mobile Handling */
@@ -581,8 +614,9 @@
     width: 150px;
   }
   
-  .wedding-share-bar {
-    top: 56px;
+  .wedding-share-footer {
+    padding: 1rem;
+    margin-top: 1.5rem;
   }
   
   .wedding-share-buttons {
@@ -592,6 +626,12 @@
   .wedding-share-btn {
     width: 34px;
     height: 34px;
+    font-size: 0.9rem;
+  }
+  
+  .copy-toast {
+    bottom: 1rem;
+    padding: 0.875rem 1.5rem;
     font-size: 0.9rem;
   }
 }
@@ -691,65 +731,6 @@
   }
 }
 </script>
-
-<!-- Social Share Bar -->
-<div class="wedding-share-bar">
-  <div class="container">
-    <div class="wedding-share-buttons">
-      <span class="wedding-share-label">Share this wedding:</span>
-      
-      <a href="{{ social_share.facebook }}" 
-         class="wedding-share-btn share-facebook"
-         target="_blank"
-         rel="noopener noreferrer"
-         aria-label="Share on Facebook"
-         title="Share on Facebook">
-        <i class="bi bi-facebook" aria-hidden="true"></i>
-      </a>
-      
-      <a href="{{ social_share.twitter }}" 
-         class="wedding-share-btn share-twitter"
-         target="_blank"
-         rel="noopener noreferrer"
-         aria-label="Share on Twitter"
-         title="Share on Twitter">
-        <i class="bi bi-twitter" aria-hidden="true"></i>
-      </a>
-      
-      <a href="{{ social_share.pinterest }}" 
-         class="wedding-share-btn share-pinterest"
-         target="_blank"
-         rel="noopener noreferrer"
-         aria-label="Share on Pinterest"
-         title="Share on Pinterest">
-        <i class="bi bi-pinterest" aria-hidden="true"></i>
-      </a>
-      
-      <a href="{{ social_share.whatsapp }}" 
-         class="wedding-share-btn share-whatsapp"
-         target="_blank"
-         rel="noopener noreferrer"
-         aria-label="Share on WhatsApp"
-         title="Share on WhatsApp">
-        <i class="bi bi-whatsapp" aria-hidden="true"></i>
-      </a>
-      
-      <a href="{{ social_share.email }}" 
-         class="wedding-share-btn share-email"
-         aria-label="Share via Email"
-         title="Share via Email">
-        <i class="bi bi-envelope-fill" aria-hidden="true"></i>
-      </a>
-      
-      <button class="wedding-share-btn share-copy"
-              onclick="copyWeddingLink('{{ social_share.copy_link }}')"
-              aria-label="Copy link"
-              title="Copy link">
-        <i class="bi bi-link-45deg" aria-hidden="true"></i>
-      </button>
-    </div>
-  </div>
-</div>
 
 <div class="wedding-content-wrapper">
   <!-- Hero Section with Large Photo -->
@@ -881,8 +862,71 @@
         <p class="footer-date wedding-elegant">{{ couple.wedding_date|date:"F j, Y" }}</p>
       {% endif %}
       <div class="decorative-line"></div>
+      
+      <!-- Social Share Bar - Footer Version -->
+      <div class="wedding-share-footer">
+        <div class="wedding-share-buttons">
+          <span class="wedding-share-label">Share this wedding:</span>
+          
+          <a href="{{ social_share.facebook }}" 
+             class="wedding-share-btn share-facebook"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Facebook"
+             title="Share on Facebook">
+            <i class="bi bi-facebook" aria-hidden="true"></i>
+          </a>
+          
+          <a href="{{ social_share.twitter }}" 
+             class="wedding-share-btn share-twitter"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Twitter"
+             title="Share on Twitter">
+            <i class="bi bi-twitter" aria-hidden="true"></i>
+          </a>
+          
+          <a href="{{ social_share.pinterest }}" 
+             class="wedding-share-btn share-pinterest"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on Pinterest"
+             title="Share on Pinterest">
+            <i class="bi bi-pinterest" aria-hidden="true"></i>
+          </a>
+          
+          <a href="{{ social_share.whatsapp }}" 
+             class="wedding-share-btn share-whatsapp"
+             target="_blank"
+             rel="noopener noreferrer"
+             aria-label="Share on WhatsApp"
+             title="Share on WhatsApp">
+            <i class="bi bi-whatsapp" aria-hidden="true"></i>
+          </a>
+          
+          <a href="{{ social_share.email }}" 
+             class="wedding-share-btn share-email"
+             aria-label="Share via Email"
+             title="Share via Email">
+            <i class="bi bi-envelope-fill" aria-hidden="true"></i>
+          </a>
+          
+          <button class="wedding-share-btn share-copy"
+                  onclick="copyWeddingLink('{{ social_share.copy_link }}')"
+                  aria-label="Copy link"
+                  title="Copy link">
+            <i class="bi bi-link-45deg" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
+</div>
+
+<!-- Copy Toast Notification -->
+<div class="copy-toast" id="copyToast">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>Link copied to clipboard!</span>
 </div>
 
 {% if couple.wedding_date and not is_wedding_day and not wedding_passed %}
@@ -912,20 +956,31 @@ updateCountdown();
 {% endif %}
 
 <script>
-// Copy wedding link to clipboard
+// Copy wedding link to clipboard with toast notification
 function copyWeddingLink(url) {
   navigator.clipboard.writeText(url).then(function() {
     const btn = event.currentTarget;
     const icon = btn.querySelector('i');
     const originalClass = icon.className;
+    const toast = document.getElementById('copyToast');
     
+    // Change button icon to check
     icon.className = 'bi bi-check2';
     btn.classList.add('copied');
     
+    // Show toast notification
+    toast.classList.add('show');
+    
+    // Reset button after 2 seconds
     setTimeout(function() {
       icon.className = originalClass;
       btn.classList.remove('copied');
     }, 2000);
+    
+    // Hide toast after 3 seconds
+    setTimeout(function() {
+      toast.classList.remove('show');
+    }, 3000);
   }, function(err) {
     console.error('Could not copy text: ', err);
     alert('Failed to copy link. Please try again.');

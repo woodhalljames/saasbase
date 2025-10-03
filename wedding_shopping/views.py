@@ -8,12 +8,31 @@ from django.http import Http404
 from django.db import transaction
 from django.utils import timezone
 from django.core.paginator import Paginator
+import urllib.parse
 
 from .models import CoupleProfile, WeddingLink
 from .forms import CoupleProfileForm, WeddingLinkFormSet
 
 
+def generate_social_share_urls(request, title, description, image_url=None):
+    """Helper function to generate social share URLs"""
+    current_url = request.build_absolute_uri()
+    encoded_url = urllib.parse.quote(current_url)
+    encoded_title = urllib.parse.quote(title)
+    encoded_desc = urllib.parse.quote(description)
+    
+    return {
+        'facebook': f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}",
+        'twitter': f"https://twitter.com/intent/tweet?url={encoded_url}&text={encoded_title}",
+        'pinterest': f"https://pinterest.com/pin/create/button/?url={encoded_url}&description={encoded_desc}&media={image_url or ''}",
+        'whatsapp': f"https://wa.me/?text={encoded_title} - {encoded_url}",
+        'email': f"mailto:?subject={title}&body={description} - {current_url}",
+        'copy_link': current_url
+    }
+
+
 class PublicCoupleDetailView(DetailView):
+    """View for displaying wedding pages - allows owners to preview even if not public"""
     model = CoupleProfile
     template_name = 'wedding_shopping/public_couple_detail.html'
     context_object_name = 'couple'
@@ -21,15 +40,54 @@ class PublicCoupleDetailView(DetailView):
     slug_url_kwarg = 'slug'
     
     def get_queryset(self):
-        # Only show public profiles
-        return CoupleProfile.objects.filter(is_public=True)
+        """Return all profiles - we'll check permissions in get_object"""
+        return CoupleProfile.objects.all()
+    
+    def get_object(self, queryset=None):
+        """Get the couple profile, checking if user can view it"""
+        if queryset is None:
+            queryset = self.get_queryset()
+        
+        # Try to get by slug
+        slug = self.kwargs.get(self.slug_url_kwarg)
+        if slug:
+            try:
+                obj = queryset.get(slug=slug)
+            except CoupleProfile.DoesNotExist:
+                raise Http404("Wedding page not found")
+        else:
+            # Try to get by share_token
+            share_token = self.kwargs.get('share_token')
+            if share_token:
+                try:
+                    obj = queryset.get(share_token=share_token)
+                except CoupleProfile.DoesNotExist:
+                    raise Http404("Wedding page not found")
+            else:
+                raise Http404("Wedding page not found")
+        
+        # Check permissions
+        is_owner = self.request.user.is_authenticated and obj.user == self.request.user
+        
+        # Allow access if:
+        # 1. Page is public, OR
+        # 2. User is the owner
+        if not obj.is_public and not is_owner:
+            raise Http404("This wedding page is not public yet")
+        
+        return obj
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         couple = self.object
         
+        # Check if user is the owner
+        is_owner = self.request.user.is_authenticated and couple.user == self.request.user
+        context['is_owner'] = is_owner
+        context['is_preview'] = is_owner and not couple.is_public
+        
         # Get wedding links
-        wedding_links = couple.wedding_links.all().order_by('order', 'created_at')
+        wedding_links = couple.wedding_links.all().order_by('created_at')
         context['wedding_links'] = wedding_links
         
         # Calculate countdown
@@ -62,116 +120,6 @@ class PublicCoupleDetailView(DetailView):
         )
         
         return context
-    
-    def get_enhanced_seo_data(self, couple):
-        """Generate comprehensive SEO meta tags dynamically"""
-        # Build dynamic title
-        title_parts = [f"{couple.partner_1_name} & {couple.partner_2_name}"]
-        if couple.wedding_date:
-            title_parts.append("Wedding")
-        else:
-            title_parts.append("Wedding Page")
-        
-        # Generate comprehensive meta description
-        meta_description_parts = [
-            f"Join {couple.partner_1_name} & {couple.partner_2_name} as they celebrate their love"
-        ]
-        
-        if couple.wedding_date:
-            formatted_date = couple.wedding_date.strftime('%B %d, %Y')
-            if couple.wedding_date > timezone.now().date():
-                meta_description_parts.append(f"on {formatted_date}")
-            else:
-                meta_description_parts.append(f"- married {formatted_date}")
-        
-        if couple.venue_name:
-            meta_description_parts.append(f"at {couple.venue_name}")
-        
-        if couple.venue_location:
-            if couple.display_city:
-                meta_description_parts.append(f"in {couple.display_city}")
-            else:
-                meta_description_parts.append(f"in {couple.venue_location}")
-        
-        # Add story preview if available
-        if couple.couple_story:
-            story_preview = couple.couple_story.strip()[:80]
-            if len(couple.couple_story) > 80:
-                story_preview = story_preview.rsplit(' ', 1)[0] + "..."
-            meta_description_parts.append(f"- {story_preview}")
-        
-        meta_description = ". ".join(meta_description_parts)[:160]
-        
-        # Choose the best image for Open Graph
-        og_image = None
-        if couple.couple_photo:
-            og_image = self.request.build_absolute_uri(couple.couple_photo.url)
-        elif couple.venue_photo:
-            og_image = self.request.build_absolute_uri(couple.venue_photo.url)
-        
-        # Build keywords
-        keywords = [
-            couple.partner_1_name,
-            couple.partner_2_name,
-            "wedding",
-            "love story",
-            "wedding page"
-        ]
-        
-        if couple.venue_name:
-            keywords.append(couple.venue_name)
-        
-        if couple.display_city:
-            keywords.extend([couple.display_city, f"{couple.display_city} wedding"])
-        
-        if couple.wedding_date:
-            keywords.extend([
-                couple.wedding_date.strftime('%Y'),
-                couple.wedding_date.strftime('%B %Y'),
-                f"{couple.wedding_date.strftime('%B %Y')} wedding"
-            ])
-        
-        # Build canonical URL
-        canonical_url = self.request.build_absolute_uri(couple.get_absolute_url())
-        
-        return {
-            'title': " - ".join(title_parts),
-            'description': meta_description,
-            'keywords': ", ".join(keywords),
-            'og_image': og_image,
-            'canonical_url': canonical_url,
-            'wedding_date': couple.wedding_date,
-            'venue_name': couple.venue_name,
-            'venue_location': couple.venue_location,
-            'couple_names': couple.couple_names,
-            
-            # Structured data components
-            'schema_org': {
-                'type': 'Event',
-                'name': f"{couple.couple_names} Wedding",
-                'description': meta_description,
-                'url': canonical_url,
-                'image': og_image,
-                'startDate': couple.wedding_date.isoformat() if couple.wedding_date else None,
-                'location': {
-                    'name': couple.venue_name or couple.venue_location,
-                    'address': couple.venue_location
-                } if couple.venue_name or couple.venue_location else None,
-                'organizer': {
-                    'name': couple.couple_names,
-                    'type': 'Person'
-                }
-            },
-            
-            # Social sharing optimized URLs
-            'social_share': {
-                'facebook': f"https://www.facebook.com/sharer/sharer.php?u={canonical_url}",
-                'twitter': f"https://twitter.com/intent/tweet?url={canonical_url}&text={couple.couple_names} Wedding",
-                'pinterest': f"https://pinterest.com/pin/create/button/?url={canonical_url}&description={meta_description}&media={og_image or ''}",
-                'whatsapp': f"https://wa.me/?text={couple.couple_names} Wedding - {canonical_url}",
-                'email': f"mailto:?subject={couple.couple_names} Wedding&body=Check out {couple.couple_names}'s wedding page: {canonical_url}"
-            }
-        }
 
 
 class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
@@ -181,11 +129,11 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
     template_name = 'wedding_shopping/manage_couple_site.html'
     
     def get_object(self, queryset=None):
-        """Get existing profile or create a new one"""
+        """Get existing profile or return None for creation"""
         try:
             return CoupleProfile.objects.get(user=self.request.user)
         except CoupleProfile.DoesNotExist:
-            return CoupleProfile(user=self.request.user)
+            return None
     
     def get_success_url(self):
         return reverse('wedding_shopping:manage_wedding_page')
@@ -193,7 +141,7 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        is_new = not self.object.pk
+        is_new = self.object is None or not self.object.pk
         context['is_new'] = is_new
         context['title'] = "Create Your Wedding Page" if is_new else "Manage Your Wedding Page"
         
@@ -210,15 +158,57 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 prefix='weddinglink'
             )
         
-        # Add SEO preview data for the form
-        if not is_new:
-            context['seo_preview'] = {
-                'url_preview': self.object.wedding_url_preview,
-                'share_url': self.request.build_absolute_uri(self.object.get_share_url()),
-                'public_url': self.request.build_absolute_uri(self.object.get_absolute_url()) if self.object.is_public else None
-            }
+        # Add preview/publish context
+        if not is_new and self.object:
+            context['page_url'] = self.request.build_absolute_uri(self.object.get_absolute_url())
+            context['share_token_url'] = self.request.build_absolute_uri(self.object.get_share_url())
         
         return context
+    
+    def post(self, request, *args, **kwargs):
+        """Handle form submission including publish action"""
+        self.object = self.get_object()
+        
+        # Check if this is a publish action
+        if 'publish_page' in request.POST:
+            if self.object and self.object.pk:
+                self.object.is_public = True
+                self.object.save(update_fields=['is_public'])
+                messages.success(request, "🎉 Your wedding page is now live and public!")
+                return redirect(self.get_success_url())
+            else:
+                messages.error(request, "Please save your wedding page first before publishing.")
+                return redirect(self.get_success_url())
+        
+        # Check if this is an unpublish action
+        if 'unpublish_page' in request.POST:
+            if self.object and self.object.pk:
+                self.object.is_public = False
+                self.object.save(update_fields=['is_public'])
+                messages.info(request, "Your wedding page is now private.")
+                return redirect(self.get_success_url())
+        
+        # Handle delete request
+        if 'delete_wedding_page' in request.POST:
+            if self.object and self.object.pk:
+                self.object.delete()
+                messages.success(request, "Your wedding page has been deleted.")
+                return redirect('users:detail', username=request.user.username)
+        
+        # Handle photo deletions
+        if self.object and self.object.pk:
+            if 'delete_couple_photo' in request.POST:
+                if self.object.couple_photo:
+                    self.object.couple_photo.delete()
+                    self.object.save(update_fields=['couple_photo'])
+            
+            if 'delete_venue_photo' in request.POST:
+                if self.object.venue_photo:
+                    self.object.venue_photo.delete()
+                    self.object.save(update_fields=['venue_photo'])
+        
+        # Normal form submission
+        return super().post(request, *args, **kwargs)
     
     def form_valid(self, form):
         context = self.get_context_data()
@@ -231,8 +221,13 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
             return self.form_invalid(form)
         
         with transaction.atomic():
-            # Save the main profile (images will be auto-optimized)
+            # Save the main profile
             form.instance.user = self.request.user
+            
+            # For new profiles, keep them private by default
+            if is_new:
+                form.instance.is_public = False
+            
             self.object = form.save()
             
             # Save wedding links formset
@@ -249,32 +244,20 @@ class CoupleProfileManageView(LoginRequiredMixin, UpdateView):
                 for obj in wedding_link_formset.deleted_objects:
                     obj.delete()
         
-        # Enhanced success messages with sharing info
+        # Success messages
         if is_new:
-            public_url = self.request.build_absolute_uri(self.object.get_absolute_url())
-            share_url = self.request.build_absolute_uri(self.object.get_share_url())
-            
             messages.success(
                 self.request, 
-                f"Your wedding page has been created! "
-                f"{'Public URL: ' + public_url if self.object.is_public else 'Private sharing URL: ' + share_url}"
+                "✅ Your wedding page has been created! Review it below, then click 'Publish' to make it live."
             )
         else:
-            messages.success(self.request, "Your wedding page has been updated successfully!")
+            messages.success(self.request, "✅ Your wedding page has been updated successfully!")
         
         return super().form_valid(form)
     
     def form_invalid(self, form):
         """Handle form validation errors"""
-        if form.errors:
-            messages.error(self.request, "Please correct the errors in your wedding details.")
-        
-        context = self.get_context_data()
-        wedding_link_formset = context.get('wedding_link_formset')
-        
-        if wedding_link_formset and not wedding_link_formset.is_valid():
-            messages.error(self.request, "Please correct the errors in your wedding links.")
-        
+        messages.error(self.request, "❌ Please correct the errors below.")
         return super().form_invalid(form)
 
 
@@ -292,35 +275,17 @@ def wedding_link_redirect(request, pk):
 
 
 def public_couples_list(request):
-    """Enhanced list of public couple profiles with SEO"""
+    """List of public couple profiles - ONLY shows published pages"""
     couples_list = CoupleProfile.objects.filter(is_public=True).order_by('-created_at')
     
-    # Pagination: 42 couples per page (6 across, 7 down)
+    # Pagination: 42 couples per page
     paginator = Paginator(couples_list, 42)
     page_number = request.GET.get('page')
     couples = paginator.get_page(page_number)
     
-    # Enhanced SEO data
-    page_title = 'Wedding Celebrations'
-    if page_number and page_number != '1':
-        page_title += f' - Page {page_number}'
-    
     context = {
         'couples': couples,
         'title': 'Wedding Celebrations',
-        'seo_data': {
-            'title': f'Discover {page_title} | DreamWedAI',
-            'description': 'Browse beautiful wedding pages and love stories from couples around the world. Get inspired for your own wedding celebration.',
-            'keywords': 'wedding pages, wedding stories, couple profiles, wedding inspiration, real weddings',
-            'canonical_url': request.build_absolute_uri(),
-            'schema_org': {
-                'type': 'CollectionPage',
-                'name': page_title,
-                'description': 'A collection of beautiful wedding celebrations and love stories',
-                'url': request.build_absolute_uri(),
-                'numberOfItems': couples_list.count()
-            }
-        }
     }
     
     return render(request, 'wedding_shopping/public_couples_list.html', context)

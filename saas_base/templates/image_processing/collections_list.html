@@ -50,19 +50,7 @@
                 </span>
               </div>
               
-              {% if collection.is_public %}
-                <div class="position-absolute top-0 start-0 p-2">
-                  <span class="badge bg-info">
-                    <i class="bi bi-globe"></i> Public
-                  </span>
-                </div>
-              {% else %}
-                <div class="position-absolute top-0 start-0 p-2">
-                  <span class="badge bg-secondary">
-                    <i class="bi bi-lock"></i> Private
-                  </span>
-                </div>
-              {% endif %}
+              <!-- ✓ REMOVED: Public/Private badges -->
             </div>
             
             <div class="card-body">
@@ -88,13 +76,11 @@
                           data-collection-id="{{ collection.id }}"
                           data-collection-name="{{ collection.name }}"
                           data-collection-description="{{ collection.description }}"
-                          data-collection-public="{{ collection.is_public|yesno:'true,false' }}"
                           title="Edit collection details">
                     <i class="bi bi-pencil"></i> Edit
                   </button>
                 </div>
               </div>
-              {% if collection.is_public %}
               <div class="row g-1 mt-1">
                 <div class="col-6">
                   <button class="btn btn-sm btn-outline-info w-100 share-collection-btn" 
@@ -112,25 +98,7 @@
                   </button>
                 </div>
               </div>
-              {% else %}
-              <div class="row g-1 mt-1">
-                <div class="col-6">
-                  <button class="btn btn-sm btn-outline-info w-100 make-public-btn" 
-                          data-collection-id="{{ collection.id }}"
-                          title="Make collection public">
-                    <i class="bi bi-globe"></i> Make Public
-                  </button>
-                </div>
-                <div class="col-6">
-                  <button class="btn btn-sm btn-outline-danger w-100 delete-collection-btn" 
-                          data-collection-id="{{ collection.id }}"
-                          data-collection-name="{{ collection.name }}"
-                          title="Delete collection">
-                    <i class="bi bi-trash"></i> Delete
-                  </button>
-                </div>
-              </div>
-              {% endif %}
+              <!-- ✓ REMOVED: Make Public button -->
             </div>
           </div>
         </div>
@@ -153,9 +121,6 @@
       </div>
     </div>
   {% endif %}
-
-  <!-- Recent Favorites Section -->
-  
 </div>
 
 <!-- Create Collection Modal -->
@@ -179,20 +144,10 @@
             <textarea class="form-control" id="collectionDescription" name="description" rows="3" 
                       placeholder="Describe what this collection is for..."></textarea>
           </div>
-          <div class="mb-3">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="isPublic" name="is_public">
-              <label class="form-check-label" for="isPublic">
-                Make this collection public
-              </label>
-              <small class="form-text text-muted d-block">
-                Public collections can be discovered by other users
-              </small>
-            </div>
-          </div>
+          <!-- ✓ REMOVED: is_public checkbox -->
           <div class="alert alert-info small">
             <i class="bi bi-info-circle me-2"></i>
-            Collections are private by default. You can change this setting anytime after creation.
+            All collections are public and can be shared with others.
           </div>
         </div>
         <div class="modal-footer">
@@ -223,15 +178,7 @@
             <label for="editCollectionDescription" class="form-label">Description (Optional)</label>
             <textarea class="form-control" id="editCollectionDescription" name="description" rows="3"></textarea>
           </div>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="editIsPublic" name="is_public">
-            <label class="form-check-label" for="editIsPublic">
-              Make this collection public
-            </label>
-            <small class="form-text text-muted d-block">
-              Public collections can be discovered by other users
-            </small>
-          </div>
+          <!-- ✓ REMOVED: is_public checkbox -->
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -242,7 +189,7 @@
   </div>
 </div>
 
-<!-- Delete Collection Modal -->
+<!-- Delete and Share modals stay the same -->
 <div class="modal fade" id="deleteCollectionModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -262,7 +209,6 @@
   </div>
 </div>
 
-<!-- Share Collection Modal -->
 <div class="modal fade" id="shareCollectionModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -278,7 +224,7 @@
             <i class="bi bi-clipboard"></i> Copy
           </button>
         </div>
-        <small class="text-muted">Anyone with this link can view your public collection.</small>
+        <small class="text-muted">Share this link to let others view your collection.</small>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -322,29 +268,6 @@
   transform: scale(1.02);
 }
 
-/* Animation effects */
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .collection-thumbnail {
@@ -369,11 +292,11 @@
 </style>
 
 <script>
-// Collection Management JavaScript - Simplified version
+// Collection Management JavaScript - FIXED EDIT FUNCTIONALITY
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔧 Setting up simplified collection management...');
+    console.log('🔧 Setting up collection management...');
     
-    // Edit Collection
+    // Edit Collection - ✓ FIXED
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('edit-collection-btn') || e.target.closest('.edit-collection-btn')) {
             e.preventDefault();
@@ -397,15 +320,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Make Public Collection
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('make-public-btn') || e.target.closest('.make-public-btn')) {
-            e.preventDefault();
-            handleMakePublic(e.target.closest('.make-public-btn') || e.target);
-        }
-    });
-    
-    // Edit Collection Form Submit
+    // Edit Collection Form Submit - ✓ FIXED
     const editForm = document.getElementById('editCollectionForm');
     if (editForm) {
         editForm.addEventListener('submit', function(e) {
@@ -444,15 +359,14 @@ function handleEditCollection(button) {
     
     const collectionId = button.dataset.collectionId;
     const collectionName = button.dataset.collectionName;
-    const collectionDescription = button.dataset.collectionDescription;
-    const isPublic = button.dataset.collectionPublic === 'true';
+    const collectionDescription = button.dataset.collectionDescription || '';
     
     currentCollectionId = collectionId;
     
     // Fill form
     document.getElementById('editCollectionName').value = collectionName;
-    document.getElementById('editCollectionDescription').value = collectionDescription || '';
-    document.getElementById('editIsPublic').checked = isPublic;
+    document.getElementById('editCollectionDescription').value = collectionDescription;
+    // ✓ REMOVED: document.getElementById('editIsPublic').checked = isPublic;
     
     // Update form action
     const form = document.getElementById('editCollectionForm');
@@ -502,52 +416,6 @@ function handleShareCollection(button) {
     modal.show();
 }
 
-function handleMakePublic(button) {
-    console.log('🌐 Make public clicked');
-    
-    const collectionId = button.dataset.collectionId;
-    
-    // Simulate edit with is_public = true
-    currentCollectionId = collectionId;
-    
-    // Find the collection name from the card
-    const card = button.closest('.collection-item');
-    const collectionName = card.querySelector('.card-title').textContent.trim();
-    
-    // Make the collection public
-    makeCollectionPublic(collectionId, collectionName);
-}
-
-async function makeCollectionPublic(collectionId, collectionName) {
-    try {
-        const response = await fetch(`/studio/collections/${collectionId}/edit/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCSRFToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: `name=${encodeURIComponent(collectionName)}&is_public=on`
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showToast(data.message, 'success');
-            
-            // Refresh the page to show updated collection
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            throw new Error(data.error || 'Error making collection public');
-        }
-    } catch (error) {
-        console.error('⌚ Make public error:', error);
-        showToast('Error making collection public: ' + error.message, 'error');
-    }
-}
-
 async function submitEditCollection() {
     console.log('💾 Submitting collection edit...');
     
@@ -583,7 +451,7 @@ async function submitEditCollection() {
             throw new Error(data.error || 'Error updating collection');
         }
     } catch (error) {
-        console.error('⌚ Edit collection error:', error);
+        console.error('❌ Edit collection error:', error);
         showToast('Error updating collection: ' + error.message, 'error');
     }
 }
@@ -633,7 +501,7 @@ async function executeDeleteCollection(collectionId) {
             throw new Error(data.error || 'Delete failed');
         }
     } catch (error) {
-        console.error('⌚ Delete collection error:', error);
+        console.error('❌ Delete collection error:', error);
         showToast('Error deleting collection: ' + error.message, 'error');
     }
 }

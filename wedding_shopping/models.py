@@ -41,7 +41,7 @@ class CoupleProfile(models.Model):
     
     # Sharing & Privacy
     share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    is_public = models.BooleanField(default=False, help_text="Make this profile publicly accessible")
+    is_public = models.BooleanField(default=True, help_text="Make this profile publicly accessible")
     slug = models.SlugField(max_length=150, unique=True, blank=True)
     
     # Timestamps
