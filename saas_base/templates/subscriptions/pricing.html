@@ -28,7 +28,7 @@
   transform: rotate(-5deg);
 }
 
-/* Keep 6 months free badge */
+/* Keep 3 months free badge */
 .savings-badge {
   display: inline-block;
   background: linear-gradient(135deg, #28a745, #20c997);
@@ -67,7 +67,7 @@
               <input type="radio" class="btn-check" name="billing" id="yearly">
               <label class="btn btn-outline-rose" for="yearly">
                 Yearly Billing 
-                <span class="badge bg-success ms-2">6 Months Free!</span>
+                <span class="badge bg-success ms-2">3 Months Free!</span>
               </label>
             </div>
           </div>
@@ -175,10 +175,10 @@
                           <span class="period-large text-muted">/year</span>
                         </div>
                         
-                        <!-- 6 MONTHS FREE badge below price -->
+                        <!-- 3 MONTHS FREE badge below price -->
                         <div class="badge bg-success fw-bold px-3 py-2 mt-2">
                           <i class="bi bi-gift-fill me-1"></i>
-                          6 MONTHS FREE!
+                          3 MONTHS FREE!
                         </div>
                       </div>
                     {% endwith %}
@@ -253,7 +253,7 @@
                     <input type="hidden" name="price_id" value="{{ product.prices.yearly.id }}">
                     <button type="submit" class="btn {% if product.highlight %}btn-gradient-rose{% else %}btn-outline-primary{% endif %} w-100 py-3 fw-semibold">
                       {% if user_authenticated %}
-                        <i class="bi bi-trophy-fill me-1"></i>Get 6 Months FREE
+                        <i class="bi bi-trophy-fill me-1"></i>Get 3 Months FREE
                       {% else %}
                         <i class="bi bi-trophy-fill me-1"></i>Best Deal - Subscribe Now
                       {% endif %}
