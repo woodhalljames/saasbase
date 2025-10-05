@@ -122,12 +122,12 @@
                       <!-- Compact price display -->
                       <div class="price-stack">
                         <!-- Show original higher price crossed out based on tier -->
-                        {% if monthly_amount == "29" %}
-                          <div class="original-price mb-1">$49</div>
-                        {% elif monthly_amount == "99" %}
-                          <div class="original-price mb-1">$199</div>
-                        {% elif monthly_amount == "299" %}
-                          <div class="original-price mb-1">$499</div>
+                        {% if monthly_amount == "14" %}
+                          <div class="original-price mb-1">$39</div>
+                        {% elif monthly_amount == "59" %}
+                          <div class="original-price mb-1">$99</div>
+                        {% elif monthly_amount == "199" %}
+                          <div class="original-price mb-1">$299</div>
                         {% else %}
                           <div class="original-price mb-1">${{ product.prices.monthly.amount|floatformat:0|add:"30" }}</div>
                         {% endif %}
@@ -158,12 +158,12 @@
                       <!-- Compact price display -->
                       <div class="price-stack">
                         <!-- Show much higher original price crossed out for yearly -->
-                        {% if yearly_amount == "174" %}
-                          <div class="original-price mb-1">$294</div>
-                        {% elif yearly_amount == "594" %}
-                          <div class="original-price mb-1">$1194</div>
-                        {% elif yearly_amount == "1794" %}
-                          <div class="original-price mb-1">$2994</div>
+                        {% if yearly_amount == "126" %}
+                          <div class="original-price mb-1">$351</div>
+                        {% elif yearly_amount == "531" %}
+                          <div class="original-price mb-1">$891</div>
+                        {% elif yearly_amount == "1791" %}
+                          <div class="original-price mb-1">$2691</div>
                         {% else %}
                           <div class="original-price mb-1">${{ product.prices.yearly.amount|floatformat:0|add:"200" }}</div>
                         {% endif %}
