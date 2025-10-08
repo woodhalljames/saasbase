@@ -84,15 +84,8 @@
 /* Social Share Bar - Footer Version */
 .wedding-share-footer {
   margin-top: 2rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 15px;
-  transition: all 0.3s ease;
-}
-
-.wedding-share-footer:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  padding: 0;
+  background: transparent;
 }
 
 .wedding-share-buttons {
@@ -123,9 +116,11 @@
   font-size: 1rem;
   border: none;
   cursor: pointer;
+  opacity: 0.6;
 }
 
 .wedding-share-btn:hover {
+  opacity: 1;
   transform: translateY(-2px) scale(1.1);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   color: white;
@@ -141,6 +136,7 @@
 
 .share-copy.copied {
   background: #28a745;
+  opacity: 1;
 }
 
 /* Copy Toast Notification */
@@ -866,8 +862,7 @@
       <!-- Social Share Bar - Footer Version -->
       <div class="wedding-share-footer">
         <div class="wedding-share-buttons">
-          <span class="wedding-share-label">Share this wedding:</span>
-          
+        
           <a href="{{ social_share.facebook }}" 
              class="wedding-share-btn share-facebook"
              target="_blank"

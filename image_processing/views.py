@@ -1,4 +1,4 @@
-# image_processing/views.py - Complete with EXIF orientation correction
+# image_processing/views.py - FIXED: Collection edit now properly handles AJAX requests
 
 import json
 import logging
@@ -313,13 +313,10 @@ def ajax_upload_image(request):
     }, status=400)
 
 
-# All the other view functions remain exactly the same - no changes needed
-# Since EXIF correction happens at upload time, all other views just work with corrected images
-
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with real-time Gemini transformation - Updated for single user_instructions field"""
+    """Process wedding venue image with real-time Gemini transformation"""
     try:
         # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
@@ -511,7 +508,7 @@ def process_wedding_image(request, pk):
 
 
 def _get_job_details(job, prompt_mode):
-    """Helper to get job details for JSON response - Updated for single user_instructions field"""
+    """Helper to get job details for JSON response"""
     details = {
         'mode': prompt_mode,
         'model': 'gemini-2.5-flash-image-preview',
@@ -541,11 +538,9 @@ def _get_job_details(job, prompt_mode):
     return details
 
 
-# All remaining view functions stay exactly the same - no changes needed since they work with already corrected images
-
 @login_required
 def job_status(request, job_id):
-    """Get real-time status of a venue transformation job - Updated for single user_instructions field"""
+    """Get real-time status of a venue transformation job"""
     try:
         job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
         
@@ -622,7 +617,7 @@ def job_status(request, job_id):
 
 @login_required
 def redo_transformation_with_job(request, job_id):
-    """Redirect to wedding studio with job parameters pre-filled - Updated for single user_instructions field"""
+    """Redirect to wedding studio with job parameters pre-filled"""
     job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
     
     # Build query parameters from the job settings
@@ -672,7 +667,7 @@ def redo_transformation_with_job(request, job_id):
 
 @login_required
 def processing_history(request):
-    """View all wedding venue transformation jobs - Updated for single user_instructions field"""
+    """View all wedding venue transformation jobs"""
     jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
     ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
@@ -968,7 +963,6 @@ def collection_detail(request, collection_id):
     return render(request, 'image_processing/collection_detail.html', context)
 
 
-
 @login_required
 @require_POST
 def create_collection_ajax(request):
@@ -977,7 +971,6 @@ def create_collection_ajax(request):
         data = json.loads(request.body)
         name = data.get('name', '').strip()
         description = data.get('description', '').strip()
-        # Removed is_public parameter - always True now
         
         if not name:
             return JsonResponse({
@@ -1010,7 +1003,7 @@ def create_collection_ajax(request):
                 'created_at': collection.created_at.isoformat()
             },
             'message': f'Collection "{name}" created successfully!'
-        })  # <-- This closing brace was missing!
+        })
         
     except json.JSONDecodeError:
         return JsonResponse({
@@ -1146,6 +1139,7 @@ def remove_image_from_collection(request, collection_id):
         logger.error(f"Error removing from collection: {str(e)}")
         return JsonResponse({'success': False, 'error': 'Error removing from collection'})
 
+
 @login_required
 def get_user_collections(request):
     """API endpoint to get user's collections"""
@@ -1176,7 +1170,6 @@ def get_user_collections(request):
             'success': False,
             'error': 'Unable to load collections'
         }, status=500)
-  
 
 
 @login_required
@@ -1289,14 +1282,12 @@ def add_to_multiple_collections(request):
         return JsonResponse({'success': False, 'error': 'Error adding to collections'})
 
 
-
 @login_required
 @require_POST
 def create_collection(request):
     """Create a new collection - Always public"""
     name = request.POST.get('name', '').strip()
     description = request.POST.get('description', '').strip()
-    # Removed is_public parameter
     
     if not name:
         messages.error(request, 'Collection name is required')
@@ -1316,32 +1307,56 @@ def create_collection(request):
     
     return redirect('image_processing:collections_list')
 
+
 @login_required
 @require_POST
 def edit_collection(request, collection_id):
-    """Edit an existing collection"""
+    """Edit an existing collection - FIXED: Now properly handles AJAX requests"""
     collection = get_object_or_404(Collection, id=collection_id, user=request.user)
     
     name = request.POST.get('name', '').strip()
     description = request.POST.get('description', '').strip()
-    is_public = request.POST.get('is_public') == 'on'
     
     if not name:
+        # Check if AJAX request
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Collection name is required'
+            }, status=400)
+        
         messages.error(request, 'Collection name is required')
         return redirect('image_processing:collection_detail', collection_id=collection_id)
     
     try:
         collection.name = name
         collection.description = description
-        collection.is_public = is_public
+        collection.is_public = True  # Always public now (removed checkbox from UI)
         collection.save()
         
+        # Check if AJAX request and return JSON
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Collection "{name}" updated successfully!'
+            })
+        
+        # Regular form submission
         messages.success(request, f'Collection "{name}" updated successfully!')
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
+        
     except Exception as e:
         logger.error(f"Error updating collection: {str(e)}")
+        
+        # Check if AJAX request and return JSON error
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'error': 'Error updating collection'
+            }, status=500)
+        
         messages.error(request, 'Error updating collection')
-    
-    return redirect('image_processing:collection_detail', collection_id=collection_id)
+        return redirect('image_processing:collection_detail', collection_id=collection_id)
 
 
 @login_required
