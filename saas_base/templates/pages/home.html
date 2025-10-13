@@ -5,172 +5,10 @@
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}">
-<style>
-/* Affiliate Banner Styles */
-.affiliate-banner {
-  background: linear-gradient(135deg, var(--electric-rose), var(--bright-cyan));
-  color: white;
-  padding: 0.75rem 0;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  animation: slideDown 0.5s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.affiliate-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
-}
-
-.affiliate-banner.hidden {
-  display: none;
-}
-
-.commission-badge-banner {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  color: #000;
-  font-size: 1.2rem;
-  font-weight: 900;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  white-space: nowrap;
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  }
-  50% {
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-  }
-}
-
-.affiliate-banner .btn-light {
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-}
-
-.affiliate-banner .btn-light:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-.affiliate-banner .btn-link {
-  color: #000;
-  opacity: 0.8;
-  transition: opacity 0.2s ease;
-  text-decoration: none;
-  font-size: 1.2rem;
-  padding: 0.25rem 0.5rem;
-}
-
-.affiliate-banner .btn-link:hover {
-  opacity: 1;
-  color: #000;
-}
-
-@media (max-width: 768px) {
-  .affiliate-banner {
-    padding: 0.5rem 0;
-  }
-  
-  .commission-badge-banner {
-    font-size: 1rem;
-    padding: 0.4rem 0.8rem;
-  }
-  
-  .affiliate-banner .fs-5 {
-    font-size: 1rem !important;
-  }
-  
-  .affiliate-banner .small {
-    font-size: 0.8rem !important;
-  }
-  
-  .affiliate-banner .btn {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .affiliate-banner .d-flex {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .commission-badge-banner {
-    margin-bottom: 0.75rem;
-  }
-  
-  .affiliate-banner .col-lg-4 {
-    text-align: center !important;
-  }
-}
-</style>
 {% endblock %}
 
 {% block content %}
-<!-- Affiliate Banner -->
-<div class="affiliate-banner" id="affiliateBanner">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-lg-8 col-md-7">
-        <div class="d-flex align-items-center gap-2">
-          <div class="commission-badge-banner">
-            30% Commission
-          </div>
-          <div>
-            <div class="fw-bold mb-0" style="font-size: 1.1rem;">
-              <i class="bi bi-currency-dollar me-1"></i>
-              Earn Passive Income with Our Rewardful Affiliate Program
-            </div>
-            <p class="mb-0 small opacity-90">
-              Perfect for wedding photographers, planners & content creators!
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-4 col-md-5 text-md-end mt-2 mt-md-0">
-        <a href="https://dreamwedai.getrewardful.com" 
-           target="_blank" 
-           rel="noopener noreferrer"
-           class="btn btn-light fw-bold px-3 py-2"
-           onclick="trackAffiliateClick()">
-          <i class="bi bi-rocket-takeoff me-2"></i>
-          Join Free
-        </a>
-        <button class="btn btn-link text-dark ms-1" onclick="closeAffiliateBanner()" title="Dismiss" aria-label="Dismiss banner">
-          <i class="bi bi-x-lg"></i>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+
 
 <div class="homepage">
   <!-- Hero Section - Enhanced with Real Image -->
@@ -191,8 +29,8 @@
                 <i class="bi bi-magic"></i> Visit Studio
               </a>
             {% else %}
-              <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-3">
-                 Subscribe!
+              <a href="{% url 'account_signup' %}" class="hero-cta-primary me-3">
+                Start Free!
               </a>
             {% endif %}
 
@@ -570,7 +408,7 @@
             {% else %}
            
             <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-2">
-               Subscribe!
+               Easy Subscribe
             </a>
             {% endif %}
           </div>
