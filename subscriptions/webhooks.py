@@ -88,7 +88,7 @@ def get_customer_subscription_by_stripe_id(customer_id):
         return None
 
 def handle_checkout_session(session):
-    """Process checkout.session.completed event with simplified account setup"""
+    """Process checkout.session.completed event - handles duplicate users"""
     customer_id = session.customer
     subscription_id = session.subscription
     customer_email = session.customer_details.email if session.customer_details else None
@@ -100,39 +100,47 @@ def handle_checkout_session(session):
     logger.info(f"Processing checkout session for customer {customer_id}, subscription {subscription_id}, email {customer_email}")
     
     try:
-        with transaction.atomic():
-            # Check if customer already exists
-            customer_subscription = None
-            user_created = False
-            
+        # STEP 1: Find or create user by EMAIL (handles duplicates)
+        if not customer_email:
+            logger.error(f"No email found for customer {customer_id}")
+            return
+        
+        user, user_created = create_or_get_user_from_email(customer_email)
+        logger.info(f"{'Created' if user_created else 'Found existing'} user: {user.username} ({user.email})")
+        
+        # STEP 2: Get or create CustomerSubscription for this user
+        customer_subscription, sub_created = CustomerSubscription.objects.get_or_create(
+            user=user,
+            defaults={'stripe_customer_id': customer_id}
+        )
+        
+        # STEP 3: Handle customer ID merge if needed
+        if customer_subscription.stripe_customer_id and customer_subscription.stripe_customer_id != customer_id:
+            logger.warning(
+                f"User {user.email} has multiple Stripe customers: "
+                f"{customer_subscription.stripe_customer_id} → {customer_id}. "
+                f"Updating to new customer ID."
+            )
+        
+        # Update with new customer and subscription IDs
+        customer_subscription.stripe_customer_id = customer_id
+        
+        if subscription_id:
+            customer_subscription.stripe_subscription_id = subscription_id
+            logger.info(f"Updated checkout session with subscription {subscription_id}")
+        else:
+            logger.warning(f"Checkout session {session.id} has no subscription_id - waiting for subscription.created")
+        
+        customer_subscription.save()
+        
+        # STEP 4: Send welcome email OUTSIDE transaction (don't let email crash webhook)
+        if user_created:
             try:
-                customer_subscription = CustomerSubscription.objects.get(stripe_customer_id=customer_id)
-                logger.info(f"Found existing CustomerSubscription for checkout")
-            except CustomerSubscription.DoesNotExist:
-                # This could be a guest checkout - create user account
-                if customer_email:
-                    user, user_created = create_or_get_user_from_email(customer_email)
-                    customer_subscription = CustomerSubscription.objects.create(
-                        user=user,
-                        stripe_customer_id=customer_id,
-                        subscription_active=False
-                    )
-                    logger.info(f"Created new user and subscription for {customer_email}")
-                else:
-                    logger.error(f"No email found for customer {customer_id}")
-                    return
-            
-            # Update with subscription details if available
-            if subscription_id and customer_subscription:
-                customer_subscription.stripe_subscription_id = subscription_id
-                customer_subscription.save()
-                logger.info(f"Updated checkout session with subscription {subscription_id}")
-            else:
-                logger.warning(f"Checkout session {session.id} has no subscription_id - waiting for subscription.created")
-            
-            # Send welcome email with account setup link if new user
-            if user_created and customer_subscription:
-                send_welcome_email_with_setup_link(customer_subscription.user)
+                send_welcome_email_with_setup_link(user)
+                logger.info(f"Sent welcome email to {user.email}")
+            except Exception as e:
+                logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
+                logger.info("Subscription is still active despite email failure")
                 
     except Exception as e:
         logger.error(f"Error processing checkout session: {str(e)}", exc_info=True)
@@ -367,7 +375,7 @@ def handle_subscription_deleted(subscription):
         logger.error(f"Error deleting subscription: {str(e)}", exc_info=True)
 
 def handle_invoice_paid(invoice):
-    """Process invoice.paid event"""
+    """Process invoice.paid event - RESET TOKENS HERE"""
     customer_id = invoice.customer
     
     try:
@@ -377,11 +385,26 @@ def handle_invoice_paid(invoice):
             return
         
         # Update status if this was a late payment
+        status_updated = False
         if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
             customer_subscription.status = 'active'
             customer_subscription.subscription_active = True
             customer_subscription.save()
+            status_updated = True
             logger.info(f"Reactivated subscription for customer {customer_id}")
+        
+        # RESET TOKENS ON SUCCESSFUL PAYMENT (monthly billing cycle completed)
+        from usage_limits.usage_tracker import UsageTracker
+        
+        if UsageTracker.reset_usage_on_payment(customer_subscription.user):
+            user_limit = UsageTracker.get_user_limit(customer_subscription.user)
+            logger.info(
+                f"✓ Payment successful for {customer_subscription.user.email} - "
+                f"tokens reset to {user_limit} "
+                f"({'subscription reactivated' if status_updated else 'normal billing cycle'})"
+            )
+        else:
+            logger.error(f"Failed to reset tokens for {customer_subscription.user.email} after payment")
             
     except Exception as e:
         logger.error(f"Error processing payment: {str(e)}", exc_info=True)

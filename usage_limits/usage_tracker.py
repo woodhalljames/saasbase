@@ -12,10 +12,9 @@ class UsageTracker:
     """Simple usage tracker for individual processing"""
     
     @classmethod
-    def _get_monthly_key(cls, user_id):
-        """Get Redis key for user's monthly usage"""
-        now = datetime.now()
-        return f"usage:monthly:{user_id}:{now.year}:{now.month}"
+    def _get_usage_key(cls, user_id):
+        """Get Redis key for user's usage - no auto-reset"""
+        return f"usage:{user_id}"
     
     @classmethod
     def _get_yearly_reset_key(cls, user_id, period):
@@ -45,7 +44,7 @@ class UsageTracker:
             return False
         
         redis_client = RedisClient.get_client()
-        usage_key = cls._get_monthly_key(user.id)
+        usage_key = cls._get_usage_key(user.id)
         
         try:
             # Atomic check-and-increment
@@ -67,11 +66,7 @@ class UsageTracker:
                         # Execute atomic increment
                         pipe.multi()
                         pipe.incrby(usage_key, count)
-                        
-                        # Set expiry if needed
-                        ttl = redis_client.ttl(usage_key)
-                        if ttl < 0:
-                            cls._set_monthly_expiry(pipe, usage_key)
+                        # No expiry - tokens don't auto-reset
                         
                         pipe.execute()
                         
@@ -88,29 +83,13 @@ class UsageTracker:
             return False
     
     @classmethod
-    def _set_monthly_expiry(cls, pipe, usage_key):
-        """Set expiry to end of month with buffer"""
-        now = datetime.now()
-        # Calculate end of current month
-        if now.month == 12:
-            next_month = now.replace(year=now.year + 1, month=1, day=1)
-        else:
-            next_month = now.replace(month=now.month + 1, day=1)
-        
-        end_of_month = next_month - timedelta(days=1)
-        seconds_until_end = int((end_of_month - now).total_seconds())
-        
-        # Add 24 hour buffer to avoid early expiration
-        pipe.expire(usage_key, seconds_until_end + 86400)
-    
-    @classmethod
     def get_current_usage(cls, user):
         """Get current monthly usage"""
         if not user or not user.is_authenticated:
             return 0
         
         redis_client = RedisClient.get_client()
-        usage_key = cls._get_monthly_key(user.id)
+        usage_key = cls._get_usage_key(user.id)
         
         try:
             usage = redis_client.get(usage_key)
@@ -195,11 +174,11 @@ class UsageTracker:
             return False
         
         redis_client = RedisClient.get_client()
-        usage_key = cls._get_monthly_key(user.id)
+        usage_key = cls._get_usage_key(user.id)
         
         try:
             redis_client.set(usage_key, 0)
-            cls._set_monthly_expiry(redis_client, usage_key)
+            # No expiry - tokens persist until payment resets them
             
             logger.info(f"Usage reset for user {user.id}")
             return True
@@ -314,3 +293,34 @@ class UsageTracker:
         except Exception as e:
             logger.error(f"Error marking yearly reset complete for user {user.id}: {str(e)}")
         return False
+    
+    @classmethod
+    def reset_usage_on_payment(cls, user):
+        """
+        Reset usage when invoice.paid webhook fires.
+        This gives users a fresh token allocation for their billing period.
+        """
+        if not user or not user.is_authenticated:
+            logger.warning("Cannot reset usage: invalid user")
+            return False
+        
+        redis_client = RedisClient.get_client()
+        usage_key = cls._get_usage_key(user.id)
+        
+        try:
+            # Get current state for logging
+            old_usage = int(redis_client.get(usage_key) or 0)
+            user_limit = cls.get_user_limit(user)
+            
+            # Reset to 0
+            redis_client.set(usage_key, 0)
+            
+            logger.info(
+                f"Payment received - reset usage for user {user.id} "
+                f"(was: {old_usage}/{user_limit}, now: 0/{user_limit})"
+            )
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error resetting usage on payment for user {user.id}: {str(e)}")
+            return False
