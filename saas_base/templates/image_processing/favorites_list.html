@@ -15,8 +15,8 @@
           <li class="breadcrumb-item active">Favorites</li>
         </ol>
       </nav>
-      <h1>❤️ My Favorites</h1>
-      <p class="text-muted">Your favorite wedding transformations</p>
+      <h1>💖 My Favorites</h1>
+      <p class="text-muted">Quick access uploads and favorite transformations</p>
     </div>
     <div class="col-md-6 text-end">
       <div class="btn-group" role="group">
@@ -30,164 +30,254 @@
     </div>
   </div>
 
-  {% if page_obj %}
-    <!-- Favorites Grid -->
-    <div class="row g-3" id="favoritesGrid">
-      {% for favorite in page_obj %}
-        {% with processed_image=favorite.processed_image %}
-        {% if processed_image and processed_image.pk %}
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4 favorite-item" data-favorite-id="{{ favorite.id }}">
-          <div class="card h-100 shadow-sm favorite-card">
-            <div class="position-relative image-container">
-              <img src="{{ processed_image.processed_image.url }}" 
-                   class="card-img-top" 
-                   alt="Wedding transformation"
-                   style="height: 250px; object-fit: cover;">
-              
-              <!-- ONLY Favorite Heart (no other overlay icons) -->
-              <div class="position-absolute top-0 start-0 p-2">
-                <button class="btn btn-sm favorite-heart-btn" 
-                        data-processed-image-id="{{ processed_image.id }}">
-                  <i class="bi bi-heart-fill text-danger favorite-heart-icon"></i>
-                </button>
-              </div>
-            </div>
-            
-            <div class="card-body">
-              <h6 class="card-title text-truncate">
-                {% if processed_image.processing_job.custom_prompt %}
-                  Custom Design
-                {% else %}
-                  {{ processed_image.processing_job.theme_display_name|default:"Wedding Style" }} {{ processed_image.processing_job.space_display_name|default:"Space" }}
-                {% endif %}
-              </h6>
-              
-              <!-- Wedding Style Badges -->
-              {% with job=processed_image.processing_job %}
-                {% if job.custom_prompt %}
-                  <div class="mb-2">
-                    <span class="badge bg-purple">Custom Design</span>
+  <!-- Tabs for Uploads vs Processed -->
+  <ul class="nav nav-tabs mb-4" id="favoritesTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="uploads-tab" data-bs-toggle="tab" data-bs-target="#uploads-content" 
+              type="button" role="tab" aria-controls="uploads-content" aria-selected="true">
+        <i class="bi bi-star-fill text-warning me-2"></i>Quick Access Uploads
+        <span class="badge bg-warning text-dark ms-2">{{ favorite_uploads|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="processed-tab" data-bs-toggle="tab" data-bs-target="#processed-content" 
+              type="button" role="tab" aria-controls="processed-content" aria-selected="false">
+        <i class="bi bi-heart-fill text-danger me-2"></i>Favorite Transformations
+        <span class="badge bg-danger ms-2">{{ favorite_processed|length }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content -->
+  <div class="tab-content" id="favoritesTabContent">
+    
+    <!-- UPLOADS TAB -->
+    <div class="tab-pane fade show active" id="uploads-content" role="tabpanel" aria-labelledby="uploads-tab">
+      {% if favorite_uploads %}
+        <div class="alert alert-info border-0 mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Quick Access:</strong> These starred uploads appear in the Wedding Studio for fast selection.
+          Click the star icon to remove from quick access.
+        </div>
+
+        <div class="row g-3" id="favoriteUploadsGrid">
+          {% for favorite in favorite_uploads %}
+            {% with image=favorite.image %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 favorite-upload-item" data-favorite-id="{{ favorite.id }}">
+              <div class="card h-100 shadow-sm favorite-card">
+                <div class="position-relative image-container">
+                  <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                       class="card-img-top" 
+                       alt="{{ image.original_filename }}"
+                       style="height: 250px; object-fit: cover;">
+                  
+                  <!-- Star button -->
+                  <div class="position-absolute top-0 start-0 p-2">
+                    {% include 'image_processing/components/favorite_star.html' with user_image=image %}
                   </div>
-                  <small class="text-muted d-block mb-2">{{ job.custom_prompt|truncatechars:50 }}</small>
-                {% elif job.wedding_theme and job.space_type %}
-                  <div class="mb-2">
-                    <span class="badge bg-primary me-1">{{ job.theme_display_name|default:job.wedding_theme }}</span>
-                    <span class="badge bg-secondary">{{ job.space_display_name|default:job.space_type }}</span>
-                  </div>
-                {% endif %}
+                </div>
                 
-                <!-- Optional parameters -->
-                {% if job.season or job.lighting_mood or job.color_scheme %}
+                <div class="card-body">
+                  <h6 class="card-title text-truncate" title="{{ image.original_filename }}">
+                    {{ image.original_filename }}
+                  </h6>
+                  
+                  {% if image.venue_name %}
+                    <p class="text-primary small mb-2">{{ image.venue_name }}</p>
+                  {% endif %}
+                  
+                  {% if image.venue_description %}
+                    <p class="text-muted small mb-2">{{ image.venue_description|truncatechars:60 }}</p>
+                  {% endif %}
+                  
                   <div class="mb-2">
-                    {% if job.season %}
-                      <span class="badge bg-warning text-dark small">{{ job.season|title }}</span>
-                    {% endif %}
-                    {% if job.lighting_mood %}
-                      <span class="badge bg-secondary small">{{ job.lighting_mood|title }}</span>
-                    {% endif %}
-                    {% if job.color_scheme %}
-                      <span class="badge bg-success small">{{ job.color_scheme|title }}</span>
-                    {% endif %}
+                    <span class="badge bg-secondary">{{ image.get_image_type_display }}</span>
                   </div>
-                {% endif %}
-              {% endwith %}
-              
-              <small class="text-muted">
-                <i class="bi bi-magic"></i> Created {{ processed_image.created_at|date:"M d, Y" }}<br>
-                <i class="bi bi-heart-fill text-danger"></i> Favorited {{ favorite.created_at|timesince }} ago
-              </small>
-            </div>
-            
-            <!-- ALL Actions in Card Footer (NO overlay icons) -->
-            <div class="card-footer bg-transparent">
-              <div class="row g-1">
-                <div class="col-6">
-                  <a href="{% url 'image_processing:processed_image_detail' processed_image.pk %}" 
-                     class="btn btn-sm btn-success w-100">
-                    <i class="bi bi-eye"></i> View
-                  </a>
+                  
+                  <small class="text-muted">
+                    <i class="bi bi-upload"></i> Uploaded {{ image.uploaded_at|date:"M d, Y" }}<br>
+                    <i class="bi bi-star-fill text-warning"></i> Starred {{ favorite.created_at|timesince }} ago<br>
+                    <i class="bi bi-magic"></i> Used {{ favorite.times_used }} time{{ favorite.times_used|pluralize }}
+                  </small>
                 </div>
-                <div class="col-6">
-                  <button class="btn btn-sm btn-outline-primary w-100 redo-transformation-btn" 
-                          data-job-id="{{ processed_image.processing_job.id }}"
-                          onclick="redoTransformation('{{ processed_image.processing_job.id }}');"
-                          title="Use these settings again">
-                    <i class="bi bi-arrow-repeat"></i> Redo
-                  </button>
-                </div>
-              </div>
-              <!-- Second row of actions -->
-              <div class="row g-1 mt-1">
-                <div class="col-6">
-                  <!-- UNIVERSAL Collection Button - Uses centralized system from base.html -->
-                  <button class="btn btn-sm btn-outline-success w-100" 
-                          type="button" 
-                          data-processed-image-id="{{ processed_image.id }}">
-                    <i class="bi bi-collection"></i> Save
-                  </button>
-                </div>
-                <div class="col-6">
-                  <a href="{{ processed_image.processed_image.url }}" 
-                     class="btn btn-sm btn-outline-primary w-100" 
-                     download
-                     title="Download image">
-                    <i class="bi bi-download"></i> Download
-                  </a>
+                
+                <!-- Actions -->
+                <div class="card-footer bg-transparent">
+                  <div class="row g-1">
+                    <div class="col-6">
+                      <a href="{% url 'image_processing:wedding_studio' %}?image_id={{ image.id }}" 
+                         class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-magic"></i> Transform
+                      </a>
+                    </div>
+                    <div class="col-6">
+                      <a href="{% url 'image_processing:image_detail' image.pk %}" 
+                         class="btn btn-sm btn-outline-info w-100">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </div>
+                  </div>
+                  <div class="row g-1 mt-1">
+                    <div class="col-6">
+                      <button class="btn btn-sm btn-outline-success w-100" 
+                              type="button" 
+                              data-user-image-id="{{ image.id }}">
+                        <i class="bi bi-collection"></i> Save
+                      </button>
+                    </div>
+                    <div class="col-6">
+                      <a href="{{ image.image.url }}" 
+                         class="btn btn-sm btn-outline-secondary w-100" 
+                         download="{{ image.original_filename }}"
+                         title="Download image">
+                        <i class="bi bi-download"></i> Download
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
+            {% endwith %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Empty state for uploads -->
+        <div class="text-center py-5">
+          <i class="bi bi-star text-muted" style="font-size: 4rem;"></i>
+          <h3 class="mt-3 text-muted">No Quick Access Uploads</h3>
+          <p class="text-muted">
+            Star <i class="bi bi-star-fill text-warning"></i> your favorite uploads for quick access in the studio
+          </p>
+          <div class="mt-4">
+            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-outline-primary btn-lg me-3">
+              <i class="bi bi-images"></i> View My Images
+            </a>
+            <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg">
+              <i class="bi bi-plus-circle"></i> Upload New Image
+            </a>
           </div>
         </div>
-        {% endif %}
-        {% endwith %}
-      {% endfor %}
+      {% endif %}
     </div>
 
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-      <nav aria-label="Favorites pagination" class="mt-4">
-        <ul class="pagination justify-content-center">
-          {% if page_obj.has_previous %}
-            <li class="page-item">
-              <a class="page-link" href="?page=1">First</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-            </li>
-          {% endif %}
+    <!-- PROCESSED TAB -->
+    <div class="tab-pane fade" id="processed-content" role="tabpanel" aria-labelledby="processed-tab">
+      {% if favorite_processed %}
+        <div class="alert alert-danger border-0 mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Favorite Transformations:</strong> Your hearted AI-generated designs.
+          Click the heart icon to remove from favorites.
+        </div>
 
-          {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-              <li class="page-item active">
-                <span class="page-link">{{ num }}</span>
-              </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-              <li class="page-item">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-              </li>
-            {% endif %}
+        <div class="row g-3" id="favoriteProcessedGrid">
+          {% for favorite in favorite_processed %}
+            {% with processed_image=favorite.processed_image %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4 favorite-item" data-favorite-id="{{ favorite.id }}">
+              <div class="card h-100 shadow-sm favorite-card">
+                <div class="position-relative image-container">
+                  <img src="{{ processed_image.processed_image.url }}" 
+                       class="card-img-top" 
+                       alt="Wedding transformation"
+                       style="height: 250px; object-fit: cover;">
+                  
+                  <!-- Heart button -->
+                  <div class="position-absolute top-0 start-0 p-2">
+                    {% include 'image_processing/components/favorite_heart.html' with processed_image=processed_image %}
+                  </div>
+                </div>
+                
+                <div class="card-body">
+                  <h6 class="card-title text-truncate">
+                    {% if processed_image.processing_job.custom_prompt %}
+                      Custom Design
+                    {% else %}
+                      {{ processed_image.processing_job.theme_display|default:"Wedding Style" }} {{ processed_image.processing_job.space_display|default:"Space" }}
+                    {% endif %}
+                  </h6>
+                  
+                  <!-- Mode badge -->
+                  <div class="mb-2">
+                    <span class="badge {% if processed_image.processing_job.studio_mode == 'venue' %}bg-primary{% else %}bg-info{% endif %}">
+                      {{ processed_image.processing_job.get_studio_mode_display }}
+                    </span>
+                  </div>
+                  
+                  <!-- Wedding Style Badges -->
+                  {% with job=processed_image.processing_job %}
+                    {% if job.custom_prompt %}
+                      <small class="text-muted d-block mb-2">{{ job.custom_prompt|truncatechars:50 }}</small>
+                    {% elif job.studio_mode == 'venue' and job.wedding_theme and job.space_type %}
+                      <div class="mb-2">
+                        <span class="badge bg-secondary me-1">{{ job.theme_display|default:job.wedding_theme }}</span>
+                        <span class="badge bg-light text-dark">{{ job.space_display|default:job.space_type }}</span>
+                      </div>
+                    {% elif job.studio_mode != 'venue' %}
+                      <div class="mb-2">
+                        {% if job.setting_type %}
+                          <span class="badge bg-secondary">{{ job.setting_type|title }}</span>
+                        {% endif %}
+                        {% if job.pose_style %}
+                          <span class="badge bg-light text-dark">{{ job.pose_style|title }}</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endwith %}
+                  
+                  <small class="text-muted">
+                    <i class="bi bi-magic"></i> Created {{ processed_image.created_at|date:"M d, Y" }}<br>
+                    <i class="bi bi-heart-fill text-danger"></i> Favorited {{ favorite.created_at|timesince }} ago
+                  </small>
+                </div>
+                
+                <!-- Actions -->
+                <div class="card-footer bg-transparent">
+                  <div class="row g-1">
+                    <div class="col-6">
+                      <a href="{% url 'image_processing:processed_image_detail' processed_image.pk %}" 
+                         class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-eye"></i> View
+                      </a>
+                    </div>
+                    <div class="col-6">
+                      <button class="btn btn-sm btn-outline-primary w-100 redo-transformation-btn" 
+                              data-job-id="{{ processed_image.processing_job.id }}"
+                              onclick="redoTransformation('{{ processed_image.processing_job.id }}');"
+                              title="Use these settings again">
+                        <i class="bi bi-arrow-repeat"></i> Redo
+                      </button>
+                    </div>
+                  </div>
+                  <div class="row g-1 mt-1">
+                    <div class="col-6">
+                      <button class="btn btn-sm btn-outline-success w-100" 
+                              type="button" 
+                              data-processed-image-id="{{ processed_image.id }}">
+                        <i class="bi bi-collection"></i> Save
+                      </button>
+                    </div>
+                    <div class="col-6">
+                      <a href="{{ processed_image.processed_image.url }}" 
+                         class="btn btn-sm btn-outline-secondary w-100" 
+                         download
+                         title="Download image">
+                        <i class="bi bi-download"></i> Download
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endwith %}
           {% endfor %}
-
-          {% if page_obj.has_next %}
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-            </li>
-            <li class="page-item">
-              <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-            </li>
-          {% endif %}
-        </ul>
-      </nav>
-    {% endif %}
-
-  {% else %}
-    <!-- Empty state -->
-    <div class="row">
-      <div class="col-12">
+        </div>
+      {% else %}
+        <!-- Empty state for processed -->
         <div class="text-center py-5">
           <i class="bi bi-heart text-muted" style="font-size: 4rem;"></i>
-          <h3 class="mt-3 text-muted">No Favorites Yet</h3>
-          <p class="text-muted">Heart your favorite wedding transformations to see them here</p>
+          <h3 class="mt-3 text-muted">No Favorite Transformations</h3>
+          <p class="text-muted">
+            Heart <i class="bi bi-heart-fill text-danger"></i> your favorite AI transformations to see them here
+          </p>
           <div class="mt-4">
             <a href="{% url 'image_processing:processing_history' %}" class="btn btn-outline-primary btn-lg me-3">
               <i class="bi bi-magic"></i> View Transformations
@@ -197,13 +287,13 @@
             </a>
           </div>
         </div>
-      </div>
+      {% endif %}
     </div>
-  {% endif %}
+  </div>
 </div>
 
 <style>
-/* Enhanced favorites styling - NO overlay icons except heart */
+/* Enhanced favorites styling */
 .favorite-card {
   transition: all 0.3s ease;
   border: 2px solid transparent;
@@ -212,6 +302,13 @@
 .favorite-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.favorite-upload-item .favorite-card:hover {
+  border-color: #ffc107;
+}
+
+.favorite-item .favorite-card:hover {
   border-color: #ff6b8a;
 }
 
@@ -228,33 +325,19 @@
   transform: scale(1.05);
 }
 
-/* Favorite heart styling - ONLY overlay icon */
-.favorite-heart-btn {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(220, 53, 69, 0.3);
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
+/* Tab styling */
+.nav-tabs .nav-link {
+  color: #6c757d;
+  font-weight: 500;
 }
 
-.favorite-heart-btn:hover {
-  background: white;
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+.nav-tabs .nav-link.active {
+  color: #0d6efd;
+  font-weight: 600;
 }
 
-.favorite-heart-icon {
-  font-size: 1.1rem;
-  animation: heartbeat 2s infinite;
-}
-
-@keyframes heartbeat {
-  0%, 50%, 100% { transform: scale(1); }
-  25%, 75% { transform: scale(1.1); }
+.nav-tabs .nav-link:hover {
+  color: #0d6efd;
 }
 
 /* Badge styling */
@@ -264,12 +347,6 @@
 
 .badge.small {
   font-size: 0.7rem;
-}
-
-/* Purple badge for custom prompts */
-.bg-purple {
-  background-color: #6f42c1 !important;
-  color: white;
 }
 
 /* Button styling */
@@ -292,6 +369,11 @@
     font-size: 0.75rem;
     padding: 0.2rem 0.4rem;
   }
+  
+  .nav-tabs .nav-link {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
 }
 
 @media (max-width: 576px) {
@@ -303,20 +385,25 @@
     font-size: 0.7rem;
     padding: 0.15rem 0.3rem;
   }
+  
+  .nav-tabs .nav-link {
+    font-size: 0.85rem;
+    padding: 0.5rem;
+  }
 }
 
-/* Staggered animation for favorites */
-.favorite-item {
+/* Staggered animation */
+.favorite-upload-item, .favorite-item {
   animation: fadeInUp 0.6s ease forwards;
   opacity: 0;
   transform: translateY(20px);
 }
 
-.favorite-item:nth-child(1) { animation-delay: 0.1s; }
-.favorite-item:nth-child(2) { animation-delay: 0.2s; }
-.favorite-item:nth-child(3) { animation-delay: 0.3s; }
-.favorite-item:nth-child(4) { animation-delay: 0.4s; }
-.favorite-item:nth-child(n+5) { animation-delay: 0.5s; }
+.favorite-upload-item:nth-child(1), .favorite-item:nth-child(1) { animation-delay: 0.1s; }
+.favorite-upload-item:nth-child(2), .favorite-item:nth-child(2) { animation-delay: 0.2s; }
+.favorite-upload-item:nth-child(3), .favorite-item:nth-child(3) { animation-delay: 0.3s; }
+.favorite-upload-item:nth-child(4), .favorite-item:nth-child(4) { animation-delay: 0.4s; }
+.favorite-upload-item:nth-child(n+5), .favorite-item:nth-child(n+5) { animation-delay: 0.5s; }
 
 @keyframes fadeInUp {
   to {
@@ -327,91 +414,40 @@
 </style>
 
 <script>
-// Simplified Favorites Management - Universal collection picker handles collections
+// Favorites Management
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('❤️ Setting up simplified favorites management...');
+    console.log('💖 Setting up favorites management...');
     
-    // Collection picker is automatically handled by the universal system in base.html
-    
-    // Handle favorite heart clicks
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('favorite-heart-btn') || e.target.closest('.favorite-heart-btn')) {
-            e.preventDefault();
-            handleFavoriteToggle(e.target.closest('.favorite-heart-btn') || e.target);
+    // Listen for star toggle events to update upload favorites
+    document.addEventListener('favoriteUploadChanged', function(e) {
+        const { imageId, isStarred } = e.detail;
+        
+        if (!isStarred) {
+            // Remove from uploads tab if unstarred
+            const item = document.querySelector(`.favorite-upload-item[data-favorite-id] .card img[src*="user_images"][src*="${imageId}"]`);
+            if (item) {
+                const card = item.closest('.favorite-upload-item');
+                if (card) {
+                    card.style.animation = 'fadeOut 0.3s ease forwards';
+                    setTimeout(() => card.remove(), 300);
+                    
+                    // Update badge count
+                    const badge = document.querySelector('#uploads-tab .badge');
+                    if (badge) {
+                        const currentCount = parseInt(badge.textContent) || 0;
+                        badge.textContent = Math.max(0, currentCount - 1);
+                    }
+                }
+            }
         }
     });
+    
+    // Collection picker is automatically handled by the universal system in base.html
 });
-
-async function handleFavoriteToggle(button) {
-    const processedImageId = button.dataset.processedImageId;
-    const heartIcon = button.querySelector('.favorite-heart-icon');
-    const favoriteItem = button.closest('.favorite-item');
-    
-    if (!processedImageId) {
-        console.error('No processed image ID found');
-        return;
-    }
-    
-    try {
-        // Optimistic UI update
-        heartIcon.classList.add('animate__animated', 'animate__pulse');
-        button.disabled = true;
-        
-        const response = await fetch('/studio/favorite/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCSRFToken(),
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: `processed_image_id=${processedImageId}`
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            if (!data.is_favorited) {
-                // Item was unfavorited, remove from grid with animation
-                favoriteItem.style.transition = 'all 0.4s ease';
-                favoriteItem.style.transform = 'scale(0.8)';
-                favoriteItem.style.opacity = '0';
-                
-                setTimeout(() => {
-                    favoriteItem.remove();
-                    
-                    // Check if no favorites left
-                    const remainingFavorites = document.querySelectorAll('.favorite-item');
-                    if (remainingFavorites.length === 0) {
-                        // Reload to show empty state
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    }
-                }, 400);
-                
-                showAlert('Removed from favorites', 'info');
-            } else {
-                // Shouldn't happen on favorites page, but handle gracefully
-                showAlert('Added to favorites', 'success');
-            }
-        } else {
-            showAlert(data.error || 'Error updating favorites', 'danger');
-        }
-        
-    } catch (error) {
-        console.error('Favorite toggle error:', error);
-        showAlert('Error updating favorites', 'danger');
-    } finally {
-        heartIcon.classList.remove('animate__animated', 'animate__pulse');
-        button.disabled = false;
-    }
-}
 
 // Redo transformation functionality
 async function redoTransformation(jobId) {
     try {
-        showAlert('Copying settings to studio...', 'info');
-        
         const response = await fetch(`/studio/redo-transformation/${jobId}/`, {
             method: 'GET',
             headers: {
@@ -422,7 +458,6 @@ async function redoTransformation(jobId) {
         const result = await response.json();
         
         if (result.success) {
-            // Redirect to studio with pre-filled parameters
             window.location.href = result.redirect_url;
         } else {
             showAlert('Failed to copy settings', 'danger');
@@ -433,13 +468,7 @@ async function redoTransformation(jobId) {
     }
 }
 
-function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-           document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
-}
-
 function showAlert(message, type) {
-    // Remove existing alerts
     document.querySelectorAll('.temp-alert').forEach(alert => alert.remove());
     
     const alert = document.createElement('div');
@@ -458,6 +487,13 @@ function showAlert(message, type) {
     setTimeout(() => {
         if (alert.parentElement) alert.remove();
     }, 5000);
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
 }
 </script>
 {% endblock %}

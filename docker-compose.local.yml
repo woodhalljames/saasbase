@@ -83,3 +83,9 @@ services:
     ports:
       - '5555:5555'
     command: /start-flower
+
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"

@@ -5,7 +5,81 @@
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'image_processing:image_gallery' %}">
+<style>
+/* Gallery-specific star button positioning */
+.image-card .favorite-star-btn {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.image-card:hover .favorite-star-btn {
+    transform: scale(1.2);
+}
+
+/* Image Gallery Styles */
+.image-card {
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.image-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  border-color: #0d6efd;
+}
+
+.image-container {
+  overflow: hidden;
+  border-radius: calc(0.375rem - 1px) calc(0.375rem - 1px) 0 0;
+  position: relative;
+}
+
+.image-container img {
+  transition: transform 0.3s ease;
+}
+
+.image-card:hover .image-container img {
+  transform: scale(1.05);
+}
+
+/* Button styling */
+.btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Search bar styling */
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .image-container img {
+    height: 120px !important;
+  }
+  
+  .card-body {
+    padding: 0.75rem !important;
+  }
+  
+  .btn-sm {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .image-container img {
+    height: 100px !important;
+  }
+}
+</style>
 {% endblock %}
+
 {% block content %}
 {% csrf_token %}
 <div class="container py-4">
@@ -25,6 +99,9 @@
           <p class="text-muted mb-0">{{ total_images }} image{{ total_images|pluralize }} • {{ total_transformations }} transformation{{ total_transformations|pluralize }}</p>
         </div>
         <div class="d-flex gap-2">
+          <a href="{% url 'image_processing:favorites_list' %}" class="btn btn-outline-warning">
+            <i class="bi bi-star-fill"></i> Quick Access
+          </a>
           <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Upload New
           </a>
@@ -109,7 +186,7 @@
     <div class="row g-3" id="imagesGrid">
       {% for image in page_obj %}
         <div class="col-6 col-sm-4 col-md-3 col-lg-2 image-item" data-image-id="{{ image.id }}">
-          <div class="card h-100 shadow-sm image-card">
+          <div class="card h-100 shadow-sm image-card position-relative">
             <!-- Image Container -->
             <div class="position-relative image-container">
               <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
@@ -118,9 +195,9 @@
                    style="height: 150px; object-fit: cover; cursor: pointer;"
                    onclick="showImageModal('{{ image.id }}', '{{ image.image.url }}', '{{ image.original_filename|escapejs }}', '{{ image.width }}', '{{ image.height }}', '{{ image.file_size|filesizeformat }}', '{{ image.uploaded_at|date:"M d, Y" }}')">
               
-              <!-- Selection Checkbox (hidden by default) -->
-              <div class="position-absolute top-0 start-0 p-2 d-none" id="checkbox-{{ image.id }}">
-                <input type="checkbox" class="form-check-input bg-white border-2" value="{{ image.id }}">
+              <!-- STAR BUTTON - Always visible -->
+              <div class="position-absolute top-0 start-0 p-2" style="z-index: 10;">
+                {% include 'image_processing/components/favorite_star.html' with user_image=image %}
               </div>
             </div>
             
@@ -129,12 +206,17 @@
               <h6 class="card-title small mb-1 text-truncate" title="{{ image.original_filename }}">
                 {{ image.original_filename }}
               </h6>
-              <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex justify-content-between align-items-center mb-1">
                 <small class="text-muted">{{ image.uploaded_at|timesince }} ago</small>
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-secondary">{{ image.get_image_type_display }}</span>
                 <small class="text-muted">{{ image.file_size|filesizeformat }}</small>
               </div>
               {% if image.venue_name %}
-                <small class="text-primary d-block mt-1">{{ image.venue_name }}</small>
+                <small class="text-primary d-block mt-1 text-truncate" title="{{ image.venue_name }}">
+                  {{ image.venue_name }}
+                </small>
               {% endif %}
             </div>
             
@@ -154,44 +236,6 @@
                           data-image-id="{{ image.id }}">
                     <i class="bi bi-collection"></i> Save
                   </button>
-                  
-                  <!-- Collection Popup -->
-                  <div class="collection-popup d-none shadow-lg">
-                    <div class="collection-popup-header">
-                      <div class="d-flex justify-content-between align-items-center mb-2">
-                        <small class="text-muted fw-medium">Save to Collections</small>
-                        <button class="btn-close btn-close-sm collection-popup-close" type="button"></button>
-                      </div>
-                      <input type="text" 
-                             class="form-control form-control-sm collection-search" 
-                             placeholder="Search collections...">
-                    </div>
-                    
-                    <div class="collection-list-container">
-                      <!-- Loading state -->
-                      <div class="collection-loading text-center py-3">
-                        <div class="spinner-border spinner-border-sm text-primary"></div>
-                        <small class="d-block mt-1 text-muted">Loading...</small>
-                      </div>
-                      
-                      <!-- Collections list -->
-                      <div class="collection-list d-none">
-                        <!-- Collections will be populated here -->
-                      </div>
-                      
-                      <!-- Empty state -->
-                      <div class="collection-empty d-none text-center py-3">
-                        <i class="bi bi-collection text-muted"></i>
-                        <small class="d-block text-muted">No collections yet</small>
-                      </div>
-                    </div>
-                    
-                    <div class="collection-popup-footer">
-                      <button class="btn btn-sm btn-outline-primary w-100 create-collection-btn">
-                        <i class="bi bi-plus"></i> New Collection
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
               
@@ -209,42 +253,6 @@
                      download="{{ image.original_filename }}">
                     <i class="bi bi-download"></i>
                   </a>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Create Collection Modal for this image -->
-          <div class="modal fade" id="createCollectionModal-{{ image.id }}" tabindex="-1">
-            <div class="modal-dialog modal-sm">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h6 class="modal-title">New Collection</h6>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                  <form class="create-collection-form">
-                    <div class="mb-3">
-                      <label class="form-label small">Collection Name</label>
-                      <input type="text" 
-                             class="form-control form-control-sm collection-name-input" 
-                             placeholder="e.g., Garden Wedding Ideas"
-                             maxlength="100" 
-                             required>
-                    </div>
-                    <div class="mb-3">
-                      <label class="form-label small">Description (Optional)</label>
-                      <textarea class="form-control form-control-sm collection-description-input" 
-                                rows="2" 
-                                placeholder="What this collection is for..."></textarea>
-                    </div>
-                  </form>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-primary btn-sm create-and-add-btn">
-                    <i class="bi bi-plus-circle"></i> Create Collection
-                  </button>
                 </div>
               </div>
             </div>
@@ -361,195 +369,29 @@
   </div>
 </div>
 
-<style>
-/* Image Gallery Styles */
-.image-card {
-  transition: all 0.3s ease;
-  border: 2px solid transparent;
-}
-
-.image-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-  border-color: #0d6efd;
-}
-
-.image-container {
-  overflow: hidden;
-  border-radius: calc(0.375rem - 1px) calc(0.375rem - 1px) 0 0;
-  position: relative;
-}
-
-.image-container img {
-  transition: transform 0.3s ease;
-}
-
-.image-card:hover .image-container img {
-  transform: scale(1.05);
-}
-
-/* Collection picker positioning for gallery */
-.collection-picker-wrapper .collection-popup {
-  left: 0;
-  top: 100%;
-  margin-top: 0.5rem;
-  width: 280px;
-}
-
-/* Button styling */
-.btn-sm {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-}
-
-/* Search bar styling */
-.bg-light {
-  background-color: #f8f9fa !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .image-container img {
-    height: 120px !important;
-  }
-  
-  .card-body {
-    padding: 0.75rem !important;
-  }
-  
-  .btn-sm {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.4rem;
-  }
-  
-  .collection-picker-wrapper .collection-popup {
-    left: -100px;
-    width: 260px;
-  }
-}
-
-@media (max-width: 576px) {
-  .image-container img {
-    height: 100px !important;
-  }
-  
-  .btn-sm {
-    font-size: 0.65rem;
-    padding: 0.15rem 0.3rem;
-  }
-}
-
-/* Staggered animation for images */
-.image-item {
-  animation: fadeInUp 0.6s ease forwards;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.image-item:nth-child(1) { animation-delay: 0.1s; }
-.image-item:nth-child(2) { animation-delay: 0.15s; }
-.image-item:nth-child(3) { animation-delay: 0.2s; }
-.image-item:nth-child(4) { animation-delay: 0.25s; }
-.image-item:nth-child(5) { animation-delay: 0.3s; }
-.image-item:nth-child(6) { animation-delay: 0.35s; }
-.image-item:nth-child(n+7) { animation-delay: 0.4s; }
-
-@keyframes fadeInUp {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Modal improvements */
-.modal-body img {
-  max-height: 70vh;
-  object-fit: contain;
-}
-
-/* Form improvements */
-.form-label.small {
-  font-weight: 600;
-  color: #495057;
-}
-
-/* Alert improvements */
-.alert {
-  border-radius: 0.5rem;
-}
-</style>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📸 Image Gallery initialized');
-    
-    // Initialize collection pickers
-    window.initializeNewCollectionPickers();
-    
-    // Auto-submit search form on filter change
-    const dateFilter = document.getElementById('date_filter');
-    if (dateFilter) {
-        dateFilter.addEventListener('change', function() {
-            this.form.submit();
-        });
-    }
-});
-
-// Show image in modal
-function showImageModal(imageId, imageUrl, imageName, width, height, size, uploadDate) {
-    const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
-    
-    document.getElementById('modalImage').src = imageUrl;
-    document.getElementById('modalImageName').textContent = imageName;
-    document.getElementById('modalImageDimensions').textContent = `${width}x${height}`;
+// Image modal functionality
+function showImageModal(id, url, name, width, height, size, date) {
+    document.getElementById('modalImage').src = url;
+    document.getElementById('modalImageName').textContent = name;
+    document.getElementById('modalImageDimensions').textContent = `${width} × ${height}`;
     document.getElementById('modalImageSize').textContent = size;
-    document.getElementById('modalImageDate').textContent = uploadDate;
+    document.getElementById('modalImageDate').textContent = date;
+    document.getElementById('modalDownloadButton').href = url;
+    document.getElementById('modalDownloadButton').download = name;
     
-    // Update buttons
-    const useButton = document.getElementById('modalUseButton');
-    const downloadButton = document.getElementById('modalDownloadButton');
-    
-    useButton.onclick = () => {
-        modal.hide();
-        selectImageForStudio(imageId);
+    // Set up use button
+    document.getElementById('modalUseButton').onclick = function() {
+        selectImageForStudio(id);
+        bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal')).hide();
     };
     
-    downloadButton.href = imageUrl;
-    downloadButton.download = imageName;
-    
-    modal.show();
+    new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
 }
 
-// Select image for transformation
+// Select image for studio
 function selectImageForStudio(imageId) {
-    const studioUrl = new URL('{% url "image_processing:wedding_studio" %}', window.location.origin);
-    studioUrl.searchParams.set('image_id', imageId);
-    
-    showToast('Redirecting to studio with selected image...', 'info');
-    
-    setTimeout(() => {
-        window.location.href = studioUrl.toString();
-    }, 1000);
-}
-
-// Toast notification function
-function showToast(message, type = 'info') {
-    // Remove existing toasts
-    document.querySelectorAll('.gallery-toast').forEach(toast => toast.remove());
-    
-    const toast = document.createElement('div');
-    toast.className = `alert alert-${type === 'danger' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-sm position-fixed gallery-toast`;
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close btn-close-sm ms-2" onclick="this.parentElement.remove()"></button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentElement) toast.remove();
-    }, 4000);
+    window.location.href = `/studio/?image_id=${imageId}`;
 }
 </script>
 {% endblock %}

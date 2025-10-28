@@ -1,371 +1,187 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Wedding Visualizer{% endblock %}
+{% block title %}Wedding Studio - AI Transformation{% endblock %}
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'image_processing:wedding_studio' %}">
-{% endblock %}
-{% block content %}
-<div class="container-fluid py-3" style="max-width: 1400px;">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12 text-center">
-      <h1 class="h2 mb-2">Wedding Studio</h1>
-      <p class="text-muted mb-0">Transform any space into your perfect wedding celebration</p>
-   </div>
-  </div>
-
-  <!-- Main Layout -->
-  <div class="row g-4">
-    
-    <!-- Left: Streamlined Transform Controls -->
-    <div class="col-xl-3 col-lg-4 col-md-5">
-      <div class="card shadow-sm">
-        <div class="card-header py-2 bg-primary text-white">
-          <h6 class="mb-0 fw-bold">🎨 Customize Your Wedding</h6>
-        </div>
-        <div class="card-body p-3">
-          <form id="transformForm">
-            {% csrf_token %}
-            
-            <!-- CORE Required Fields -->
-            <div class="mb-3">
-              <label for="wedding-theme" class="form-label fw-bold small">Wedding Style <span class="text-danger">*</span></label>
-              <select class="form-select" id="wedding-theme" name="wedding_theme" required>
-                <option value="">Choose your style...</option>
-                {% for value, label in wedding_themes %}
-                  <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            
-            <div class="mb-3">
-              <label for="space-type" class="form-label fw-bold small">Space Purpose <span class="text-danger">*</span></label>
-              <select class="form-select" id="space-type" name="space_type" required>
-                <option value="">What will this space be?</option>
-                {% for value, label in space_types %}
-                  <option value="{{ value }}">{{ label }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            
-
-
-            <!-- Optional Details Section - Simplified -->
-            <div class="border-top pt-3 mt-3">
-              <div class="d-flex align-items-center justify-content-between mb-3">
-                <h6 class="mb-0 text-muted">More Options</h6>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleOptional">
-                  <i class="bi bi-chevron-down" id="toggleIcon"></i>
-                </button>
-              </div>
-              
-              <div id="optionalFields" class="d-none">
-                <!-- Season -->
-                <div class="mb-3">
-                  <label for="season" class="form-label small">Season</label>
-                  <select class="form-select form-select-sm" id="season" name="season">
-                    {% for value, label in season_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                  <div class="form-text small">Wedding season for seasonal elements</div>
-                </div>
-
-                <!-- Simplified Lighting -->
-                <div class="mb-3">
-                  <label for="lighting" class="form-label small">Lighting Atmosphere</label>
-                  <select class="form-select form-select-sm" id="lighting" name="lighting">
-                    {% for value, label in lighting_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                  <div class="form-text small">Preferred lighting mood</div>
-                </div>
-
-                <!-- Color Scheme -->
-                <div class="mb-3">
-                  <label for="color-scheme" class="form-label small">Color Scheme</label>
-                  <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
-                    <option value="">Theme default</option>
-                    {% for value, label in color_schemes %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                  <div class="form-text small">Preferred color palette</div>
-                </div>
-
-                <!-- User Instructions - Single field -->
-                <div class="mb-3">
-                  <label for="user-instructions" class="form-label small">
-                    Additional Instructions 
-                    <i class="bi bi-question-circle" 
-                       title="Add any specific requests or things to include/avoid"
-                       data-bs-toggle="tooltip"></i>
-                  </label>
-                  <textarea class="form-control form-control-sm" id="user-instructions" name="user_instructions" 
-                            rows="3" placeholder='For example: "Include lots of white roses and fairy lights but avoid dark colors" or "Make it very romantic with candles, no artificial flowers"'></textarea>
-                </div>
-              </div>
-            </div>
-            
-            <div class="d-grid">
-              <button type="submit" class="btn btn-secondary py-2" id="transformBtn" disabled>
-                <i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>
-              </button>
-            </div>
-            
-            {% if usage_data %}
-            <div class="text-center mt-2">
-              <small class="text-muted">
-                {{ usage_data.remaining }} of {{ usage_data.limit }} transforms remaining
-              </small>
-            </div>
-            {% endif %}
-
-          
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Center: Main Upload Area -->
-    <div class="col-xl-9 col-lg-8 col-md-7">
-      <div class="card shadow-sm" style="min-height: 500px;">
-        <div class="card-body d-flex align-items-center justify-content-center p-4">
-          
-          <!-- Upload Area (default state) -->
-          <div id="uploadArea" class="text-center w-100">
-            <div class="upload-zone p-4" id="dropZone">
-              
-              <!-- Upload Buttons -->
-              <div class="mb-4">
-                <button type="button" class="btn btn-primary btn-lg upload-btn" id="uploadBtn">
-                  <i class="bi bi-cloud-upload me-2"></i> Upload Photo
-                </button>
-                <!-- Camera button - only show on mobile -->
-                <button type="button" class="btn btn-outline-primary btn-lg ms-3 d-block d-md-none camera-btn" id="cameraBtn">
-                  <i class="bi bi-camera me-2"></i> Take Photo
-                </button>
-              </div>
-              
-              <!-- Hidden file inputs -->
-              <input type="file" id="fileInput" accept="image/*" class="d-none">
-              <input type="file" id="cameraInput" accept="image/*" capture="environment" class="d-none">
-              
-              <i class="bi bi-cloud-upload text-primary mb-3" style="font-size: 4rem;"></i>
-              <h4 class="mb-3">Upload Your Venue Photo</h4>
-              <p class="text-muted mb-3">Drop your image here, click "Upload Photo" above<span class="d-block d-md-none">, or take a photo with your camera</span></p>
-              <p class="text-muted small mb-4">JPG, PNG, WebP • Max 10MB</p>
-              
-              <div class="d-flex justify-content-center gap-1 flex-wrap">
-                <span class="badge bg-light text-dark">Empty rooms</span>
-                <span class="badge bg-light text-dark">Outdoor spaces</span>
-                <span class="badge bg-light text-dark">Event halls</span>
-                <span class="badge bg-light text-dark">Backyards</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Upload Progress -->
-          <div id="uploadProgress" class="text-center w-100 d-none">
-            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
-              <span class="visually-hidden">Uploading...</span>
-            </div>
-            <h5 class="mb-2" id="uploadProgressText">Uploading your photo...</h5>
-            <p class="text-muted" id="uploadProgressSubtext">Processing your venue image</p>
-            <div class="progress mx-auto" style="width: 300px; height: 8px;">
-              <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
-            </div>
-          </div>
-
-          <!-- Selected Image Preview -->
-          <div id="imagePreview" class="text-center w-100 d-none">
-            <!-- Clear Selection Button -->
-            <div class="d-flex justify-content-end mb-2">
-              <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSelectionBtn" title="Clear selection and choose different image">
-                <i class="bi bi-x-circle me-1"></i>
-              </button>
-            </div>
-            
-            <img id="selectedImage" 
-                 class="img-fluid rounded shadow mb-3" 
-                 style="max-height: 400px; max-width: 100%; object-fit: contain;"
-                 alt="Selected Venue">
-            <div class="bg-light rounded px-3 py-2 d-inline-block">
-              <h6 id="selectedImageName" class="mb-1 fw-bold">Selected Image</h6>
-              <small class="text-muted" id="selectedImageDetails">Ready for transformation</small>
-            </div>
-            
-    
-           
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Processing Status -->
-  <div id="processingStatus" class="row mt-4 d-none">
-    <div class="col-12">
-      <div class="alert alert-warning border-0 py-3">
-        <div class="d-flex align-items-center">
-          <div class="spinner-border spinner-border-sm text-warning me-3" role="status"></div>
-          <div>
-            <div class="fw-bold">Creating Your Wedding Vision...</div>
-            <div class="small text-muted">Redirecting you to view the transformation progress</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom: Recent Activity -->
-  <div class="row mt-5">
-    <div class="col-12">
-      <div class="card shadow-sm">
-        <div class="card-header py-2 bg-light">
-          <div class="d-flex justify-content-between align-items-center">
-            <h6 class="mb-0 fw-bold">📸 Recent Activity</h6>
-            <div class="btn-group btn-group-sm" role="group">
-              <input type="radio" class="btn-check" name="activityFilter" id="showImages" checked>
-              <label class="btn btn-outline-primary btn-sm py-1 px-2" for="showImages">Images</label>
-              
-              <input type="radio" class="btn-check" name="activityFilter" id="showTransforms">
-              <label class="btn btn-outline-primary btn-sm py-1 px-2" for="showTransforms">Results</label>
-            </div>
-          </div>
-        </div>
-        <div class="card-body p-3">
-          
-          <!-- Recent Images Tab -->
-          <div id="recentImagesTab">
-            {% if recent_images %}
-              <div class="row g-2" id="recentImagesContainer">
-                {% for image in recent_images|slice:":6" %}
-                  <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                    <div class="venue-thumbnail border rounded overflow-hidden" 
-                         data-image-id="{{ image.id }}"
-                         data-image-url="{{ image.image.url }}"
-                         data-thumbnail-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
-                         data-image-name="{{ image.original_filename }}"
-                         data-image-width="{{ image.width }}"
-                         data-image-height="{{ image.height }}"
-                         data-file-size="{{ image.file_size }}"
-                         style="cursor: pointer; aspect-ratio: 1; height: 100px;"
-                         title="Click to select {{ image.original_filename }}">
-                      <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
-                           class="w-100 h-100 object-fit-cover" 
-                           alt="{{ image.original_filename }}">
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-              <div class="d-flex justify-content-between align-items-center mt-3">
-                <small class="text-muted">Click any image to select it</small>
-                <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-primary">
-                  View All Images
-                </a>
-              </div>
-            {% else %}
-              <div class="text-center py-4">
-                <i class="bi bi-images text-muted fs-4"></i>
-                <p class="text-muted mb-0 mt-2">No uploads yet</p>
-              </div>
-            {% endif %}
-          </div>
-
-          <!-- Recent Transformations Tab - UPDATED VERSION -->
-          <div id="recentTransformsTab" class="d-none">
-            {% if recent_jobs %}
-              <div class="row g-3">
-                {% for job in recent_jobs|slice:":6" %}
-                  {% if job.status == 'completed' %}
-                    {% with processed_images=job.processed_images.all %}
-                      {% if processed_images %}
-                        {% with first_result=processed_images.0 %}
-                          <div class="col-md-6 col-lg-4">
-                            <a href="{% url 'image_processing:processed_image_detail' first_result.pk %}" 
-                               class="text-decoration-none text-dark result-card-link">
-                              <div class="d-flex align-items-center p-3 rounded border result-card">
-                                <!-- Keep original image thumbnail -->
-                                <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                                     class="rounded me-3" 
-                                     style="width: 50px; height: 40px; object-fit: cover;" 
-                                     alt="Original venue">
-                                
-                                <!-- Updated content: Space/Theme + timing -->
-                                <div class="flex-grow-1 min-w-0">
-                                  <div class="fw-bold small text-truncate">
-                                    {% if job.custom_prompt %}
-                                      Custom Design
-                                    {% elif job.wedding_theme and job.space_type %}
-                                      {% for value, label in wedding_themes %}
-                                        {% if value == job.wedding_theme %}{{ label }}{% endif %}
-                                      {% endfor %}
-                                      •
-                                      {% for value, label in space_types %}
-                                        {% if value == job.space_type %}{{ label }}{% endif %}
-                                      {% endfor %}
-                                    {% else %}
-                                      Wedding Transformation
-                                    {% endif %}
-                                  </div>
-                                  <div class="mt-1">
-                                    <small class="text-muted">{{ job.created_at|timesince }} ago</small>
-                                  </div>
-                                </div>
-                                
-                                <!-- Visual indicator that it's clickable -->
-                                <div class="ms-2 text-muted">
-                                  <i class="bi bi-arrow-right"></i>
-                                </div>
-                              </div>
-                            </a>
-                          </div>
-                        {% endwith %}
-                      {% endif %}
-                    {% endwith %}
-                  {% endif %}
-                {% endfor %}
-              </div>
-              
-              <!-- Keep existing "View All Results" link -->
-              <div class="text-center mt-3">
-                <a href="{% url 'image_processing:processing_history' %}" class="btn btn-sm btn-outline-primary">
-                  View All Results
-                </a>
-              </div>
-            {% else %}
-              <!-- Keep existing empty state -->
-              <div class="text-center py-4">
-                <i class="bi bi-magic text-muted fs-4"></i>
-                <p class="text-muted mb-0 mt-2">No transformations yet</p>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Bottom spacing to prevent footer overlap -->
-  <div class="pb-4"></div>
-</div>
-
 <style>
-/* Studio-specific styles */
+/* Studio Mode Tabs */
+.studio-mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.studio-mode-tab {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.studio-mode-tab:hover {
+  border-color: #00F5FF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.studio-mode-tab.active {
+  border-color: #00F5FF;
+  background: rgba(0, 245, 255, 0.1);
+}
+
+.studio-mode-tab .mode-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.studio-mode-tab .mode-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Selected Images Card */
+.selected-images-card {
+  min-height: 500px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.selected-image-item {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 2px solid #00F5FF;
+  cursor: move;
+  margin-bottom: 0.5rem;
+  max-width: 80px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.selected-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selected-image-item .remove-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  border: none;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.selected-image-item .order-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.selected-images-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Favorite uploads section */
+.favorite-uploads-section {
+  padding: 1rem;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.favorite-upload-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.favorite-upload-item:hover {
+  border-color: #00F5FF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.favorite-upload-item.selected {
+  border-color: #28a745;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+}
+
+.favorite-upload-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.favorite-upload-item .star-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(255, 193, 7, 0.9);
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* Upload zone */
 .upload-zone {
   border: 2px dashed #dee2e6;
   border-radius: 15px;
   transition: all 0.3s ease;
   cursor: pointer;
   background: rgba(248, 249, 250, 0.5);
-  min-height: 400px;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  padding: 2rem;
 }
 
 .upload-zone:hover,
@@ -375,11 +191,16 @@
   transform: scale(1.01);
 }
 
-.upload-zone.dragover {
-  border-color: #28a745;
-  background-color: rgba(40, 167, 69, 0.05);
+/* Mode-specific field groups */
+.mode-fields {
+  display: none;
 }
 
+.mode-fields.active {
+  display: block;
+}
+
+/* Venue thumbnail styling */
 .venue-thumbnail {
   transition: all 0.2s ease;
   border: 2px solid transparent !important;
@@ -395,344 +216,748 @@
 }
 
 .venue-thumbnail.selected {
-  border-color: #00F5FF !important;
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 245, 255, 0.3);
+  border-color: #28a745 !important;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
 .venue-thumbnail.selected::after {
   content: '✓';
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #00F5FF;
+  top: 4px;
+  right: 4px;
+  background: #28a745;
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: bold;
-}
-
-/* Tab switching styles */
-.btn-check:checked + .btn-outline-primary {
-  color: white;
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
-}
-
-/* Enhanced transformation info */
-.alert.bg-light {
-  background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef;
-}
-
-/* Tooltip styling */
-[data-bs-toggle="tooltip"] {
-  cursor: help;
-  color: #6c757d;
-}
-
-/* Result card styles - NEW */
-.result-card {
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.result-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  border-color: #0d6efd !important;
-}
-
-.result-card-link:hover {
-  text-decoration: none !important;
-}
-
-.result-card-link:hover .result-card {
-  background-color: rgba(13, 110, 253, 0.05);
-}
-
-.result-card-link:hover .bi-arrow-right {
-  color: #0d6efd !important;
-  transform: translateX(2px);
-}
-
-.bi-arrow-right {
-  transition: all 0.2s ease;
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .upload-btn {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  .camera-btn {
-    width: 100%;
-    margin-left: 0 !important;
-  }
-  
-  .upload-zone {
-    min-height: 300px;
-    padding: 2rem 1rem !important;
-  }
-  
-  .upload-zone i {
-    font-size: 3rem !important;
-  }
-  
-  .venue-thumbnail {
-    height: 90px !important;
-  }
-}
-
-@media (max-width: 576px) {
-  .venue-thumbnail {
-    height: 80px !important;
-  }
 }
 
 .object-fit-cover {
   object-fit: cover;
 }
 </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3" style="max-width: 1400px;">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12 text-center">
+      <h1 class="h2 mb-2">Wedding Studio</h1>
+      <p class="text-muted mb-0">Transform spaces or create portraits with AI</p>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <div class="row g-4">
+    
+    <!-- Left: Studio Controls -->
+    <div class="col-xl-3 col-lg-3 col-md-12">
+      <div class="card shadow-sm" style="min-height: 500px;">
+        <div class="card-header py-2 bg-primary text-white">
+          <h6 class="mb-0 fw-bold">🎨 Studio Settings</h6>
+        </div>
+        <div class="card-body p-3">
+          <form id="transformForm">
+            {% csrf_token %}
+            
+            <!-- Studio Mode Selection -->
+            <div class="mb-3">
+              <label class="form-label fw-bold small">Studio Mode</label>
+              <div class="studio-mode-tabs">
+                <div class="studio-mode-tab active" data-mode="venue">
+                  <div class="mode-icon">🏛️</div>
+                  <div class="mode-name">Venue</div>
+                </div>
+                <div class="studio-mode-tab" data-mode="portrait_wedding">
+                  <div class="mode-icon">👰</div>
+                  <div class="mode-name">Wedding</div>
+                </div>
+                <div class="studio-mode-tab" data-mode="portrait_engagement">
+                  <div class="mode-icon">💕</div>
+                  <div class="mode-name">Engagement</div>
+                </div>
+              </div>
+              <input type="hidden" id="studio-mode" name="studio_mode" value="venue">
+            </div>
+
+            <!-- VENUE MODE FIELDS -->
+            <div class="mode-fields active" id="venue-fields">
+              <div class="mb-3">
+                <label for="wedding-theme" class="form-label fw-bold small">Wedding Style <span class="text-danger">*</span></label>
+                <select class="form-select" id="wedding-theme" name="wedding_theme">
+                  <option value="">Choose style...</option>
+                  {% for value, label in wedding_themes %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">Required: Pick your wedding style</small>
+              </div>
+              
+              <div class="mb-3">
+                <label for="space-type" class="form-label fw-bold small">Space Type</label>
+                <select class="form-select" id="space-type" name="space_type">
+                  <option value="">Choose space (optional)...</option>
+                  {% for value, label in space_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">Optional: Specify the type of space</small>
+              </div>
+            </div>
+
+            <!-- PORTRAIT MODE FIELDS -->
+            <div class="mode-fields" id="portrait-fields">
+              <div class="mb-3">
+                <label for="setting-type" class="form-label fw-bold small">Setting</label>
+                <select class="form-select" id="setting-type" name="setting_type">
+                  <option value="">Choose setting (optional)...</option>
+                  {% for value, label in portrait_settings %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">Optional: Where should the photo be taken</small>
+              </div>
+
+              <div class="mb-3">
+                <label for="pose-style" class="form-label fw-bold small">Pose/Action <span class="text-danger">*</span></label>
+                <select class="form-select" id="pose-style" name="pose_style">
+                  <option value="">Choose pose...</option>
+                  <option value="formal_portrait">Formal Portrait</option>
+                  <option value="romantic_embrace">Romantic Embrace</option>
+                  <option value="candid_laughing">Candid & Laughing</option>
+                  <option value="walking_together">Walking Together</option>
+                  <option value="sitting_intimate">Sitting Intimate</option>
+                  <option value="dancing">Dancing</option>
+                  <option value="playful_fun">Playful & Fun</option>
+                </select>
+                <small class="form-text text-muted">Required: How should subjects be posed</small>
+              </div>
+            </div>
+
+            <!-- Optional Details -->
+            <div class="border-top pt-3 mt-3">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="mb-0 text-muted">More Options</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleOptional">
+                  <i class="bi bi-chevron-down" id="toggleIcon"></i>
+                </button>
+              </div>
+              
+              <div id="optionalFields" class="d-none">
+                <!-- Portrait Optional Fields -->
+                <div class="portrait-optional-fields d-none">
+                  <div class="mb-3">
+                    <label for="photo-theme" class="form-label small">Photo Theme</label>
+                    <select class="form-select form-select-sm" id="photo-theme" name="photo_theme">
+                      <option value="">Choose theme...</option>
+                      {% for value, label in portrait_themes %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="attire-style" class="form-label small">Attire Style</label>
+                    <select class="form-select form-select-sm" id="attire-style" name="attire_style">
+                      <option value="">Choose attire...</option>
+                      <option value="traditional_formal">Traditional Wedding Attire</option>
+                      <option value="modern_chic">Modern Chic</option>
+                      <option value="casual_elegant">Casual Elegant</option>
+                      <option value="bohemian">Bohemian Style</option>
+                      <option value="vintage_inspired">Vintage Inspired</option>
+                      <option value="cultural_traditional">Cultural Traditional</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="season" class="form-label small">Season</label>
+                  <select class="form-select form-select-sm" id="season" name="season">
+                    {% for value, label in season_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="lighting" class="form-label small">Lighting</label>
+                  <select class="form-select form-select-sm" id="lighting" name="lighting_mood">
+                    {% for value, label in lighting_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="color-scheme" class="form-label small">Colors</label>
+                  <select class="form-select form-select-sm" id="color-scheme" name="color_scheme">
+                    <option value="">Theme default</option>
+                    {% for value, label in color_schemes %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="user-instructions" class="form-label small">Additional Instructions</label>
+                  <textarea class="form-control form-control-sm" id="user-instructions" name="user_instructions" 
+                            rows="3" placeholder="Any specific requests..."></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-secondary py-2" id="transformBtn" disabled>
+                <i class="bi bi-magic me-1"></i> <span>Select Images First</span>
+              </button>
+            </div>
+            
+            {% if usage_data %}
+            <div class="text-center mt-2">
+              <small class="text-muted">
+                {{ usage_data.remaining }} of {{ usage_data.limit }} remaining
+              </small>
+            </div>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Upload Area -->
+    <div class="col-xl-6 col-lg-5 col-md-12">
+      <div class="card shadow-sm" style="min-height: 500px;">
+        <div class="card-body p-4">
+          
+          <!-- Upload Area -->
+          <div id="uploadArea">
+            <div class="upload-zone" id="dropZone">
+              <div class="mb-4">
+                <button type="button" class="btn btn-primary btn-lg upload-btn" id="uploadBtn">
+                  <i class="bi bi-cloud-upload me-2"></i> Upload Images
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-lg ms-3 d-md-none camera-btn" id="cameraBtn">
+                  <i class="bi bi-camera me-2"></i> Take Photo
+                </button>
+              </div>
+              
+              <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple class="d-none">
+              <input type="file" id="cameraInput" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" capture="environment" class="d-none">
+              
+              <i class="bi bi-cloud-upload text-primary mb-3" style="font-size: 4rem;"></i>
+              <h4 class="mb-3" id="uploadTitle">Upload Your Images</h4>
+              <p class="text-muted mb-3" id="uploadDescription">Select up to 3 images (venue photos, selfies, references)</p>
+              <p class="text-muted small mb-0"><strong>JPG, PNG, WebP</strong> • Max 10MB each</p>
+            </div>
+          </div>
+
+          <!-- Upload Progress -->
+          <div id="uploadProgress" class="text-center w-100 d-none">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5 id="uploadProgressText">Uploading...</h5>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Selected Images -->
+    <div class="col-xl-3 col-lg-4 col-md-12">
+      <div class="card shadow-sm selected-images-card">
+        <div class="card-header py-2 bg-success text-white">
+          <h6 class="mb-0 fw-bold">
+            <i class="bi bi-images me-1"></i>
+            Selected (<span id="selectedCount">0</span>/3)
+          </h6>
+        </div>
+        <div class="card-body p-3" id="selectedImagesContainer">
+          <div class="selected-images-placeholder">
+            <i class="bi bi-images mb-2" style="font-size: 3rem;"></i>
+            <p class="mb-0">No images selected</p>
+            <small class="text-muted">Select 1-3 images</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Favorite Uploads Section -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header py-2 bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">⭐ Favorite Uploads - Quick Add</h6>
+            <small class="text-muted">Click to add to selection</small>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          <div id="favoriteUploadsContainer" class="d-flex gap-2 flex-wrap">
+            <div class="text-muted small">
+              <i class="bi bi-star me-1"></i>Star images from Recent Images below for quick access
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header py-2 bg-light">
+          <div class="d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-bold">📸 Recent Images</h6>
+            <a href="{% url 'image_processing:image_gallery' %}" class="btn btn-sm btn-outline-primary">
+              View All
+            </a>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          {% if recent_images %}
+            <div class="row g-2" id="recentImagesContainer">
+              {% for image in recent_images|slice:":12" %}
+                <div class="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-1">
+                  <div class="venue-thumbnail border rounded overflow-hidden position-relative" 
+                       data-image-id="{{ image.id }}"
+                       data-image-url="{{ image.image.url }}"
+                       data-thumbnail-url="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}"
+                       data-image-name="{{ image.original_filename }}"
+                       style="cursor: pointer; aspect-ratio: 1; height: 100px;">
+                    <img src="{% if image.thumbnail %}{{ image.thumbnail.url }}{% else %}{{ image.image.url }}{% endif %}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         alt="{{ image.original_filename }}">
+                    <div class="position-absolute top-0 start-0 m-1">
+                      {% include 'image_processing/components/favorite_star.html' with user_image=image %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <i class="bi bi-images text-muted fs-4"></i>
+              <p class="text-muted mb-0 mt-2">No uploads yet</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
-console.log('🚀 Wedding Studio script loading...');
-
-// Make preselected image data available to JavaScript
-{% if preselected_image %}
-window.preselectedImageData = {
-    id: {{ preselected_image.id }},
-    image_url: "{{ preselected_image.image.url }}",
-    name: "{{ preselected_image.original_filename|escapejs }}",
-    width: {{ preselected_image.width }},
-    height: {{ preselected_image.height }},
-    file_size: {{ preselected_image.file_size }}
-};
-console.log('📌 Preselected image data loaded:', window.preselectedImageData);
-{% else %}
-window.preselectedImageData = null;
-{% endif %}
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📱 DOM Content Loaded');
-    initializeWeddingStudio();
+    initializeMultiModeStudio();
 });
 
-function initializeWeddingStudio() {
-    console.log('🎬 Initializing Wedding Studio...');
+function initializeMultiModeStudio() {
+    console.log('🎬 Initializing Multi-Mode Studio...');
     
-    // Wedding Studio Manager Class - UPDATED VERSION
-    class WeddingStudioManager {
+    class MultiModeStudio {
         constructor() {
-            this.selectedImageId = null;
-            this.isUploading = false;
-            this.currentJobId = null;
+            this.selectedImages = [];
+            this.favoriteUploads = [];
+            this.currentMode = 'venue';
+            this.maxImages = 3;
+            this.allowedFormats = ['jpg', 'jpeg', 'png', 'webp'];
             this.init();
         }
 
         init() {
-            console.log('⚙️ Setting up Wedding Studio Manager...');
+            this.setupModeToggle();
             this.setupUploadButtons();
             this.setupFileInputs();
             this.setupDropZone();
             this.setupThumbnails();
             this.setupForm();
-            this.setupTabs();
             this.setupOptionalFields();
-            this.setupTooltips();
-            this.setupClearSelection();
+            this.loadFavoriteUploads();
+            this.updateUploadText();
             
-            // Call these methods in the correct order
-            this.handlePreselectedImage();
-            this.handleURLParameters();
-            
-            console.log('✅ Wedding Studio Manager ready!');
-        }
-
-        handlePreselectedImage() {
-            console.log('🎯 Checking for preselected image...');
-            
-            // Check if there's preselected image data from the template
-            const preselectedData = window.preselectedImageData;
-            if (preselectedData) {
-                console.log('📌 Found preselected image:', preselectedData.id);
-                
-                // Set the selected image ID
-                this.selectedImageId = preselectedData.id;
-                
-                // Find and select the corresponding thumbnail if it exists
-                const thumbnail = document.querySelector(`[data-image-id="${preselectedData.id}"]`);
-                if (thumbnail) {
-                    this.selectThumbnail(thumbnail);
-                } else {
-                    // If thumbnail doesn't exist in recent images, show the image directly
-                    this.showImagePreview(
-                        preselectedData.image_url,
-                        preselectedData.name,
-                        preselectedData.width,
-                        preselectedData.height,
-                        preselectedData.file_size
-                    );
-                }
-                
-                console.log('✅ Preselected image loaded successfully');
-            } else {
-                console.log('ℹ️ No preselected image found');
-            }
-        }
-
-        handleURLParameters() {
-            console.log('🔗 Checking URL parameters for form population...');
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            let settingsApplied = false;
-            
-            // Handle image selection from URL
-            const imageId = urlParams.get('image_id');
-            if (imageId && !this.selectedImageId) {
-                console.log('📌 Found image_id in URL:', imageId);
-                
-                // Try to find this image in thumbnails
-                const thumbnail = document.querySelector(`[data-image-id="${imageId}"]`);
-                if (thumbnail) {
-                    this.selectThumbnail(thumbnail);
-                    settingsApplied = true;
-                } else {
-                    // Set the ID so it will be used when form is submitted
-                    this.selectedImageId = imageId;
-                    console.log('📌 Set selectedImageId from URL, but thumbnail not found in recent images');
-                }
-            }
-            
-            // UPDATED: Handle guided mode form fields with single user_instructions
-            const formFields = [
-                { param: 'wedding_theme', elementId: 'wedding-theme' },
-                { param: 'space_type', elementId: 'space-type' },
-                { param: 'season', elementId: 'season' },
-                { param: 'lighting', elementId: 'lighting' },
-                { param: 'color_scheme', elementId: 'color-scheme' },
-                { param: 'user_instructions', elementId: 'user-instructions' }  // UPDATED: Single field
-            ];
-            
-            formFields.forEach(field => {
-                const value = urlParams.get(field.param);
-                if (value) {
-                    const element = document.getElementById(field.elementId);
-                    if (element) {
-                        element.value = value;
-                        settingsApplied = true;
-                        console.log(`🔧 Set ${field.param}:`, value);
-                    }
-                }
+            document.addEventListener('favoriteUploadChanged', (e) => {
+                console.log('⭐ Favorite upload changed event received:', e.detail);
+                this.loadFavoriteUploads();
             });
             
-            // Handle custom_prompt field
-            const customPrompt = urlParams.get('custom_prompt');
-            if (customPrompt) {
-                const customPromptField = document.getElementById('custom-prompt');
-                if (customPromptField) {
-                    customPromptField.value = customPrompt;
-                    settingsApplied = true;
-                }
-            }
-            
-            if (settingsApplied) {
-                // UPDATED: Show optional fields if any optional parameters were set
-                if (urlParams.get('season') || urlParams.get('lighting') || urlParams.get('color_scheme') || 
-                    urlParams.get('user_instructions')) {  // UPDATED: Single field check
-                    const optionalFields = document.getElementById('optionalFields');
-                    const toggleIcon = document.getElementById('toggleIcon');
-                    if (optionalFields && optionalFields.classList.contains('d-none')) {
-                        optionalFields.classList.remove('d-none');
-                        if (toggleIcon) toggleIcon.className = 'bi bi-chevron-up';
-                    }
-                }
-              
-                this.updateTransformButton();
-                
-                this.showAlert('Settings loaded from previous transformation', 'success');
-                console.log('✅ URL parameters applied successfully');
-                
-                // Clean up URL without causing reload
-                if (window.history && window.history.replaceState) {
-                    const cleanUrl = window.location.pathname;
-                    window.history.replaceState({}, document.title, cleanUrl);
-                }
-            } else {
-                console.log('ℹ️ No form parameters found in URL');
-            }
+            console.log('✅ Multi-Mode Studio ready!');
         }
 
-        setupTooltips() {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
+        validateFileFormat(file) {
+            const fileName = file.name.toLowerCase();
+            const fileExt = fileName.split('.').pop();
+            
+            if (!this.allowedFormats.includes(fileExt)) {
+                return {
+                    valid: false,
+                    error: `Invalid format ".${fileExt}". Please upload JPG, PNG, or WebP images only.`
+                };
+            }
+            
+            const validMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validMimeTypes.includes(file.type)) {
+                return {
+                    valid: false,
+                    error: `Invalid file type. Please upload JPG, PNG, or WebP images only.`
+                };
+            }
+            
+            return { valid: true };
+        }
+
+        setupModeToggle() {
+            const modeTabs = document.querySelectorAll('.studio-mode-tab');
+            const studioModeInput = document.getElementById('studio-mode');
+            const portraitOptionalFields = document.querySelector('.portrait-optional-fields');
+
+            modeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const mode = tab.dataset.mode;
+                    
+                    modeTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    studioModeInput.value = mode;
+                    this.currentMode = mode;
+                    
+                    document.querySelectorAll('.mode-fields').forEach(f => f.classList.remove('active'));
+                    if (mode === 'venue') {
+                        document.getElementById('venue-fields').classList.add('active');
+                        if (portraitOptionalFields) {
+                            portraitOptionalFields.classList.add('d-none');
+                        }
+                    } else {
+                        document.getElementById('portrait-fields').classList.add('active');
+                        if (portraitOptionalFields) {
+                            portraitOptionalFields.classList.remove('d-none');
+                        }
+                    }
+                    
+                    this.updateUploadText();
+                    this.updateTransformButton();
+                    
+                    console.log('🔄 Switched to mode:', mode);
+                });
             });
         }
 
-        setupClearSelection() {
-            console.log('🗑️ Setting up clear selection...');
+        updateUploadText() {
+            const title = document.getElementById('uploadTitle');
+            const description = document.getElementById('uploadDescription');
             
-            const clearBtn = document.getElementById('clearSelectionBtn');
-            const uploadDifferentBtn = document.getElementById('uploadDifferentBtn');
+            if (this.currentMode === 'venue') {
+                title.textContent = 'Upload Your Images';
+                description.textContent = 'Select up to 3 images (venue photos, references)';
+            } else {
+                title.textContent = 'Upload Your Images';
+                description.textContent = 'Select up to 3 images (faces, clothing, location inspiration)';
+            }
+        }
+
+        setupUploadButtons() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            const cameraBtn = document.getElementById('cameraBtn');
             const fileInput = document.getElementById('fileInput');
+            const cameraInput = document.getElementById('cameraInput');
 
-            if (clearBtn) {
-                clearBtn.addEventListener('click', (e) => {
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    console.log('🗑️ Clear selection clicked');
-                    this.clearSelection();
+                    fileInput.click();
                 });
             }
 
-           
-
-            console.log('✅ Clear selection setup complete');
+            if (cameraBtn) {
+                cameraBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    cameraInput.click();
+                });
+            }
         }
 
-        clearSelection() {
-            console.log('🗑️ Clearing image selection...');
-            
-            // Clear selected image data
-            this.selectedImageId = null;
-            
-            // Clear thumbnail selections
-            document.querySelectorAll('.venue-thumbnail').forEach(t => {
-                t.classList.remove('selected');
-            });
-            
-            // Reset to upload area
-            this.showUploadArea();
-            
-            // Update transform button
-            this.updateTransformButton();
-            
-            // Clear file inputs
+        setupFileInputs() {
             const fileInput = document.getElementById('fileInput');
             const cameraInput = document.getElementById('cameraInput');
-            if (fileInput) fileInput.value = '';
-            if (cameraInput) cameraInput.value = '';
+
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    this.handleMultipleFileUpload(Array.from(e.target.files));
+                });
+            }
+
+            if (cameraInput) {
+                cameraInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleMultipleFileUpload(Array.from(e.target.files));
+                    }
+                });
+            }
+        }
+
+        setupDropZone() {
+            const dropZone = document.getElementById('dropZone');
+
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('dragover');
+                });
+
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('dragover');
+                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                    if (files.length > 0) {
+                        this.handleMultipleFileUpload(files);
+                    }
+                });
+            }
+        }
+
+        async handleMultipleFileUpload(files) {
+            const remainingSlots = this.maxImages - this.selectedImages.length;
             
-            this.showAlert('Selection cleared - ready to upload new image', 'info');
+            if (remainingSlots <= 0) {
+                this.showAlert(`Maximum ${this.maxImages} images allowed`, 'warning');
+                return;
+            }
+
+            const invalidFiles = [];
+            const validFiles = [];
             
-            console.log('✅ Selection cleared successfully');
+            for (const file of files) {
+                const validation = this.validateFileFormat(file);
+                if (validation.valid) {
+                    validFiles.push(file);
+                } else {
+                    invalidFiles.push({ name: file.name, error: validation.error });
+                }
+            }
+            
+            if (invalidFiles.length > 0) {
+                const errorMsg = invalidFiles.length === 1 
+                    ? invalidFiles[0].error 
+                    : `${invalidFiles.length} files have invalid formats. Please upload JPG, PNG, or WebP only.`;
+                this.showAlert(errorMsg, 'danger');
+                
+                if (validFiles.length === 0) {
+                    return;
+                }
+            }
+
+            const filesToUpload = validFiles.slice(0, remainingSlots);
+            
+            if (validFiles.length > remainingSlots) {
+                this.showAlert(`Only uploading ${remainingSlots} of ${validFiles.length} images (max ${this.maxImages})`, 'warning');
+            }
+
+            this.showUploadProgress();
+
+            for (const file of filesToUpload) {
+                await this.uploadSingleFile(file);
+            }
+
+            this.hideUploadProgress();
+            this.renderSelectedImages();
+            this.updateTransformButton();
+        }
+
+        async uploadSingleFile(file) {
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('csrfmiddlewaretoken', this.getCSRFToken());
+
+                const response = await fetch('/studio/upload/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.selectedImages.push({
+                        id: data.image_id,
+                        url: data.image_url,
+                        thumbnailUrl: data.thumbnail_url || data.image_url,
+                        name: data.image_name
+                    });
+                    
+                    this.addToRecentImages(data);
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                this.showAlert('Upload failed: ' + error.message, 'danger');
+            }
+        }
+
+        renderSelectedImages() {
+            const container = document.getElementById('selectedImagesContainer');
+            const countEl = document.getElementById('selectedCount');
+            
+            if (!container) return;
+
+            countEl.textContent = this.selectedImages.length;
+
+            if (this.selectedImages.length === 0) {
+                container.innerHTML = `
+                    <div class="selected-images-placeholder">
+                        <i class="bi bi-images mb-2" style="font-size: 3rem;"></i>
+                        <p class="mb-0">No images selected</p>
+                        <small class="text-muted">Select 1-3 images</small>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            this.selectedImages.forEach((img, index) => {
+                const item = document.createElement('div');
+                item.className = 'selected-image-item';
+                item.dataset.imageId = img.id;
+                item.innerHTML = `
+                    <img src="${img.thumbnailUrl}" alt="${img.name}">
+                    <button class="remove-btn" data-index="${index}">×</button>
+                    <div class="order-badge">${index + 1}</div>
+                `;
+
+                const removeBtn = item.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removeImage(index);
+                });
+
+                container.appendChild(item);
+            });
+        }
+
+        removeImage(index) {
+            this.selectedImages.splice(index, 1);
+            this.renderSelectedImages();
+            this.updateTransformButton();
+            
+            const thumbnails = document.querySelectorAll('.venue-thumbnail');
+            thumbnails.forEach(t => {
+                const imageId = parseInt(t.dataset.imageId);
+                if (!this.selectedImages.find(img => img.id === imageId)) {
+                    t.classList.remove('selected');
+                }
+            });
+        }
+
+        setupThumbnails() {
+            document.addEventListener('click', (e) => {
+                const thumbnail = e.target.closest('.venue-thumbnail');
+                if (thumbnail && !e.target.closest('.favorite-star-btn')) {
+                    this.toggleThumbnailSelection(thumbnail);
+                }
+            });
+        }
+
+        toggleThumbnailSelection(thumbnail) {
+            const imageId = parseInt(thumbnail.dataset.imageId);
+            const imageUrl = thumbnail.dataset.imageUrl;
+            const thumbnailUrl = thumbnail.dataset.thumbnailUrl;
+            const imageName = thumbnail.dataset.imageName;
+
+            const existingIndex = this.selectedImages.findIndex(img => img.id === imageId);
+
+            if (existingIndex >= 0) {
+                this.selectedImages.splice(existingIndex, 1);
+                thumbnail.classList.remove('selected');
+            } else {
+                if (this.selectedImages.length >= this.maxImages) {
+                    this.showAlert(`Maximum ${this.maxImages} images allowed`, 'warning');
+                    return;
+                }
+
+                this.selectedImages.push({
+                    id: imageId,
+                    url: imageUrl,
+                    thumbnailUrl: thumbnailUrl,
+                    name: imageName
+                });
+                thumbnail.classList.add('selected');
+            }
+
+            this.renderSelectedImages();
+            this.updateTransformButton();
+        }
+
+        addToRecentImages(data) {
+            const container = document.getElementById('recentImagesContainer');
+            if (!container) return;
+
+            const div = document.createElement('div');
+            div.className = 'col-6 col-sm-4 col-md-3 col-lg-2 col-xl-1';
+            div.innerHTML = `
+                <div class="venue-thumbnail border rounded overflow-hidden position-relative" 
+                     data-image-id="${data.image_id}"
+                     data-image-url="${data.image_url}"
+                     data-thumbnail-url="${data.thumbnail_url || data.image_url}"
+                     data-image-name="${data.image_name}"
+                     style="cursor: pointer; aspect-ratio: 1; height: 100px;">
+                    <img src="${data.thumbnail_url || data.image_url}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         alt="${data.image_name}">
+                    <div class="position-absolute top-0 start-0 m-1">
+                        <button type="button" 
+                                class="favorite-star-btn not-starred"
+                                data-user-image-id="${data.image_id}"
+                                data-is-starred="false"
+                                title="Add to quick access">
+                          <i class="bi bi-star"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.insertBefore(div, container.firstChild);
+
+            const thumbs = container.querySelectorAll('.col-6, .col-sm-4, .col-md-3, .col-lg-2, .col-xl-1');
+            if (thumbs.length > 12) {
+                thumbs[thumbs.length - 1].remove();
+            }
+        }
+
+        setupForm() {
+            const form = document.getElementById('transformForm');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.processImages();
+                });
+            }
+
+            // UPDATED: Only listen to required fields
+            const requiredFields = ['wedding-theme', 'pose-style'];
+            requiredFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('change', () => this.updateTransformButton());
+                }
+            });
         }
 
         setupOptionalFields() {
-            console.log('🔧 Setting up optional fields...');
-            
             const toggleBtn = document.getElementById('toggleOptional');
             const optionalFields = document.getElementById('optionalFields');
             const toggleIcon = document.getElementById('toggleIcon');
-            const themeSelect = document.getElementById('wedding-theme');
-            const spaceSelect = document.getElementById('space-type');
 
             if (toggleBtn && optionalFields && toggleIcon) {
                 toggleBtn.addEventListener('click', () => {
@@ -746,455 +971,234 @@ function initializeWeddingStudio() {
                     }
                 });
             }
-
-           
-
-            console.log('✅ Optional fields setup complete');
         }
 
-        setupUploadButtons() {
-            console.log('🔘 Setting up upload buttons...');
-            
-            const uploadBtn = document.getElementById('uploadBtn');
-            const cameraBtn = document.getElementById('cameraBtn');
-            const fileInput = document.getElementById('fileInput');
-            const cameraInput = document.getElementById('cameraInput');
-
-            if (uploadBtn && fileInput) {
-                uploadBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('📤 Upload button clicked');
-                    if (!this.isUploading) {
-                        fileInput.click();
-                    }
-                });
-                console.log('✅ Upload button connected');
-            }
-
-            if (cameraBtn && cameraInput) {
-                cameraBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('📷 Camera button clicked');
-                    if (!this.isUploading) {
-                        cameraInput.click();
-                    }
-                });
-                console.log('✅ Camera button connected');
-            }
-        }
-
-        setupFileInputs() {
-            console.log('📂 Setting up file inputs...');
-            
-            const fileInput = document.getElementById('fileInput');
-            const cameraInput = document.getElementById('cameraInput');
-
-            if (fileInput) {
-                fileInput.addEventListener('change', (e) => {
-                    console.log('📤 File input changed:', e.target.files.length);
-                    if (e.target.files.length > 0) {
-                        this.handleFileUpload(e.target.files[0], 'file');
-                    }
-                });
-                console.log('✅ File input connected');
-            }
-
-            if (cameraInput) {
-                cameraInput.addEventListener('change', (e) => {
-                    console.log('📷 Camera input changed:', e.target.files.length);
-                    if (e.target.files.length > 0) {
-                        this.handleFileUpload(e.target.files[0], 'camera');
-                    }
-                });
-                console.log('✅ Camera input connected');
-            }
-        }
-
-        setupDropZone() {
-            console.log('🎯 Setting up drop zone...');
-            
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-
-            if (dropZone && fileInput) {
-                dropZone.addEventListener('click', (e) => {
-                    if (!e.target.closest('button') && !e.target.closest('input')) {
-                        e.preventDefault();
-                        console.log('🎯 Drop zone clicked');
-                        if (!this.isUploading) {
-                            fileInput.click();
-                        }
-                    }
-                });
-
-                dropZone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.add('dragover');
-                });
-
-                dropZone.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    if (!dropZone.contains(e.relatedTarget)) {
-                        dropZone.classList.remove('dragover');
-                    }
-                });
-
-                dropZone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('dragover');
-                    const files = e.dataTransfer.files;
-                    console.log('🎯 Files dropped:', files.length);
-                    if (files.length > 0 && !this.isUploading) {
-                        this.handleFileUpload(files[0], 'drop');
-                    }
-                });
-
-                console.log('✅ Drop zone connected');
-            }
-        }
-
-        setupThumbnails() {
-            console.log('🖼️ Setting up thumbnails...');
-            
-            const thumbnails = document.querySelectorAll('.venue-thumbnail');
-            console.log(`Found ${thumbnails.length} thumbnails`);
-            
-            thumbnails.forEach((thumb) => {
-                thumb.addEventListener('click', () => {
-                    console.log('🖼️ Thumbnail clicked');
-                    this.selectThumbnail(thumb);
-                });
-            });
-            
-            console.log('✅ Thumbnails connected');
-        }
-
-        setupForm() {
-            console.log('📋 Setting up form...');
-            
-            const form = document.getElementById('transformForm');
-            const themeSelect = document.getElementById('wedding-theme');
-            const spaceSelect = document.getElementById('space-type');
-
-            if (form) {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    console.log('📋 Form submitted');
-                    this.processImage();
-                });
-            }
-
-            if (themeSelect) {
-                themeSelect.addEventListener('change', () => {
-                    console.log('🎨 Theme changed:', themeSelect.value);
-                    this.updateTransformButton();
-                    
-                });
-            }
-
-            if (spaceSelect) {
-                spaceSelect.addEventListener('change', () => {
-                    console.log('🏠 Space changed:', spaceSelect.value);
-                    this.updateTransformButton();
-                  
-                });
-            }
-
-            console.log('✅ Form connected');
-        }
-
-        setupTabs() {
-            console.log('🗂️ Setting up tabs...');
-            
-            const showImages = document.getElementById('showImages');
-            const showTransforms = document.getElementById('showTransforms');
-            const imagesTab = document.getElementById('recentImagesTab');
-            const transformsTab = document.getElementById('recentTransformsTab');
-
-            if (showImages && showTransforms && imagesTab && transformsTab) {
-                showImages.addEventListener('change', () => {
-                    if (showImages.checked) {
-                        imagesTab.classList.remove('d-none');
-                        transformsTab.classList.add('d-none');
-                    }
-                });
-
-                showTransforms.addEventListener('change', () => {
-                    if (showTransforms.checked) {
-                        imagesTab.classList.add('d-none');
-                        transformsTab.classList.remove('d-none');
-                    }
-                });
-
-                console.log('✅ Tabs connected');
-            }
-        }
-
-        async handleFileUpload(file, source) {
-            console.log(`📤 Uploading ${file.name} from ${source}`);
-
-            if (!file.type.startsWith('image/')) {
-                this.showAlert('Please select an image file', 'danger');
-                return;
-            }
-
-            if (file.size > 10 * 1024 * 1024) {
-                this.showAlert('File too large (max 10MB)', 'danger');
-                return;
-            }
-
-            this.isUploading = true;
-            this.showUploadProgress(source);
-
+        async loadFavoriteUploads() {
+            console.log('🔥 Loading favorite uploads...');
             try {
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('csrfmiddlewaretoken', this.getCSRF());
-
-                console.log('🌐 Sending upload request...');
-
-                const response = await fetch('/studio/upload/', {
-                    method: 'POST',
-                    body: formData,
+                const response = await fetch('/studio/favorite-uploads/', {
+                    credentials: 'same-origin',
                     headers: {
+                        'X-CSRFToken': this.getCSRFToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
 
-                console.log(`📡 Response status: ${response.status}`);
-                
                 const data = await response.json();
-                console.log('📡 Response data:', data);
 
                 if (data.success) {
-                    console.log('✅ Upload successful!');
-                    this.handleUploadSuccess(data, source);
-                    this.showAlert(`${source === 'camera' ? 'Photo captured' : 'Image uploaded'} successfully!`, 'success');
+                    this.favoriteUploads = data.favorites || [];
+                    console.log('✅ Loaded favorites:', this.favoriteUploads.length, 'items');
+                    this.renderFavoriteUploads();
                 } else {
-                    throw new Error(data.error || 'Upload failed');
+                    console.error('❌ Failed to load favorites:', data);
                 }
             } catch (error) {
-                console.error('⛔ Upload error:', error);
-                this.showAlert('Upload failed: ' + error.message, 'danger');
-                this.showUploadArea();
-            } finally {
-                this.isUploading = false;
-                document.getElementById('fileInput').value = '';
-                const cameraInput = document.getElementById('cameraInput');
-                if (cameraInput) cameraInput.value = '';
+                console.error('❌ Error loading favorites:', error);
             }
         }
 
-        handleUploadSuccess(data, source) {
-            console.log('🎉 Handling upload success...');
-            
-            this.addToRecentImages(data);
-            this.selectedImageId = data.image_id;
-            this.showImagePreview(
-                data.image_url, 
-                data.image_name, 
-                data.width, 
-                data.height, 
-                data.file_size
-            );
-            this.updateTransformButton();
-        }
-
-        addToRecentImages(data) {
-            const container = document.getElementById('recentImagesContainer');
-            if (!container) return;
-
-            console.log('➕ Adding to recent images...');
-
-            const div = document.createElement('div');
-            div.className = 'col-6 col-sm-4 col-md-3 col-lg-2';
-            div.innerHTML = `
-                <div class="venue-thumbnail border rounded overflow-hidden" 
-                     data-image-id="${data.image_id}"
-                     data-image-url="${data.image_url}"
-                     data-thumbnail-url="${data.thumbnail_url || data.image_url}"
-                     data-image-name="${data.image_name}"
-                     data-image-width="${data.width}"
-                     data-image-height="${data.height}"
-                     data-file-size="${data.file_size}"
-                     style="cursor: pointer; aspect-ratio: 1; height: 100px;"
-                     title="Click to select ${data.image_name}">
-                    <img src="${data.thumbnail_url || data.image_url}" 
-                         class="w-100 h-100 object-fit-cover" 
-                         alt="${data.image_name}">
-                </div>
-            `;
-
-            const thumbnail = div.querySelector('.venue-thumbnail');
-            thumbnail.addEventListener('click', () => this.selectThumbnail(thumbnail));
-
-            container.insertBefore(div, container.firstChild);
-
-            const thumbs = container.querySelectorAll('.col-6, .col-sm-4, .col-md-3, .col-lg-2');
-            if (thumbs.length > 6) {
-                thumbs[6].remove();
+        renderFavoriteUploads() {
+            const container = document.getElementById('favoriteUploadsContainer');
+            if (!container) {
+                console.error('❌ Favorite uploads container not found');
+                return;
             }
-        }
 
-        selectThumbnail(thumbnail) {
-            console.log('🖼️ Selecting thumbnail...');
-            
-            document.querySelectorAll('.venue-thumbnail').forEach(t => {
-                t.classList.remove('selected');
+            console.log('🎨 Rendering', this.favoriteUploads.length, 'favorite uploads');
+
+            if (this.favoriteUploads.length === 0) {
+                container.innerHTML = `
+                    <div class="text-muted small">
+                        <i class="bi bi-star me-1"></i>Star images from Recent Images below for quick access
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            this.favoriteUploads.forEach((fav, index) => {
+                const isSelected = this.selectedImages.some(img => img.id === fav.image.id);
+
+                const item = document.createElement('div');
+                item.className = `favorite-upload-item ${isSelected ? 'selected' : ''}`;
+                item.dataset.imageId = fav.image.id;
+                item.dataset.imageUrl = fav.image.url;
+                item.dataset.thumbnailUrl = fav.image.thumbnail_url;
+                item.dataset.imageName = fav.image.name;
+                item.title = `${fav.image.name} - Click to ${isSelected ? 'remove' : 'add'}`;
+
+                item.innerHTML = `
+                    <img src="${fav.image.thumbnail_url}" alt="${fav.image.name}">
+                    <div class="star-badge"><i class="bi bi-star-fill"></i></div>
+                `;
+
+                item.addEventListener('click', () => {
+                    this.toggleFavoriteUploadSelection(item);
+                });
+
+                container.appendChild(item);
+                
+                console.log(`  ✅ Added favorite #${index + 1}:`, fav.image.name);
             });
             
-            thumbnail.classList.add('selected');
-            
-            const imageId = thumbnail.dataset.imageId;
-            const imageUrl = thumbnail.dataset.imageUrl;
-            const imageName = thumbnail.dataset.imageName;
-            const imageWidth = thumbnail.dataset.imageWidth;
-            const imageHeight = thumbnail.dataset.imageHeight;
-            const fileSize = thumbnail.dataset.fileSize;
-            
-            this.selectedImageId = imageId;
-            this.showImagePreview(imageUrl, imageName, imageWidth, imageHeight, fileSize);
+            console.log('✅ Rendered', this.favoriteUploads.length, 'favorites');
+        }
+
+        toggleFavoriteUploadSelection(item) {
+            const imageId = parseInt(item.dataset.imageId);
+            const existingIndex = this.selectedImages.findIndex(img => img.id === imageId);
+
+            if (existingIndex >= 0) {
+                this.selectedImages.splice(existingIndex, 1);
+                item.classList.remove('selected');
+            } else {
+                if (this.selectedImages.length >= this.maxImages) {
+                    this.showAlert(`Maximum ${this.maxImages} images allowed`, 'warning');
+                    return;
+                }
+
+                this.selectedImages.push({
+                    id: imageId,
+                    url: item.dataset.imageUrl,
+                    thumbnailUrl: item.dataset.thumbnailUrl,
+                    name: item.dataset.imageName
+                });
+                item.classList.add('selected');
+            }
+
+            this.renderSelectedImages();
             this.updateTransformButton();
             
-            this.showAlert(`Selected "${imageName}" for transformation`, 'success');
-        }
-
-        showUploadProgress(source) {
-            console.log('⏳ Showing upload progress...');
-            this.hideAllStates();
-            document.getElementById('uploadProgress').classList.remove('d-none');
-            
-            if (source === 'camera') {
-                document.getElementById('uploadProgressText').textContent = 'Processing your photo...';
-                document.getElementById('uploadProgressSubtext').textContent = 'Preparing your captured image';
-            }
-        }
-
-        showImagePreview(imageUrl, imageName, width, height, fileSize) {
-            console.log('🖼️ Showing image preview...');
-            this.hideAllStates();
-            
-            const preview = document.getElementById('imagePreview');
-            const img = document.getElementById('selectedImage');
-            const name = document.getElementById('selectedImageName');
-            const details = document.getElementById('selectedImageDetails');
-            
-            img.src = imageUrl;
-            name.textContent = imageName;
-            
-            let detailText = 'Ready for AI transformation';
-            if (width && height) {
-                detailText = `${width}x${height} • Ready for transformation`;
-                if (fileSize) {
-                    const sizeMB = (fileSize / (1024 * 1024)).toFixed(1);
-                    detailText = `${width}x${height} • ${sizeMB}MB • Ready for transformation`;
+            const thumbnails = document.querySelectorAll('.venue-thumbnail');
+            thumbnails.forEach(t => {
+                if (parseInt(t.dataset.imageId) === imageId) {
+                    if (existingIndex >= 0) {
+                        t.classList.remove('selected');
+                    } else {
+                        t.classList.add('selected');
+                    }
                 }
-            }
-            details.textContent = detailText;
-            
-            preview.classList.remove('d-none');
-        }
-
-        showUploadArea() {
-            console.log('📤 Showing upload area...');
-            this.hideAllStates();
-            document.getElementById('uploadArea').classList.remove('d-none');
-        }
-
-        hideAllStates() {
-            ['uploadArea', 'uploadProgress', 'imagePreview'].forEach(id => {
-                document.getElementById(id).classList.add('d-none');
             });
         }
 
         updateTransformButton() {
             const btn = document.getElementById('transformBtn');
-            const hasImage = !!this.selectedImageId;
-            const hasTheme = document.getElementById('wedding-theme')?.value;
-            const hasSpace = document.getElementById('space-type')?.value;
+            const hasImages = this.selectedImages.length > 0;
             
-            const canTransform = hasImage && hasTheme && hasSpace;
-            
-            btn.disabled = !canTransform;
-            
-            if (canTransform) {
-                btn.className = 'btn btn-primary py-2';
-                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Transform</span>';
+            // UPDATED: Single field validation per mode
+            let hasRequiredFields = false;
+            if (this.currentMode === 'venue') {
+                const theme = document.getElementById('wedding-theme')?.value;
+                hasRequiredFields = !!theme;
             } else {
-                btn.className = 'btn btn-secondary py-2';
-                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Image & Style</span>';
+                const pose = document.getElementById('pose-style')?.value;
+                hasRequiredFields = !!pose;
             }
-        }
 
-      
-        getFormData() {
-            const form = document.getElementById('transformForm');
-            const formData = new FormData(form);
-            const data = {};
-            
-            // Only include non-empty values
-            for (let [key, value] of formData.entries()) {
-                if (value && value.trim() !== '') {
-                    data[key] = value.trim();
+            const canTransform = hasImages && hasRequiredFields;
+
+            btn.disabled = !canTransform;
+
+            if (canTransform) {
+                btn.className = 'btn btn-primary py-2 w-100';
+                const imageText = this.selectedImages.length === 1 ? '1 Image' : `${this.selectedImages.length} Images`;
+                btn.innerHTML = `<i class="bi bi-magic me-1"></i> <span>Transform ${imageText}</span>`;
+            } else if (!hasImages) {
+                btn.className = 'btn btn-secondary py-2 w-100';
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Images First</span>';
+            } else {
+                btn.className = 'btn btn-secondary py-2 w-100';
+                if (this.currentMode === 'venue') {
+                    btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Wedding Style</span>';
+                } else {
+                    btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Pose/Action</span>';
                 }
             }
-            
-            console.log('📋 Simplified form data:', data);
-            return data;
         }
 
-        // UPDATED processImage method - redirects to history page
-        async processImage() {
-            if (!this.selectedImageId) {
-                this.showAlert('Please select an image first', 'danger');
+        async processImages() {
+            if (this.selectedImages.length === 0) {
+                this.showAlert('Please select at least one image', 'danger');
                 return;
             }
 
             const formData = this.getFormData();
             
-            if (!formData.wedding_theme || !formData.space_type) {
-                this.showAlert('Please select both wedding style and space type', 'danger');
-                return;
+            // UPDATED: Single field validation per mode
+            if (this.currentMode === 'venue') {
+                if (!formData.wedding_theme) {
+                    this.showAlert('Please select wedding style', 'danger');
+                    return;
+                }
+            } else {
+                if (!formData.pose_style) {
+                    this.showAlert('Please select pose/action', 'danger');
+                    return;
+                }
             }
 
-            // Update button state but don't show yellow popup
             const btn = document.getElementById('transformBtn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Starting Transformation...</span>';
+            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> <span>Starting...</span>';
 
             try {
-                const response = await fetch(`/studio/image/${this.selectedImageId}/process/`, {
+                const primaryImageId = this.selectedImages[0].id;
+                const referenceImageIds = this.selectedImages.slice(1).map(img => img.id);
+
+                formData.reference_image_ids = referenceImageIds;
+
+                const response = await fetch(`/studio/image/${primaryImageId}/process/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': this.getCSRF(),
+                        'X-CSRFToken': this.getCSRFToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify(formData)
                 });
 
                 const result = await response.json();
-                console.log('🔄 Processing response:', result);
-                
+
                 if (result.success) {
-                    this.currentJobId = result.job_id;
-                    this.showAlert('AI transformation started! Redirecting to view progress...', 'success');
+                    this.showAlert('AI transformation started! Redirecting...', 'success');
                     
-                    // Immediate redirect to history page to monitor progress
                     setTimeout(() => {
                         window.location.href = '/studio/visualizations/';
                     }, 1000);
-                    
                 } else {
                     throw new Error(result.error || 'Processing failed');
                 }
             } catch (error) {
-                console.error('⛔ Processing error:', error);
+                console.error('Processing error:', error);
                 this.showAlert('Error: ' + error.message, 'danger');
                 this.updateTransformButton();
             }
+        }
+
+        getFormData() {
+            const form = document.getElementById('transformForm');
+            const formData = new FormData(form);
+            const data = {};
+
+            for (let [key, value] of formData.entries()) {
+                if (value && value.trim() !== '') {
+                    data[key] = value.trim();
+                }
+            }
+
+            return data;
+        }
+
+        showUploadProgress() {
+            document.getElementById('uploadArea').classList.add('d-none');
+            document.getElementById('uploadProgress').classList.remove('d-none');
+        }
+
+        hideUploadProgress() {
+            document.getElementById('uploadArea').classList.remove('d-none');
+            document.getElementById('uploadProgress').classList.add('d-none');
         }
 
         showAlert(message, type) {
@@ -1215,30 +1219,14 @@ function initializeWeddingStudio() {
             }, 5000);
         }
 
-        getCSRF() {
+        getCSRFToken() {
             return document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
-                   document.querySelector('meta[name=csrf_token]')?.getAttribute('content');
-        }
-
-        destroy() {
-            // Cleanup if needed
+                   document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
         }
     }
 
-    // Initialize Wedding Studio Manager
-    try {
-        window.studioManager = new WeddingStudioManager();
-        console.log('🎉 Wedding Studio initialized successfully!');
-    } catch (error) {
-        console.error('💥 Failed to initialize wedding studio:', error);
-    }
+    window.studioManager = new MultiModeStudio();
+    console.log('🎉 Multi-Mode Studio initialized!');
 }
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (window.studioManager) {
-        window.studioManager.destroy();
-    }
-});
 </script>
 {% endblock %}

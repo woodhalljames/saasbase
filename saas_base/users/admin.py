@@ -118,10 +118,11 @@ class UserAdmin(auth_admin.UserAdmin):
         <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
             <strong>💡 How to edit tokens:</strong>
             <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                <li>Enter <strong>700</strong> → User gets 700 tokens to use</li>
-                <li>Enter <strong>0</strong> → User has no tokens left</li>
-                <li>You can give MORE than their subscription limit!</li>
-                <li>Example: User on 100-token plan can be given 1000 tokens</li>
+                <li>Enter <strong>50</strong> → User gets 50 tokens to use</li>
+                <li>Enter <strong>700</strong> → User gets 700 tokens (even beyond subscription limit!)</li>
+                <li>Enter <strong>0</strong> → User has no tokens left (blocked)</li>
+                <li>You can give MORE than their subscription limit if needed</li>
+                <li>Example: User on 100-token plan can be given 1000 bonus tokens</li>
             </ul>
         </div>
         """
@@ -173,10 +174,15 @@ class UserAdmin(auth_admin.UserAdmin):
                 old_remaining = old_usage_data['remaining']
                 limit = old_usage_data['limit']
                 
-                # Calculate what "used" should be to give them the desired remaining amount
+                # FIXED: Allow negative usage for bonus tokens beyond limit
                 # Formula: remaining = limit - used
                 # Therefore: used = limit - remaining
-                new_used = max(0, limit - new_remaining)
+                # 
+                # Examples:
+                # - User has 3 left, set to 50: used = limit - 50 (works perfectly)
+                # - User has 100 limit, set to 700: used = 100 - 700 = -600 (negative = bonus)
+                # - Set to 0: used = limit - 0 = limit (no tokens left)
+                new_used = limit - new_remaining
                 
                 try:
                     redis_client.set(usage_key, new_used)
@@ -195,10 +201,20 @@ class UserAdmin(auth_admin.UserAdmin):
                         seconds_until_end = int((end_of_month - now).total_seconds())
                         redis_client.expire(usage_key, seconds_until_end + 86400)
                     
-                    messages.success(
-                        request,
-                        f"✅ Tokens updated: {old_remaining} → {new_remaining} available (Set usage to {new_used}/{limit})"
-                    )
+                    # Show appropriate message based on whether we're giving bonus tokens
+                    if new_remaining > limit:
+                        bonus = new_remaining - limit
+                        messages.success(
+                            request,
+                            f"✅ Tokens updated: {old_remaining} → {new_remaining} available "
+                            f"(+{bonus} bonus tokens beyond {limit} subscription limit)"
+                        )
+                    else:
+                        messages.success(
+                            request,
+                            f"✅ Tokens updated: {old_remaining} → {new_remaining} available "
+                            f"(Usage set to {new_used}/{limit})"
+                        )
                 except Exception as e:
                     messages.error(
                         request,
@@ -232,19 +248,19 @@ class UserAdmin(auth_admin.UserAdmin):
             level=messages.SUCCESS
         )
     
-    reset_to_full.short_description = "Give users their full limit"
+    reset_to_full.short_description = "✨ Reset to full limit"
     
     def add_50_tokens(self, request, queryset):
         """Add 50 tokens to selected users"""
         self._add_tokens(request, queryset, 50)
     
-    add_50_tokens.short_description = "Add 50 tokens"
+    add_50_tokens.short_description = "➕ Add 50 tokens"
     
     def add_100_tokens(self, request, queryset):
         """Add 100 tokens to selected users"""
         self._add_tokens(request, queryset, 100)
     
-    add_100_tokens.short_description = "Add 100 tokens"
+    add_100_tokens.short_description = "➕ Add 100 tokens"
     
     def set_to_zero(self, request, queryset):
         """Set users to 0 remaining tokens"""
@@ -274,7 +290,7 @@ class UserAdmin(auth_admin.UserAdmin):
             level=messages.SUCCESS
         )
     
-    set_to_zero.short_description = "Set to 0 tokens (block access)"
+    set_to_zero.short_description = "🚫 Set to 0 tokens (block)"
     
     def _add_tokens(self, request, queryset, amount):
         """Helper method to add tokens to users"""
@@ -291,8 +307,11 @@ class UserAdmin(auth_admin.UserAdmin):
                 usage_data = UsageTracker.get_usage_data(user)
                 current_used = usage_data['current']
                 
-                # To add tokens, we reduce the "used" count
-                new_used = max(0, current_used - amount)
+                # FIXED: To add tokens, we reduce the "used" count
+                # Allow negative values for bonus tokens beyond subscription limit
+                # Example: used=97, add 50 tokens → new_used=47 (gives 53 more tokens if limit=100)
+                # Example: used=10, add 50 tokens → new_used=-40 (40 bonus beyond limit)
+                new_used = current_used - amount
                 
                 redis_client.set(usage_key, new_used)
                 count += 1

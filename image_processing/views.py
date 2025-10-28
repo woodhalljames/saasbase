@@ -1,4 +1,3 @@
-# image_processing/views.py - FIXED: Collection edit now properly handles AJAX requests
 
 import json
 import logging
@@ -19,43 +18,38 @@ from PIL import Image, ImageOps
 
 from usage_limits.decorators import usage_limit_required
 from .models import (
-    UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, Favorite,
-    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES
+    UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, 
+    Favorite, FavoriteUpload, JobReferenceImage,
+    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES, PORTRAIT_THEMES, PORTRAIT_SETTINGS
 )
-from .forms import (
-    ImageUploadForm, WeddingTransformForm,
-    SEASON_CHOICES, LIGHTING_CHOICES, PROMPT_MODE_CHOICES
-)
-from .tasks import process_venue_transformation, process_venue_realtime
+from .forms import ImageUploadForm
+from .tasks import process_image_job
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png', 'webp']
+ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
 
 def apply_exif_correction(uploaded_file):
-    """
-    Apply EXIF orientation correction to uploaded image file.
-    Returns the corrected file or original if no correction needed.
-    """
+    """Apply EXIF orientation correction to uploaded image file"""
     try:
-        # Open the image
         image = Image.open(uploaded_file)
         
-        # Check if image has EXIF orientation data
         if hasattr(image, '_getexif') and image._getexif() is not None:
-            # Apply EXIF orientation correction
             corrected_image = ImageOps.exif_transpose(image)
             
-            # Check if correction was actually applied
             if corrected_image is not image:
                 logger.info(f"Applied EXIF orientation correction to {uploaded_file.name}")
                 
-                # Convert corrected image back to file format
                 output = io.BytesIO()
-                
-                # Preserve original format
                 image_format = image.format or 'JPEG'
+                
                 if image_format.upper() == 'JPEG':
-                    # For JPEG, ensure RGB mode and good quality
                     if corrected_image.mode in ('RGBA', 'LA', 'P'):
                         background = Image.new('RGB', corrected_image.size, (255, 255, 255))
                         if corrected_image.mode == 'P':
@@ -65,18 +59,10 @@ def apply_exif_correction(uploaded_file):
                     
                     corrected_image.save(output, format='JPEG', quality=95, optimize=True)
                 else:
-                    # For other formats, save as-is
                     corrected_image.save(output, format=image_format)
                 
                 output.seek(0)
-                
-                # Create new ContentFile with corrected image data
-                corrected_file = ContentFile(
-                    output.getvalue(),
-                    name=uploaded_file.name
-                )
-                
-                # Copy important attributes
+                corrected_file = ContentFile(output.getvalue(), name=uploaded_file.name)
                 corrected_file.content_type = uploaded_file.content_type
                 
                 return corrected_file
@@ -89,11 +75,21 @@ def apply_exif_correction(uploaded_file):
             
     except Exception as e:
         logger.warning(f"Error applying EXIF correction to {uploaded_file.name}: {str(e)}")
-        # Return original file if correction fails
         return uploaded_file
 
 
-# HELPER FUNCTION - Add favorite status to processed images
+def validate_image_format(uploaded_file):
+    """Validate image format - only JPG, PNG, WebP allowed"""
+    file_ext = uploaded_file.name.lower().split('.')[-1]
+    if file_ext not in ALLOWED_IMAGE_FORMATS:
+        return False, f"Invalid format '.{file_ext}'. Please upload JPG, PNG, or WebP images only."
+    
+    if uploaded_file.content_type not in ALLOWED_MIME_TYPES:
+        return False, f"Invalid file type. Please upload JPG, PNG, or WebP images only."
+    
+    return True, None
+
+
 def add_favorite_status_to_processed_images(user, processed_images):
     """Add is_favorited attribute to processed images efficiently"""
     if not user.is_authenticated:
@@ -112,30 +108,97 @@ def add_favorite_status_to_processed_images(user, processed_images):
     return processed_images
 
 
+def add_star_status_to_images(user, user_images):
+    """Add is_starred attribute to user images efficiently"""
+    if not user.is_authenticated:
+        for img in user_images:
+            img.is_starred = False
+        return user_images
+    
+    starred_ids = set(
+        FavoriteUpload.objects.filter(user=user)
+        .values_list('image_id', flat=True)
+    )
+    
+    for img in user_images:
+        img.is_starred = img.id in starred_ids
+    
+    return user_images
+
+
+def generate_prompt_for_job(studio_mode, reference_count, **params):
+    """
+    Generate prompt BEFORE creating job.
+    This is called in views, not in models.
+    
+    Args:
+        studio_mode: 'venue', 'portrait_wedding', or 'portrait_engagement'
+        reference_count: Number of reference images (we know this before saving!)
+        **params: All other job parameters
+        
+    Returns:
+        str: Generated prompt
+    """
+    try:
+        if studio_mode == 'venue':
+            from .prompt_generator import VenuePromptGenerator
+            return VenuePromptGenerator.generate_prompt(
+                wedding_theme=params.get('wedding_theme'),
+                space_type=params.get('space_type'),
+                season=params.get('season'),
+                lighting_mood=params.get('lighting_mood'),
+                color_scheme=params.get('color_scheme'),
+                custom_prompt=params.get('custom_prompt'),
+                user_instructions=params.get('user_instructions')
+            )
+        elif studio_mode in ['portrait_wedding', 'portrait_engagement']:
+            from .prompt_generator import PortraitPromptGenerator
+            portrait_style = 'wedding' if studio_mode == 'portrait_wedding' else 'engagement'
+            return PortraitPromptGenerator.generate_prompt(
+                portrait_style=portrait_style,
+                photo_theme=params.get('photo_theme'),
+                setting_type=params.get('setting_type'),
+                pose_style=params.get('pose_style'),
+                attire_style=params.get('attire_style'),
+                season=params.get('season'),
+                lighting_mood=params.get('lighting_mood'),
+                color_scheme=params.get('color_scheme'),
+                custom_prompt=params.get('custom_prompt'),
+                user_instructions=params.get('user_instructions'),
+                reference_count=reference_count  # We know this!
+            )
+    except ImportError as e:
+        logger.error(f"Could not import prompt generator: {e}")
+        if params.get('custom_prompt'):
+            return params['custom_prompt']
+        return "Generate a beautiful image"
+
+
+# ============================================================================
+# MAIN VIEWS
+# ============================================================================
+
 @login_required
 def wedding_studio(request):
-    """Main wedding venue transformation studio with EXIF-corrected image uploads"""
+    """Main wedding studio with multi-mode support (venue, wedding portrait, engagement portrait)"""
     
-    # Handle image upload
     if request.method == 'POST':
         form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
-                # Apply EXIF correction to uploaded image
                 original_file = form.cleaned_data['image']
                 corrected_file = apply_exif_correction(original_file)
                 
-                # Create user image with corrected file
                 user_image = form.save(commit=False)
                 user_image.user = request.user
                 user_image.original_filename = original_file.name
-                
-                # Replace the image with corrected version
                 user_image.image = corrected_file
+                
+                if not user_image.image_type:
+                    user_image.image_type = 'venue'
                 
                 user_image.save()
                 
-                # Handle AJAX requests
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({
                         'success': True,
@@ -144,8 +207,7 @@ def wedding_studio(request):
                         'image_url': user_image.image.url,
                         'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
                         'image_name': user_image.original_filename,
-                        'venue_name': user_image.venue_name or '',
-                        'venue_description': user_image.venue_description or '',
+                        'image_type': user_image.image_type,
                         'width': user_image.width,
                         'height': user_image.height,
                         'file_size': user_image.file_size,
@@ -155,13 +217,12 @@ def wedding_studio(request):
                 return redirect('image_processing:wedding_studio')
                 
             except Exception as e:
-                logger.error(f"Error uploading image: {str(e)}")
+                logger.error(f"Error uploading image: {str(e)}", exc_info=True)
                 error_msg = f'Failed to upload image: {str(e)}'
                 if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                     return JsonResponse({'success': False, 'error': error_msg}, status=400)
                 messages.error(request, error_msg)
         else:
-            # Handle form errors
             error_messages = []
             for field, errors in form.errors.items():
                 for error in errors:
@@ -173,32 +234,29 @@ def wedding_studio(request):
             for error in error_messages:
                 messages.error(request, error)
     
-    # GET request - display the studio
+    # GET request
     recent_images = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')[:20]
+    recent_images = add_star_status_to_images(request.user, list(recent_images))
     
-    # Get specific image if image_id is provided
     preselected_image = None
     image_id = request.GET.get('image_id')
     if image_id:
         try:
             preselected_image = UserImage.objects.get(id=image_id, user=request.user)
-            logger.info(f"Preselected image found: {preselected_image.original_filename} (ID: {image_id})")
+            logger.info(f"Preselected image: {preselected_image.original_filename}")
         except UserImage.DoesNotExist:
-            logger.warning(f"Preselected image not found for ID: {image_id}")
+            logger.warning(f"Preselected image not found: {image_id}")
             messages.warning(request, "The selected image was not found.")
         except ValueError:
-            logger.warning(f"Invalid image_id parameter: {image_id}")
+            logger.warning(f"Invalid image_id: {image_id}")
     
-    # Get user's usage data
     from usage_limits.usage_tracker import UsageTracker
     usage_data = UsageTracker.get_usage_data(request.user)
     
-    # Get recent processing jobs with favorite status
     recent_jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
     ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')[:5]
     
-    # Add favorite status to recent jobs
     favorite_ids = set(
         Favorite.objects.filter(user=request.user)
         .values_list('processed_image_id', flat=True)
@@ -208,79 +266,72 @@ def wedding_studio(request):
         for processed_image in job.processed_images.all():
             processed_image.is_favorited = processed_image.id in favorite_ids
     
-    # Pre-fill form parameters from URL with single user_instructions field
-    initial_form_data = {}
-    url_field_mapping = [
-        ('wedding_theme', 'wedding_theme'),
-        ('space_type', 'space_type'),
-        ('season', 'season'),
-        ('lighting', 'lighting_mood'),  # URL param 'lighting' maps to 'lighting_mood'
-        ('color_scheme', 'color_scheme'),
-        ('user_instructions', 'user_instructions'),  # Single instructions field
-        ('custom_prompt', 'custom_prompt')
-    ]
-    
-    for url_param, form_field in url_field_mapping:
-        value = request.GET.get(url_param)
-        if value:
-            initial_form_data[form_field] = value
-    
-    # Set prompt mode based on whether custom_prompt is provided
-    if 'custom_prompt' in initial_form_data:
-        initial_form_data['prompt_mode'] = 'custom'
-
-    # Sort choices alphabetically for template context
     sorted_wedding_themes = sorted(WEDDING_THEMES, key=lambda x: x[1])
     sorted_color_schemes = sorted(COLOR_SCHEMES, key=lambda x: x[1])
+    sorted_portrait_themes = sorted(PORTRAIT_THEMES, key=lambda x: x[1])
+
+    from .forms import SEASON_CHOICES, LIGHTING_CHOICES
 
     context = {
         'recent_images': recent_images,
         'preselected_image': preselected_image,
         'usage_data': usage_data,
         'recent_jobs': recent_jobs,
-        # Core choices - wedding themes and color schemes now sorted alphabetically
         'wedding_themes': sorted_wedding_themes,
-        'space_types': SPACE_TYPES,  # Keep space types in original order (logical flow)
+        'space_types': SPACE_TYPES,
+        'portrait_themes': sorted_portrait_themes,
+        'portrait_settings': PORTRAIT_SETTINGS,
         'color_schemes': sorted_color_schemes,
         'season_choices': SEASON_CHOICES,
         'lighting_choices': LIGHTING_CHOICES,
-        'prompt_mode_choices': PROMPT_MODE_CHOICES,
-        # Forms
         'upload_form': ImageUploadForm(),
-        'transform_form': WeddingTransformForm(initial=initial_form_data),
-        # Gemini-specific info
         'gemini_model': 'gemini-2.5-flash-image-preview',
         'supports_custom_prompts': True,
         'processing_mode': 'real-time',
-        # Theme organization info for template
-        'theme_count': len(WEDDING_THEMES),
-        'theme_organization': 'alphabetical',
     }
     
     return render(request, 'image_processing/wedding_studio.html', context)
 
-
 @login_required
 @require_POST
 def ajax_upload_image(request):
-    """AJAX endpoint for image uploads with EXIF correction"""
-    form = ImageUploadForm(request.POST, request.FILES)
+    """AJAX endpoint for image uploads with format validation and EXIF correction"""
+    
+    if 'image' in request.FILES:
+        uploaded_file = request.FILES['image']
+        is_valid, error_message = validate_image_format(uploaded_file)
+        
+        if not is_valid:
+            logger.warning(f"Upload rejected - wrong format: {uploaded_file.name}")
+            return JsonResponse({
+                'success': False,
+                'error': error_message
+            }, status=400)
+    
+    mutable_post = request.POST.copy()
+    
+    if 'image_type' not in mutable_post or not mutable_post['image_type']:
+        mutable_post['image_type'] = 'venue'
+        logger.debug("Added default image_type='venue' for bulk upload")
+    
+    form = ImageUploadForm(mutable_post, request.FILES)
     
     if form.is_valid():
         try:
-            # Apply EXIF correction to uploaded image
             original_file = form.cleaned_data['image']
             corrected_file = apply_exif_correction(original_file)
             
-            # Create user image with corrected file
             user_image = form.save(commit=False)
             user_image.user = request.user
             user_image.original_filename = original_file.name
-            
-            # Replace the image with corrected version
             user_image.image = corrected_file
             
+            if not user_image.image_type:
+                user_image.image_type = 'venue'
+            
             user_image.save()
+            
+            logger.info(f"Image uploaded successfully: {user_image.original_filename} (type: {user_image.image_type}, size: {user_image.file_size} bytes)")
             
             return JsonResponse({
                 'success': True,
@@ -288,6 +339,7 @@ def ajax_upload_image(request):
                 'image_url': user_image.image.url,
                 'thumbnail_url': user_image.thumbnail.url if user_image.thumbnail else user_image.image.url,
                 'image_name': user_image.original_filename,
+                'image_type': user_image.image_type,
                 'width': user_image.width,
                 'height': user_image.height,
                 'file_size': user_image.file_size,
@@ -295,45 +347,50 @@ def ajax_upload_image(request):
             })
             
         except Exception as e:
-            logger.error(f"Error in AJAX upload: {str(e)}")
+            logger.error(f"Error in AJAX upload: {str(e)}", exc_info=True)
             return JsonResponse({
                 'success': False,
                 'error': f'Upload failed: {str(e)}'
             }, status=500)
     
-    # Handle form errors
     errors = []
     for field, field_errors in form.errors.items():
         for error in field_errors:
-            errors.append(str(error))
+            if field == '__all__':
+                errors.append(str(error))
+            else:
+                errors.append(f"{field}: {error}")
+    
+    error_message = '; '.join(errors) if errors else 'Invalid upload data'
+    logger.warning(f"Upload form validation failed: {error_message}")
     
     return JsonResponse({
         'success': False,
-        'error': '; '.join(errors)
+        'error': error_message
     }, status=400)
 
 
 @login_required
 @require_http_methods(["POST"])
 def process_wedding_image(request, pk):
-    """Process wedding venue image with real-time Gemini transformation"""
+    """
+    FIXED: Process image with multi-image support and 3 studio modes.
+    Generate prompt BEFORE creating job.
+    """
     try:
-        # Get the user's image
         user_image = get_object_or_404(UserImage, id=pk, user=request.user)
         
-        # Check usage limits
         from usage_limits.usage_tracker import UsageTracker
         usage_data = UsageTracker.get_usage_data(request.user)
         
         if usage_data['remaining'] <= 0:
             return JsonResponse({
                 'success': False,
-                'error': 'You have reached your monthly transformation limit. Please upgrade your subscription to continue.',
+                'error': 'You have reached your monthly limit. Please upgrade your subscription.',
                 'usage_data': usage_data,
                 'needs_upgrade': True
             }, status=429)
         
-        # Parse request data
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -342,161 +399,134 @@ def process_wedding_image(request, pk):
                 'error': 'Invalid request data'
             }, status=400)
         
-        # Determine processing mode
-        prompt_mode = data.get('prompt_mode', 'guided')
+        studio_mode = data.get('studio_mode', 'venue')
+        if studio_mode not in ['venue', 'portrait_wedding', 'portrait_engagement']:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid studio mode'
+            }, status=400)
         
-        # Get single user instructions field
         user_instructions = data.get('user_instructions', '').strip()
+        custom_prompt = data.get('custom_prompt', '').strip()
         
-        # Validate and create job based on mode
-        if prompt_mode == 'custom':
-            # Custom prompt mode
-            custom_prompt = data.get('custom_prompt', '').strip()
-            
-            if not custom_prompt:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Custom prompt is required for custom mode'
-                }, status=400)
-            
-            if len(custom_prompt) < 10:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'Custom prompt is too short - please provide more detail'
-                }, status=400)
-            
-            # Create job for custom prompt
-            job_data = {
-                'user_image': user_image,
-                'custom_prompt': custom_prompt,
-                'user_instructions': user_instructions if user_instructions else None,
-                'wedding_theme': '',
-                'space_type': ''
-            }
-            
-        else:
-            # Guided mode
+        if custom_prompt and len(custom_prompt) < 10:
+            return JsonResponse({
+                'success': False,
+                'error': 'Custom prompt is too short'
+            }, status=400)
+        
+        # Collect all job parameters
+        job_params = {
+            'user_instructions': user_instructions if user_instructions else None,
+            'custom_prompt': custom_prompt if custom_prompt else None
+        }
+        
+        # Mode-specific validation and parameters
+        if studio_mode == 'venue':
             wedding_theme = data.get('wedding_theme', '').strip()
             space_type = data.get('space_type', '').strip()
             
-            if not wedding_theme or not space_type:
+            if not custom_prompt and not wedding_theme:
                 return JsonResponse({
                     'success': False,
-                    'error': 'Wedding theme and space type are required for guided mode'
+                    'error': 'Wedding style is required for venue mode'
                 }, status=400)
             
-            # Validate theme and space type exist in choices
-            valid_themes = [choice[0] for choice in WEDDING_THEMES]
-            valid_spaces = [choice[0] for choice in SPACE_TYPES]
-            
-            if wedding_theme not in valid_themes:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Invalid wedding theme: {wedding_theme}'
-                }, status=400)
-                
-            if space_type not in valid_spaces:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Invalid space type: {space_type}'
-                }, status=400)
-            
-            # Create guided job data
-            job_data = {
-                'user_image': user_image,
+            job_params.update({
                 'wedding_theme': wedding_theme,
-                'space_type': space_type,
-                'user_instructions': user_instructions if user_instructions else None
-            }
+                'space_type': space_type if space_type else '',
+            })
             
-            # Handle optional fields for guided mode
-            optional_fields = [
-                ('season', SEASON_CHOICES, 'season'),
-                ('lighting_mood', LIGHTING_CHOICES, 'lighting'),
-                ('color_scheme', COLOR_SCHEMES, 'color_scheme'),
-            ]
+        else:  # Portrait modes
+            photo_theme = data.get('photo_theme', '').strip()
+            setting_type = data.get('setting_type', '').strip()
+            pose_style = data.get('pose_style', '').strip()
             
-            for field_name, choices, data_key in optional_fields:
-                value = data.get(data_key, '').strip()
-                if value:
-                    if choices:
-                        valid_values = [choice[0] for choice in choices if choice[0]]
-                        if value in valid_values:
-                            job_data[field_name] = value
-                        else:
-                            logger.warning(f"Invalid {field_name}: {value}, skipping")
+            if not custom_prompt and not pose_style:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Pose/action is required for portrait mode'
+                }, status=400)
+            
+            job_params.update({
+                'photo_theme': photo_theme if photo_theme else '',
+                'setting_type': setting_type if setting_type else '',
+                'pose_style': pose_style,
+                'attire_style': data.get('attire_style', ''),
+            })
         
-        # Create and save the job
+        # Optional fields
+        optional_fields = ['season', 'lighting_mood', 'color_scheme']
+        for field in optional_fields:
+            value = data.get(field, '').strip()
+            if value:
+                job_params[field] = value
+        
+        # Get reference image IDs
+        reference_image_ids = data.get('reference_image_ids', [])
+        if reference_image_ids and isinstance(reference_image_ids, list):
+            reference_image_ids = reference_image_ids[:2]  # Max 2 additional (3 total)
+        else:
+            reference_image_ids = []
+        
+        # Calculate total image count (primary + references)
+        total_image_count = 1 + len(reference_image_ids)
+        
+        # CRITICAL: Generate prompt BEFORE creating job
+        generated_prompt = generate_prompt_for_job(
+            studio_mode=studio_mode,
+            reference_count=total_image_count,
+            **job_params
+        )
+        
+        logger.info(f"Generated prompt for {studio_mode} with {total_image_count} images, length: {len(generated_prompt)} chars")
+        
+        # Now create job with pre-generated prompt
         with transaction.atomic():
-            job = ImageProcessingJob.objects.create(**job_data)
+            job = ImageProcessingJob.objects.create(
+                user_image=user_image,
+                studio_mode=studio_mode,
+                generated_prompt=generated_prompt,  # Already generated!
+                **job_params
+            )
             
-            logger.info(f"Created venue transformation job {job.id} - Mode: {prompt_mode}, User: {request.user.username}")
-            if prompt_mode == 'custom':
-                logger.info(f"Custom prompt: {job.custom_prompt[:100]}...")
-            else:
-                logger.info(f"Guided: {job.wedding_theme} + {job.space_type}")
+            # Attach reference images
+            for order, ref_id in enumerate(reference_image_ids):
+                try:
+                    ref_image = UserImage.objects.get(id=ref_id, user=request.user)
+                    JobReferenceImage.objects.create(
+                        job=job,
+                        reference_image=ref_image,
+                        order=order
+                    )
+                    logger.info(f"Added reference image {ref_id} to job {job.id}")
+                except UserImage.DoesNotExist:
+                    logger.warning(f"Reference image {ref_id} not found")
+                    continue
             
-            # Log user instructions if provided
-            if user_instructions:
-                logger.info(f"User instructions: {user_instructions[:100]}...")
+            logger.info(f"Created {studio_mode} job {job.id} with prompt pre-generated, {len(reference_image_ids)} reference images")
         
-        # Choose processing method based on preference
-        use_realtime = data.get('realtime', False) or getattr(request.user, 'prefer_realtime', False)
-        
-        if use_realtime:
-            # Real-time processing - process immediately
-            try:
-                result = process_venue_realtime(job.id)
-                
-                if result['success']:
-                    # Get the processed image details
-                    processed_image = ProcessedImage.objects.get(id=result['processed_image_id'])
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'job_id': job.id,
-                        'status': 'completed',
-                        'message': 'Venue transformation completed!',
-                        'processing_mode': 'realtime',
-                        'result': {
-                            'id': processed_image.id,
-                            'image_url': processed_image.processed_image.url,
-                            'width': processed_image.width,
-                            'height': processed_image.height,
-                            'is_favorited': False  # New image, not favorited yet
-                        },
-                        'job_details': _get_job_details(job, prompt_mode)
-                    })
-                else:
-                    return JsonResponse({
-                        'success': False,
-                        'job_id': job.id,
-                        'error': result.get('error', 'Transformation failed'),
-                        'processing_mode': 'realtime'
-                    }, status=500)
-                    
-            except Exception as e:
-                logger.error(f"Real-time processing failed for job {job.id}: {str(e)}")
-                # Fall back to async processing
-                pass
-        
-        # Async processing (default or fallback)
+        # Queue the task
         def queue_transformation():
-            task_result = process_venue_transformation.apply_async(args=[job.id])
-            logger.info(f"Venue transformation task queued: {task_result.id} for job {job.id}")
+            task_result = process_image_job.apply_async(args=[job.id])
+            logger.info(f"Task queued: {task_result.id} for job {job.id}")
             return task_result
         
-        # Queue the task after transaction commits
         transaction.on_commit(queue_transformation)
         
-        # Return success with job details
         return JsonResponse({
             'success': True,
             'job_id': job.id,
             'status': 'pending',
-            'message': 'Venue transformation started with Gemini!',
+            'message': f'{job.mode_display} started!',
             'processing_mode': 'async',
-            'job_details': _get_job_details(job, prompt_mode)
+            'job_details': {
+                'mode': studio_mode,
+                'model': 'gemini-2.5-flash-image-preview',
+                'image_count': total_image_count,
+                'has_user_instructions': bool(user_instructions),
+                'prompt_length': len(generated_prompt)
+            }
         })
         
     except Exception as e:
@@ -507,40 +537,9 @@ def process_wedding_image(request, pk):
         }, status=500)
 
 
-def _get_job_details(job, prompt_mode):
-    """Helper to get job details for JSON response"""
-    details = {
-        'mode': prompt_mode,
-        'model': 'gemini-2.5-flash-image-preview',
-        'has_user_instructions': bool(job.user_instructions)
-    }
-    
-    if prompt_mode == 'custom':
-        details['custom_prompt'] = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
-    else:
-        details.update({
-            'theme': job.wedding_theme,
-            'space_type': job.space_type,
-            'theme_display': dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme),
-            'space_display': dict(SPACE_TYPES).get(job.space_type, job.space_type),
-        })
-        
-        # Add optional details if present
-        if job.season:
-            details['season'] = job.season
-        if job.lighting_mood:
-            details['lighting'] = job.lighting_mood
-            details['lighting_display'] = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
-        if job.color_scheme:
-            details['color_scheme'] = job.color_scheme
-            details['color_display'] = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
-    
-    return details
-
-
 @login_required
 def job_status(request, job_id):
-    """Get real-time status of a venue transformation job"""
+    """Get real-time status of a job"""
     try:
         job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
         
@@ -549,38 +548,38 @@ def job_status(request, job_id):
             'status': job.status,
             'created_at': job.created_at.isoformat(),
             'model': 'gemini-2.5-flash-image-preview',
-            'mode': 'custom' if job.custom_prompt else 'guided',
+            'mode': job.studio_mode,
             'has_user_instructions': bool(job.user_instructions)
         }
         
-        # Add details based on mode
         if job.custom_prompt:
             data['custom_prompt'] = job.custom_prompt
             data['prompt_preview'] = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
         else:
-            data['wedding_theme'] = job.wedding_theme
-            data['space_type'] = job.space_type
+            if job.studio_mode == 'venue':
+                data['wedding_theme'] = job.wedding_theme
+                data['space_type'] = job.space_type
+                if job.wedding_theme:
+                    data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
+                if job.space_type:
+                    data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+            else:
+                data['photo_theme'] = job.photo_theme
+                data['setting_type'] = job.setting_type
+                if job.photo_theme:
+                    data['theme_display'] = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme)
+                if job.setting_type:
+                    data['setting_display'] = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type)
             
-            # Add display names
-            if job.wedding_theme:
-                data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-            if job.space_type:
-                data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-            
-            # Add optional fields only if they exist
             if job.season:
                 data['season'] = job.season
             if job.lighting_mood:
                 data['lighting'] = job.lighting_mood
-                data['lighting_display'] = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
             if job.color_scheme:
                 data['color_scheme'] = job.color_scheme
-                data['color_display'] = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
         
-        # Add user instructions if provided
         if job.user_instructions:
             data['user_instructions'] = job.user_instructions
-            data['user_instructions_preview'] = job.user_instructions[:100] + ('...' if len(job.user_instructions) > 100 else '')
         
         if job.status == 'completed':
             data['completed_at'] = job.completed_at.isoformat() if job.completed_at else None
@@ -595,7 +594,6 @@ def job_status(request, job_id):
                     'file_size': processed_img.file_size,
                     'gemini_model': processed_img.gemini_model,
                 }
-                # Check if favorited
                 data['result']['is_favorited'] = Favorite.objects.filter(
                     user=request.user,
                     processed_image=processed_img
@@ -615,115 +613,113 @@ def job_status(request, job_id):
         }, status=500)
 
 
+# ============================================================================
+# FAVORITE UPLOAD VIEWS (STAR SYSTEM)
+# ============================================================================
+
 @login_required
-def redo_transformation_with_job(request, job_id):
-    """Redirect to wedding studio with job parameters pre-filled"""
-    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
-    
-    # Build query parameters from the job settings
-    params = {}
-    
-    if job.custom_prompt:
-        # Custom prompt mode
-        params['prompt_mode'] = 'custom'
-        params['custom_prompt'] = job.custom_prompt
-    else:
-        # Guided mode
-        params['prompt_mode'] = 'guided'
-        if job.wedding_theme:
-            params['wedding_theme'] = job.wedding_theme
-        if job.space_type:
-            params['space_type'] = job.space_type
+@require_POST
+def toggle_favorite_upload(request):
+    """Toggle favorite status for uploaded images (star icon)"""
+    try:
+        data = json.loads(request.body)
+        image_id = data.get('image_id')
         
-        # Add optional parameters if they exist
-        if job.season:
-            params['season'] = job.season
-        if job.lighting_mood:
-            params['lighting'] = job.lighting_mood  # Note: URL param is 'lighting', field is 'lighting_mood'
-        if job.color_scheme:
-            params['color_scheme'] = job.color_scheme
-    
-    # Add user instructions parameter (applies to both modes)
-    if job.user_instructions:
-        params['user_instructions'] = job.user_instructions
-    
-    # Add image selection
-    params['image_id'] = job.user_image.id
-    
-    # Build the redirect URL
-    base_url = reverse('image_processing:wedding_studio')
-    query_string = urlencode(params)
-    redirect_url = f"{base_url}?{query_string}"
-    
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        if not image_id:
+            return JsonResponse({'success': False, 'error': 'No image specified'}, status=400)
+        
+        user_image = get_object_or_404(UserImage, id=image_id, user=request.user)
+        
+        favorite, created = FavoriteUpload.objects.get_or_create(
+            user=request.user,
+            image=user_image
+        )
+        
+        if not created:
+            # Already favorited - remove it
+            favorite.delete()
+            is_favorited = False
+            message = 'Removed from quick access'
+            logger.info(f"User {request.user.username} removed star from image {image_id}")
+        else:
+            # Newly favorited
+            is_favorited = True
+            message = 'Added to quick access'
+            logger.info(f"User {request.user.username} starred image {image_id}")
+        
         return JsonResponse({
             'success': True,
-            'redirect_url': redirect_url,
-            'message': 'Redirecting to studio with saved settings...'
+            'is_favorited': is_favorited,
+            'message': message
         })
-    
-    return redirect(redirect_url)
+        
+    except Exception as e:
+        logger.error(f"Error toggling favorite upload: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': 'Error updating favorite'}, status=500)
 
 
 @login_required
-def processing_history(request):
-    """View all wedding venue transformation jobs"""
-    jobs = ImageProcessingJob.objects.filter(
-        user_image__user=request.user
-    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
-    
-    # Get favorite IDs once for efficiency
-    favorite_ids = set(
-        Favorite.objects.filter(user=request.user)
-        .values_list('processed_image_id', flat=True)
-    )
-    
-    # Add display names and favorite status to jobs
-    for job in jobs:
-        # Handle both custom and guided modes
-        if job.custom_prompt:
-            job.mode_display = 'Custom Prompt'
-            job.theme_display = 'Custom Design'
-            job.space_display = 'Custom Space'
-            job.prompt_preview = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
-        else:
-            job.mode_display = 'Guided Design'
-            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Unknown'
-            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Unknown'
+def get_favorite_uploads(request):
+    """Get user's favorite uploads for quick access"""
+    try:
+        favorites = FavoriteUpload.objects.filter(
+            user=request.user
+        ).select_related('image').order_by('-last_used', '-created_at')[:20]
         
-        # Add user instructions info
-        job.has_user_instructions = bool(job.user_instructions)
+        favorites_data = []
+        for fav in favorites:
+            favorites_data.append({
+                'id': fav.id,
+                'image': {
+                    'id': fav.image.id,
+                    'name': fav.image.original_filename,
+                    'url': fav.image.image.url,
+                    'thumbnail_url': fav.image.thumbnail.url if fav.image.thumbnail else fav.image.image.url,
+                },
+                # REMOVED: 'label' field - doesn't exist in model
+                'times_used': fav.times_used,
+                'created_at': fav.created_at.isoformat()
+            })
         
-        if job.user_instructions:
-            job.user_instructions_preview = job.user_instructions[:50] + ('...' if len(job.user_instructions) > 50 else '')
+        return JsonResponse({
+            'success': True,
+            'favorites': favorites_data
+        })
         
-        # Add optional field display names for guided mode
-        if job.lighting_mood:
-            job.lighting_display = dict(LIGHTING_CHOICES).get(job.lighting_mood, job.lighting_mood)
-        if job.color_scheme:
-            job.color_display = dict(COLOR_SCHEMES).get(job.color_scheme, job.color_scheme)
-        
-        # Add favorite status to ALL processed images for this job
-        for processed_image in job.processed_images.all():
-            processed_image.is_favorited = processed_image.id in favorite_ids
-    
-    # Pagination
-    paginator = Paginator(jobs, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'gemini_model': 'gemini-2.5-flash-image-preview',
-    }
-    
-    return render(request, 'image_processing/processing_history.html', context)
+    except Exception as e:
+        logger.error(f"Error getting favorite uploads: {str(e)}", exc_info=True)
+        return JsonResponse({'success': False, 'error': 'Error loading favorites'}, status=500)
+
 
 
 @login_required
 @require_POST
+def remove_favorite_upload(request, favorite_id):
+    """Remove a favorite upload"""
+    try:
+        favorite = get_object_or_404(FavoriteUpload, id=favorite_id, user=request.user)
+        favorite.delete()
+        
+        logger.info(f"Removed favorite upload {favorite_id}")
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Removed from favorites'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error removing favorite: {str(e)}")
+        return JsonResponse({'success': False, 'error': 'Error removing favorite'}, status=500)
+
+
+# ============================================================================
+# FAVORITE VIEWS (HEART SYSTEM)
+# ============================================================================
+
+@login_required
+@require_POST
 def toggle_favorite(request):
-    """Toggle favorite status for wedding transformations"""
+    """Toggle favorite status for processed images (heart icon)"""
     processed_image_id = request.POST.get('processed_image_id')
     
     if not processed_image_id:
@@ -745,9 +741,11 @@ def toggle_favorite(request):
             favorite.delete()
             is_favorited = False
             message = 'Removed from favorites'
+            logger.info(f"User {request.user.username} removed heart from processed image {processed_image_id}")
         else:
             is_favorited = True
             message = 'Added to favorites'
+            logger.info(f"User {request.user.username} hearted processed image {processed_image_id}")
         
         return JsonResponse({
             'success': True,
@@ -758,6 +756,185 @@ def toggle_favorite(request):
     except Exception as e:
         logger.error(f"Error toggling favorite: {str(e)}")
         return JsonResponse({'success': False, 'error': 'Error updating favorite'})
+
+
+@login_required
+def favorites_list(request):
+    """
+    List user's favorites - TWO TABS:
+    1. Favorite Uploads (⭐ star) - Quick Access for uploaded images
+    2. Favorite Processed (❤️ heart) - Hearted AI transformations
+    """
+    
+    # Get favorite uploads (starred uploaded images)
+    favorite_uploads = FavoriteUpload.objects.filter(
+        user=request.user
+    ).select_related('image').order_by('-last_used', '-created_at')
+    
+    # Add is_starred flag to uploaded images
+    for fav in favorite_uploads:
+        fav.image.is_starred = True
+    
+    # Get favorite processed images (hearted transformations)
+    favorite_processed = Favorite.objects.filter(
+        user=request.user
+    ).select_related(
+        'processed_image__processing_job__user_image'
+    ).order_by('-created_at')
+    
+    # Add display names for processed images
+    for favorite in favorite_processed:
+        job = favorite.processed_image.processing_job
+        
+        if job.custom_prompt:
+            job.theme_display = "Custom Design"
+            job.space_display = "Custom"
+        elif job.studio_mode == 'venue':
+            job.theme_display = dict(WEDDING_THEMES).get(
+                job.wedding_theme, 
+                job.wedding_theme or 'Unknown'
+            )
+            job.space_display = dict(SPACE_TYPES).get(
+                job.space_type, 
+                job.space_type or 'Unknown'
+            )
+        else:
+            # Portrait mode
+            job.theme_display = dict(PORTRAIT_THEMES).get(
+                job.photo_theme, 
+                job.photo_theme or 'Unknown'
+            )
+            job.space_display = dict(PORTRAIT_SETTINGS).get(
+                job.setting_type, 
+                job.setting_type or 'Unknown'
+            )
+        
+        # Mark as favorited
+        favorite.processed_image.is_favorited = True
+    
+    context = {
+        'favorite_uploads': favorite_uploads,
+        'favorite_processed': favorite_processed,
+        'total_uploads': favorite_uploads.count(),
+        'total_processed': favorite_processed.count(),
+    }
+    
+    return render(request, 'image_processing/favorites_list.html', context)
+
+# ============================================================================
+# IMAGE MANAGEMENT VIEWS
+# ============================================================================
+
+@login_required
+def redo_transformation_with_job(request, job_id):
+    """Redirect to wedding studio with job parameters pre-filled"""
+    job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+    
+    params = {}
+    params['studio_mode'] = job.studio_mode
+    
+    if job.custom_prompt:
+        params['custom_prompt'] = job.custom_prompt
+    else:
+        if job.studio_mode == 'venue':
+            if job.wedding_theme:
+                params['wedding_theme'] = job.wedding_theme
+            if job.space_type:
+                params['space_type'] = job.space_type
+        else:
+            if job.photo_theme:
+                params['photo_theme'] = job.photo_theme
+            if job.setting_type:
+                params['setting_type'] = job.setting_type
+            if job.pose_style:
+                params['pose_style'] = job.pose_style
+            if job.attire_style:
+                params['attire_style'] = job.attire_style
+        
+        if job.season:
+            params['season'] = job.season
+        if job.lighting_mood:
+            params['lighting'] = job.lighting_mood
+        if job.color_scheme:
+            params['color_scheme'] = job.color_scheme
+    
+    if job.user_instructions:
+        params['user_instructions'] = job.user_instructions
+    
+    params['image_id'] = job.user_image.id
+    
+    base_url = reverse('image_processing:wedding_studio')
+    query_string = urlencode(params)
+    redirect_url = f"{base_url}?{query_string}"
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'redirect_url': redirect_url,
+            'message': 'Redirecting to studio with saved settings...'
+        })
+    
+    return redirect(redirect_url)
+
+@login_required
+def processing_history(request):
+    """
+    FIXED: View all processing jobs - removed .theme_display_name references
+    """
+    jobs = ImageProcessingJob.objects.filter(
+        user_image__user=request.user
+    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
+    
+    favorite_ids = set(
+        Favorite.objects.filter(user=request.user)
+        .values_list('processed_image_id', flat=True)
+    )
+    
+    for job in jobs:
+        # FIXED: Build display names manually, don't use .theme_display_name
+        if job.custom_prompt:
+            job.mode_display_text = 'Custom Prompt'
+            job.prompt_preview = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
+        elif job.studio_mode == 'venue':
+            job.mode_display_text = 'Venue Design'
+            # Build theme display manually
+            if job.wedding_theme:
+                job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
+            else:
+                job.theme_display = 'No theme'
+            
+            if job.space_type:
+                job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+            else:
+                job.space_display = 'No space type'
+        else:
+            # Portrait modes
+            job.mode_display_text = 'Wedding Portrait' if job.studio_mode == 'portrait_wedding' else 'Engagement Portrait'
+            
+            if job.photo_theme:
+                job.theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme)
+            else:
+                job.theme_display = 'No theme'
+            
+            if job.setting_type:
+                job.setting_display = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type)
+            else:
+                job.setting_display = 'No setting'
+        
+        # Add favorite status
+        for processed_image in job.processed_images.all():
+            processed_image.is_favorited = processed_image.id in favorite_ids
+    
+    paginator = Paginator(jobs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'gemini_model': 'gemini-2.5-flash-image-preview',
+    }
+    
+    return render(request, 'image_processing/processing_history.html', context)
 
 
 @login_required
@@ -786,9 +963,13 @@ def get_usage_data(request):
 def image_detail(request, pk):
     """View details of a user's image"""
     image = get_object_or_404(UserImage, id=pk, user=request.user)
-    
-    # Get processing jobs for this image
     jobs = image.processing_jobs.all().order_by('-created_at')
+    
+    # Add star status
+    image.is_starred = FavoriteUpload.objects.filter(
+        user=request.user,
+        image=image
+    ).exists()
     
     context = {
         'image': image,
@@ -800,11 +981,9 @@ def image_detail(request, pk):
 
 @login_required
 def image_gallery(request):
-    """View all user uploaded images with mobile-friendly design"""
-    # Get all user images
+    """View all user uploaded images"""
     images_list = UserImage.objects.filter(user=request.user).order_by('-uploaded_at')
     
-    # Search functionality
     search_query = request.GET.get('search', '').strip()
     if search_query:
         images_list = images_list.filter(
@@ -813,29 +992,26 @@ def image_gallery(request):
             Q(venue_description__icontains=search_query)
         )
     
-    # Filter by date
     date_filter = request.GET.get('date_filter', '')
     if date_filter == 'today':
-        from django.utils import timezone
         today = timezone.now().date()
         images_list = images_list.filter(uploaded_at__date=today)
     elif date_filter == 'week':
         from datetime import timedelta
-        from django.utils import timezone
         week_ago = timezone.now().date() - timedelta(days=7)
         images_list = images_list.filter(uploaded_at__date__gte=week_ago)
     elif date_filter == 'month':
         from datetime import timedelta
-        from django.utils import timezone
         month_ago = timezone.now().date() - timedelta(days=30)
         images_list = images_list.filter(uploaded_at__date__gte=month_ago)
     
-    # Pagination - mobile friendly (smaller page size)
-    paginator = Paginator(images_list, 12)  # 12 images per page for mobile
+    paginator = Paginator(images_list, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Add stats
+    # Add star status to images in page
+    page_obj.object_list = add_star_status_to_images(request.user, list(page_obj.object_list))
+    
     total_images = UserImage.objects.filter(user=request.user).count()
     total_transformations = ImageProcessingJob.objects.filter(user_image__user=request.user).count()
     
@@ -852,14 +1028,13 @@ def image_gallery(request):
 
 @login_required
 def processed_image_detail(request, pk):
-    """View details of a processed image with proper theme/space display"""
+    """View details of a processed image"""
     processed_image = get_object_or_404(
         ProcessedImage, 
         id=pk, 
         processing_job__user_image__user=request.user
     )
     
-    # Check if favorited
     is_favorited = Favorite.objects.filter(
         user=request.user,
         processed_image=processed_image
@@ -867,16 +1042,17 @@ def processed_image_detail(request, pk):
     
     processed_image.is_favorited = is_favorited
     
-    # Get the job for theme/space display
     job = processed_image.processing_job
     
-    # Determine theme and space display names
     if job.custom_prompt:
         theme_display = "Custom Design"
-        space_display = "Custom Space"
+        space_display = "Custom"
+    elif job.studio_mode == 'venue':
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme or 'Unknown')
+        space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type or 'Unknown')
     else:
-        theme_display = job.theme_display_name if hasattr(job, 'theme_display_name') else dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme or 'Unknown')
-        space_display = job.space_display_name if hasattr(job, 'space_display_name') else dict(SPACE_TYPES).get(job.space_type, job.space_type or 'Unknown')
+        theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme or 'Unknown')
+        space_display = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type or 'Unknown')
     
     context = {
         'processed_image': processed_image,
@@ -889,37 +1065,9 @@ def processed_image_detail(request, pk):
     return render(request, 'image_processing/processed_image_detail.html', context)
 
 
-@login_required
-def favorites_list(request):
-    """List user's favorite wedding venue transformations"""
-    favorites = Favorite.objects.filter(user=request.user).select_related(
-        'processed_image__processing_job__user_image'
-    ).order_by('-created_at')
-    
-    # Add display names to jobs
-    for favorite in favorites:
-        job = favorite.processed_image.processing_job
-        if job.custom_prompt:
-            job.theme_display = "Custom Design"
-            job.space_display = "Custom Space"
-        else:
-            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme or 'Unknown')
-            job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type or 'Unknown')
-    
-    # Pagination
-    paginator = Paginator(favorites, 12)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'total_favorites': favorites.count(),
-    }
-    
-    return render(request, 'image_processing/favorites_list.html', context)
-
-
-# Collection Management Views
+# ============================================================================
+# COLLECTION MANAGEMENT VIEWS
+# ============================================================================
 
 @login_required
 def collections_list(request):
@@ -939,12 +1087,10 @@ def collection_detail(request, collection_id):
     """View details of a collection"""
     collection = get_object_or_404(Collection, id=collection_id, user=request.user)
     
-    # Get collection items with favorite status
     items = collection.items.select_related(
         'user_image', 'processed_image__processing_job'
     ).order_by('order', '-added_at')
     
-    # Add favorite status to processed images
     favorite_ids = set(
         Favorite.objects.filter(user=request.user)
         .values_list('processed_image_id', flat=True)
@@ -966,7 +1112,7 @@ def collection_detail(request, collection_id):
 @login_required
 @require_POST
 def create_collection_ajax(request):
-    """AJAX endpoint to create a new collection - Always public"""
+    """AJAX endpoint to create a new collection"""
     try:
         data = json.loads(request.body)
         name = data.get('name', '').strip()
@@ -978,7 +1124,6 @@ def create_collection_ajax(request):
                 'error': 'Collection name is required'
             }, status=400)
         
-        # Check if collection with this name already exists
         if Collection.objects.filter(user=request.user, name=name).exists():
             return JsonResponse({
                 'success': False,
@@ -989,8 +1134,10 @@ def create_collection_ajax(request):
             user=request.user,
             name=name,
             description=description,
-            is_public=True  # Always public now
+            is_public=True
         )
+        
+        logger.info(f"Created collection '{name}' for user {request.user.username}")
         
         return JsonResponse({
             'success': True,
@@ -998,7 +1145,7 @@ def create_collection_ajax(request):
                 'id': collection.id,
                 'name': collection.name,
                 'description': collection.description,
-                'is_public': True,  # Always True
+                'is_public': True,
                 'item_count': 0,
                 'created_at': collection.created_at.isoformat()
             },
@@ -1011,7 +1158,7 @@ def create_collection_ajax(request):
             'error': 'Invalid request data'
         }, status=400)
     except Exception as e:
-        logger.error(f"Error creating collection: {str(e)}")
+        logger.error(f"Error creating collection: {str(e)}", exc_info=True)
         return JsonResponse({
             'success': False,
             'error': 'Failed to create collection'
@@ -1035,7 +1182,6 @@ def add_to_collection(request):
     try:
         collection = get_object_or_404(Collection, id=collection_id, user=request.user)
         
-        # Determine which image to add
         if processed_image_id:
             processed_image = get_object_or_404(
                 ProcessedImage,
@@ -1060,6 +1206,8 @@ def add_to_collection(request):
         if created:
             collection.updated_at = timezone.now()
             collection.save(update_fields=['updated_at'])
+            
+            logger.info(f"Added image to collection '{collection.name}'")
             
             return JsonResponse({
                 'success': True,
@@ -1088,6 +1236,8 @@ def remove_from_collection(request, collection_id, item_id):
         
         collection.updated_at = timezone.now()
         collection.save(update_fields=['updated_at'])
+        
+        logger.info(f"Removed item {item_id} from collection '{collection.name}'")
         
         return JsonResponse({
             'success': True,
@@ -1176,14 +1326,12 @@ def get_user_collections(request):
 def get_processed_image_collections(request, processed_image_id):
     """Get collections that contain a specific processed image"""
     try:
-        # Verify the processed image belongs to the user
         processed_image = get_object_or_404(
             ProcessedImage,
             id=processed_image_id,
             processing_job__user_image__user=request.user
         )
         
-        # Get collection IDs that contain this image
         collection_ids = list(
             CollectionItem.objects.filter(
                 processed_image=processed_image
@@ -1216,7 +1364,6 @@ def add_to_multiple_collections(request):
         if not collection_ids:
             return JsonResponse({'success': False, 'error': 'No collections specified'})
         
-        # Get the image
         if processed_image_id:
             processed_image = get_object_or_404(
                 ProcessedImage,
@@ -1264,7 +1411,7 @@ def add_to_multiple_collections(request):
             if added_count == 1:
                 message = f'Added to "{collection_names[0]}"'
             else:
-                message = f'Added to {added_count} collections: {", ".join(collection_names)}'
+                message = f'Added to {added_count} collections'
             
             return JsonResponse({
                 'success': True,
@@ -1285,7 +1432,7 @@ def add_to_multiple_collections(request):
 @login_required
 @require_POST
 def create_collection(request):
-    """Create a new collection - Always public"""
+    """Create a new collection"""
     name = request.POST.get('name', '').strip()
     description = request.POST.get('description', '').strip()
     
@@ -1298,7 +1445,7 @@ def create_collection(request):
             user=request.user,
             name=name,
             description=description,
-            is_public=True  # Always public
+            is_public=True
         )
         messages.success(request, f'Collection "{name}" created successfully!')
     except Exception as e:
@@ -1311,14 +1458,13 @@ def create_collection(request):
 @login_required
 @require_POST
 def edit_collection(request, collection_id):
-    """Edit an existing collection - FIXED: Now properly handles AJAX requests"""
+    """Edit an existing collection"""
     collection = get_object_or_404(Collection, id=collection_id, user=request.user)
     
     name = request.POST.get('name', '').strip()
     description = request.POST.get('description', '').strip()
     
     if not name:
-        # Check if AJAX request
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -1331,24 +1477,21 @@ def edit_collection(request, collection_id):
     try:
         collection.name = name
         collection.description = description
-        collection.is_public = True  # Always public now (removed checkbox from UI)
+        collection.is_public = True
         collection.save()
         
-        # Check if AJAX request and return JSON
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': True,
                 'message': f'Collection "{name}" updated successfully!'
             })
         
-        # Regular form submission
         messages.success(request, f'Collection "{name}" updated successfully!')
         return redirect('image_processing:collection_detail', collection_id=collection_id)
         
     except Exception as e:
         logger.error(f"Error updating collection: {str(e)}")
         
-        # Check if AJAX request and return JSON error
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
@@ -1401,21 +1544,18 @@ def delete_processed_image(request, pk):
             processing_job__user_image__user=request.user
         )
         
-        # Remove from any collections first
         CollectionItem.objects.filter(processed_image=processed_image).delete()
-        
-        # Remove from favorites
         Favorite.objects.filter(processed_image=processed_image).delete()
         
-        # Delete the image file
         if processed_image.processed_image:
             try:
                 processed_image.processed_image.delete(save=False)
             except Exception as e:
                 logger.warning(f"Could not delete image file: {str(e)}")
         
-        # Delete the database record
         processed_image.delete()
+        
+        logger.info(f"Deleted processed image {pk}")
         
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
@@ -1439,53 +1579,9 @@ def delete_processed_image(request, pk):
         return redirect('image_processing:processing_history')
 
 
-@login_required
-@require_POST  
-def delete_user_image(request, pk):
-    """Delete a user uploaded image and all related processing jobs"""
-    try:
-        user_image = get_object_or_404(UserImage, id=pk, user=request.user)
-        
-        # This will cascade delete all processing jobs and processed images
-        original_filename = user_image.original_filename
-        
-        # Delete the image files
-        if user_image.image:
-            try:
-                user_image.image.delete(save=False)
-            except Exception as e:
-                logger.warning(f"Could not delete image file: {str(e)}")
-        
-        if user_image.thumbnail:
-            try:
-                user_image.thumbnail.delete(save=False)
-            except Exception as e:
-                logger.warning(f"Could not delete thumbnail file: {str(e)}")
-        
-        # Delete the database record (cascades to jobs and processed images)
-        user_image.delete()
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'"{original_filename}" deleted successfully'
-            })
-        
-        messages.success(request, f'"{original_filename}" deleted successfully')
-        return redirect('image_processing:image_gallery')
-        
-    except Exception as e:
-        logger.error(f"Error deleting user image: {str(e)}")
-        
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': False,
-                'error': 'Failed to delete image'
-            }, status=500)
-        
-        messages.error(request, 'Failed to delete image')
-        return redirect('image_processing:image_gallery')
-
+# ============================================================================
+# UTILITY / TEST VIEWS
+# ============================================================================
 
 @login_required
 def test_gemini_api(request):

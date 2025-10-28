@@ -1,10 +1,10 @@
-# image_processing/prompt_generator.py - Updated for single user_instructions field
+# image_processing/prompt_generator.py
+# Merged and updated with comprehensive venue options and expanded portrait poses.
 
-class WeddingVenuePromptGenerator:
+class VenuePromptGenerator:
     """
-    Enhanced wedding space prompt generation for Gemini 2.5 Flash.
+    Enhanced wedding space prompt generation for Gemini.
     Focus: Detailed decorative styling without architectural changes.
-    Updated to handle single user_instructions field for natural language input.
     """
     
     @classmethod
@@ -61,7 +61,7 @@ class WeddingVenuePromptGenerator:
         theme_styling = cls._get_theme_styling(wedding_theme, space_type)
         
         # Start with specific decoration prompt
-        prompt = f"Turn this space into into a stunning {cls._get_space_description(space_type)} decorated with {theme_styling}"
+        prompt = f"Turn this space into a stunning {cls._get_space_description(space_type)} decorated with {theme_styling}"
         
         # Add seasonal decorative elements
         if season:
@@ -86,7 +86,7 @@ class WeddingVenuePromptGenerator:
             prompt += f" {user_instructions.strip()}"
         
         # Ensure focus on decoration and empty space
-        prompt += ".  Remove and show no people or text in this image."
+        prompt += ". Remove and show no people or text in this image."
         
         return prompt
     
@@ -97,11 +97,11 @@ class WeddingVenuePromptGenerator:
         # Theme-specific styling with consistent detail level (50-80 words each)
         theme_base = {
             # Classic Traditional Themes
-            'rustic': 'rustic barn wedding featuring weathered wood farm aethetics, tables with burlap runners and white lace overlays, mason jar centerpieces filled with wildflowers and baby\'s breath, sunflowers, vintage bottles, cross-back wooden chairs with burlap bow ties, wagon wheel decorations, checkered gingham ribbons, and wine barrel cocktail tables.',
+            'rustic': 'rustic barn wedding featuring weathered wood farm aesthetics, tables with burlap runners and white lace overlays, mason jar centerpieces filled with wildflowers and baby\'s breath, sunflowers, vintage bottles, cross-back wooden chairs with burlap bow ties, wagon wheel decorations, checkered gingham ribbons, and wine barrel cocktail tables.',
             
-            'modern': 'contemporary minimalist celebration with clear acrylic ghost aethetics, tall cylinder vases holding single white orchids, metal centerpieces in gold or copper, crisp white linens with silver chargers, LED light strips in clean lines, monochromatic white flower arrangements, chrome, geometric backdrop panels, clear glass vessels, metallic balloon installations, sleek white flooring with modern sculptural elements, and precisely arranged minimalist decor.',
+            'modern': 'contemporary minimalist celebration with clear acrylic ghost aesthetics, tall cylinder vases holding single white orchids, metal centerpieces in gold or copper, crisp white linens with silver chargers, LED light strips in clean lines, monochromatic white flower arrangements, chrome, geometric backdrop panels, clear glass vessels, metallic balloon installations, sleek white flooring with modern sculptural elements, and precisely arranged minimalist decor.',
             
-            'vintage': 'nostalgic vintage aethetics with antique brass candelabras, lace doily overlays, pearl strand garlands, mercury glass vases with roses and peonies, velvet furniture in dusty rose, crystal punch bowls, Victorian parasols, and aged brass fixtures.',
+            'vintage': 'nostalgic vintage aesthetics with antique brass candelabras, lace doily overlays, pearl strand garlands, mercury glass vases with roses and peonies, velvet furniture in dusty rose, crystal punch bowls, Victorian parasols, and aged brass fixtures.',
             
             'classic': 'classic traditional elegance featuring gold & ivory, tall crystal candelabras, white taper candles, white rose and lily arrangements, crystal stemware, symmetrical floral arrangements, ivory silk draping with swag, and pearl accents.',
             
@@ -109,11 +109,11 @@ class WeddingVenuePromptGenerator:
             
             'beach': 'coastal beach theme featuring driftwood centerpieces, air plants, nautical rope wrapped details, starfish and shells, hurricane lanterns with sand and candles, flowing white fabric, sea glass vessels, coral displays, ship wheels, anchor decorations, striped navy and white patterns, bamboo furniture, tropical flowers, and weathered wood.',
             
-            'industrial': 'urban warehouse chic with exposed Edison bulb installations, concrete planters with succulents, metal pipe structures, raw wood and metal furnitures, geometric copper centerpieces, leather seating elements, gear and pulley decorations, distressed metal signage, black metal, minimalist protea arrangements, vintage factory vibe, concrete and metal vessels, exposed brick backdrops, and industrial pendant lighting.',
+            'industrial': 'urban warehouse chic with exposed Edison bulb installations, concrete planters with succulents, metal pipe structures, raw wood and metal furniture, geometric copper centerpieces, leather seating elements, gear and pulley decorations, distressed metal signage, black metal, minimalist protea arrangements, vintage factory vibe, concrete and metal vessels, exposed brick backdrops, and industrial pendant lighting.',
             
-            'bohemian': 'free-spirited bohohemian style featuring macrame hangings, layered vintage rugs, pampas grass in ceramic vessels, mixed metal lanterns, eclectic furniture pieces, dreamcatcher installations, floor cushion seating with tassels, brass tables, wildflower arrangements in mismatched bottles, feather accents, wooden bead garlands, paisley patterns, mandala decorations, incense holders.',
+            'bohemian': 'free-spirited bohemian style featuring macrame hangings, layered vintage rugs, pampas grass in ceramic vessels, mixed metal lanterns, eclectic furniture pieces, dreamcatcher installations, floor cushion seating with tassels, brass tables, wildflower arrangements in mismatched bottles, feather accents, wooden bead garlands, paisley patterns, mandala decorations, incense holders.',
             
-            'glamorous': 'Hollywood regency opulence with crystal, mirrored furniture and tables, sequined linens in gold and silver, tall ostrich feather centerpieces, art deco patterns, velvet draping in jewel tones, gold candelabras, rhinestone scatter, crytal & metallic, champagne tower, gilded everything, dramatic spotlighting, and luxurious metallic accents throughout.',
+            'glamorous': 'Hollywood regency opulence with crystal, mirrored furniture and tables, sequined linens in gold and silver, tall ostrich feather centerpieces, art deco patterns, velvet draping in jewel tones, gold candelabras, rhinestone scatter, crystal & metallic, champagne tower, gilded everything, dramatic spotlighting, and luxurious metallic accents throughout.',
             
             'tropical': 'paradise island vibes featuring monstera leaves as placemats, bird of paradise vibe, bamboo furniture, tiki torches, tropical centerpieces, palm frond installations overhead, bright hibiscus flowers, rattan lanterns, colorful paper umbrellas, banana leaf runners, carved tiki elements, bright fabric in sunset colors, orchid scatter, coconut, and vibrant paper lantern clusters.',
             
@@ -126,7 +126,7 @@ class WeddingVenuePromptGenerator:
             
             'elegant': 'sophisticated elegance featuring refined decorations, luxurious fabrics, polished surfaces, high-quality materials, classic arrangement with dignified presentations, upscale aesthetics, premium flowers, sophisticated lighting, and distinguished styling.',
             
-            'chic': 'contemporary chic style with trendy decorations, fashion-forward elements, stylish arrangements, modern aesthetics, designer touches, current trends, sophisticated simplicity, contemporary art influences, and fashinable colors.',
+            'chic': 'contemporary chic style with trendy decorations, fashion-forward elements, stylish arrangements, modern aesthetics, designer touches, current trends, sophisticated simplicity, contemporary art influences, and fashionable colors.',
             
             'timeless': 'classic timeless design with enduring beauty, traditional elements, lasting appeal, vintage charm, heritage inspirations, generational style, classic color schemes, time-honored traditions, elegant simplicity, refined taste, quality materials, and sophisticated presentations that transcend trends.',
             
@@ -220,7 +220,7 @@ class WeddingVenuePromptGenerator:
             
             'art_deco_glam': 'Art Deco glamour with 1920s inspirations, glamorous elements, vintage Hollywood beauty, Art Deco patterns, glamorous presentations, period styling, vintage glamour, and Art Deco wedding themes.',
             
-         'concrete_jungle': 'concrete jungle urban with industrial city elements, metropolitan presentations, city aesthetics, urban styling, industrial elegance, metropolitan beauty, and urban wedding themes.',
+            'concrete_jungle': 'concrete jungle urban with industrial city elements, metropolitan presentations, city aesthetics, urban styling, industrial elegance, metropolitan beauty, and urban wedding themes.',
             
             'glass_house': 'glass house modern with contemporary glass elements, modern beauty, architectural presentations, contemporary aesthetics, modern styling, architectural beauty, contemporary elegance, and modern wedding themes',
             
@@ -249,7 +249,7 @@ class WeddingVenuePromptGenerator:
             'wedding_ceremony': ', arranged for a sacred ceremony space with decorated altar, guest seating with aisle decorations, with processional pathway.',
             'dining_area': ', configured as an elegant dining space with a head table, guest table arrangements, and themed centerpiece displays.',
             'dance_floor': ', designed as a celebration space with dance area, perimeter social seating, with DJ or band platform.',
-            'cocktail_hour': ', styled for socializing with high-top tables, bar station setup, appetizer displays, and confortable conversation atmosphere.',
+            'cocktail_hour': ', styled for socializing with high-top tables, bar station setup, appetizer displays, and comfortable conversation atmosphere.',
             'bridal_suite': ', perfect for a bridal preparation suite with vanity stations, relaxation seating, and privacy.',
             'entrance_area': ', designed as a grand arrival experience with guest reception elements, gift table setup with themed bags, and memorable first impression.',
         }
@@ -296,6 +296,7 @@ class WeddingVenuePromptGenerator:
         """Get detailed color application descriptions"""
         color_applications = {
             # Primary Colors
+
             'red': 'Dominated by red with crimson roses, burgundy dahlias, red linens, ruby glass accents.',
             'pink': 'Enhanced with pink through blush roses, pink peonies, rose-colored fabrics, pink glass elements.',
             'coral': 'Energized with coral through coral roses, peach dahlias, coral fabrics, sunset glass accents.',
@@ -339,7 +340,7 @@ class WeddingVenuePromptGenerator:
             'spring_fresh': 'Refreshed with spring colors including pink tulips, green foliage, yellow daffodils, and pastel elements.',
             'summer_bright': 'Energized with summer colors including coral flowers, turquoise accents, yellow elements, and bright fabrics.',
             'autumn_harvest': 'Warmed with autumn colors including orange foliage, burgundy flowers, golden elements, and harvest accents.',
-            'winter_elegant': 'Sophisticated with winter colors including navy elements, silver accents, white flowers, and crystal details.',
+            'write_elegant': 'Sophisticated with winter colors including navy elements, silver accents, white flowers, and crystal details.',
         }
         
         return color_applications.get(color_scheme, '')
@@ -348,8 +349,8 @@ class WeddingVenuePromptGenerator:
     def _get_space_description(cls, space_type):
         """Get concise space type descriptions"""
         space_descriptions = {
-            'wedding_ceremony': 'wedding ceremony with altar, guest seating with isle, ',
-            'dance_floor': 'celebration area with space for dancing, small stage for DJ or band, ',
+            'wedding_ceremony': 'wedding ceremony with altar, guest seating with aisle',
+            'dance_floor': 'celebration area with space for dancing, small stage for DJ or band',
             'dining_area': 'reception and dining area with seating for a wedding',
             'cocktail_hour': 'cocktail and lounge area for conversation',
             'bridal_suite': 'bridal preparation suite with everything she needs',
@@ -357,3 +358,278 @@ class WeddingVenuePromptGenerator:
         }
         
         return space_descriptions.get(space_type, space_type.replace('_', ' '))
+
+
+class PortraitPromptGenerator:
+    """
+    Portrait photo generation for wedding and engagement.
+    Focus: Creating beautiful portraits with good composition, styling,
+           and expanded pose/activity options.
+    """
+    
+    @classmethod
+    def generate_prompt(cls, portrait_style, photo_theme, setting_type,
+                       pose_style=None, attire_style=None, season=None,
+                       lighting_mood=None, color_scheme=None,
+                       custom_prompt=None, user_instructions=None,
+                       reference_count=1):
+        """
+        Generate portrait photo prompt.
+        
+        Args:
+            portrait_style: 'wedding' or 'engagement'
+            photo_theme: Overall style (classic_elegant, modern_romantic, etc.)
+            setting_type: Location (studio, garden, beach, etc.)
+            pose_style: Pose type (now includes activities)
+            attire_style: Clothing style
+            season: Optional season
+            lighting_mood: Lighting atmosphere
+            color_scheme: Color palette
+            custom_prompt: Custom user prompt
+            user_instructions: Additional instructions
+            reference_count: Number of reference images
+            
+        Returns:
+            str: Complete prompt for Gemini
+        """
+        
+        # Custom prompt mode
+        if custom_prompt and custom_prompt.strip():
+            prompt = custom_prompt.strip()
+            
+            # Add user instructions
+            if user_instructions and user_instructions.strip():
+                prompt += f" {user_instructions.strip()}"
+            
+            # Add reference context
+            prompt += cls._get_reference_context(reference_count)
+            
+            return prompt
+        
+        # Guided mode
+        return cls._build_guided_prompt(
+            portrait_style, photo_theme, setting_type,
+            pose_style, attire_style, season,
+            lighting_mood, color_scheme, user_instructions,
+            reference_count
+        )
+    
+    @classmethod
+    def _build_guided_prompt(cls, portrait_style, photo_theme, setting_type,
+                            pose_style, attire_style, season,
+                            lighting_mood, color_scheme, user_instructions,
+                            reference_count):
+        """Build guided portrait prompt"""
+        
+        # Start with style context
+        if portrait_style == 'wedding':
+            prompt = "Create a beautiful, professional wedding portrait photograph. "
+        else:
+            prompt = "Create a beautiful, natural engagement portrait photograph. "
+        
+        # Add theme
+        theme_desc = cls._get_theme_description(photo_theme, portrait_style)
+        if theme_desc:
+            prompt += f"{theme_desc} "
+        
+        # Add setting
+        setting_desc = cls._get_setting_description(setting_type, season)
+        if setting_desc:
+            prompt += f"The photo is taken {setting_desc}. "
+        
+        # Add pose or activity
+        if pose_style:
+            pose_desc = cls._get_pose_description(pose_style, portrait_style)
+            if pose_desc:
+                prompt += f"{pose_desc} "
+        
+        # Add attire
+        if attire_style:
+            attire_desc = cls._get_attire_description(attire_style, portrait_style)
+            if attire_desc:
+                prompt += f"{attire_desc} "
+        
+        # Add lighting
+        if lighting_mood:
+            lighting_desc = cls._get_lighting_description(lighting_mood)
+            if lighting_desc:
+                prompt += f"{lighting_desc} "
+        
+        # Add color scheme
+        if color_scheme:
+            color_desc = cls._get_color_description(color_scheme)
+            if color_desc:
+                prompt += f"{color_desc} "
+        
+        # Add user instructions
+        if user_instructions and user_instructions.strip():
+            prompt += f"{user_instructions.strip()} "
+        
+        # Add reference context
+        prompt += cls._get_reference_context(reference_count)
+        
+        # Quality emphasis
+        prompt += " Create a professional, high-quality portrait with beautiful composition, flattering lighting, and sharp focus."
+        
+        return prompt
+    
+    @classmethod
+    def _get_theme_description(cls, theme, style):
+        """Get theme styling"""
+        themes = {
+            'classic_elegant': 'A timeless and elegant composition with refined sophistication and traditional styling.',
+            'modern_romantic': 'A contemporary romantic atmosphere, featuring soft focus, intimate framing, and modern elements.',
+            'outdoor_natural': 'A natural outdoor setting, using soft natural light and organic, relaxed poses to capture authenticity.',
+            'vintage_timeless': 'Vintage-inspired styling with classic, nostalgic elements and a warm, sentimental atmosphere.',
+            'destination_exotic': 'An exotic destination backdrop, featuring dramatic landscapes and an adventurous, epic feel.',
+            'bohemian_free': 'A free-spirited bohemian vibe with relaxed, unconventional poses, artistic composition, and earthy elements.',
+            'luxury_glamour': 'Luxurious and glamorous styling with high-fashion elements, dramatic lighting, and editorial quality.',
+            'casual_lifestyle': 'A casual lifestyle portrait capturing natural, candid moments and the authentic connection between the couple.',
+            'urban_chic': 'An urban chic style with city architecture, edgy composition, and a fashionable, modern aesthetic.',
+            'minimalist_modern': 'A minimalist and modern style focusing on clean lines, simple backgrounds, and the subjects\' connection.',
+        }
+        return themes.get(theme, '')
+    
+    @classmethod
+    def _get_setting_description(cls, setting, season):
+        """Get setting location"""
+        settings = {
+            'studio': 'in a professional photo studio with a clean, neutral, or textured backdrop',
+            'garden': 'in a lush garden filled with blooming flowers, greenery, and winding paths',
+            'beach': 'on a beautiful sandy beach with the ocean waves and coastline in the background',
+            'urban': 'in a modern urban city setting, using architecture, street art, or cityscapes as the backdrop',
+            'countryside': 'in the peaceful countryside, featuring rolling hills, a rustic barn, or a field of wildflowers',
+            'venue_interior': 'inside an elegant wedding venue, showcasing grand architecture, a staircase, or a decorated ballroom',
+            'mountain': 'in the mountains with a dramatic, epic vista of peaks and valleys',
+            'forest': 'in a quiet forest, surrounded by tall trees and dappled natural light',
+            'home': 'at home in a cozy, personal setting like a living room or kitchen, showing their everyday life',
+            'coffee_shop': 'in a charming, cozy coffee shop with warm interior lighting and atmosphere',
+            #kicthen 
+            # city landscape 
+            # bay or harbour
+            #
+        }
+        setting_desc = settings.get(setting, 'in a beautiful location')
+        
+        # Add seasonal elements
+        if season:
+            seasonal = {
+                'spring': ' with fresh spring blooms, budding trees, and soft green foliage',
+                'summer': ' with lush, vibrant summer greenery and bright, sunny skies',
+                'fall': ' with colorful autumn foliage, golden light, and fallen leaves',
+                'winter': ' with a winter atmosphere, perhaps with bare branches, evergreen trees, or a dusting of snow',
+            }
+            setting_desc += seasonal.get(season, '')
+        
+        return setting_desc
+    
+    @classmethod
+    def _get_pose_description(cls, pose, style):
+        """Get pose instruction, now including activities"""
+        poses = {
+            # --- Standard Poses ---
+            'formal_portrait': 'The couple is posed formally, looking at the camera with traditional, elegant composition.',
+            'romantic_embrace': 'The couple is in a romantic embrace, holding each other close, showing affection and intimate connection.',
+            'candid_laughing': 'The couple is captured in a candid moment, laughing naturally with genuine joy and expression.',
+            'walking_together': 'The couple is walking together hand-in-hand, captured in a natural, flowing movement.',
+            'sitting_intimate': 'The couple is sitting close together in an intimate, relaxed pose, perhaps on a bench or blanket.',
+            'dancing': 'The couple is dancing together, captured in a moment of graceful or playful romantic movement.',
+            'playful_fun': 'The couple is in a playful, fun moment, piggyback ride or a silly expression.',
+            'forehead_kiss': 'One person is gently kissing the other on the forehead.',
+            'looking_at_each_other': 'The couple is looking into each other\'s eyes, smiling, showing a deep connection.',
+            
+            # --- Activity & Hobby Poses (Mainly for Engagement) ---
+            'playing_board_game': 'The couple is sitting at a table, casually dressed, laughing and playing a board game together.',
+            'cooking_together': 'In a kitchen, the couple is playfully cooking or baking together. Ingredients out.',
+            'hiking': 'The couple is in hiking gear on a mountain trail, pausing to look at the view or at each other.',
+            'coffee_date': 'The couple is sitting at a small table in a coffee shop, holding warm mugs and talking intimately.',
+            'skiing_snowboarding': 'The couple is dressed in full ski gear, posing on a snowy mountain slope with their equipment.',
+            'reading_together': 'The couple is sitting comfortably, enjoying seperate books together.',
+            'picnic': 'The couple is having a romantic picnic in a park, sitting on a blanket surrounded by food and nature.',
+            'biking': 'The couple is posing with their bicycles on a scenic path or city street.',
+            #snowboarding
+            #fishing
+            #horseback riding 
+            # sailing 
+            # football match
+            # american football match
+            # safari
+            #city night walk 
+            # baking 
+            
+        }
+        
+        # Filter out wedding-inappropriate poses if style is 'wedding'
+        wedding_blacklist = {
+            'playing_board_game', 'cooking_together', 'hiking', 'playing_music', 
+            'coffee_date', 'skiing_snowboarding', 'reading_together', 'picnic', 'biking'
+        }
+        
+        if style == 'wedding' and pose in wedding_blacklist:
+            # Provide a safe default if a hobby is selected for a wedding photo
+            return 'The couple is in a romantic embrace, holding each other close, showing affection and intimate connection.'
+            
+        return poses.get(pose, 'The couple is posed beautifully, showing their connection.')
+    
+    @classmethod
+    def _get_attire_description(cls, attire, style):
+        """Get clothing description"""
+        if style == 'wedding':
+            attires = {
+                'traditional_formal': 'The bride wears an elegant white wedding gown and veil, the groom wears a classic black tuxedo.',
+                'modern_chic': 'They wear modern, contemporary wedding attire with designer styling and sleek silhouettes.',
+                'casual_elegant': 'They wear casually elegant wedding attire, such as a simpler dress for the bride and a suit for the groom.',
+                'bohemian': 'They wear bohemian-style wedding attire, featuring flowing fabrics, lace, and perhaps a flower crown.',
+                'vintage_inspired': 'They wear vintage-inspired wedding attire, referencing a specific era like the 1920s or 1950s.',
+                'cultural_traditional': 'They wear traditional cultural wedding attire specific to their heritage (e.g., sari, kilt, hanbok).',
+            }
+        else: # Engagement
+            attires = {
+                'casual_elegant': 'They wear casual but elegant clothing, like nice jeans with a stylish top or a sundress.',
+                'modern_chic': 'They wear modern, chic, and fashionable outfits, well-coordinated and stylish.',
+                'bohemian': 'They wear bohemian-style clothing, with earthy tones, flowing fabrics, and layered textures.',
+                'formal_elegant': 'They wear formal, elegant outfits, like a cocktail dress and a suit, for a glamorous look.',
+                'cozy_casual': 'They wear cozy, casual clothing like sweaters and jeans, perfect for an at-home or winter shoot.',
+                'activity_specific': 'They wear clothing appropriate for their chosen activity (e.g., hiking gear, ski outfits, aprons).',
+            }
+        
+        return attires.get(attire, 'They are wearing stylish, appropriate clothing.')
+    
+    @classmethod
+    def _get_lighting_description(cls, lighting):
+        """Get lighting atmosphere"""
+        lights = {
+            'romantic': 'Illuminated with romantic, warm lighting, creating a soft, dreamy glow and intimate ambiance.',
+            'bright': 'Brightened with clear, cheerful lighting, ensuring sharp details and an energetic, happy atmosphere.',
+            'dim': 'Softened with intimate dim lighting, creating a cozy, moody atmosphere with gentle shadows.',
+            'dramatic': 'Enhanced with dramatic lighting, using bold contrasts, shadows, or spotlights for a theatrical effect.',
+            'natural': 'Using soft, diffused natural daylight (e.g., from a window or on an overcast day) for a flattering, organic look.',
+            'golden': 'Bathed in the warm, honeyed glow of golden hour lighting, just before sunset or after sunrise.',
+            'dusk': 'Enhanced with the soft, purple-and-pink tones of dusk or twilight, creating a magical evening feel.',
+            'dawn': 'Illuminated with the fresh, soft, and clear light of dawn, providing a clean and hopeful atmosphere.',
+        }
+        return lights.get(lighting, '')
+        
+    @classmethod
+    def _get_color_description(cls, color_scheme):
+        """Get color palette application"""
+        colors = {
+            'vibrant_bold': 'The photograph features vibrant, bold colors with high saturation and strong contrast.',
+            'light_airy_pastels': 'The photograph features a light and airy palette, dominated by soft pastels, whites, and gentle tones.',
+            'earth_tones_natural': 'The photograph uses natural earth tones, such as olive green, beige, terracotta, and brown, for an organic feel.',
+            'moody_dramatic': 'The photograph has a moody and dramatic color palette, with deep shadows, rich dark colors, and muted tones.',
+            'black_white_classic': 'This is a classic black and white photograph, emphasizing contrast, texture, and emotion.',
+            'warm_tones': 'The photograph is characterized by warm tones, with an emphasis on reds, oranges, yellows, and browns.',
+            'cool_tones': 'The photograph is characterized by cool tones, with an emphasis on blues, greens, and purples.',
+        }
+        return colors.get(color_scheme, '')
+    
+    @classmethod
+    def _get_reference_context(cls, reference_count):
+        """Get reference context"""
+        if reference_count == 1:
+            return " Use the provided reference image as primary inspiration for the portrait"
+        elif reference_count <= 3:
+            return f" Use the {reference_count} reference images provided to create the portrait"
+        else:
+            return f" Use the {reference_count} reference images (which may include faces, clothing, or location inspiration) to create the portrait"

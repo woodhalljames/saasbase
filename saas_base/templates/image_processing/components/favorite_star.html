@@ -1,0 +1,262 @@
+<!-- image_processing/templates/image_processing/components/favorite_star.html -->
+<!-- Star favorite button for UserImages (uploaded images) - Yellow styling -->
+
+{% load static %}
+
+{% if user_image %}
+<button type="button" 
+        class="favorite-star-btn {% if user_image.is_starred %}starred{% else %}not-starred{% endif %}"
+        data-user-image-id="{{ user_image.id }}"
+        data-is-starred="{% if user_image.is_starred %}true{% else %}false{% endif %}"
+        title="{% if user_image.is_starred %}Remove from quick access{% else %}Add to quick access{% endif %}">
+  <i class="bi bi-star{% if user_image.is_starred %}-fill{% endif %}"></i>
+</button>
+{% else %}
+<!-- Fallback if no user_image provided -->
+<span class="text-muted favorite-star-disabled" title="Quick access not available">
+  <i class="bi bi-star" style="opacity: 0.3; font-size: 16px;"></i>
+</span>
+{% endif %}
+
+<!-- Only include the script and styles once per page -->
+{% if not favorite_star_loaded %}
+<script>
+// Initialize favorite star functionality
+if (typeof window.favoriteStarInitialized === 'undefined') {
+    window.favoriteStarInitialized = true;
+    
+    const toggleFavoriteUploadUrl = '{% url "image_processing:toggle_favorite_upload" %}';
+    
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.favorite-star-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const button = e.target.closest('.favorite-star-btn');
+            const userImageId = button.dataset.userImageId;
+            const isCurrentlyStarred = button.dataset.isStarred === 'true';
+            
+            if (button.disabled) return;
+            
+            button.disabled = true;
+            button.classList.add('loading');
+            
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                            document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                            document.querySelector('input[name="csrfmiddlewaretoken"]')?.value;
+            
+            if (!csrfToken) {
+                console.error('CSRF token not found');
+                button.disabled = false;
+                button.classList.remove('loading');
+                return;
+            }
+            
+            fetch(toggleFavoriteUploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ image_id: userImageId })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const icon = button.querySelector('i');
+                    const newIsStarred = data.is_favorited;
+                    
+                    button.classList.add('updating');
+                    
+                    setTimeout(() => {
+                        if (newIsStarred) {
+                            icon.className = 'bi bi-star-fill';
+                            button.classList.remove('not-starred');
+                            button.classList.add('starred');
+                            button.title = 'Remove from quick access';
+                        } else {
+                            icon.className = 'bi bi-star';
+                            button.classList.remove('starred');
+                            button.classList.add('not-starred');
+                            button.title = 'Add to quick access';
+                        }
+                        
+                        button.dataset.isStarred = newIsStarred.toString();
+                        button.classList.remove('updating');
+                        
+                        // Dispatch event to update Quick Add section
+                        const event = new CustomEvent('favoriteUploadChanged', {
+                            detail: { 
+                                imageId: userImageId, 
+                                isStarred: newIsStarred 
+                            }
+                        });
+                        document.dispatchEvent(event);
+                        
+                        console.log('⭐ Star toggled successfully, dispatched event');
+                    }, 100);
+                    
+                } else {
+                    console.error('❌ Toggle failed:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('⭐ Star toggle error:', error);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.classList.remove('loading');
+            });
+        }
+    });
+}
+</script>
+
+<style>
+/* Star favorite button styles - White circle with yellow star */
+.favorite-star-btn {
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: white;
+    color: #ffc107;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    padding: 0;
+}
+
+.favorite-star-btn:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.favorite-star-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25);
+}
+
+.favorite-star-btn i {
+    font-size: 12px;
+}
+
+/* Not starred state - white background with yellow star outline */
+.favorite-star-btn.not-starred {
+    background-color: white;
+    color: #ffc107;
+}
+
+.favorite-star-btn.not-starred i {
+    color: #ffc107;
+}
+
+/* Starred state - white background with yellow filled star */
+.favorite-star-btn.starred {
+    background-color: white;
+    color: #ffc107;
+}
+
+.favorite-star-btn.starred i {
+    color: #ffc107;
+}
+
+.favorite-star-btn.starred:hover {
+    background-color: #f8f9fa;
+}
+
+/* Loading state */
+.favorite-star-btn.loading {
+    opacity: 0.7;
+    transform: none !important;
+    cursor: wait;
+}
+
+.favorite-star-btn.loading::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+    border-top: 2px solid #ffc107;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.favorite-star-btn.loading i {
+    opacity: 0;
+}
+
+/* Disabled state */
+.favorite-star-btn:disabled {
+    opacity: 0.6;
+    transform: none !important;
+    cursor: not-allowed;
+}
+
+.favorite-star-btn:disabled:hover {
+    transform: none !important;
+    background-color: white;
+}
+
+/* Update animation */
+.favorite-star-btn.updating i {
+    animation: starPulse 0.4s ease;
+}
+
+/* Star pulse animation */
+@keyframes starPulse {
+    0% {
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.3) rotate(180deg);
+    }
+    100% {
+        transform: scale(1) rotate(360deg);
+    }
+}
+
+/* Loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Disabled star styling */
+.favorite-star-disabled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    cursor: not-allowed;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .favorite-star-btn {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .favorite-star-btn i {
+        font-size: 10px;
+    }
+}
+</style>
+
+<!-- Mark that favorite star has been loaded -->
+<script>window.favorite_star_loaded = true;</script>
+{% endif %}

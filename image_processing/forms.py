@@ -1,108 +1,123 @@
-# image_processing/forms.py - Updated with alphabetical wedding theme sorting
+# image_processing/forms.py - Aligned with models.py and prompt_generator.py
 
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import UserImage, ImageProcessingJob, WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES
+from .models import (
+    UserImage, ImageProcessingJob, 
+    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES,
+    PORTRAIT_THEMES, PORTRAIT_SETTINGS, PORTRAIT_POSES, PORTRAIT_ATTIRE,
+    SEASONS, LIGHTING_MOODS
+)
 
-# Essential Choices - Simplified for better UX
-SEASON_CHOICES = [
-    ('', 'Any season'),
-    ('spring', 'Spring'),
-    ('summer', 'Summer'),
-    ('fall', 'Fall'),
-    ('winter', 'Winter'),
+# Essential Choices
+SEASON_CHOICES = [('', 'Any season')] + list(SEASONS)
+
+LIGHTING_CHOICES = [('', 'Automatic')] + list(LIGHTING_MOODS)
+
+STUDIO_MODE_CHOICES = [
+    ('venue', 'Venue Design'),
+    ('portrait_wedding', 'Wedding Portrait'),
+    ('portrait_engagement', 'Engagement Portrait'),
 ]
 
-# Simplified lighting choices for better prompts
-LIGHTING_CHOICES = [
-    ('', 'Automatic'),
-    ('romantic', 'Romantic & Warm'),
-    ('bright', 'Bright & Cheerful'),
-    ('dim', 'Dim & Intimate'),
-    ('dramatic', 'Dramatic & Moody'),
-    ('natural', 'Natural Daylight'),
-    ('golden', 'Golden Hour'),
-    ('dusk', 'Dusk & Twilight'),
-    ('dawn', 'Dawn & Morning'),
-]
-
-# Prompt mode choices
-PROMPT_MODE_CHOICES = [
-    ('guided', 'Guided Design (Recommended)'),
-    ('custom', 'Custom Prompt (Advanced)'),
+OUTPUT_COUNT_CHOICES = [
+    (1, '1 Photo (1 Credit)'),
+    (3, '3 Photos (3 Credits)'),
+    (5, '5 Photos (5 Credits)'),
 ]
 
 
 class ImageUploadForm(forms.ModelForm):
-    """Image upload form with venue details"""
+    """Image upload form with image type classification"""
+    
+    IMAGE_TYPE_CHOICES = [
+        ('venue', 'Venue/Space Photo'),
+        ('face', 'Face Photo'),
+        ('reference', 'Reference (Clothing, Pet, etc.)'),
+    ]
+    
+    image_type = forms.ChoiceField(
+        choices=IMAGE_TYPE_CHOICES,
+        initial='venue',
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm mb-2',
+            'id': 'image_type_select'
+        }),
+        help_text='What type of image is this?'
+    )
     
     class Meta:
         model = UserImage
-        fields = ['image', 'venue_name', 'venue_description']
+        fields = ['image', 'image_type', 'venue_name', 'venue_description']
         widgets = {
             'image': forms.FileInput(attrs={
                 'class': 'form-control form-control-lg',
                 'accept': 'image/*',
                 'id': 'id_image',
+                'capture': 'environment',
             }),
             'venue_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'e.g., Garden Pavilion, Main Ballroom (optional)',
+                'placeholder': 'Optional: Name or label for this image',
                 'id': 'venue_name'
             }),
             'venue_description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
-                'placeholder': 'Describe special features, views, or architectural elements (optional)',
+                'placeholder': 'Optional: Any notes about this image',
                 'id': 'venue_description'
             })
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make venue fields optional
         self.fields['venue_name'].required = False
         self.fields['venue_description'].required = False
-        
-        # Add help text
-        self.fields['venue_name'].help_text = "What do you call this space?"
-        self.fields['venue_description'].help_text = "Help Gemini understand your venue better"
+        self.fields['venue_name'].label = 'Label (Optional)'
+        self.fields['venue_description'].label = 'Notes (Optional)'
     
     def clean_image(self):
         image = self.cleaned_data.get('image')
         
         if image:
-            # 15MB max for high-quality Gemini processing
             if image.size > 15 * 1024 * 1024:
-                raise ValidationError("Image too large. Maximum size is 15MB for best Gemini results.")
+                raise ValidationError("Image too large. Maximum size is 15MB.")
             
             if not image.content_type.startswith('image/'):
                 raise ValidationError("File must be an image.")
             
-            # Support modern formats that Gemini handles well
             allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
             if image.content_type.lower() not in allowed_formats:
-                raise ValidationError("Supported formats: JPEG, PNG, WebP (best results with high-resolution images)")
+                raise ValidationError("Supported formats: JPEG, PNG, WebP")
                 
         return image
 
 
-class WeddingTransformForm(forms.ModelForm):
-    """Updated wedding venue transformation form with single user_instructions field and alphabetical theme sorting"""
+class UnifiedStudioForm(forms.ModelForm):
+    """Unified form for venue and portrait studio modes - ALIGNED"""
     
-    # Prompt mode selection
-    prompt_mode = forms.ChoiceField(
-        choices=PROMPT_MODE_CHOICES,
-        initial='guided',
-        widget=forms.Select(attrs={
-            'class': 'form-select form-select-lg mb-3',
-            'id': 'prompt-mode',
-            'onchange': 'togglePromptMode()',
+    # Studio mode selection
+    studio_mode = forms.ChoiceField(
+        choices=STUDIO_MODE_CHOICES,
+        initial='venue',
+        widget=forms.RadioSelect(attrs={
+            'class': 'studio-mode-radio',
         }),
-        help_text='Guided mode uses wedding themes, custom mode lets you write your own prompt'
+        help_text='Select studio type'
     )
     
-    # Override season and lighting with custom choices
+    # Output count selection
+    output_count = forms.ChoiceField(
+        choices=OUTPUT_COUNT_CHOICES,
+        initial=1,
+        widget=forms.RadioSelect(attrs={
+            'class': 'output-count-radio',
+            'id': 'output-count',
+        }),
+        help_text='More outputs = more variations but uses more credits'
+    )
+    
+    # Shared optional fields
     season = forms.ChoiceField(
         choices=SEASON_CHOICES,
         required=False,
@@ -121,27 +136,51 @@ class WeddingTransformForm(forms.ModelForm):
         })
     )
     
-    # Processing preference
-    realtime_processing = forms.BooleanField(
+    color_scheme = forms.ChoiceField(
+        choices=[('', 'Theme default')] + list(COLOR_SCHEMES),
         required=False,
-        initial=False,
-        widget=forms.CheckboxInput(attrs={
-            'class': 'form-check-input',
-            'id': 'realtime-processing',
-        }),
-        help_text='Get results immediately (may take 30-60 seconds) instead of background processing'
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-sm',
+            'id': 'color-scheme',
+        })
+    )
+    
+    user_instructions = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'id': 'user-instructions',
+            'rows': 3,
+            'placeholder': 'Any additional instructions or preferences...'
+        })
+    )
+    
+    custom_prompt = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'id': 'custom-prompt',
+            'rows': 5,
+            'placeholder': 'Write your own custom prompt for advanced control...',
+            'style': 'display: none;'
+        })
     )
     
     class Meta:
         model = ImageProcessingJob
         fields = [
-            'prompt_mode', 'custom_prompt',  # Prompt selection
-            'wedding_theme', 'space_type', 'season', 'lighting_mood', 'color_scheme',  # Guided options
-            'user_instructions',  # Single user instructions field
-            'realtime_processing'  # Processing preference
+            'studio_mode', 'output_count',
+            # Venue fields
+            'wedding_theme', 'space_type',
+            # Portrait fields
+            'photo_theme', 'setting_type', 'pose_style', 'attire_style',
+            # Shared fields
+            'season', 'lighting_mood', 'color_scheme',
+            'user_instructions', 'custom_prompt'
         ]
         
         widgets = {
+            # Venue mode widgets
             'wedding_theme': forms.Select(attrs={
                 'class': 'form-select form-select-lg',
                 'id': 'wedding-theme',
@@ -150,102 +189,130 @@ class WeddingTransformForm(forms.ModelForm):
                 'class': 'form-select form-select-lg',
                 'id': 'space-type',
             }),
-            'color_scheme': forms.Select(attrs={
+            # Portrait mode widgets
+            'photo_theme': forms.Select(attrs={
                 'class': 'form-select form-select-sm',
-                'id': 'color-scheme',
+                'id': 'photo-theme',
             }),
-            # Custom prompt widget
-            'custom_prompt': forms.Textarea(attrs={
-                'class': 'form-control',
-                'id': 'custom-prompt',
-                'rows': 5,
-                'placeholder': 'Describe your ideal wedding venue transformation in detail. Example: "Transform this space into a romantic garden ceremony with soft pink roses, flowing white drapes, and warm golden lighting. Add vintage wooden chairs and a floral arch..."',
-                'style': 'display: none;'  # Hidden by default
+            'setting_type': forms.Select(attrs={
+                'class': 'form-select form-select-lg',
+                'id': 'setting-type',
             }),
-            # Single user instructions field with helpful placeholder
-            'user_instructions': forms.Textarea(attrs={
-                'class': 'form-control',
-                'id': 'user-instructions',
-                'rows': 3,
-                'placeholder': 'Additional instructions for your transformation... For example: "Include lots of white roses and avoid dark colors" or "Add fairy lights everywhere but no artificial flowers" or "Make it very romantic with candles"'
-            })
+            'pose_style': forms.Select(attrs={
+                'class': 'form-select form-select-lg',
+                'id': 'pose-style',
+            }),
+            'attire_style': forms.Select(attrs={
+                'class': 'form-select form-select-sm',
+                'id': 'attire-style',
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Sort wedding themes alphabetically by display name (second element of tuple)
-        sorted_wedding_themes = sorted(WEDDING_THEMES, key=lambda x: x[1])
+        # Sort choices alphabetically (except 'use_pictured' which stays at end)
+        def sort_with_use_pictured(choices):
+            """Sort choices but keep 'use_pictured' at the end"""
+            regular = [(k, v) for k, v in choices if k != 'use_pictured']
+            use_pictured = [(k, v) for k, v in choices if k == 'use_pictured']
+            return sorted(regular, key=lambda x: x[1]) + use_pictured
         
-        # Add empty choices for required fields (guided mode) with alphabetically sorted themes
+        sorted_wedding_themes = sort_with_use_pictured(WEDDING_THEMES)
+        sorted_portrait_themes = sort_with_use_pictured(PORTRAIT_THEMES)
+        sorted_portrait_settings = sort_with_use_pictured(PORTRAIT_SETTINGS)
+        sorted_portrait_poses = sort_with_use_pictured(PORTRAIT_POSES)
+        sorted_portrait_attire = sort_with_use_pictured(PORTRAIT_ATTIRE)
+        sorted_color_schemes = sort_with_use_pictured(COLOR_SCHEMES)
+        
+        # Setup venue mode choices
         self.fields['wedding_theme'].choices = [('', 'Choose your wedding style...')] + list(sorted_wedding_themes)
         self.fields['space_type'].choices = [('', 'What will this space be?')] + list(SPACE_TYPES)
         
-        # Sort color schemes alphabetically as well for consistency
-        sorted_color_schemes = sorted(COLOR_SCHEMES, key=lambda x: x[1])
+        # Setup portrait mode choices
+        self.fields['photo_theme'].choices = [('', 'Choose theme (optional)...')] + list(sorted_portrait_themes)
+        self.fields['setting_type'].choices = [('', 'Choose setting...')] + list(sorted_portrait_settings)
+        self.fields['pose_style'].choices = [('', 'Choose pose/action...')] + list(sorted_portrait_poses)
+        self.fields['attire_style'].choices = [('', 'Choose attire (optional)...')] + list(sorted_portrait_attire)
+        
+        # Setup shared choices
         self.fields['color_scheme'].choices = [('', 'Theme default')] + list(sorted_color_schemes)
         
-        # Set field requirements (validated conditionally)
-        self.fields['wedding_theme'].required = False
-        self.fields['space_type'].required = False
-        self.fields['custom_prompt'].required = False
-        self.fields['user_instructions'].required = False
-        
-        # Make other fields optional
-        for field_name in ['season', 'lighting_mood', 'color_scheme']:
+        # Make all theme/style fields optional (validated conditionally in clean())
+        for field_name in ['wedding_theme', 'space_type', 'photo_theme', 'setting_type', 
+                          'pose_style', 'attire_style']:
             self.fields[field_name].required = False
         
-        # Add enhanced help text for Gemini
-        self.fields['wedding_theme'].help_text = 'Choose the overall style - Gemini will create detailed wedding decor (themes sorted A-Z)'
-        self.fields['space_type'].help_text = 'What type of wedding area should this become?'
-        self.fields['season'].help_text = 'Seasonal flowers and elements (optional)'
-        self.fields['lighting_mood'].help_text = 'Lighting atmosphere (optional)'
-        self.fields['color_scheme'].help_text = 'Color palette preference (optional, sorted A-Z)'
-        self.fields['custom_prompt'].help_text = 'Write a detailed description of your ideal venue transformation. Gemini works best with specific, descriptive prompts.'
-        
-        # Enhanced help text for single user instructions field
-        self.fields['user_instructions'].help_text = 'Add any specific requests, things to include or avoid. This will be added to your transformation prompt. Examples: "lots of fairy lights", "no artificial flowers", "make it very romantic", "include some greenery but avoid red colors"'
+        # Help text
+        self.fields['wedding_theme'].help_text = 'Overall venue style (includes 80+ themes + "Use Pictured")'
+        self.fields['space_type'].help_text = 'What type of space? ("Use Pictured" available)'
+        self.fields['photo_theme'].help_text = 'Portrait style (optional, includes "Use Pictured")'
+        self.fields['setting_type'].help_text = 'Where should the photo be taken? ("Use Pictured" available)'
+        self.fields['pose_style'].help_text = 'How should subjects be posed? ("Use Pictured" available)'
+        self.fields['attire_style'].help_text = 'Clothing style (optional, includes "Use Pictured")'
+        self.fields['season'].help_text = 'Season preference ("Use Pictured" available)'
+        self.fields['lighting_mood'].help_text = 'Lighting mood ("Use Pictured" available)'
+        self.fields['color_scheme'].help_text = 'Color palette ("Use Pictured" available)'
+        self.fields['output_count'].help_text = 'Generate multiple variations for more options'
     
     def clean(self):
         cleaned_data = super().clean()
-        prompt_mode = cleaned_data.get('prompt_mode', 'guided')
+        studio_mode = cleaned_data.get('studio_mode', 'venue')
+        custom_prompt = cleaned_data.get('custom_prompt', '').strip()
         
-        if prompt_mode == 'guided':
-            # Guided mode: require theme and space
+        # If custom prompt provided, skip other validation
+        if custom_prompt:
+            if len(custom_prompt) < 20:
+                self.add_error('custom_prompt', 'Custom prompt too short. Please provide more detail.')
+            return cleaned_data
+        
+        # Validate based on studio mode - UPDATED: Only one field required per mode
+        if studio_mode == 'venue':
+            # Venue mode: require ONLY wedding style
             if not cleaned_data.get('wedding_theme'):
-                self.add_error('wedding_theme', 'Wedding style is required for guided design.')
-            
-            if not cleaned_data.get('space_type'):
-                self.add_error('space_type', 'Space type is required for guided design.')
-            
-            # Clear custom prompt if in guided mode
-            cleaned_data['custom_prompt'] = ''
-            
-        elif prompt_mode == 'custom':
-            # Custom mode: require custom prompt with minimum length
-            custom_prompt = cleaned_data.get('custom_prompt', '').strip()
-            if not custom_prompt:
-                self.add_error('custom_prompt', 'Custom prompt is required for custom design mode.')
-            elif len(custom_prompt) < 20:
-                self.add_error('custom_prompt', 'Custom prompt is too short. Please provide more detail for better Gemini results.')
+                self.add_error('wedding_theme', 'Wedding style is required for venue design.')
+            # space_type is now optional
         
-        # Validate user instructions length if provided
-        user_instructions = cleaned_data.get('user_instructions', '').strip()
-        if user_instructions:
-            if len(user_instructions) > 1000:
-                self.add_error('user_instructions', 'Instructions are too long (max 1000 characters).')
+        elif studio_mode in ['portrait_wedding', 'portrait_engagement']:
+            # Portrait mode: require ONLY pose/action
+            if not cleaned_data.get('pose_style'):
+                self.add_error('pose_style', 'Pose/action is required for portrait studio.')
+            # setting_type is now optional
+            # photo_theme and attire_style remain optional
+        
+        # Validate output count
+        output_count = cleaned_data.get('output_count', 1)
+        if output_count:
+            try:
+                output_count = int(output_count)
+                if output_count < 1 or output_count > 5:
+                    self.add_error('output_count', 'Output count must be between 1 and 5.')
+            except (ValueError, TypeError):
+                self.add_error('output_count', 'Invalid output count.')
         
         return cleaned_data
 
+class FavoriteFaceForm(forms.Form):
+    """Form for saving a face image to favorites"""
+    image_id = forms.IntegerField(widget=forms.HiddenInput())
+    label = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Bride, Groom, Mom, Dad',
+        }),
+        help_text='Optional label to identify this person'
+    )
 
 
 # Export choices for use in other modules
 __all__ = [
     'ImageUploadForm',
-    'WeddingTransformForm', 
-    'QuickTransformForm',
-    'SimpleInstructionsForm',
+    'UnifiedStudioForm',
+    'FavoriteFaceForm',
     'SEASON_CHOICES',
     'LIGHTING_CHOICES',
-    'PROMPT_MODE_CHOICES',
+    'STUDIO_MODE_CHOICES',
+    'OUTPUT_COUNT_CHOICES',
 ]

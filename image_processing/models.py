@@ -1,4 +1,4 @@
-# image_processing/models.py - Simplified for Gemini 2.5 real-time processing with single user_instructions
+# image_processing/models.py - FIXED: Remove auto prompt generation from save()
 
 import os
 import uuid
@@ -28,20 +28,16 @@ def processed_image_upload_path(instance, filename):
     import os
     import re
     
-    # Use the human-readable filename that was passed in
     base_filename = os.path.basename(filename)
-    
-    # Sanitize for filesystem safety
     safe_filename = re.sub(r'[<>:"/\\|?*]', '_', base_filename)
     
-    # Ensure extension exists
     if '.' not in safe_filename:
         safe_filename += '.png'
     
     return f"processed_images/{instance.processing_job.user_image.user.id}/{safe_filename}"
 
 
-# Wedding Theme Choices - Same as before with enhanced descriptions
+# Wedding Theme Choices - ALIGNED WITH PROMPT_GENERATOR (80+ themes)
 WEDDING_THEMES = [
     # Classic Traditional Themes
     ('rustic', 'Rustic Farmhouse'),
@@ -55,8 +51,6 @@ WEDDING_THEMES = [
     ('glamorous', 'Glamorous Luxury'),
     ('tropical', 'Tropical Paradise'),
     ('fairy_tale', 'Fairy Tale Enchanted'),
-    
-    # Core Basic Styles
     ('minimalist', 'Minimalist Clean'),
     ('romantic', 'Romantic Dreamy'),
     ('elegant', 'Elegant Sophisticated'),
@@ -67,7 +61,7 @@ WEDDING_THEMES = [
     ('country_barn', 'Country Barn'),
     ('art_deco', 'Art Deco Glamour'),
     ('scandinavian', 'Scandinavian Hygge'),
-    ('mediterranean', 'Mediterranean Warmth'),
+    ('mediterranean', 'Mediterranean'),
     ('prairie_wildflower', 'Prairie Wildflower'),
     
     # Seasonal Specific
@@ -77,10 +71,10 @@ WEDDING_THEMES = [
     
     # Approach-Based
     ('whimsical', 'Whimsical Playful'),
-    ('monochrome', 'Monochrome Sophisticated'),
-    ('statement_bold', 'Statement Bold'),
+    ('monochrome', 'Monochrome B&W'),
+    ('statement_bold', 'Bold Statement'),
     ('soft_dreamy', 'Soft Dreamy'),
-    ('luxury', 'Luxury Premium'),
+    ('luxury', 'Premium Luxury'),
     
     # Cultural & Traditional Themes
     ('japanese_zen', 'Japanese Zen'),
@@ -120,7 +114,7 @@ WEDDING_THEMES = [
     ('glass_house', 'Glass House'),
     
     # Vintage & Retro Themes
-    ('1950s_diner', '1950s Diner'),
+    ('1950s_diner', '1950s Diner Retro'),
     ('1960s_mod', '1960s Mod'),
     ('1970s_disco', '1970s Disco'),
     ('1980s_neon', '1980s Neon'),
@@ -128,9 +122,11 @@ WEDDING_THEMES = [
     ('victorian_romance', 'Victorian Romance'),
     ('art_nouveau', 'Art Nouveau'),
     ('great_gatsby', 'Great Gatsby'),
+    
+    # Special option
+    ('use_pictured', 'Use Pictured Style'),
 ]
 
-# Space Types for wedding venues
 SPACE_TYPES = [
     ('wedding_ceremony', 'Wedding Ceremony'),
     ('dance_floor', 'Dance Floor / Party Area'),
@@ -138,11 +134,82 @@ SPACE_TYPES = [
     ('cocktail_hour', 'Cocktail Reception'),
     ('bridal_suite', 'Bridal Suite / Getting Ready'),
     ('entrance_area', 'Entrance / Welcome Area'),
+    ('use_pictured', 'Use Pictured Space'),
 ]
 
-# Color scheme options - Comprehensive palette
+# Portrait Studio Themes - ALIGNED
+PORTRAIT_THEMES = [
+    ('classic_elegant', 'Classic Elegant'),
+    ('modern_romantic', 'Modern Romantic'),
+    ('outdoor_natural', 'Outdoor Natural'),
+    ('vintage_timeless', 'Vintage Timeless'),
+    ('destination_exotic', 'Destination Exotic'),
+    ('bohemian_free', 'Bohemian Free-Spirited'),
+    ('luxury_glamour', 'Luxury Glamour'),
+    ('casual_lifestyle', 'Casual Lifestyle'),
+    ('urban_chic', 'Urban Chic'),
+    ('minimalist_modern', 'Minimalist Modern'),
+    ('use_pictured', 'Use Pictured Style'),
+]
+
+PORTRAIT_SETTINGS = [
+    ('studio', 'Studio / Indoor'),
+    ('garden', 'Garden / Park'),
+    ('beach', 'Beach / Waterfront'),
+    ('urban', 'Urban / City'),
+    ('countryside', 'Countryside / Rural'),
+    ('venue_interior', 'Wedding Venue Interior'),
+    ('mountain', 'Mountain / Vista'),
+    ('forest', 'Forest / Woods'),
+    ('home', 'Home / Cozy Indoor'),
+    ('coffee_shop', 'Coffee Shop / Café'),
+    ('use_pictured', 'Use Pictured Location'),
+]
+
+PORTRAIT_POSES = [
+    # Standard Poses
+    ('formal_portrait', 'Formal Portrait'),
+    ('romantic_embrace', 'Romantic Embrace'),
+    ('candid_laughing', 'Candid & Laughing'),
+    ('walking_together', 'Walking Together'),
+    ('sitting_intimate', 'Sitting Intimate'),
+    ('dancing', 'Dancing'),
+    ('playful_fun', 'Playful & Fun'),
+    ('forehead_kiss', 'Forehead Kiss'),
+    ('looking_at_each_other', 'Looking at Each Other'),
+    
+    # Activity & Hobby Poses (Mainly for Engagement)
+    ('playing_board_game', 'Playing Board Game'),
+    ('cooking_together', 'Cooking Together'),
+    ('hiking', 'Hiking'),
+    ('coffee_date', 'Coffee Date'),
+    ('skiing_snowboarding', 'Skiing/Snowboarding'),
+    ('reading_together', 'Reading Together'),
+    ('picnic', 'Picnic'),
+    ('biking', 'Biking'),
+    
+    ('use_pictured', 'Use Pictured Pose/Activity'),
+]
+
+PORTRAIT_ATTIRE = [
+    # Wedding Attire
+    ('traditional_formal', 'Traditional Wedding Attire'),
+    ('modern_chic', 'Modern Chic'),
+    ('casual_elegant', 'Casual Elegant'),
+    ('bohemian', 'Bohemian Style'),
+    ('vintage_inspired', 'Vintage Inspired'),
+    ('cultural_traditional', 'Cultural Traditional'),
+    
+    # Engagement Attire
+    ('formal_elegant', 'Formal Elegant'),
+    ('cozy_casual', 'Cozy Casual'),
+    ('activity_specific', 'Activity-Specific'),
+    
+    ('use_pictured', 'Use Pictured Attire'),
+]
+
 COLOR_SCHEMES = [
-    # Solid Colors - Single color focus
+    # Primary Colors
     ('red', 'Red'),
     ('pink', 'Pink'),
     ('coral', 'Coral'),
@@ -154,7 +221,7 @@ COLOR_SCHEMES = [
     ('white', 'White'),
     ('black', 'Black'),
     
-    # Pastels - Soft, light colors
+    # Pastels
     ('pastel_pink', 'Pastel Pink'),
     ('pastel_peach', 'Pastel Peach'),
     ('pastel_yellow', 'Pastel Yellow'),
@@ -164,102 +231,102 @@ COLOR_SCHEMES = [
     ('pastel_sage', 'Pastel Sage'),
     ('pastel_cream', 'Pastel Cream'),
     
-    # Earth Tones - Natural, warm colors
-    ('earth_brown', 'Brown & Tan'),
-    ('earth_rust', 'Rust & Terracotta'),
-    ('earth_forest', 'Forest Green & Brown'),
-    ('earth_desert', 'Sand & Copper'),
-    ('earth_autumn', 'Autumn Orange & Brown'),
-    ('earth_moss', 'Moss Green & Stone'),
+    # Earth Tones
+    ('earth_brown', 'Earth Brown'),
+    ('earth_rust', 'Earth Rust'),
+    ('earth_forest', 'Earth Forest'),
+    ('earth_desert', 'Earth Desert'),
+    ('earth_autumn', 'Earth Autumn'),
+    ('earth_moss', 'Earth Moss'),
     
-    # Popular Combinations - Most requested pairs
+    # Popular Combinations
     ('black_white', 'Black & White'),
     ('pink_gold', 'Pink & Gold'),
     ('blue_white', 'Blue & White'),
     ('red_white', 'Red & White'),
-    ('sage_cream', 'Sage Green & Cream'),
-    ('blush_gold', 'Blush Pink & Gold'),
-    ('navy_gold', 'Navy Blue & Gold'),
+    ('sage_cream', 'Sage & Cream'),
+    ('blush_gold', 'Blush & Gold'),
+    ('navy_gold', 'Navy & Gold'),
     ('burgundy_gold', 'Burgundy & Gold'),
     
-    # Seasonal - Classic seasonal palettes
-    ('spring_fresh', 'Spring (Pink, Green, Yellow)'),
-    ('summer_bright', 'Summer (Coral, Turquoise, Yellow)'),
-    ('autumn_harvest', 'Autumn (Orange, Burgundy, Gold)'),
-    ('winter_elegant', 'Winter (Navy, Silver, White)'),
+    # Seasonal
+    ('spring_fresh', 'Spring Fresh'),
+    ('summer_bright', 'Summer Bright'),
+    ('autumn_harvest', 'Autumn Harvest'),
+    ('winter_elegant', 'Winter Elegant'),
+    
+    # Portrait-specific
+    ('vibrant_bold', 'Vibrant Bold'),
+    ('light_airy_pastels', 'Light Airy Pastels'),
+    ('earth_tones_natural', 'Earth Tones Natural'),
+    ('moody_dramatic', 'Moody Dramatic'),
+    ('black_white_classic', 'Black & White Classic'),
+    ('warm_tones', 'Warm Tones'),
+    ('cool_tones', 'Cool Tones'),
+    
+    ('use_pictured', 'Use Pictured Colors'),
 ]
 
-# Enhanced lighting mood options for more detailed prompts
 LIGHTING_MOODS = [
-    ('romantic', 'Romantic Candlelit'),
+    # Time-based
+    ('dawn', 'Dawn Morning Light'),
+    ('morning', 'Morning Light'),
+    ('midday', 'Midday Bright'),
+    ('golden', 'Golden Hour'),
+    ('dusk', 'Twilight Dusk'),
+    ('evening', 'Evening'),
+    ('night', 'Night'),
+    
+    # Mood-based
+    ('romantic', 'Romantic Warm'),
     ('bright', 'Bright & Cheerful'),
     ('dim', 'Intimate & Cozy'),
     ('dramatic', 'Dramatic & Bold'),
+    ('candlelit', 'Candlelit'),
+    
+    # Quality-based
     ('natural', 'Natural Daylight'),
-    ('golden', 'Golden Hour'),
-    ('dusk', 'Twilight Dusk'),
-    ('dawn', 'Dawn Morning Light'),
+    ('fluorescent', 'Fluorescent Bright'),
+    ('rainy', 'Rainy/Overcast'),
+    
+    ('use_pictured', 'Use Pictured Lighting'),
 ]
 
-# Season options for seasonal decorations
 SEASONS = [
     ('spring', 'Spring'),
     ('summer', 'Summer'),
     ('fall', 'Fall/Autumn'),
     ('winter', 'Winter'),
+    ('use_pictured', 'Use Pictured Season'),
 ]
 
 
-def generate_wedding_venue_prompt(wedding_theme, space_type, season=None, lighting_mood=None,
-                                 color_scheme=None, custom_prompt=None, user_instructions=None):
-    """Generate enhanced narrative text prompt for Gemini 2.5 venue transformation"""
-    try:
-        from .prompt_generator import WeddingVenuePromptGenerator
-        
-        return WeddingVenuePromptGenerator.generate_prompt(
-            wedding_theme=wedding_theme,
-            space_type=space_type,
-            season=season,
-            lighting_mood=lighting_mood,
-            color_scheme=color_scheme,
-            custom_prompt=custom_prompt,
-            user_instructions=user_instructions
-        )
-    except ImportError as e:
-        logger.error(f"Could not import WeddingVenuePromptGenerator: {e}")
-        # Simple fallback if prompt generator is not available
-        if custom_prompt and custom_prompt.strip():
-            prompt = custom_prompt.strip()
-            if user_instructions and user_instructions.strip():
-                prompt += f" {user_instructions.strip()}"
-            return prompt
-        
-        # Basic fallback for guided mode
-        theme_name = dict(WEDDING_THEMES).get(wedding_theme, wedding_theme) if wedding_theme else "elegant"
-        space_name = dict(SPACE_TYPES).get(space_type, space_type) if space_type else "wedding space"
-        prompt = f"Transform this venue into a beautiful {space_name.lower()} with {theme_name.lower()} wedding styling and decorations."
-        
-        if user_instructions and user_instructions.strip():
-            prompt += f" {user_instructions.strip()}"
-        
-        prompt += " Show the space without any people visible."
-        return prompt
-
-
 class UserImage(models.Model):
-    """User uploaded venue images"""
+    """User uploaded images - for all studio modes"""
+    
+    IMAGE_TYPES = [
+        ('venue', 'Venue Photo'),
+        ('face', 'Face Photo'),
+        ('reference', 'Reference Image'),
+    ]
+    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='images')
     original_filename = models.CharField(max_length=255)
     image = models.ImageField(upload_to=user_image_upload_path)
     thumbnail = models.ImageField(upload_to=user_image_upload_path, blank=True, null=True)
+    
+    # Image classification
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPES, default='venue',
+                                  help_text="Type of image uploaded")
+    
     file_size = models.PositiveIntegerField(help_text="Size in bytes")
     width = models.PositiveIntegerField()
     height = models.PositiveIntegerField()
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
-    # Optional venue details
-    venue_name = models.CharField(max_length=200, blank=True, help_text="Name of the venue")
-    venue_description = models.TextField(blank=True, help_text="Description of the venue space")
+    # Optional metadata
+    venue_name = models.CharField(max_length=200, blank=True, help_text="Name or label")
+    venue_description = models.TextField(blank=True, help_text="Description or notes")
     
     class Meta:
         ordering = ['-uploaded_at']
@@ -320,8 +387,35 @@ class UserImage(models.Model):
             logger.error(f"Error creating thumbnail for {self.original_filename}: {str(e)}")
 
 
+class FavoriteUpload(models.Model):
+    """Favorites for uploaded images (star icon) - for quick access in studio"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorite_uploads')
+    image = models.ForeignKey(UserImage, on_delete=models.CASCADE, related_name='favorited_by')
+    
+    # Usage tracking
+    times_used = models.IntegerField(default=0)
+    last_used = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'image']
+        ordering = ['-last_used', '-created_at']
+        verbose_name = 'Favorite Upload'
+        verbose_name_plural = 'Favorite Uploads'
+    
+    def __str__(self):
+        return f"{self.user.username} ⭐ {self.image.original_filename}"
+    
+    def increment_usage(self):
+        """Increment usage counter and update last used timestamp"""
+        self.times_used += 1
+        self.last_used = timezone.now()
+        self.save(update_fields=['times_used', 'last_used'])
+
+
 class ImageProcessingJob(models.Model):
-    """Wedding venue transformation jobs - simplified for real-time processing"""
+    """Processing jobs - supports venue, wedding portrait, and engagement portrait modes"""
+    
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('processing', 'Processing'),
@@ -329,28 +423,43 @@ class ImageProcessingJob(models.Model):
         ('failed', 'Failed'),
     ]
     
+    STUDIO_MODES = [
+        ('venue', 'Venue Design'),
+        ('portrait_wedding', 'Wedding Portrait'),
+        ('portrait_engagement', 'Engagement Portrait'),
+    ]
+    
+    # Primary image (main input)
     user_image = models.ForeignKey(UserImage, on_delete=models.CASCADE, related_name='processing_jobs')
+    
+    # Studio mode selection
+    studio_mode = models.CharField(max_length=20, choices=STUDIO_MODES, default='venue')
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     error_message = models.TextField(blank=True, null=True)
     
-    # Core transformation parameters (guided mode)
+    # VENUE MODE FIELDS
     wedding_theme = models.CharField(max_length=50, choices=WEDDING_THEMES, blank=True)
     space_type = models.CharField(max_length=20, choices=SPACE_TYPES, blank=True)
     
-    # Optional customization (guided mode) - Enhanced options
-    season = models.CharField(max_length=20, choices=SEASONS, blank=True, help_text="Wedding season")
-    lighting_mood = models.CharField(max_length=20, choices=LIGHTING_MOODS, blank=True, help_text="Lighting atmosphere")
+    # PORTRAIT MODE FIELDS
+    photo_theme = models.CharField(max_length=50, choices=PORTRAIT_THEMES, blank=True)
+    setting_type = models.CharField(max_length=30, choices=PORTRAIT_SETTINGS, blank=True)
+    pose_style = models.CharField(max_length=30, choices=PORTRAIT_POSES, blank=True)
+    attire_style = models.CharField(max_length=30, choices=PORTRAIT_ATTIRE, blank=True)
+    
+    # SHARED OPTIONAL FIELDS
+    season = models.CharField(max_length=20, choices=SEASONS, blank=True)
+    lighting_mood = models.CharField(max_length=20, choices=LIGHTING_MOODS, blank=True)
     color_scheme = models.CharField(max_length=30, choices=COLOR_SCHEMES, blank=True)
     
-    # Custom prompt for advanced users (custom mode)
-    custom_prompt = models.TextField(blank=True, null=True,
-                                   help_text="Custom prompt (overrides theme/style settings)")
+    # Custom prompt (overrides guided mode)
+    custom_prompt = models.TextField(blank=True, null=True)
     
-    # Single user instructions field - appended to ALL prompts
-    user_instructions = models.TextField(blank=True, null=True,
-                                       help_text="Additional instructions for the transformation")
+    # User instructions (appended to all prompts)
+    user_instructions = models.TextField(blank=True, null=True)
     
-    # Generated final prompt (cached)
+    # Generated final prompt (cached) - NO LONGER AUTO-GENERATED IN SAVE
     generated_prompt = models.TextField(blank=True, null=True)
     
     # Timestamps
@@ -362,63 +471,48 @@ class ImageProcessingJob(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        if self.custom_prompt:
-            return f"Job {self.id} - Custom Prompt ({self.status})"
-        theme_display = dict(WEDDING_THEMES).get(self.wedding_theme, 'Unknown')
-        space_display = dict(SPACE_TYPES).get(self.space_type, 'Unknown')
-        return f"Job {self.id} - {theme_display} {space_display} ({self.status})"
+        mode_display = dict(self.STUDIO_MODES).get(self.studio_mode, self.studio_mode)
+        return f"Job {self.id} - {mode_display} ({self.status})"
     
-    def save(self, *args, **kwargs):
-        """Generate enhanced narrative prompt if needed"""
-        if not self.generated_prompt and (self.custom_prompt or (self.wedding_theme and self.space_type)):
-            try:
-                self.generated_prompt = generate_wedding_venue_prompt(
-                    wedding_theme=self.wedding_theme,
-                    space_type=self.space_type,
-                    season=self.season or None,
-                    lighting_mood=self.lighting_mood or None,
-                    color_scheme=self.color_scheme or None,
-                    custom_prompt=self.custom_prompt or None,
-                    user_instructions=self.user_instructions or None
-                )
-                
-                logger.info(f"Generated enhanced Gemini prompt for job {self.id}")
-                
-            except Exception as e:
-                logger.error(f"Error generating prompt for job {self.id}: {str(e)}")
-                # Enhanced fallback with more detail
-                if self.custom_prompt:
-                    self.generated_prompt = f"{self.custom_prompt}. Transform and decorate this space beautifully without any people visible."
-                else:
-                    theme_name = dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme) if self.wedding_theme else "elegant"
-                    space_name = dict(SPACE_TYPES).get(self.space_type, self.space_type) if self.space_type else "wedding space"
-                    self.generated_prompt = f"Transform this venue into a breathtaking {space_name.lower()} with beautiful {theme_name.lower()} wedding styling, featuring appropriate decorations, floral arrangements, and lighting. The space should be elegantly decorated and empty with no people visible."
-                
-                if self.user_instructions:
-                    self.generated_prompt += f" {self.user_instructions}"
-        
-        super().save(*args, **kwargs)
+    # REMOVED: Auto prompt generation from save() method
+    # Prompt is now generated in views.py BEFORE job creation
     
     @property
-    def theme_display_name(self):
-        if self.custom_prompt:
-            return "Custom Design"
-        return dict(WEDDING_THEMES).get(self.wedding_theme, self.wedding_theme) if self.wedding_theme else "Custom"
+    def is_venue_mode(self):
+        return self.studio_mode == 'venue'
     
     @property
-    def space_display_name(self):
-        if self.custom_prompt:
-            return "Custom Space"
-        return dict(SPACE_TYPES).get(self.space_type, self.space_type) if self.space_type else "Space"
+    def is_portrait_mode(self):
+        return self.studio_mode.startswith('portrait_')
     
     @property
-    def is_custom_mode(self):
-        """Check if this job uses custom prompt mode"""
-        return bool(self.custom_prompt and self.custom_prompt.strip())
+    def mode_display(self):
+        return dict(self.STUDIO_MODES).get(self.studio_mode, self.studio_mode)
+
+
+class JobReferenceImage(models.Model):
+    """Links multiple reference images to a single processing job (up to 5 images)"""
+    job = models.ForeignKey(
+        ImageProcessingJob, 
+        on_delete=models.CASCADE,
+        related_name='reference_images'
+    )
+    reference_image = models.ForeignKey(
+        UserImage,
+        on_delete=models.CASCADE
+    )
+    order = models.IntegerField(default=0, help_text="Order of reference images")
+    
+    class Meta:
+        ordering = ['order']
+        unique_together = ['job', 'reference_image']
+    
+    def __str__(self):
+        return f"Job {self.job.id} - Reference {self.order + 1}"
 
 
 class ProcessedImage(models.Model):
-    """Processed wedding venue images from Gemini 2.5"""
+    """Processed images from Gemini - single output only"""
     processing_job = models.ForeignKey(ImageProcessingJob, on_delete=models.CASCADE, related_name='processed_images')
     processed_image = models.ImageField(upload_to=processed_image_upload_path)
     file_size = models.PositiveIntegerField(help_text="Size in bytes")
@@ -439,7 +533,6 @@ class ProcessedImage(models.Model):
                 self.file_size = self.processed_image.size
             except Exception as e:
                 logger.error(f"Error getting image dimensions: {str(e)}")
-                # Set default values if image can't be opened
                 self.width = 512
                 self.height = 512
                 self.file_size = getattr(self.processed_image, 'size', 0) or 0
@@ -447,16 +540,12 @@ class ProcessedImage(models.Model):
         super().save(*args, **kwargs)
     
     def __str__(self):
-        return f"Gemini Wedding Design - {self.processing_job.theme_display_name}"
-    
-    @property
-    def transformation_title(self):
-        return f"{self.processing_job.theme_display_name} {self.processing_job.space_display_name}"
+        return f"{self.processing_job.mode_display} - Output"
 
 
-# Collection and Favorite models remain the same
+# Collections and Favorites for Processed Images
 class Collection(models.Model):
-    """User collections for organizing wedding designs"""
+    """User collections for organizing designs"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='collections')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
@@ -474,13 +563,12 @@ class Collection(models.Model):
     
     @classmethod
     def get_or_create_default(cls, user):
-        """Get or create the default collection for a user"""
         collection, created = cls.objects.get_or_create(
             user=user,
             is_default=True,
             defaults={
-                'name': 'My Wedding Designs',
-                'description': 'Your saved wedding venue designs',
+                'name': 'My Designs',
+                'description': 'Your saved designs',
             }
         )
         return collection
@@ -491,7 +579,6 @@ class Collection(models.Model):
     
     @property
     def thumbnail(self):
-        """Get the first image as thumbnail"""
         first_item = self.items.first()
         if first_item:
             if first_item.processed_image:
@@ -519,27 +606,13 @@ class CollectionItem(models.Model):
     
     def __str__(self):
         if self.processed_image:
-            return f"{self.collection.name} - {self.processed_image.transformation_title}"
+            return f"{self.collection.name} - {self.processed_image}"
         else:
             return f"{self.collection.name} - {self.user_image.original_filename}"
-    
-    @property
-    def image_url(self):
-        if self.processed_image:
-            return self.processed_image.processed_image.url
-        else:
-            return self.user_image.thumbnail.url if self.user_image.thumbnail else self.user_image.image.url
-    
-    @property
-    def image_title(self):
-        if self.processed_image:
-            return self.processed_image.transformation_title
-        else:
-            return self.user_image.original_filename
 
 
 class Favorite(models.Model):
-    """User favorites for wedding designs"""
+    """Favorites for processed images (heart icon)"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
     processed_image = models.ForeignKey('ProcessedImage', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -549,24 +622,4 @@ class Favorite(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} ❤️ {self.processed_image.transformation_title}"
-    
-    @property
-    def image_url(self):
-        return self.processed_image.processed_image.url
-    
-    @property
-    def image_title(self):
-        return self.processed_image.transformation_title
-
-
-# Helper functions
-def get_wedding_choices():
-    """Get choices for forms with enhanced options"""
-    return {
-        'themes': WEDDING_THEMES,
-        'spaces': SPACE_TYPES,
-        'color_schemes': COLOR_SCHEMES,
-        'lighting_moods': LIGHTING_MOODS,
-        'seasons': SEASONS,
-    }
+        return f"{self.user.username} ♥ {self.processed_image}"

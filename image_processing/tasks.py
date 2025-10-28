@@ -1,3 +1,4 @@
+# image_processing/tasks.py - Updated for venue, wedding, and engagement modes
 
 from celery import shared_task
 from django.contrib.auth import get_user_model
@@ -11,7 +12,7 @@ import string
 from PIL import Image as PILImage
 from io import BytesIO
 
-from .models import ImageProcessingJob, ProcessedImage, UserImage, WEDDING_THEMES, SPACE_TYPES
+from .models import ImageProcessingJob, ProcessedImage, UserImage, WEDDING_THEMES, SPACE_TYPES, PORTRAIT_THEMES, PORTRAIT_SETTINGS
 from usage_limits.usage_tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
@@ -20,10 +21,11 @@ User = get_user_model()
 
 def generate_human_readable_filename(job, file_extension='png'):
     """
-    Generate human-readable filename for processed wedding images.
+    Generate human-readable filename for processed images.
     
-    Format for guided mode: {Space}_{Theme}_{Date}_{RandomSuffix}.{ext}
-    Format for custom mode: Custom_Design_{Date}_{RandomSuffix}.{ext}
+    Format for venue: {Space}_{Theme}_{Date}_{RandomSuffix}.{ext}
+    Format for portrait: {Mode}_{Theme}_{Date}_{RandomSuffix}.{ext}
+    Format for custom: Custom_{Date}_{RandomSuffix}.{ext}
     
     Args:
         job: ImageProcessingJob instance
@@ -33,102 +35,89 @@ def generate_human_readable_filename(job, file_extension='png'):
         str: Human-readable filename
     """
     try:
-        # Helper function to clean text for filename
         def clean_for_filename(text):
             if not text:
                 return ""
-            # Remove special characters, convert to title case, replace spaces with underscores
             cleaned = re.sub(r'[^\w\s-]', '', str(text))
             cleaned = re.sub(r'\s+', '_', cleaned.strip())
-            # Convert to title case but keep underscores
             parts = cleaned.split('_')
             cleaned = '_'.join(word.capitalize() for word in parts if word)
             return cleaned
         
-        # Generate date string
         date_str = job.created_at.strftime('%Y-%m-%d')
-        
-        # Generate random suffix for uniqueness (4 characters)
         random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
         
         if job.custom_prompt:
-            # Custom prompt mode: Custom_Design_{Date}_{RandomSuffix}
-            filename_parts = ['Custom_Design', date_str, random_suffix]
-        else:
-            # Guided mode: {Space}_{Theme}_{Date}_{RandomSuffix}
-            theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Wedding'
+            # Custom prompt mode
+            filename_parts = ['Custom', date_str, random_suffix]
+        elif job.studio_mode == 'venue':
+            # Venue mode
+            theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme) if job.wedding_theme else 'Venue'
             space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'Space'
             
-            # Clean the main components
             theme_clean = clean_for_filename(theme_display)
             space_clean = clean_for_filename(space_display)
             
-            # New format: Space_Theme_Date_RandomSuffix
             filename_parts = [space_clean, theme_clean, date_str, random_suffix]
+        else:
+            # Portrait mode (wedding or engagement)
+            mode_name = 'Wedding' if job.studio_mode == 'portrait_wedding' else 'Engagement'
+            theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme) if job.photo_theme else 'Portrait'
+            
+            mode_clean = clean_for_filename(mode_name)
+            theme_clean = clean_for_filename(theme_display)
+            
+            filename_parts = [mode_clean, theme_clean, date_str, random_suffix]
         
-        # Join parts and create filename
         base_name = '_'.join(part for part in filename_parts if part)
         
-        # Ensure filename isn't too long (max 80 chars for base name)
+        # Ensure filename isn't too long
         if len(base_name) > 80:
-            # Keep date and random suffix, truncate the beginning parts
             suffix_parts = [date_str, random_suffix]
-            suffix_length = len('_'.join(suffix_parts)) + 1  # +1 for underscore
+            suffix_length = len('_'.join(suffix_parts)) + 1
             max_base_length = 80 - suffix_length
-            
-            if job.custom_prompt:
-                # Truncate custom design part
-                truncated_base = base_name[:max_base_length]
-                base_name = f"{truncated_base}_{date_str}_{random_suffix}"
-            else:
-                # For guided mode, prioritize keeping theme, truncate space if needed
-                space_clean = clean_for_filename(space_display)
-                theme_clean = clean_for_filename(theme_display)
-                
-                available_length = max_base_length - len(theme_clean) - 1  # -1 for underscore
-                if len(space_clean) > available_length:
-                    space_clean = space_clean[:available_length]
-                
-                base_name = f"{space_clean}_{theme_clean}_{date_str}_{random_suffix}"
+            truncated_base = base_name[:max_base_length]
+            base_name = f"{truncated_base}_{date_str}_{random_suffix}"
         
-        # Final filename with extension
         filename = f"{base_name}.{file_extension}"
-        
         logger.info(f"Generated filename for job {job.id}: {filename}")
         return filename
         
     except Exception as e:
         logger.error(f"Error generating readable filename for job {job.id}: {str(e)}")
-        # Fallback to simple format
-        fallback_name = f"Wedding_Design_{job.created_at.strftime('%Y-%m-%d')}_{random.randint(1000, 9999)}.{file_extension}"
+        fallback_name = f"Design_{job.created_at.strftime('%Y-%m-%d')}_{random.randint(1000, 9999)}.{file_extension}"
         return fallback_name
 
 
 @shared_task(bind=True, max_retries=2)
-def process_venue_transformation(self, job_id):
+def process_image_job(self, job_id):
     """
-    Process wedding venue transformation with Gemini 2.5 Flash.
-    Real-time processing with direct API calls.
+    Main task router for all studio modes.
+    Routes to appropriate processing based on studio_mode.
     """
     try:
         job = ImageProcessingJob.objects.get(id=job_id)
         user = job.user_image.user
         
-        logger.info(f"Starting Gemini venue transformation for job {job_id}, user {user.username}")
+        logger.info(f"Starting processing for job {job_id}, mode: {job.studio_mode}, user: {user.username}")
         
-        # Update job status to processing
+        # Update job status
         job.status = 'processing'
         job.started_at = timezone.now()
         job.save(update_fields=['status', 'started_at'])
         
-        # Process with Gemini
-        result = transform_venue_with_gemini(job)
+        # Route to appropriate processor
+        if job.studio_mode == 'venue':
+            result = process_venue_job(job)
+        elif job.studio_mode in ['portrait_wedding', 'portrait_engagement']:
+            result = process_portrait_job(job)
+        else:
+            raise ValueError(f"Unknown studio mode: {job.studio_mode}")
         
         if result['success']:
-            # Success - increment usage counter
+            # Increment usage counter
             if not UsageTracker.increment_usage(user, 1):
-                logger.warning(f"Usage increment failed for user {user.id} after successful transformation")
-                # Continue anyway since transformation was completed
+                logger.warning(f"Usage increment failed for user {user.id} after successful generation")
             
             # Update job to completed
             job.status = 'completed'
@@ -136,7 +125,7 @@ def process_venue_transformation(self, job_id):
             job.save(update_fields=['status', 'completed_at'])
             
             processing_time = (job.completed_at - job.started_at).total_seconds()
-            logger.info(f"Venue transformation completed in {processing_time:.1f}s - Job {job_id}, User {user.username}")
+            logger.info(f"Job {job_id} completed in {processing_time:.1f}s")
             
             return {
                 'success': True,
@@ -145,12 +134,12 @@ def process_venue_transformation(self, job_id):
                 'processing_time': processing_time
             }
         else:
-            # Failed - don't increment usage
+            # Failed
             job.status = 'failed'
-            job.error_message = result.get('error', 'Unknown transformation error')
+            job.error_message = result.get('error', 'Unknown error')
             job.save(update_fields=['status', 'error_message'])
             
-            logger.error(f"Venue transformation failed - Job {job_id}: {job.error_message}")
+            logger.error(f"Job {job_id} failed: {job.error_message}")
             
             return {
                 'success': False,
@@ -159,13 +148,12 @@ def process_venue_transformation(self, job_id):
             }
             
     except ImageProcessingJob.DoesNotExist:
-        logger.error(f"Processing job {job_id} not found")
+        logger.error(f"Job {job_id} not found")
         return {'success': False, 'error': f'Job {job_id} not found'}
         
     except Exception as e:
-        logger.error(f"Unexpected error in venue transformation {job_id}: {str(e)}")
+        logger.error(f"Unexpected error in job {job_id}: {str(e)}")
         
-        # Try to update job status
         try:
             job = ImageProcessingJob.objects.get(id=job_id)
             job.status = 'failed'
@@ -176,56 +164,64 @@ def process_venue_transformation(self, job_id):
         
         # Retry if we haven't exceeded max retries
         if self.request.retries < self.max_retries:
-            logger.info(f"Retrying venue transformation job {job_id} (attempt {self.request.retries + 1})")
+            logger.info(f"Retrying job {job_id} (attempt {self.request.retries + 1})")
             raise self.retry(countdown=30)
         
         return {'success': False, 'error': str(e)}
 
 
-def transform_venue_with_gemini(job):
+def process_venue_job(job):
     """
-    Transform wedding venue using Gemini 2.5 Flash Image Preview.
-    Direct API call with real-time processing.
-    Updated with simplified human-readable filename generation.
+    Process venue transformation job.
+    Can use multiple input images for context.
     """
     try:
         from .services import GeminiImageService
         
-        # Initialize Gemini service
         service = GeminiImageService()
         
-        # Read the original image
-        with job.user_image.image.open('rb') as image_file:
-            image_data = image_file.read()
+        # Get all reference images (up to 5)
+        reference_images = [job.user_image]  # Start with primary image
+        
+        # Add additional reference images if any
+        for ref in job.reference_images.all()[:4]:  # Max 4 additional (5 total)
+            reference_images.append(ref.reference_image)
+        
+        logger.info(f"Processing venue job {job.id} with {len(reference_images)} image(s)")
+        
+        # Read all images
+        image_data_list = []
+        for img in reference_images:
+            with img.image.open('rb') as image_file:
+                image_data_list.append(image_file.read())
         
         # Get the generated prompt
         prompt = job.generated_prompt or "Transform this space into a beautiful wedding venue"
         
-        logger.info(f"Transforming venue with Gemini 2.5 - Job {job.id}")
-        logger.debug(f"Prompt length: {len(prompt)} chars")
+        logger.info(f"Venue prompt length: {len(prompt)} chars")
         
-        # Call Gemini API for venue transformation
-        result = service.transform_venue_image(
-            image_data=image_data,
+        # Call Gemini API with multiple images - NO MODE PARAMETER
+        result = service.transform_with_multiple_images(
+            image_data_list=image_data_list,
             prompt=prompt
         )
         
         if result['success']:
-            # Create and save the transformed image with human-readable filename
+            # Save the generated image
             processed_image = ProcessedImage(
                 processing_job=job,
                 gemini_model=result.get('model', 'gemini-2.5-flash-image-preview'),
                 finish_reason=result.get('finish_reason', 'STOP')
             )
             
-            # Generate simplified human-readable filename: Space_Theme_Date_RandomSuffix
+            # Generate human-readable filename
             readable_filename = generate_human_readable_filename(job, 'png')
             
-            # Save the generated image with readable filename
+            # Save the generated image
             image_content = ContentFile(result['image_data'])
             processed_image.processed_image.save(readable_filename, image_content, save=True)
             
-            logger.info(f"Successfully saved wedding venue transformation with filename: {readable_filename} - Job {job.id}")
+            logger.info(f"Successfully saved venue transformation: {readable_filename}")
             
             return {
                 'success': True,
@@ -235,25 +231,100 @@ def transform_venue_with_gemini(job):
                 'filename': readable_filename
             }
         else:
-            logger.error(f"Gemini transformation failed for job {job.id}: {result.get('error')}")
+            logger.error(f"Venue transformation failed for job {job.id}: {result.get('error')}")
             return {
                 'success': False,
-                'error': result.get('error', 'Gemini API transformation failed')
+                'error': result.get('error', 'Gemini API failed')
             }
             
     except Exception as e:
-        logger.error(f"Error in venue transformation for job {job.id}: {str(e)}")
+        logger.error(f"Error in venue processing for job {job.id}: {str(e)}")
         return {
             'success': False,
-            'error': f'Transformation error: {str(e)}'
+            'error': f'Processing error: {str(e)}'
+        }
+
+
+def process_portrait_job(job):
+    """
+    Process portrait job (wedding or engagement).
+    Uses multiple reference images (faces, clothing, pets, etc).
+    """
+    try:
+        from .services import GeminiImageService
+        
+        service = GeminiImageService()
+        
+        # Get all reference images (up to 5)
+        reference_images = [job.user_image]  # Start with primary image
+        
+        # Add additional reference images
+        for ref in job.reference_images.all()[:4]:  # Max 4 additional (5 total)
+            reference_images.append(ref.reference_image)
+        
+        logger.info(f"Processing portrait job {job.id} with {len(reference_images)} reference image(s)")
+        
+        # Read all images
+        image_data_list = []
+        for img in reference_images:
+            with img.image.open('rb') as image_file:
+                image_data_list.append(image_file.read())
+        
+        # Get the generated prompt
+        prompt = job.generated_prompt or "Generate a beautiful portrait photograph"
+        
+        logger.info(f"Portrait prompt length: {len(prompt)} chars")
+        
+        # Call Gemini API with multiple reference images - NO MODE PARAMETER
+        result = service.transform_with_multiple_images(
+            image_data_list=image_data_list,
+            prompt=prompt
+        )
+        
+        if result['success']:
+            # Save the generated portrait
+            processed_image = ProcessedImage(
+                processing_job=job,
+                gemini_model=result.get('model', 'gemini-2.5-flash-image-preview'),
+                finish_reason=result.get('finish_reason', 'STOP')
+            )
+            
+            # Generate human-readable filename
+            readable_filename = generate_human_readable_filename(job, 'png')
+            
+            # Save the generated image
+            image_content = ContentFile(result['image_data'])
+            processed_image.processed_image.save(readable_filename, image_content, save=True)
+            
+            logger.info(f"Successfully saved portrait: {readable_filename}")
+            
+            return {
+                'success': True,
+                'processed_image_id': processed_image.id,
+                'model': result.get('model', 'gemini-2.5-flash-image-preview'),
+                'finish_reason': result.get('finish_reason', 'STOP'),
+                'filename': readable_filename
+            }
+        else:
+            logger.error(f"Portrait generation failed for job {job.id}: {result.get('error')}")
+            return {
+                'success': False,
+                'error': result.get('error', 'Gemini API failed')
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in portrait processing for job {job.id}: {str(e)}")
+        return {
+            'success': False,
+            'error': f'Processing error: {str(e)}'
         }
 
 
 @shared_task
-def process_venue_realtime(job_id):
+def process_realtime(job_id):
     """
-    Synchronous venue transformation for real-time processing.
-    Used when we want immediate results without Celery delay.
+    Synchronous processing for real-time results.
+    Used when immediate results are needed.
     """
     try:
         job = ImageProcessingJob.objects.get(id=job_id)
@@ -263,8 +334,13 @@ def process_venue_realtime(job_id):
         job.started_at = timezone.now()
         job.save(update_fields=['status', 'started_at'])
         
-        # Transform immediately
-        result = transform_venue_with_gemini(job)
+        # Process based on mode
+        if job.studio_mode == 'venue':
+            result = process_venue_job(job)
+        elif job.studio_mode in ['portrait_wedding', 'portrait_engagement']:
+            result = process_portrait_job(job)
+        else:
+            raise ValueError(f"Unknown studio mode: {job.studio_mode}")
         
         if result['success']:
             # Increment usage
@@ -280,7 +356,7 @@ def process_venue_realtime(job_id):
                 'success': True,
                 'job_id': job_id,
                 'processed_image_id': result['processed_image_id'],
-                'filename': result.get('filename', 'Wedding_Design.png')
+                'filename': result.get('filename', 'Output.png')
             }
         else:
             # Mark as failed
@@ -295,20 +371,20 @@ def process_venue_realtime(job_id):
             }
             
     except Exception as e:
-        logger.error(f"Error in real-time venue processing {job_id}: {str(e)}")
+        logger.error(f"Error in real-time processing {job_id}: {str(e)}")
         return {'success': False, 'error': str(e)}
 
 
 @shared_task(bind=True)
 def cleanup_old_jobs(self):
     """
-    Cleanup task for old processing jobs and failed transformations.
+    Cleanup task for old processing jobs and failed jobs.
     Runs periodically to keep database clean.
     """
     from datetime import timedelta
     
     try:
-        # Find jobs that have been processing for more than 30 minutes (stuck jobs)
+        # Find stuck jobs (processing for more than 30 minutes)
         cutoff_time = timezone.now() - timedelta(minutes=30)
         stuck_jobs = ImageProcessingJob.objects.filter(
             status='processing',
@@ -323,7 +399,7 @@ def cleanup_old_jobs(self):
                 job.save(update_fields=['status', 'error_message'])
                 
                 cleaned_count += 1
-                logger.info(f"Marked stuck venue transformation job {job.id} as failed")
+                logger.info(f"Marked stuck job {job.id} as failed")
                 
             except Exception as e:
                 logger.error(f"Error cleaning up stuck job {job.id}: {str(e)}")
@@ -341,7 +417,7 @@ def cleanup_old_jobs(self):
             logger.info(f"Deleted {deleted_count} old failed jobs")
         
         if cleaned_count > 0 or deleted_count > 0:
-            logger.info(f"Cleanup completed: {cleaned_count} stuck jobs marked failed, {deleted_count} old jobs deleted")
+            logger.info(f"Cleanup completed: {cleaned_count} stuck jobs, {deleted_count} deleted")
         
         return {'cleaned_jobs': cleaned_count, 'deleted_jobs': deleted_count}
         

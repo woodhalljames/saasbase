@@ -24,13 +24,17 @@
     <!-- Main Image Display -->
     <div class="col-lg-8 mb-4">
       <div class="card shadow-sm">
-        <div class="card-body text-center p-4">
+        <div class="card-body text-center p-4 position-relative">
           <img src="{{ image.image.url }}" 
                class="img-fluid rounded shadow" 
                alt="{{ image.original_filename }}"
                style="max-height: 600px; max-width: 100%; object-fit: contain;">
+          
+          <!-- Floating star button in top-left corner -->
+          <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+            {% include 'image_processing/components/favorite_star.html' with user_image=image %}
+          </div>
         </div>
-       
       </div>
     </div>
 
@@ -49,6 +53,21 @@
             </a>
           </div>
           
+          <!-- Quick Access Status -->
+          <div class="alert {% if image.is_starred %}alert-warning{% else %}alert-light{% endif %} d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+              {% include 'image_processing/components/favorite_star.html' with user_image=image %}
+              <span class="ms-2 small">
+                {% if image.is_starred %}
+                  <strong>Quick Access ✓</strong>
+                {% else %}
+                  Add to Quick Access
+                {% endif %}
+              </span>
+            </div>
+            <i class="bi bi-info-circle text-muted" title="Starred images appear in Wedding Studio"></i>
+          </div>
+          
           <!-- Download & View Options -->
           <div class="d-grid gap-2 mb-3">
             <a href="{{ image.image.url }}" 
@@ -65,21 +84,31 @@
 
           <!-- Collection Picker -->
           <div class="d-grid gap-2 mb-3">
-            {% include 'image_processing/components/collection_picker.html' with user_image=image image_id=image.id %}
+            <button class="btn btn-outline-secondary collection-picker-btn" 
+                    type="button" 
+                    data-user-image-id="{{ image.id }}">
+              <i class="bi bi-collection me-2"></i>Save to Collection
+            </button>
+          </div>
+
+          <!-- Image Classification -->
+          <div class="border-top pt-3 mb-3">
+            <h6 class="text-muted mb-2"><i class="bi bi-tag me-2"></i>Image Type</h6>
+            <span class="badge bg-secondary">{{ image.get_image_type_display }}</span>
           </div>
 
           <!-- Venue Information -->
           {% if image.venue_name or image.venue_description %}
           <div class="border-top pt-3 mb-3">
-            <h6 class="text-muted mb-2"><i class="bi bi-geo-alt me-2"></i>Venue Details</h6>
+            <h6 class="text-muted mb-2"><i class="bi bi-geo-alt me-2"></i>Details</h6>
             {% if image.venue_name %}
               <p class="mb-2">
-                <strong>Name:</strong> {{ image.venue_name }}
+                <strong>Label:</strong> {{ image.venue_name }}
               </p>
             {% endif %}
             {% if image.venue_description %}
               <p class="mb-0">
-                <strong>Description:</strong> {{ image.venue_description }}
+                <strong>Notes:</strong> {{ image.venue_description }}
               </p>
             {% endif %}
           </div>
@@ -98,10 +127,10 @@
                       <div class="fw-medium small mb-1">
                         {% if job.custom_prompt %}
                           <i class="bi bi-palette text-purple me-1"></i>Custom Design
-                        {% else %}
+                        {% elif job.studio_mode == 'venue' %}
                           <i class="bi bi-magic text-primary me-1"></i>{{ job.theme_display }} • {{ job.space_display }}
-
-                          
+                        {% else %}
+                          <i class="bi bi-camera text-info me-1"></i>{{ job.get_studio_mode_display }}
                         {% endif %}
                       </div>
                       <div class="text-muted small">
@@ -149,9 +178,6 @@
                       {% endif %}
                     </div>
                   </div>
-                  
-                  <!-- Additional job details for completed transformations -->
-              
                 </div>
               {% endfor %}
               
@@ -227,18 +253,6 @@
   </div>
 </div>
 
-<!-- Collection Success Toast -->
-<div id="collectionToast" class="toast position-fixed top-0 end-0 m-3" style="z-index: 9999;">
-  <div class="toast-header">
-    <i class="bi bi-collection text-success me-2"></i>
-    <strong class="me-auto">Collection</strong>
-    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-  </div>
-  <div class="toast-body" id="collectionToastBody">
-    Image added to collection!
-  </div>
-</div>
-
 <style>
 /* Enhanced styling for image detail page */
 .transformation-item {
@@ -275,6 +289,17 @@
 
 .card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+/* Star button in corner of main image */
+.card-body.position-relative .favorite-star-btn {
+  transform: scale(1.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Quick Access alert styling */
+.alert .favorite-star-btn {
+  transform: scale(1.2);
 }
 
 /* Responsive adjustments */
@@ -314,11 +339,6 @@
   }
 }
 
-/* Collection picker styling */
-.collection-picker-dropdown .btn {
-  width: 100%;
-}
-
 /* Animation for status badges */
 .badge {
   transition: all 0.3s ease;
@@ -330,6 +350,32 @@
 </style>
 
 <script>
+// Listen for favorite star changes
+document.addEventListener('favoriteUploadChanged', function(e) {
+    const { imageId, isStarred } = e.detail;
+    console.log('⭐ Star changed:', imageId, isStarred);
+    
+    // Update the quick access alert
+    const quickAccessAlert = document.querySelector('.alert');
+    if (quickAccessAlert) {
+        if (isStarred) {
+            quickAccessAlert.classList.remove('alert-light');
+            quickAccessAlert.classList.add('alert-warning');
+            const statusText = quickAccessAlert.querySelector('span.small');
+            if (statusText) {
+                statusText.innerHTML = '<strong>Quick Access ✓</strong>';
+            }
+        } else {
+            quickAccessAlert.classList.remove('alert-warning');
+            quickAccessAlert.classList.add('alert-light');
+            const statusText = quickAccessAlert.querySelector('span.small');
+            if (statusText) {
+                statusText.textContent = 'Add to Quick Access';
+            }
+        }
+    }
+});
+
 // Redo transformation functionality
 async function redoTransformation(jobId) {
     try {
@@ -354,17 +400,6 @@ async function redoTransformation(jobId) {
         console.error('Redo transformation error:', error);
         showAlert('Error copying settings', 'danger');
     }
-}
-
-// Collection helper function
-function showCollectionToast(message, type) {
-    const toastEl = document.getElementById('collectionToast');
-    const toastBody = document.getElementById('collectionToastBody');
-    
-    toastBody.textContent = message;
-    
-    const toast = new bootstrap.Toast(toastEl);
-    toast.show();
 }
 
 function showAlert(message, type) {
