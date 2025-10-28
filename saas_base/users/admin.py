@@ -164,10 +164,9 @@ class UserAdmin(auth_admin.UserAdmin):
             if new_remaining is not None:
                 from usage_limits.usage_tracker import UsageTracker
                 from usage_limits.redis_client import RedisClient
-                from datetime import datetime, timedelta
                 
                 redis_client = RedisClient.get_client()
-                usage_key = f"usage:monthly:{obj.id}:{datetime.now().year}:{datetime.now().month}"
+                usage_key = f"usage:{obj.id}"  # FIXED: Use new key pattern
                 
                 # Get current data
                 old_usage_data = UsageTracker.get_usage_data(obj)
@@ -186,20 +185,7 @@ class UserAdmin(auth_admin.UserAdmin):
                 
                 try:
                     redis_client.set(usage_key, new_used)
-                    
-                    # Set expiry if needed
-                    ttl = redis_client.ttl(usage_key)
-                    if ttl < 0:
-                        # Calculate end of month
-                        now = datetime.now()
-                        if now.month == 12:
-                            next_month = now.replace(year=now.year + 1, month=1, day=1)
-                        else:
-                            next_month = now.replace(month=now.month + 1, day=1)
-                        
-                        end_of_month = next_month - timedelta(days=1)
-                        seconds_until_end = int((end_of_month - now).total_seconds())
-                        redis_client.expire(usage_key, seconds_until_end + 86400)
+                    # No expiry - tokens persist until payment reset
                     
                     # Show appropriate message based on whether we're giving bonus tokens
                     if new_remaining > limit:
@@ -225,13 +211,12 @@ class UserAdmin(auth_admin.UserAdmin):
     def reset_to_full(self, request, queryset):
         """Give users their full subscription limit"""
         from usage_limits.redis_client import RedisClient
-        from datetime import datetime
         
         redis_client = RedisClient.get_client()
         count = 0
         
         for user in queryset:
-            usage_key = f"usage:monthly:{user.id}:{datetime.now().year}:{datetime.now().month}"
+            usage_key = f"usage:{user.id}"  # FIXED: Use new key pattern
             try:
                 redis_client.set(usage_key, 0)  # Set used to 0 = full limit available
                 count += 1
@@ -266,13 +251,12 @@ class UserAdmin(auth_admin.UserAdmin):
         """Set users to 0 remaining tokens"""
         from usage_limits.usage_tracker import UsageTracker
         from usage_limits.redis_client import RedisClient
-        from datetime import datetime
         
         redis_client = RedisClient.get_client()
         count = 0
         
         for user in queryset:
-            usage_key = f"usage:monthly:{user.id}:{datetime.now().year}:{datetime.now().month}"
+            usage_key = f"usage:{user.id}"  # FIXED: Use new key pattern
             try:
                 limit = UsageTracker.get_user_limit(user)
                 redis_client.set(usage_key, limit)  # Set used = limit, so remaining = 0
@@ -296,13 +280,12 @@ class UserAdmin(auth_admin.UserAdmin):
         """Helper method to add tokens to users"""
         from usage_limits.usage_tracker import UsageTracker
         from usage_limits.redis_client import RedisClient
-        from datetime import datetime
         
         redis_client = RedisClient.get_client()
         count = 0
         
         for user in queryset:
-            usage_key = f"usage:monthly:{user.id}:{datetime.now().year}:{datetime.now().month}"
+            usage_key = f"usage:{user.id}"  # FIXED: Use new key pattern
             try:
                 usage_data = UsageTracker.get_usage_data(user)
                 current_used = usage_data['current']
