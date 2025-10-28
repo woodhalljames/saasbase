@@ -1,159 +1,183 @@
+# subscriptions/management/commands/sync_subscription.py
+"""
+Simple subscription sync command for production use.
+Syncs a user's subscription data from Stripe to local database.
+"""
+
 import stripe
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from saas_base.users.models import User
+from django.contrib.auth import get_user_model
+
 from subscriptions.models import CustomerSubscription, Price, Product
 
+User = get_user_model()
+
+
 class Command(BaseCommand):
-    help = 'Sync user subscription from Stripe - improved version'
+    help = 'Sync user subscription from Stripe (production-safe)'
     
     def add_arguments(self, parser):
-        parser.add_argument('identifier', type=str, help='Username or email')
-        parser.add_argument('--customer-id', type=str, help='Stripe customer ID (if known)', default=None)
+        parser.add_argument(
+            'identifier',
+            type=str,
+            help='Username or email address'
+        )
+        parser.add_argument(
+            '--customer-id',
+            type=str,
+            help='Force specific Stripe customer ID',
+            default=None
+        )
     
     def handle(self, *args, **options):
         stripe.api_key = settings.STRIPE_SECRET_KEY
         identifier = options['identifier']
-        customer_id_override = options.get('customer_id')
+        force_customer_id = options.get('customer_id')
         
         self.stdout.write(f"\n{'='*60}")
         self.stdout.write(f"Syncing subscription for: {identifier}")
         self.stdout.write(f"{'='*60}\n")
         
         try:
-            # Find user by username or email
-            try:
-                user = User.objects.get(username=identifier)
-                self.stdout.write(self.style.SUCCESS(f"✓ Found user by username: {user.username}"))
-            except User.DoesNotExist:
-                user = User.objects.get(email=identifier)
-                self.stdout.write(self.style.SUCCESS(f"✓ Found user by email: {user.email}"))
+            # Step 1: Find user
+            user = self._find_user(identifier)
+            if not user:
+                self.stdout.write(self.style.ERROR(f"✗ User not found: {identifier}"))
+                return
             
-            # Get or create subscription record
-            sub, created = CustomerSubscription.objects.get_or_create(user=user)
+            self.stdout.write(self.style.SUCCESS(f"✓ Found user: {user.username} ({user.email})"))
+            
+            # Step 2: Get or create subscription record
+            subscription_record, created = CustomerSubscription.objects.get_or_create(user=user)
             
             if created:
-                self.stdout.write(self.style.WARNING("⚠ Created new CustomerSubscription record"))
+                self.stdout.write(self.style.WARNING("⚠ Created new subscription record"))
             
-            # Display current state
-            self.stdout.write(f"\nCurrent DB state:")
-            self.stdout.write(f"  - stripe_customer_id: {sub.stripe_customer_id or 'NOT SET'}")
-            self.stdout.write(f"  - stripe_subscription_id: {sub.stripe_subscription_id or 'NOT SET'}")
-            self.stdout.write(f"  - subscription_active: {sub.subscription_active}")
-            self.stdout.write(f"  - plan_id: {sub.plan_id or 'NOT SET'}")
-            self.stdout.write(f"  - status: {sub.status or 'NOT SET'}")
-            
-            # Use override customer ID if provided
-            if customer_id_override:
-                self.stdout.write(f"\n⚠ Using override customer ID: {customer_id_override}")
-                sub.stripe_customer_id = customer_id_override
-                sub.save()
-            
-            # Check if we have a customer ID
-            if not sub.stripe_customer_id:
-                self.stdout.write(self.style.ERROR("\n✗ No Stripe customer ID found!"))
-                self.stdout.write(f"\nTo fix, run with customer ID:")
-                self.stdout.write(f"  python manage.py sync_user_subscription {identifier} --customer-id=cus_XXX")
-                return
-            
-            # Fetch subscriptions from Stripe
-            self.stdout.write(f"\nFetching subscriptions from Stripe...")
-            subscriptions = stripe.Subscription.list(
-                customer=sub.stripe_customer_id,
-                limit=10,
-                expand=['data.items.data.price.product']
-            )
-            
-            if not subscriptions.data:
-                self.stdout.write(self.style.ERROR("✗ No subscriptions found in Stripe"))
-                return
-            
-            self.stdout.write(self.style.SUCCESS(f"✓ Found {len(subscriptions.data)} subscription(s) in Stripe\n"))
-            
-            # Show all subscriptions
-            for idx, s in enumerate(subscriptions.data):
-                self.stdout.write(f"Subscription {idx + 1}:")
-                self.stdout.write(f"  - ID: {s.id}")
-                self.stdout.write(f"  - Status: {s.status}")
-                self.stdout.write(f"  - Created: {s.created}")
-                if s.items and s.items.data:
-                    price = s.items.data[0].price
-                    self.stdout.write(f"  - Price ID: {price.id}")
-                    self.stdout.write(f"  - Amount: ${price.unit_amount/100:.2f}/{price.recurring.interval}")
-                self.stdout.write("")
-            
-            # Use the first active subscription
-            subscription = None
-            for s in subscriptions.data:
-                if s.status in ['active', 'trialing']:
-                    subscription = s
-                    break
-            
-            if not subscription:
-                subscription = subscriptions.data[0]
-                self.stdout.write(self.style.WARNING(f"⚠ No active subscription, using most recent: {subscription.status}"))
+            # Step 3: Get Stripe customer ID
+            if force_customer_id:
+                self.stdout.write(f"Using forced customer ID: {force_customer_id}")
+                customer_id = force_customer_id
+                subscription_record.stripe_customer_id = customer_id
+                subscription_record.save()
+            elif subscription_record.stripe_customer_id:
+                customer_id = subscription_record.stripe_customer_id
+                self.stdout.write(f"Using existing customer ID: {customer_id}")
             else:
-                self.stdout.write(self.style.SUCCESS(f"✓ Using active subscription: {subscription.id}"))
+                self.stdout.write(self.style.ERROR("✗ No Stripe customer ID found"))
+                self.stdout.write("\nTo fix, run with --customer-id flag:")
+                self.stdout.write(f"  python manage.py sync_subscription {identifier} --customer-id=cus_XXX")
+                return
             
-            # Update the database
-            self.stdout.write(f"\nUpdating database...")
+            # Step 4: Fetch from Stripe
+            self.stdout.write(f"\nFetching from Stripe...")
             
-            sub.stripe_subscription_id = subscription.id
-            sub.status = subscription.status
-            sub.subscription_active = subscription.status in ['active', 'trialing']
-            
-            # Get plan_id from subscription items
-            if subscription.items and subscription.items.data:
-                price_item = subscription.items.data[0]
-                sub.plan_id = price_item.price.id
-                
-                # Sync product/price to local DB
-                self._sync_product_and_price(price_item.price)
-            
-            sub.save()
-            
-            # Display final state
-            self.stdout.write(self.style.SUCCESS(f"\n{'='*60}"))
-            self.stdout.write(self.style.SUCCESS(f"✓ SYNC COMPLETED"))
-            self.stdout.write(self.style.SUCCESS(f"{'='*60}\n"))
-            
-            self.stdout.write(f"Updated DB state:")
-            self.stdout.write(f"  - stripe_customer_id: {sub.stripe_customer_id}")
-            self.stdout.write(f"  - stripe_subscription_id: {sub.stripe_subscription_id}")
-            self.stdout.write(f"  - subscription_active: {sub.subscription_active}")
-            self.stdout.write(f"  - plan_id: {sub.plan_id}")
-            self.stdout.write(f"  - status: {sub.status}")
-            
-            # Get token limit
             try:
-                price = Price.objects.select_related('product').get(stripe_id=sub.plan_id)
-                self.stdout.write(f"  - token_limit: {price.product.tokens}")
-            except Price.DoesNotExist:
-                self.stdout.write(f"  - token_limit: (price not synced)")
+                # Get subscriptions for this customer
+                subscriptions = stripe.Subscription.list(
+                    customer=customer_id,
+                    limit=10
+                )
+                
+                if not subscriptions.data:
+                    self.stdout.write(self.style.WARNING("⚠ No subscriptions found in Stripe"))
+                    return
+                
+                self.stdout.write(self.style.SUCCESS(f"✓ Found {len(subscriptions.data)} subscription(s)"))
+                
+                # Find active subscription
+                active_sub = None
+                for sub in subscriptions.data:
+                    if sub.status in ['active', 'trialing']:
+                        active_sub = sub
+                        break
+                
+                if not active_sub and subscriptions.data:
+                    active_sub = subscriptions.data[0]  # Use most recent
+                    self.stdout.write(self.style.WARNING(f"⚠ No active subscription, using: {active_sub.status}"))
+                
+                # Step 5: Get subscription items (price/product info)
+                self.stdout.write(f"\nFetching subscription details...")
+                
+                subscription_items = stripe.SubscriptionItem.list(
+                    subscription=active_sub.id,
+                    expand=['data.price.product']
+                )
+                
+                # Step 6: Update database
+                subscription_record.stripe_subscription_id = active_sub.id
+                subscription_record.status = active_sub.status
+                subscription_record.subscription_active = active_sub.status in ['active', 'trialing']
+                
+                if subscription_items.data:
+                    price_item = subscription_items.data[0]
+                    subscription_record.plan_id = price_item.price.id
+                    
+                    # Sync product/price to local DB
+                    self._sync_product_price(price_item.price)
+                
+                subscription_record.save()
+                
+                # Step 7: Display results
+                self.stdout.write(self.style.SUCCESS(f"\n{'='*60}"))
+                self.stdout.write(self.style.SUCCESS("✓ SYNC COMPLETED"))
+                self.stdout.write(self.style.SUCCESS(f"{'='*60}\n"))
+                
+                self.stdout.write("Updated subscription:")
+                self.stdout.write(f"  - User: {user.username} ({user.email})")
+                self.stdout.write(f"  - Customer ID: {subscription_record.stripe_customer_id}")
+                self.stdout.write(f"  - Subscription ID: {subscription_record.stripe_subscription_id}")
+                self.stdout.write(f"  - Status: {subscription_record.status}")
+                self.stdout.write(f"  - Active: {subscription_record.subscription_active}")
+                self.stdout.write(f"  - Plan ID: {subscription_record.plan_id}")
+                
+                # Get token info
+                try:
+                    from usage_limits.usage_tracker import UsageTracker
+                    usage_data = UsageTracker.get_usage_data(user)
+                    self.stdout.write(f"\nToken allocation:")
+                    self.stdout.write(f"  - Current: {usage_data['current']}")
+                    self.stdout.write(f"  - Limit: {usage_data['limit']}")
+                    self.stdout.write(f"  - Remaining: {usage_data['remaining']}")
+                except Exception as e:
+                    self.stdout.write(f"\n⚠ Could not fetch token info: {e}")
+                
+                self.stdout.write("")
+                
+            except stripe.error.InvalidRequestError as e:
+                self.stdout.write(self.style.ERROR(f"\n✗ Stripe API error: {e}"))
+            except stripe.error.AuthenticationError as e:
+                self.stdout.write(self.style.ERROR(f"\n✗ Stripe authentication error: {e}"))
+                self.stdout.write("Check your STRIPE_SECRET_KEY setting")
             
-            self.stdout.write("")
-            
-        except User.DoesNotExist:
-            self.stdout.write(self.style.ERROR(f"✗ User not found: {identifier}"))
-            self.stdout.write("Available users with subscriptions:")
-            for cs in CustomerSubscription.objects.all()[:10]:
-                self.stdout.write(f"  - {cs.user.username} ({cs.user.email})")
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"\n✗ Error: {str(e)}"))
+            self.stdout.write(self.style.ERROR(f"\n✗ Error: {e}"))
             import traceback
             self.stdout.write(traceback.format_exc())
     
-    def _sync_product_and_price(self, stripe_price):
-        """Sync product and price to local database"""
+    def _find_user(self, identifier):
+        """Find user by username or email"""
         try:
-            # Ensure we have the full product data
+            # Try username first
+            return User.objects.get(username=identifier)
+        except User.DoesNotExist:
+            try:
+                # Try email
+                return User.objects.get(email=identifier)
+            except User.DoesNotExist:
+                return None
+    
+    def _sync_product_price(self, stripe_price):
+        """Sync Stripe price and product to local database"""
+        try:
+            # Get product data
             if isinstance(stripe_price.product, str):
                 product_data = stripe.Product.retrieve(stripe_price.product)
             else:
                 product_data = stripe_price.product
             
-            # Sync product
-            product, created = Product.objects.update_or_create(
+            # Create/update product
+            product, _ = Product.objects.update_or_create(
                 stripe_id=product_data.id,
                 defaults={
                     'name': product_data.name,
@@ -162,8 +186,8 @@ class Command(BaseCommand):
                 }
             )
             
-            # Sync price
-            price, created = Price.objects.update_or_create(
+            # Create/update price
+            Price.objects.update_or_create(
                 stripe_id=stripe_price.id,
                 defaults={
                     'product': product,
@@ -175,7 +199,7 @@ class Command(BaseCommand):
                 }
             )
             
-            self.stdout.write(f"  ✓ Synced product: {product.name} ({product.tokens} tokens)")
+            self.stdout.write(f"  ✓ Synced: {product.name} - ${stripe_price.unit_amount/100:.2f}")
             
         except Exception as e:
-            self.stdout.write(f"  ⚠ Warning: Could not sync product/price: {str(e)}")
+            self.stdout.write(f"  ⚠ Could not sync product: {e}")
