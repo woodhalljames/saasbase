@@ -395,7 +395,7 @@ TWITTER_CONSUMER_SECRET = env("TWITTER_CONSUMER_SECRET", default="")
 
 SOCIALACCOUNT_ADAPTER = "saas_base.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
-SOCIALACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSocialSignupForm"}
+#SOCIALACCOUNT_FORMS = {"signup": "saas_base.users.forms.UserSocialSignupForm"}
 
 # Stripe
 # ------------------------------------------------------------------------------
