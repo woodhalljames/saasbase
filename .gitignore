@@ -275,3 +275,5 @@ saas_base/media/
 .env
 ENV/
 .envs
+env
+.envs
