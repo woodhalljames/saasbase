@@ -1,9 +1,0 @@
-# PostgreSQL
-# ------------------------------------------------------------------------------
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=saas_base
-POSTGRES_USER=QrLWyKpmnSdApWGOVNHtarpRXZYvbFzT
-POSTGRES_PASSWORD=eFT3H8U9aG6iiZzzSNenb4DWRn7cGib7oHrsVZCnAFBGwFBMy3NnhXellqnL9Pg6
-
-
