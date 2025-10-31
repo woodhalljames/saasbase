@@ -12,7 +12,12 @@ import string
 from PIL import Image as PILImage
 from io import BytesIO
 
-from .models import ImageProcessingJob, ProcessedImage, UserImage, WEDDING_THEMES, SPACE_TYPES, PORTRAIT_THEMES, PORTRAIT_SETTINGS
+from .models import (
+    ImageProcessingJob, ProcessedImage, UserImage,
+    WEDDING_THEMES, SPACE_TYPES,
+    ENGAGEMENT_SETTINGS, ENGAGEMENT_ACTIVITIES,
+    WEDDING_MOMENTS, WEDDING_SETTINGS
+)
 from usage_limits.usage_tracker import UsageTracker
 
 logger = logging.getLogger(__name__)
@@ -59,15 +64,39 @@ def generate_human_readable_filename(job, file_extension='png'):
             space_clean = clean_for_filename(space_display)
             
             filename_parts = [space_clean, theme_clean, date_str, random_suffix]
+        elif job.studio_mode == 'portrait_engagement':
+            # Engagement portrait mode
+            activity_display = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, job.engagement_activity) if job.engagement_activity else 'Engagement'
+            setting_display = dict(ENGAGEMENT_SETTINGS).get(job.engagement_setting, job.engagement_setting) if job.engagement_setting else None
+            
+            activity_clean = clean_for_filename(activity_display)
+            setting_clean = clean_for_filename(setting_display) if setting_display else None
+            
+            # Format: Engagement_{Activity}_{Setting}_{Date}_{RandomSuffix}
+            # Or: Engagement_{Activity}_{Date}_{RandomSuffix} if no setting
+            if setting_clean:
+                filename_parts = ['Engagement', activity_clean, setting_clean, date_str, random_suffix]
+            else:
+                filename_parts = ['Engagement', activity_clean, date_str, random_suffix]
+        
+        elif job.studio_mode == 'portrait_wedding':
+            # Wedding portrait mode
+            moment_display = dict(WEDDING_MOMENTS).get(job.wedding_moment, job.wedding_moment) if job.wedding_moment else 'Wedding'
+            setting_display = dict(WEDDING_SETTINGS).get(job.wedding_setting, job.wedding_setting) if job.wedding_setting else None
+            
+            moment_clean = clean_for_filename(moment_display)
+            setting_clean = clean_for_filename(setting_display) if setting_display else None
+            
+            # Format: Wedding_{Moment}_{Setting}_{Date}_{RandomSuffix}
+            # Or: Wedding_{Moment}_{Date}_{RandomSuffix} if no setting
+            if setting_clean:
+                filename_parts = ['Wedding', moment_clean, setting_clean, date_str, random_suffix]
+            else:
+                filename_parts = ['Wedding', moment_clean, date_str, random_suffix]
+        
         else:
-            # Portrait mode (wedding or engagement)
-            mode_name = 'Wedding' if job.studio_mode == 'portrait_wedding' else 'Engagement'
-            theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme) if job.photo_theme else 'Portrait'
-            
-            mode_clean = clean_for_filename(mode_name)
-            theme_clean = clean_for_filename(theme_display)
-            
-            filename_parts = [mode_clean, theme_clean, date_str, random_suffix]
+            # Fallback for unexpected mode
+            filename_parts = ['Design', date_str, random_suffix]
         
         base_name = '_'.join(part for part in filename_parts if part)
         

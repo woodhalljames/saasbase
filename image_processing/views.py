@@ -1,4 +1,3 @@
-
 import json
 import logging
 import io
@@ -20,7 +19,10 @@ from usage_limits.decorators import usage_limit_required
 from .models import (
     UserImage, ImageProcessingJob, ProcessedImage, Collection, CollectionItem, 
     Favorite, FavoriteUpload, JobReferenceImage,
-    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES, PORTRAIT_THEMES, PORTRAIT_SETTINGS
+    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES,
+    ENGAGEMENT_SETTINGS, ENGAGEMENT_ACTIVITIES,
+    WEDDING_MOMENTS, WEDDING_SETTINGS, ATTIRE_STYLES,
+    COMPOSITION_CHOICES, EMOTIONAL_TONE_CHOICES
 )
 from .forms import ImageUploadForm
 from .tasks import process_image_job
@@ -126,14 +128,13 @@ def add_star_status_to_images(user, user_images):
     return user_images
 
 
-def generate_prompt_for_job(studio_mode, reference_count, **params):
+def generate_prompt_for_job(studio_mode, **params):
     """
     Generate prompt BEFORE creating job.
     This is called in views, not in models.
     
     Args:
         studio_mode: 'venue', 'portrait_wedding', or 'portrait_engagement'
-        reference_count: Number of reference images (we know this before saving!)
         **params: All other job parameters
         
     Returns:
@@ -153,19 +154,23 @@ def generate_prompt_for_job(studio_mode, reference_count, **params):
             )
         elif studio_mode in ['portrait_wedding', 'portrait_engagement']:
             from .prompt_generator import PortraitPromptGenerator
-            portrait_style = 'wedding' if studio_mode == 'portrait_wedding' else 'engagement'
             return PortraitPromptGenerator.generate_prompt(
-                portrait_style=portrait_style,
-                photo_theme=params.get('photo_theme'),
-                setting_type=params.get('setting_type'),
-                pose_style=params.get('pose_style'),
+                studio_mode=studio_mode,
+                # Engagement fields
+                engagement_setting=params.get('engagement_setting'),
+                engagement_activity=params.get('engagement_activity'),
+                # Wedding fields
+                wedding_moment=params.get('wedding_moment'),
+                wedding_setting=params.get('wedding_setting'),
+                # Shared fields
                 attire_style=params.get('attire_style'),
+                composition=params.get('composition'),
+                emotional_tone=params.get('emotional_tone'),
                 season=params.get('season'),
                 lighting_mood=params.get('lighting_mood'),
                 color_scheme=params.get('color_scheme'),
                 custom_prompt=params.get('custom_prompt'),
-                user_instructions=params.get('user_instructions'),
-                reference_count=reference_count  # We know this!
+                user_instructions=params.get('user_instructions')
             )
     except ImportError as e:
         logger.error(f"Could not import prompt generator: {e}")
@@ -268,7 +273,10 @@ def wedding_studio(request):
     
     sorted_wedding_themes = sorted(WEDDING_THEMES, key=lambda x: x[1])
     sorted_color_schemes = sorted(COLOR_SCHEMES, key=lambda x: x[1])
-    sorted_portrait_themes = sorted(PORTRAIT_THEMES, key=lambda x: x[1])
+    sorted_engagement_activities = sorted(ENGAGEMENT_ACTIVITIES, key=lambda x: x[1])
+    sorted_engagement_settings = sorted(ENGAGEMENT_SETTINGS, key=lambda x: x[1])
+    sorted_wedding_moments = sorted(WEDDING_MOMENTS, key=lambda x: x[1])
+    sorted_wedding_settings = sorted(WEDDING_SETTINGS, key=lambda x: x[1])
 
     from .forms import SEASON_CHOICES, LIGHTING_CHOICES
 
@@ -279,8 +287,13 @@ def wedding_studio(request):
         'recent_jobs': recent_jobs,
         'wedding_themes': sorted_wedding_themes,
         'space_types': SPACE_TYPES,
-        'portrait_themes': sorted_portrait_themes,
-        'portrait_settings': PORTRAIT_SETTINGS,
+        'engagement_activities': sorted_engagement_activities,
+        'engagement_settings': sorted_engagement_settings,
+        'wedding_moments': sorted_wedding_moments,
+        'wedding_settings': sorted_wedding_settings,
+        'attire_styles': ATTIRE_STYLES,
+        'composition_choices': COMPOSITION_CHOICES,
+        'emotional_tone_choices': EMOTIONAL_TONE_CHOICES,
         'color_schemes': sorted_color_schemes,
         'season_choices': SEASON_CHOICES,
         'lighting_choices': LIGHTING_CHOICES,
@@ -437,22 +450,42 @@ def process_wedding_image(request, pk):
                 'space_type': space_type if space_type else '',
             })
             
-        else:  # Portrait modes
-            photo_theme = data.get('photo_theme', '').strip()
-            setting_type = data.get('setting_type', '').strip()
-            pose_style = data.get('pose_style', '').strip()
+        elif studio_mode == 'portrait_engagement':
+            # Engagement portrait mode
+            engagement_setting = data.get('engagement_setting', '').strip()
+            engagement_activity = data.get('engagement_activity', '').strip()
             
-            if not custom_prompt and not pose_style:
+            if not custom_prompt and not engagement_activity:
                 return JsonResponse({
                     'success': False,
-                    'error': 'Pose/action is required for portrait mode'
+                    'error': 'Activity/pose is required for engagement mode'
                 }, status=400)
             
             job_params.update({
-                'photo_theme': photo_theme if photo_theme else '',
-                'setting_type': setting_type if setting_type else '',
-                'pose_style': pose_style,
+                'engagement_setting': engagement_setting if engagement_setting else '',
+                'engagement_activity': engagement_activity,
                 'attire_style': data.get('attire_style', ''),
+                'composition': data.get('composition', ''),
+                'emotional_tone': data.get('emotional_tone', ''),
+            })
+            
+        elif studio_mode == 'portrait_wedding':
+            # Wedding portrait mode
+            wedding_setting = data.get('wedding_setting', '').strip()
+            wedding_moment = data.get('wedding_moment', '').strip()
+            
+            if not custom_prompt and not wedding_moment:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Moment/scene is required for wedding portrait mode'
+                }, status=400)
+            
+            job_params.update({
+                'wedding_setting': wedding_setting if wedding_setting else '',
+                'wedding_moment': wedding_moment,
+                'attire_style': data.get('attire_style', ''),
+                'composition': data.get('composition', ''),
+                'emotional_tone': data.get('emotional_tone', ''),
             })
         
         # Optional fields
@@ -462,20 +495,27 @@ def process_wedding_image(request, pk):
             if value:
                 job_params[field] = value
         
-        # Get reference image IDs
+        # Get reference image IDs - Max 2 additional images (3 total including primary)
         reference_image_ids = data.get('reference_image_ids', [])
         if reference_image_ids and isinstance(reference_image_ids, list):
-            reference_image_ids = reference_image_ids[:2]  # Max 2 additional (3 total)
+            # Enforce max 3 images total (primary + up to 2 references)
+            reference_image_ids = reference_image_ids[:2]
         else:
             reference_image_ids = []
         
-        # Calculate total image count (primary + references)
+        # Calculate total image count
         total_image_count = 1 + len(reference_image_ids)
+        
+        # Validate max 3 images
+        if total_image_count > 3:
+            return JsonResponse({
+                'success': False,
+                'error': 'Maximum 3 images allowed per transformation'
+            }, status=400)
         
         # CRITICAL: Generate prompt BEFORE creating job
         generated_prompt = generate_prompt_for_job(
             studio_mode=studio_mode,
-            reference_count=total_image_count,
             **job_params
         )
         
@@ -563,13 +603,22 @@ def job_status(request, job_id):
                     data['theme_display'] = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
                 if job.space_type:
                     data['space_display'] = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-            else:
-                data['photo_theme'] = job.photo_theme
-                data['setting_type'] = job.setting_type
-                if job.photo_theme:
-                    data['theme_display'] = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme)
-                if job.setting_type:
-                    data['setting_display'] = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type)
+            elif job.studio_mode == 'portrait_engagement':
+                # Engagement portrait mode
+                data['engagement_activity'] = job.engagement_activity
+                data['engagement_setting'] = job.engagement_setting
+                if job.engagement_activity:
+                    data['activity_display'] = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, job.engagement_activity)
+                if job.engagement_setting:
+                    data['setting_display'] = dict(ENGAGEMENT_SETTINGS).get(job.engagement_setting, job.engagement_setting)
+            elif job.studio_mode == 'portrait_wedding':
+                # Wedding portrait mode
+                data['wedding_moment'] = job.wedding_moment
+                data['wedding_setting'] = job.wedding_setting
+                if job.wedding_moment:
+                    data['moment_display'] = dict(WEDDING_MOMENTS).get(job.wedding_moment, job.wedding_moment)
+                if job.wedding_setting:
+                    data['setting_display'] = dict(WEDDING_SETTINGS).get(job.wedding_setting, job.wedding_setting)
             
             if job.season:
                 data['season'] = job.season
@@ -790,24 +839,16 @@ def favorites_list(request):
             job.theme_display = "Custom Design"
             job.space_display = "Custom"
         elif job.studio_mode == 'venue':
-            job.theme_display = dict(WEDDING_THEMES).get(
-                job.wedding_theme, 
-                job.wedding_theme or 'Unknown'
-            )
-            job.space_display = dict(SPACE_TYPES).get(
-                job.space_type, 
-                job.space_type or 'Unknown'
-            )
-        else:
-            # Portrait mode
-            job.theme_display = dict(PORTRAIT_THEMES).get(
-                job.photo_theme, 
-                job.photo_theme or 'Unknown'
-            )
-            job.space_display = dict(PORTRAIT_SETTINGS).get(
-                job.setting_type, 
-                job.setting_type or 'Unknown'
-            )
+            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, '') if job.wedding_theme else ''
+            job.space_display = dict(SPACE_TYPES).get(job.space_type, '') if job.space_type else ''
+        elif job.studio_mode == 'portrait_engagement':
+            # Engagement portrait mode
+            job.theme_display = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, '') if job.engagement_activity else ''
+            job.space_display = dict(ENGAGEMENT_SETTINGS).get(job.engagement_setting, '') if job.engagement_setting else ''
+        elif job.studio_mode == 'portrait_wedding':
+            # Wedding portrait mode
+            job.theme_display = dict(WEDDING_MOMENTS).get(job.wedding_moment, '') if job.wedding_moment else ''
+            job.space_display = dict(WEDDING_SETTINGS).get(job.wedding_setting, '') if job.wedding_setting else ''
         
         # Mark as favorited
         favorite.processed_image.is_favorited = True
@@ -827,45 +868,12 @@ def favorites_list(request):
 
 @login_required
 def redo_transformation_with_job(request, job_id):
-    """Redirect to wedding studio with job parameters pre-filled"""
+    """Redirect to wedding studio with job_id parameter to restore all settings and images"""
     job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
     
-    params = {}
-    params['studio_mode'] = job.studio_mode
-    
-    if job.custom_prompt:
-        params['custom_prompt'] = job.custom_prompt
-    else:
-        if job.studio_mode == 'venue':
-            if job.wedding_theme:
-                params['wedding_theme'] = job.wedding_theme
-            if job.space_type:
-                params['space_type'] = job.space_type
-        else:
-            if job.photo_theme:
-                params['photo_theme'] = job.photo_theme
-            if job.setting_type:
-                params['setting_type'] = job.setting_type
-            if job.pose_style:
-                params['pose_style'] = job.pose_style
-            if job.attire_style:
-                params['attire_style'] = job.attire_style
-        
-        if job.season:
-            params['season'] = job.season
-        if job.lighting_mood:
-            params['lighting'] = job.lighting_mood
-        if job.color_scheme:
-            params['color_scheme'] = job.color_scheme
-    
-    if job.user_instructions:
-        params['user_instructions'] = job.user_instructions
-    
-    params['image_id'] = job.user_image.id
-    
+    # Simple redirect with just the job_id - studio will fetch details via AJAX
     base_url = reverse('image_processing:wedding_studio')
-    query_string = urlencode(params)
-    redirect_url = f"{base_url}?{query_string}"
+    redirect_url = f"{base_url}?job_id={job_id}"
     
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({
@@ -876,6 +884,144 @@ def redo_transformation_with_job(request, job_id):
     
     return redirect(redirect_url)
 
+
+@login_required
+def get_job_details(request, job_id):
+    """API endpoint to get job details including all images and settings"""
+    try:
+        job = get_object_or_404(ImageProcessingJob, id=job_id, user_image__user=request.user)
+        
+        # Get all images used in this job with full data
+        available_images = []
+        missing_images = []
+        
+        # Try to add primary image with full data
+        if job.user_image:
+            try:
+                if job.user_image.image:
+                    available_images.append({
+                        'id': job.user_image.id,
+                        'name': job.user_image.original_filename,
+                        'url': job.user_image.image.url,
+                        'thumbnailUrl': job.user_image.thumbnail.url if job.user_image.thumbnail else job.user_image.image.url,
+                        'width': job.user_image.width,
+                        'height': job.user_image.height,
+                        'file_size': job.user_image.file_size,
+                        'image_type': job.user_image.image_type,
+                    })
+            except Exception as e:
+                missing_images.append('primary')
+                logger.warning(f"Primary image for job {job_id} is missing: {str(e)}")
+        else:
+            missing_images.append('primary')
+            logger.warning(f"Primary image for job {job_id} is None")
+        
+        # Try to add reference images with full data
+        reference_images = JobReferenceImage.objects.filter(
+            job=job,
+            reference_image__isnull=False
+        ).select_related('reference_image').order_by('order')
+        
+        for ref in reference_images:
+            try:
+                if ref.reference_image and ref.reference_image.image:
+                    available_images.append({
+                        'id': ref.reference_image.id,
+                        'name': ref.reference_image.original_filename,
+                        'url': ref.reference_image.image.url,
+                        'thumbnailUrl': ref.reference_image.thumbnail.url if ref.reference_image.thumbnail else ref.reference_image.image.url,
+                        'width': ref.reference_image.width,
+                        'height': ref.reference_image.height,
+                        'file_size': ref.reference_image.file_size,
+                        'image_type': ref.reference_image.image_type,
+                    })
+            except Exception as e:
+                missing_images.append(f'reference_{ref.order}')
+                logger.warning(f"Reference image {ref.order} for job {job_id} error: {str(e)}")
+        
+        # Count null reference images (deleted)
+        null_references_count = JobReferenceImage.objects.filter(
+            job=job,
+            reference_image__isnull=True
+        ).count()
+        
+        if null_references_count > 0:
+            for i in range(null_references_count):
+                missing_images.append(f'reference_deleted_{i}')
+        
+        # Build settings object
+        settings_data = {
+            'studio_mode': job.studio_mode,
+        }
+        
+        # Add custom prompt if exists
+        if job.custom_prompt:
+            settings_data['custom_prompt'] = job.custom_prompt
+        else:
+            # Venue mode settings
+            if job.wedding_theme:
+                settings_data['wedding_theme'] = job.wedding_theme
+            if job.space_type:
+                settings_data['space_type'] = job.space_type
+            
+            # Engagement portrait settings
+            if job.engagement_setting:
+                settings_data['engagement_setting'] = job.engagement_setting
+            if job.engagement_activity:
+                settings_data['engagement_activity'] = job.engagement_activity
+            
+            # Wedding portrait settings
+            if job.wedding_moment:
+                settings_data['wedding_moment'] = job.wedding_moment
+            if job.wedding_setting:
+                settings_data['wedding_setting'] = job.wedding_setting
+            
+            # Shared portrait settings
+            if job.attire_style:
+                settings_data['attire_style'] = job.attire_style
+            if job.composition:
+                settings_data['composition'] = job.composition
+            if job.emotional_tone:
+                settings_data['emotional_tone'] = job.emotional_tone
+            
+            # Shared optional settings
+            if job.season:
+                settings_data['season'] = job.season
+            if job.lighting_mood:
+                settings_data['lighting_mood'] = job.lighting_mood
+            if job.color_scheme:
+                settings_data['color_scheme'] = job.color_scheme
+        
+        if job.user_instructions:
+            settings_data['user_instructions'] = job.user_instructions
+        
+        # Prepare response with warning if images are missing
+        response_data = {
+            'success': True,
+            'job_id': job.id,
+            'images': available_images,  # Full image data, not just IDs
+            'settings': settings_data,
+            'images_available': len(available_images),
+            'images_missing': len(missing_images)
+        }
+        
+        # Add warning message if some images are missing
+        if missing_images:
+            total_images = len(available_images) + len(missing_images)
+            if len(available_images) == 0:
+                response_data['warning'] = f"All {total_images} images from this job have been deleted. Settings restored, but please select new images."
+            else:
+                response_data['warning'] = f"{len(missing_images)} of {total_images} images have been deleted. Settings restored with {len(available_images)} available image(s)."
+        
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error fetching job details: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'Failed to load job details'
+        }, status=500)
+
 @login_required
 def processing_history(request):
     """
@@ -883,7 +1029,10 @@ def processing_history(request):
     """
     jobs = ImageProcessingJob.objects.filter(
         user_image__user=request.user
-    ).select_related('user_image').prefetch_related('processed_images').order_by('-created_at')
+    ).select_related('user_image').prefetch_related(
+        'processed_images',
+        'reference_images__reference_image'  # Prefetch reference images to avoid N+1 queries
+    ).order_by('-created_at')
     
     favorite_ids = set(
         Favorite.objects.filter(user=request.user)
@@ -897,29 +1046,19 @@ def processing_history(request):
             job.prompt_preview = job.custom_prompt[:100] + ('...' if len(job.custom_prompt) > 100 else '')
         elif job.studio_mode == 'venue':
             job.mode_display_text = 'Venue Design'
-            # Build theme display manually
-            if job.wedding_theme:
-                job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-            else:
-                job.theme_display = 'No theme'
-            
-            if job.space_type:
-                job.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
-            else:
-                job.space_display = 'No space type'
-        else:
-            # Portrait modes
-            job.mode_display_text = 'Wedding Portrait' if job.studio_mode == 'portrait_wedding' else 'Engagement Portrait'
-            
-            if job.photo_theme:
-                job.theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme)
-            else:
-                job.theme_display = 'No theme'
-            
-            if job.setting_type:
-                job.setting_display = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type)
-            else:
-                job.setting_display = 'No setting'
+            # Build theme display manually - don't show if not set
+            job.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, '') if job.wedding_theme else ''
+            job.space_display = dict(SPACE_TYPES).get(job.space_type, '') if job.space_type else ''
+        elif job.studio_mode == 'portrait_engagement':
+            # Engagement portrait mode
+            job.mode_display_text = 'Engagement Portrait'
+            job.theme_display = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, '') if job.engagement_activity else ''
+            job.space_display = dict(ENGAGEMENT_SETTINGS).get(job.engagement_setting, '') if job.engagement_setting else ''
+        elif job.studio_mode == 'portrait_wedding':
+            # Wedding portrait mode
+            job.mode_display_text = 'Wedding Portrait'
+            job.theme_display = dict(WEDDING_MOMENTS).get(job.wedding_moment, '') if job.wedding_moment else ''
+            job.space_display = dict(WEDDING_SETTINGS).get(job.wedding_setting, '') if job.wedding_setting else ''
         
         # Add favorite status
         for processed_image in job.processed_images.all():
@@ -1044,15 +1183,22 @@ def processed_image_detail(request, pk):
     
     job = processed_image.processing_job
     
+    # Set display values, but don't show "Unknown"
     if job.custom_prompt:
         theme_display = "Custom Design"
         space_display = "Custom"
     elif job.studio_mode == 'venue':
-        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme or 'Unknown')
-        space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type or 'Unknown')
+        theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, '') if job.wedding_theme else ''
+        space_display = dict(SPACE_TYPES).get(job.space_type, '') if job.space_type else ''
+    elif job.studio_mode == 'portrait_engagement':
+        theme_display = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, '') if job.engagement_activity else ''
+        space_display = dict(ENGAGEMENT_SETTINGS).get(job.engagement_setting, '') if job.engagement_setting else ''
+    elif job.studio_mode == 'portrait_wedding':
+        theme_display = dict(WEDDING_MOMENTS).get(job.wedding_moment, '') if job.wedding_moment else ''
+        space_display = dict(WEDDING_SETTINGS).get(job.wedding_setting, '') if job.wedding_setting else ''
     else:
-        theme_display = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme or 'Unknown')
-        space_display = dict(PORTRAIT_SETTINGS).get(job.setting_type, job.setting_type or 'Unknown')
+        theme_display = ''
+        space_display = ''
     
     context = {
         'processed_image': processed_image,
@@ -1096,9 +1242,23 @@ def collection_detail(request, collection_id):
         .values_list('processed_image_id', flat=True)
     )
     
+    # Add display properties to items
     for item in items:
+        # Set image URL
         if item.processed_image:
+            item.image_url = item.processed_image.processed_image.url
+            item.image_title = f"{item.processed_image.processing_job.mode_display}"
             item.processed_image.is_favorited = item.processed_image.id in favorite_ids
+            
+            # Add theme and space display names
+            job = item.processed_image.processing_job
+            if job.wedding_theme:
+                item.theme_display = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
+            if job.space_type:
+                item.space_display = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+        elif item.user_image:
+            item.image_url = item.user_image.thumbnail.url if item.user_image.thumbnail else item.user_image.image.url
+            item.image_title = item.user_image.original_filename
     
     context = {
         'collection': collection,

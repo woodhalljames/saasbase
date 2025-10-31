@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Wedding Studio - AI Transformation{% endblock %}
+{% block title %}Wedding Studio - Smart Transformations{% endblock %}
 {% block css %}
 {{ block.super }}
 <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}{% url 'image_processing:wedding_studio' %}">
@@ -47,23 +47,179 @@
 
 /* Selected Images Card */
 .selected-images-card {
-  min-height: 500px;
-  max-height: 500px;
+  max-height: none;
   overflow-y: auto;
+}
+
+/* Studio Settings card (first) expands with content */
+.studio-card:first-child {
+  min-height: 550px;
+  height: auto !important;  /* Allow to grow */
+}
+
+/* Upload and Selected cards stay fixed height */
+.studio-card:nth-child(2),
+.studio-card:nth-child(3) {
+  height: 550px !important;  /* Fixed height */
+  overflow: hidden;
+}
+
+.studio-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+/* Image preview area - centered and fills space */
+#imagePreview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+}
+
+#imagePreview img {
+  border: 3px solid #00F5FF;
+  box-shadow: 0 4px 12px rgba(0, 245, 255, 0.3);
+  margin-bottom: 1.5rem;
+}
+
+/* Upload zone - fill entire card body */
+.upload-zone {
+  border: 2px dashed #dee2e6;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  background: rgba(248, 249, 250, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 1rem;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: #00F5FF;
+  background-color: rgba(0, 245, 255, 0.05);
+  transform: scale(1.005);
+}
+
+/* Mobile: Better alignment and spacing */
+@media (max-width: 768px) {
+  /* All cards get natural height on mobile */
+  .studio-card:first-child {
+    min-height: auto;
+  }
+  
+  .studio-card:nth-child(2),
+  .studio-card:nth-child(3) {
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  .studio-card {
+    height: auto;
+  }
+  
+  .studio-card .card-body {
+    overflow: visible;
+  }
+  
+  /* Upload area relative positioning on mobile */
+  #uploadArea {
+    position: relative !important;
+    min-height: 400px;
+  }
+  
+  #imagePreview {
+    position: relative !important;
+    min-height: 350px;
+    padding: 1.5rem 1rem;
+  }
+  
+  #imagePreview img {
+    max-height: 300px !important;
+    margin-bottom: 1rem;
+  }
+  
+  #imagePreview .btn {
+    width: 100%;
+    max-width: 300px;
+    margin: 0.25rem 0 !important;
+  }
+  
+  #clearPreviewBtn {
+    top: 5px !important;
+    right: 5px !important;
+  }
+  
+  .upload-zone {
+    position: relative !important;
+    min-height: 350px;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+  
+  .selected-image-item {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  #imagePreview img {
+    max-height: 250px !important;
+  }
+  
+  .selected-image-item {
+    max-width: 230px;
+  }
+  
+  .upload-zone {
+    min-height: 300px;
+  }
+  
+  #uploadArea {
+    min-height: 300px;
+  }
 }
 
 .selected-image-item {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #00F5FF;
+  border: 3px solid #00F5FF;
   cursor: move;
-  margin-bottom: 0.5rem;
-  max-width: 80px;
+  margin-bottom: 1rem;
+  max-width: 140px;  /* Increased from 125px */
   margin-left: auto;
   margin-right: auto;
+  transition: transform 0.2s ease;
+}
+
+.selected-image-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 245, 255, 0.3);
 }
 
 .selected-image-item img {
@@ -74,37 +230,76 @@
 
 .selected-image-item .remove-btn {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
+  top: 4px;
+  right: 4px;
+  width: 24px;  /* Increased from 18px */
+  height: 24px;
   background: #dc3545;
   color: white;
   border-radius: 50%;
   border: none;
-  font-size: 10px;
+  font-size: 12px;  /* Increased from 10px */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 2;
+  transition: transform 0.2s ease;
+}
+
+.selected-image-item .remove-btn:hover {
+  transform: scale(1.15);
+  background: #bb2d3b;
 }
 
 .selected-image-item .order-badge {
   position: absolute;
-  bottom: 2px;
-  left: 2px;
-  background: rgba(0, 0, 0, 0.7);
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.8);
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 24px;  /* Increased from 18px */
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: 12px;  /* Increased from 10px */
   font-weight: bold;
   z-index: 2;
+  border: 2px solid #00F5FF;
+}
+
+/* Mobile: Make images MUCH bigger */
+@media (max-width: 768px) {
+  .selected-image-item {
+    max-width: 180px;  /* Reduced from 200px (10% smaller) */
+    margin-bottom: 1.5rem;
+    border-width: 4px;
+  }
+  
+  .selected-image-item .remove-btn {
+    width: 32px;  /* Even bigger buttons on mobile */
+    height: 32px;
+    font-size: 16px;
+    top: 6px;
+    right: 6px;
+  }
+  
+  .selected-image-item .order-badge {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+    bottom: 6px;
+    left: 6px;
+  }
+}
+
+/* Small mobile: Nearly full width */
+@media (max-width: 480px) {
+  .selected-image-item {
+    max-width: 215px;  /* Reduced from 240px (10% smaller) */
+  }
 }
 
 .selected-images-placeholder {
@@ -169,28 +364,6 @@
   font-size: 12px;
 }
 
-/* Upload zone */
-.upload-zone {
-  border: 2px dashed #dee2e6;
-  border-radius: 15px;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  background: rgba(248, 249, 250, 0.5);
-  min-height: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-}
-
-.upload-zone:hover,
-.upload-zone.dragover {
-  border-color: #00F5FF;
-  background-color: rgba(0, 245, 255, 0.05);
-  transform: scale(1.01);
-}
-
 /* Mode-specific field groups */
 .mode-fields {
   display: none;
@@ -237,6 +410,19 @@
   font-weight: bold;
 }
 
+/* Mobile: Make recent images MUCH bigger - match favorite uploads */
+@media (max-width: 768px) {
+  .venue-thumbnail {
+    height: 120px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .venue-thumbnail {
+    height: 140px !important;
+  }
+}
+
 .object-fit-cover {
   object-fit: cover;
 }
@@ -258,7 +444,7 @@
     
     <!-- Left: Studio Controls -->
     <div class="col-xl-3 col-lg-3 col-md-12">
-      <div class="card shadow-sm" style="min-height: 500px;">
+      <div class="card shadow-sm studio-card">
         <div class="card-header py-2 bg-primary text-white">
           <h6 class="mb-0 fw-bold">🎨 Studio Settings</h6>
         </div>
@@ -307,36 +493,57 @@
                     <option value="{{ value }}">{{ label }}</option>
                   {% endfor %}
                 </select>
-                <small class="form-text text-muted">Optional: Specify the type of space</small>
+                <small class="form-text text-muted">Optional: Specify the type of space to decorate</small>
               </div>
             </div>
 
-            <!-- PORTRAIT MODE FIELDS -->
-            <div class="mode-fields" id="portrait-fields">
+            <!-- ENGAGEMENT PORTRAIT MODE FIELDS -->
+            <div class="mode-fields" id="engagement-fields">
               <div class="mb-3">
-                <label for="setting-type" class="form-label fw-bold small">Setting</label>
-                <select class="form-select" id="setting-type" name="setting_type">
+                <label for="engagement-activity" class="form-label fw-bold small">Activity/Pose <span class="text-danger">*</span></label>
+                <select class="form-select" id="engagement-activity" name="engagement_activity">
+                  <option value="">Choose activity...</option>
+                  {% for value, label in engagement_activities %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">Required: What are they doing together?</small>
+              </div>
+
+              <div class="mb-3">
+                <label for="engagement-setting" class="form-label fw-bold small">Setting</label>
+                <select class="form-select" id="engagement-setting" name="engagement_setting">
                   <option value="">Choose setting (optional)...</option>
-                  {% for value, label in portrait_settings %}
+                  {% for value, label in engagement_settings %}
                     <option value="{{ value }}">{{ label }}</option>
                   {% endfor %}
                 </select>
                 <small class="form-text text-muted">Optional: Where should the photo be taken</small>
               </div>
+            </div>
+
+            <!-- WEDDING PORTRAIT MODE FIELDS -->
+            <div class="mode-fields" id="wedding-fields">
+              <div class="mb-3">
+                <label for="wedding-moment" class="form-label fw-bold small">Moment/Scene <span class="text-danger">*</span></label>
+                <select class="form-select" id="wedding-moment" name="wedding_moment">
+                  <option value="">Choose moment...</option>
+                  {% for value, label in wedding_moments %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">Required: Which moment should be captured?</small>
+              </div>
 
               <div class="mb-3">
-                <label for="pose-style" class="form-label fw-bold small">Pose/Action <span class="text-danger">*</span></label>
-                <select class="form-select" id="pose-style" name="pose_style">
-                  <option value="">Choose pose...</option>
-                  <option value="formal_portrait">Formal Portrait</option>
-                  <option value="romantic_embrace">Romantic Embrace</option>
-                  <option value="candid_laughing">Candid & Laughing</option>
-                  <option value="walking_together">Walking Together</option>
-                  <option value="sitting_intimate">Sitting Intimate</option>
-                  <option value="dancing">Dancing</option>
-                  <option value="playful_fun">Playful & Fun</option>
+                <label for="wedding-setting" class="form-label fw-bold small">Setting</label>
+                <select class="form-select" id="wedding-setting" name="wedding_setting">
+                  <option value="">Choose setting (optional)...</option>
+                  {% for value, label in wedding_settings %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
                 </select>
-                <small class="form-text text-muted">Required: How should subjects be posed</small>
+                <small class="form-text text-muted">Optional: Location for this moment</small>
               </div>
             </div>
 
@@ -350,29 +557,39 @@
               </div>
               
               <div id="optionalFields" class="d-none">
-                <!-- Portrait Optional Fields -->
+                <!-- Portrait-Only Optional Fields (Engagement & Wedding) -->
                 <div class="portrait-optional-fields d-none">
-                  <div class="mb-3">
-                    <label for="photo-theme" class="form-label small">Photo Theme</label>
-                    <select class="form-select form-select-sm" id="photo-theme" name="photo_theme">
-                      <option value="">Choose theme...</option>
-                      {% for value, label in portrait_themes %}
-                        <option value="{{ value }}">{{ label }}</option>
-                      {% endfor %}
-                    </select>
-                  </div>
-
                   <div class="mb-3">
                     <label for="attire-style" class="form-label small">Attire Style</label>
                     <select class="form-select form-select-sm" id="attire-style" name="attire_style">
-                      <option value="">Choose attire...</option>
-                      <option value="traditional_formal">Traditional Wedding Attire</option>
-                      <option value="modern_chic">Modern Chic</option>
-                      <option value="casual_elegant">Casual Elegant</option>
-                      <option value="bohemian">Bohemian Style</option>
-                      <option value="vintage_inspired">Vintage Inspired</option>
-                      <option value="cultural_traditional">Cultural Traditional</option>
+                      <option value="">Choose attire (optional)...</option>
+                      {% for value, label in attire_styles %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
                     </select>
+                    <small class="form-text text-muted">Optional: Style of clothing for the couple</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="composition" class="form-label small">Composition</label>
+                    <select class="form-select form-select-sm" id="composition" name="composition">
+                      <option value="">Automatic (optional)...</option>
+                      {% for value, label in composition_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Optional: Camera angle and framing style</small>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="emotional-tone" class="form-label small">Emotional Tone</label>
+                    <select class="form-select form-select-sm" id="emotional-tone" name="emotional_tone">
+                      <option value="">Automatic (optional)...</option>
+                      {% for value, label in emotional_tone_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Optional: Overall mood and feeling of the photo</small>
                   </div>
                 </div>
 
@@ -383,6 +600,7 @@
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <small class="form-text text-muted">Optional: Time of year for seasonal elements</small>
                 </div>
 
                 <div class="mb-3">
@@ -392,6 +610,7 @@
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <small class="form-text text-muted">Optional: Lighting style and atmosphere</small>
                 </div>
 
                 <div class="mb-3">
@@ -402,12 +621,14 @@
                       <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                   </select>
+                  <small class="form-text text-muted">Optional: Color palette for the design</small>
                 </div>
 
                 <div class="mb-3">
                   <label for="user-instructions" class="form-label small">Additional Instructions</label>
                   <textarea class="form-control form-control-sm" id="user-instructions" name="user_instructions" 
                             rows="3" placeholder="Any specific requests..."></textarea>
+                  <small class="form-text text-muted">Optional: Any other details or preferences</small>
                 </div>
               </div>
             </div>
@@ -432,11 +653,32 @@
 
     <!-- Center: Upload Area -->
     <div class="col-xl-6 col-lg-5 col-md-12">
-      <div class="card shadow-sm" style="min-height: 500px;">
-        <div class="card-body p-4">
+      <div class="card shadow-sm studio-card">
+        <div class="card-body p-4 position-relative">
           
           <!-- Upload Area -->
-          <div id="uploadArea">
+          <div id="uploadArea" class="position-absolute" style="top: 0; left: 0; right: 0; bottom: 0;">
+            <!-- Image Preview (shown when images selected) -->
+            <div id="imagePreview" class="d-none position-relative">
+              <!-- X button to clear preview -->
+              <button type="button" class="btn-close position-absolute" id="clearPreviewBtn" 
+                      style="top: 10px; right: 10px; z-index: 10; background-color: white; border-radius: 50%; padding: 0.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"
+                      aria-label="Remove image"></button>
+              
+              <div class="text-center mb-3 position-relative">
+                <img id="previewImage" src="" alt="Selected image" class="img-fluid rounded shadow-sm" style="max-height: 350px; max-width: 100%; object-fit: contain;">
+              </div>
+              <div class="text-center">
+                <button type="button" class="btn btn-outline-primary upload-btn" id="uploadNewBtn">
+                  <i class="bi bi-cloud-upload me-2"></i> Upload New
+                </button>
+                <button type="button" class="btn btn-outline-secondary ms-2 d-md-none camera-btn" id="cameraNewBtn">
+                  <i class="bi bi-camera me-2"></i> Camera
+                </button>
+              </div>
+            </div>
+            
+            <!-- Upload Zone (shown when no images) -->
             <div class="upload-zone" id="dropZone">
               <div class="mb-4">
                 <button type="button" class="btn btn-primary btn-lg upload-btn" id="uploadBtn">
@@ -468,7 +710,7 @@
 
     <!-- Right: Selected Images -->
     <div class="col-xl-3 col-lg-4 col-md-12">
-      <div class="card shadow-sm selected-images-card">
+      <div class="card shadow-sm selected-images-card studio-card">
         <div class="card-header py-2 bg-success text-white">
           <h6 class="mb-0 fw-bold">
             <i class="bi bi-images me-1"></i>
@@ -581,12 +823,328 @@ function initializeMultiModeStudio() {
             this.loadFavoriteUploads();
             this.updateUploadText();
             
+            // Handle URL parameters (job_id or image_id)
+            this.handleURLParameters();
+            
             document.addEventListener('favoriteUploadChanged', (e) => {
                 console.log('⭐ Favorite upload changed event received:', e.detail);
                 this.loadFavoriteUploads();
             });
             
             console.log('✅ Multi-Mode Studio ready!');
+        }
+
+        async handleURLParameters() {
+            const params = new URLSearchParams(window.location.search);
+            const jobId = params.get('job_id');
+            const imageId = params.get('image_id');
+            
+            if (jobId) {
+                // Load job details and auto-select images + settings
+                console.log('📦 Loading job details:', jobId);
+                await this.loadJobDetails(jobId);
+            } else if (imageId) {
+                // Just auto-select single image
+                console.log('🖼️ Auto-selecting image:', imageId);
+                await this.autoSelectImage(imageId);
+            }
+        }
+
+        async loadJobDetails(jobId) {
+            try {
+                const response = await fetch(`/studio/job/${jobId}/details/`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Job details loaded:', data);
+                    
+                    // Check if any images are missing
+                    if (data.images_missing > 0) {
+                        console.warn(`⚠️ ${data.images_missing} image(s) from this job have been deleted`);
+                    }
+                    
+                    // Auto-select all AVAILABLE images from the job (using full image data)
+                    if (data.images && data.images.length > 0) {
+                        for (const imageData of data.images) {
+                            // Check if already selected
+                            if (!this.selectedImages.find(img => img.id === imageData.id)) {
+                                // Check max images
+                                if (this.selectedImages.length < this.maxImages) {
+                                    this.selectedImages.push({
+                                        id: imageData.id,
+                                        url: imageData.url,
+                                        thumbnailUrl: imageData.thumbnailUrl,
+                                        name: imageData.name
+                                    });
+                                    console.log('✅ Auto-selected image:', imageData.name);
+                                }
+                            }
+                        }
+                        
+                        // Re-render the selected images display
+                        this.renderSelectedImages();
+                        this.updateTransformButton();
+                        
+                        // Sync thumbnail selection states in gallery
+                        this.syncThumbnailStates();
+                    } else {
+                        console.warn('⚠️ No images available for this job');
+                    }
+                    
+                    // Pre-fill form settings (always restore settings even if images missing)
+                    this.prefillFormSettings(data.settings);
+                    
+                    // Show appropriate message
+                    if (data.warning) {
+                        // Some images deleted - show warning
+                        this.showNotification(data.warning, 'warning');
+                    } else if (data.images_available > 0) {
+                        // All images available - show success
+                        this.showNotification(
+                            `Ready to transform! Settings and ${data.images_available} image(s) loaded. Click "Transform" to continue.`, 
+                            'success'
+                        );
+                    } else {
+                        // No images available - show info
+                        this.showNotification(
+                            'Settings restored, but original images have been deleted. Please select new images.', 
+                            'info'
+                        );
+                    }
+                } else {
+                    console.error('Failed to load job details:', data.error);
+                    this.showNotification('Failed to load previous settings', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading job details:', error);
+                this.showNotification('Error loading previous settings', 'error');
+            }
+        }
+
+        async autoSelectImage(imageId) {
+            try {
+                // Check if already selected
+                if (this.selectedImages.find(img => img.id === parseInt(imageId))) {
+                    console.log('Image already selected:', imageId);
+                    return;
+                }
+                
+                // Check max images
+                if (this.selectedImages.length >= this.maxImages) {
+                    console.log('Max images reached');
+                    return;
+                }
+                
+                // Fetch image data
+                const response = await fetch(`/studio/favorite-uploads/`);
+                const favData = await response.json();
+                
+                // Find the image in favorites or other sources
+                let imageData = null;
+                for (const fav of favData.favorites) {
+                    if (fav.image.id === parseInt(imageId)) {
+                        imageData = fav.image;
+                        break;
+                    }
+                }
+                
+                if (imageData) {
+                    this.addImageToSelection(imageData);
+                } else {
+                    console.log('Image not found in favorites, fetching directly...');
+                    // Fallback: try to fetch image details directly if needed
+                }
+            } catch (error) {
+                console.error('Error auto-selecting image:', error);
+            }
+        }
+
+        syncThumbnailStates() {
+            // Mark all thumbnails as selected or unselected based on selectedImages array
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                console.log('🔄 Syncing thumbnail selection states...');
+                const thumbnails = document.querySelectorAll('.venue-thumbnail, .favorite-upload-item');
+                
+                let syncCount = 0;
+                thumbnails.forEach(thumbnail => {
+                    const imageId = parseInt(thumbnail.dataset.imageId);
+                    const isSelected = this.selectedImages.some(img => img.id === imageId);
+                    
+                    if (isSelected) {
+                        if (!thumbnail.classList.contains('selected')) {
+                            thumbnail.classList.add('selected');
+                            syncCount++;
+                        }
+                    } else {
+                        if (thumbnail.classList.contains('selected')) {
+                            thumbnail.classList.remove('selected');
+                        }
+                    }
+                });
+                
+                console.log(`✅ Thumbnail states synced (${syncCount} thumbnails marked as selected)`);
+            });
+        }
+
+        switchModeWithoutClearing(mode) {
+            console.log('🔄 Switching to mode (without clearing):', mode);
+            
+            const modeTabs = document.querySelectorAll('.studio-mode-tab');
+            const studioModeInput = document.getElementById('studio-mode');
+            const portraitOptionalFields = document.querySelector('.portrait-optional-fields');
+            
+            // Update active tab
+            modeTabs.forEach(tab => {
+                if (tab.dataset.mode === mode) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // Update hidden input
+            if (studioModeInput) studioModeInput.value = mode;
+            this.currentMode = mode;
+            
+            // Hide all mode field groups
+            document.querySelectorAll('.mode-fields').forEach(f => f.classList.remove('active'));
+            
+            // Show appropriate fields based on mode
+            if (mode === 'venue') {
+                document.getElementById('venue-fields').classList.add('active');
+                if (portraitOptionalFields) {
+                    portraitOptionalFields.classList.add('d-none');
+                }
+            } else if (mode === 'portrait_engagement') {
+                document.getElementById('engagement-fields').classList.add('active');
+                if (portraitOptionalFields) {
+                    portraitOptionalFields.classList.remove('d-none');
+                }
+            } else if (mode === 'portrait_wedding') {
+                document.getElementById('wedding-fields').classList.add('active');
+                if (portraitOptionalFields) {
+                    portraitOptionalFields.classList.remove('d-none');
+                }
+            }
+            
+            this.updateUploadText();
+            // Don't update transform button yet - will do after fields are populated
+        }
+
+        prefillFormSettings(settings) {
+            console.log('📝 Pre-filling form settings:', settings);
+            
+            // STEP 1: Switch mode FIRST (manually, without clearing fields)
+            if (settings.studio_mode) {
+                this.switchModeWithoutClearing(settings.studio_mode);
+            }
+            
+            // STEP 2: Now populate all fields (after mode is set)
+            
+            // Custom prompt
+            if (settings.custom_prompt) {
+                const customPromptField = document.getElementById('custom-prompt');
+                if (customPromptField) customPromptField.value = settings.custom_prompt;
+            }
+            
+            // Venue settings
+            if (settings.wedding_theme) {
+                const themeSelect = document.getElementById('wedding-theme');
+                if (themeSelect) themeSelect.value = settings.wedding_theme;
+            }
+            if (settings.space_type) {
+                const spaceSelect = document.getElementById('space-type');
+                if (spaceSelect) spaceSelect.value = settings.space_type;
+            }
+            
+            // Engagement portrait settings
+            if (settings.engagement_activity) {
+                const activitySelect = document.getElementById('engagement-activity');
+                if (activitySelect) activitySelect.value = settings.engagement_activity;
+            }
+            if (settings.engagement_setting) {
+                const settingSelect = document.getElementById('engagement-setting');
+                if (settingSelect) settingSelect.value = settings.engagement_setting;
+            }
+            
+            // Wedding portrait settings
+            if (settings.wedding_moment) {
+                const momentSelect = document.getElementById('wedding-moment');
+                if (momentSelect) {
+                    momentSelect.value = settings.wedding_moment;
+                    console.log('✅ Set wedding_moment to:', settings.wedding_moment);
+                }
+            }
+            if (settings.wedding_setting) {
+                const settingSelect = document.getElementById('wedding-setting');
+                if (settingSelect) settingSelect.value = settings.wedding_setting;
+            }
+            
+            // Shared portrait settings
+            if (settings.attire_style) {
+                const attireSelect = document.getElementById('attire-style');
+                if (attireSelect) attireSelect.value = settings.attire_style;
+            }
+            if (settings.composition) {
+                const compositionSelect = document.getElementById('composition');
+                if (compositionSelect) compositionSelect.value = settings.composition;
+            }
+            if (settings.emotional_tone) {
+                const emotionalToneSelect = document.getElementById('emotional-tone');
+                if (emotionalToneSelect) emotionalToneSelect.value = settings.emotional_tone;
+            }
+            
+            // Shared settings
+            if (settings.season) {
+                const seasonSelect = document.getElementById('season');
+                if (seasonSelect) seasonSelect.value = settings.season;
+            }
+            if (settings.lighting_mood) {
+                const lightingSelect = document.getElementById('lighting');
+                if (lightingSelect) lightingSelect.value = settings.lighting_mood;
+            }
+            if (settings.color_scheme) {
+                const colorSchemeSelect = document.getElementById('color-scheme');
+                if (colorSchemeSelect) colorSchemeSelect.value = settings.color_scheme;
+            }
+            if (settings.user_instructions) {
+                const instructionsField = document.getElementById('user-instructions');
+                if (instructionsField) instructionsField.value = settings.user_instructions;
+            }
+            
+            // STEP 3: Update transform button state now that fields are populated
+            this.updateTransformButton();
+            
+            console.log('✅ All settings restored');
+        }
+
+        showNotification(message, type = 'info') {
+            const alertTypes = {
+                'success': { class: 'alert-success', icon: 'check-circle' },
+                'error': { class: 'alert-danger', icon: 'exclamation-triangle' },
+                'warning': { class: 'alert-warning', icon: 'exclamation-triangle' },
+                'info': { class: 'alert-info', icon: 'info-circle' }
+            };
+            
+            const alertConfig = alertTypes[type] || alertTypes['info'];
+            
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertConfig.class} alert-dismissible fade show position-fixed`;
+            alert.style.cssText = 'top: 80px; right: 20px; z-index: 9999; max-width: 350px;';
+            alert.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-${alertConfig.icon}-fill me-2"></i>
+                    <div>${message}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentElement) alert.remove();
+            }, 5000);
         }
 
         validateFileFormat(file) {
@@ -620,20 +1178,33 @@ function initializeMultiModeStudio() {
                 tab.addEventListener('click', () => {
                     const mode = tab.dataset.mode;
                     
+                    // Update active tab
                     modeTabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     
+                    // Update hidden input
                     studioModeInput.value = mode;
                     this.currentMode = mode;
                     
+                    // Clear all mode-specific fields when switching
+                    this.clearModeFields();
+                    
+                    // Hide all mode field groups
                     document.querySelectorAll('.mode-fields').forEach(f => f.classList.remove('active'));
+                    
+                    // Show appropriate fields based on mode
                     if (mode === 'venue') {
                         document.getElementById('venue-fields').classList.add('active');
                         if (portraitOptionalFields) {
                             portraitOptionalFields.classList.add('d-none');
                         }
-                    } else {
-                        document.getElementById('portrait-fields').classList.add('active');
+                    } else if (mode === 'portrait_engagement') {
+                        document.getElementById('engagement-fields').classList.add('active');
+                        if (portraitOptionalFields) {
+                            portraitOptionalFields.classList.remove('d-none');
+                        }
+                    } else if (mode === 'portrait_wedding') {
+                        document.getElementById('wedding-fields').classList.add('active');
                         if (portraitOptionalFields) {
                             portraitOptionalFields.classList.remove('d-none');
                         }
@@ -647,22 +1218,67 @@ function initializeMultiModeStudio() {
             });
         }
 
+        clearModeFields() {
+            // Clear venue fields
+            const weddingTheme = document.getElementById('wedding-theme');
+            const spaceType = document.getElementById('space-type');
+            if (weddingTheme) weddingTheme.value = '';
+            if (spaceType) spaceType.value = '';
+            
+            // Clear engagement fields
+            const engagementActivity = document.getElementById('engagement-activity');
+            const engagementSetting = document.getElementById('engagement-setting');
+            if (engagementActivity) engagementActivity.value = '';
+            if (engagementSetting) engagementSetting.value = '';
+            
+            // Clear wedding portrait fields
+            const weddingMoment = document.getElementById('wedding-moment');
+            const weddingSetting = document.getElementById('wedding-setting');
+            if (weddingMoment) weddingMoment.value = '';
+            if (weddingSetting) weddingSetting.value = '';
+            
+            // Clear shared portrait fields (keep these across portrait modes if desired, or clear)
+            const attireStyle = document.getElementById('attire-style');
+            const composition = document.getElementById('composition');
+            const emotionalTone = document.getElementById('emotional-tone');
+            if (attireStyle) attireStyle.value = '';
+            if (composition) composition.value = '';
+            if (emotionalTone) emotionalTone.value = '';
+            
+            // Optional: Keep season, lighting, color_scheme, user_instructions across modes
+            // If you want to clear these too, uncomment:
+            // const season = document.getElementById('season');
+            // const lighting = document.getElementById('lighting');
+            // const colorScheme = document.getElementById('color-scheme');
+            // const userInstructions = document.getElementById('user-instructions');
+            // if (season) season.value = '';
+            // if (lighting) lighting.value = '';
+            // if (colorScheme) colorScheme.value = '';
+            // if (userInstructions) userInstructions.value = '';
+        }
+
         updateUploadText() {
             const title = document.getElementById('uploadTitle');
             const description = document.getElementById('uploadDescription');
             
             if (this.currentMode === 'venue') {
                 title.textContent = 'Upload Your Images';
-                description.textContent = 'Select up to 3 images (venue photos, references)';
-            } else {
+                description.textContent = 'Select up to 3 images (venue, flower bouquet, design references, etc.)';
+            } else if (this.currentMode === 'portrait_engagement') {
                 title.textContent = 'Upload Your Images';
-                description.textContent = 'Select up to 3 images (faces, clothing, location inspiration)';
+                description.textContent = 'Select up to 3 images (selfies, clothing, pet, location reference, etc.)';
+            } else if (this.currentMode === 'portrait_wedding') {
+                title.textContent = 'Upload Your Images';
+                description.textContent = 'Select up to 3 images (selfies, dress, tux, location reference, etc.)';
             }
         }
 
         setupUploadButtons() {
             const uploadBtn = document.getElementById('uploadBtn');
+            const uploadNewBtn = document.getElementById('uploadNewBtn');
             const cameraBtn = document.getElementById('cameraBtn');
+            const cameraNewBtn = document.getElementById('cameraNewBtn');
+            const clearPreviewBtn = document.getElementById('clearPreviewBtn');
             const fileInput = document.getElementById('fileInput');
             const cameraInput = document.getElementById('cameraInput');
 
@@ -673,10 +1289,39 @@ function initializeMultiModeStudio() {
                 });
             }
 
+            if (uploadNewBtn) {
+                uploadNewBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    fileInput.click();
+                });
+            }
+
             if (cameraBtn) {
                 cameraBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     cameraInput.click();
+                });
+            }
+
+            if (cameraNewBtn) {
+                cameraNewBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    cameraInput.click();
+                });
+            }
+
+            if (clearPreviewBtn) {
+                clearPreviewBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // Just hide preview and show upload zone
+                    // DON'T clear selectedImages array
+                    const imagePreview = document.getElementById('imagePreview');
+                    const dropZone = document.getElementById('dropZone');
+                    
+                    if (imagePreview && dropZone) {
+                        imagePreview.classList.add('d-none');
+                        dropZone.classList.remove('d-none');
+                    }
                 });
             }
         }
@@ -808,10 +1453,26 @@ function initializeMultiModeStudio() {
         renderSelectedImages() {
             const container = document.getElementById('selectedImagesContainer');
             const countEl = document.getElementById('selectedCount');
+            const imagePreview = document.getElementById('imagePreview');
+            const dropZone = document.getElementById('dropZone');
+            const previewImage = document.getElementById('previewImage');
             
             if (!container) return;
 
             countEl.textContent = this.selectedImages.length;
+
+            // Update main preview area
+            if (this.selectedImages.length > 0) {
+                // Show most recent image in main preview
+                const mostRecent = this.selectedImages[this.selectedImages.length - 1];
+                previewImage.src = mostRecent.url;
+                imagePreview.classList.remove('d-none');
+                dropZone.classList.add('d-none');
+            } else {
+                // Show upload zone
+                imagePreview.classList.add('d-none');
+                dropZone.classList.remove('d-none');
+            }
 
             if (this.selectedImages.length === 0) {
                 container.innerHTML = `
@@ -944,8 +1605,8 @@ function initializeMultiModeStudio() {
                 });
             }
 
-            // UPDATED: Only listen to required fields
-            const requiredFields = ['wedding-theme', 'pose-style'];
+            // Listen to all required fields for all modes
+            const requiredFields = ['wedding-theme', 'engagement-activity', 'wedding-moment'];
             requiredFields.forEach(fieldId => {
                 const field = document.getElementById(fieldId);
                 if (field) {
@@ -1087,14 +1748,17 @@ function initializeMultiModeStudio() {
             const btn = document.getElementById('transformBtn');
             const hasImages = this.selectedImages.length > 0;
             
-            // UPDATED: Single field validation per mode
+            // Check required fields based on mode
             let hasRequiredFields = false;
             if (this.currentMode === 'venue') {
                 const theme = document.getElementById('wedding-theme')?.value;
                 hasRequiredFields = !!theme;
-            } else {
-                const pose = document.getElementById('pose-style')?.value;
-                hasRequiredFields = !!pose;
+            } else if (this.currentMode === 'portrait_engagement') {
+                const activity = document.getElementById('engagement-activity')?.value;
+                hasRequiredFields = !!activity;
+            } else if (this.currentMode === 'portrait_wedding') {
+                const moment = document.getElementById('wedding-moment')?.value;
+                hasRequiredFields = !!moment;
             }
 
             const canTransform = hasImages && hasRequiredFields;
@@ -1112,8 +1776,10 @@ function initializeMultiModeStudio() {
                 btn.className = 'btn btn-secondary py-2 w-100';
                 if (this.currentMode === 'venue') {
                     btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Wedding Style</span>';
-                } else {
-                    btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Pose/Action</span>';
+                } else if (this.currentMode === 'portrait_engagement') {
+                    btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Activity/Pose</span>';
+                } else if (this.currentMode === 'portrait_wedding') {
+                    btn.innerHTML = '<i class="bi bi-magic me-1"></i> <span>Select Moment/Scene</span>';
                 }
             }
         }
@@ -1126,15 +1792,20 @@ function initializeMultiModeStudio() {
 
             const formData = this.getFormData();
             
-            // UPDATED: Single field validation per mode
+            // Validate required fields based on mode
             if (this.currentMode === 'venue') {
                 if (!formData.wedding_theme) {
                     this.showAlert('Please select wedding style', 'danger');
                     return;
                 }
-            } else {
-                if (!formData.pose_style) {
-                    this.showAlert('Please select pose/action', 'danger');
+            } else if (this.currentMode === 'portrait_engagement') {
+                if (!formData.engagement_activity) {
+                    this.showAlert('Please select activity/pose', 'danger');
+                    return;
+                }
+            } else if (this.currentMode === 'portrait_wedding') {
+                if (!formData.wedding_moment) {
+                    this.showAlert('Please select moment/scene', 'danger');
                     return;
                 }
             }
@@ -1162,7 +1833,7 @@ function initializeMultiModeStudio() {
                 const result = await response.json();
 
                 if (result.success) {
-                    this.showAlert('AI transformation started! Redirecting...', 'success');
+                    this.showAlert('Transformation started! Redirecting...', 'success');
                     
                     setTimeout(() => {
                         window.location.href = '/studio/visualizations/';

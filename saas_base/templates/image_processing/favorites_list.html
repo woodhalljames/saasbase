@@ -90,10 +90,6 @@
                     <p class="text-muted small mb-2">{{ image.venue_description|truncatechars:60 }}</p>
                   {% endif %}
                   
-                  <div class="mb-2">
-                    <span class="badge bg-secondary">{{ image.get_image_type_display }}</span>
-                  </div>
-                  
                   <small class="text-muted">
                     <i class="bi bi-upload"></i> Uploaded {{ image.uploaded_at|date:"M d, Y" }}<br>
                     <i class="bi bi-star-fill text-warning"></i> Starred {{ favorite.created_at|timesince }} ago<br>
@@ -187,39 +183,38 @@
                 </div>
                 
                 <div class="card-body">
-                  <h6 class="card-title text-truncate">
-                    {% if processed_image.processing_job.custom_prompt %}
-                      Custom Design
-                    {% else %}
-                      {{ processed_image.processing_job.theme_display|default:"Wedding Style" }} {{ processed_image.processing_job.space_display|default:"Space" }}
-                    {% endif %}
-                  </h6>
+                  <!-- Parameter badges AS the title -->
+                  {% if processed_image.processing_job.custom_prompt %}
+                    <h6 class="card-title">Custom Design</h6>
+                  {% else %}
+                    <div class="mb-2 d-flex gap-2 flex-wrap">
+                      {% if job.theme_display and job.theme_display != 'Unknown' %}
+                      <span class="badge rounded-pill" style="background-color: #00F5FF; color: #1a365d; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                        {{ job.theme_display }}
+                      </span>
+                      {% endif %}
+                      {% if job.space_display and job.space_display != 'Unknown' %}
+                      <span class="badge rounded-pill" style="background-color: #f43f5e; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                        {{ job.space_display }}
+                      </span>
+                      {% endif %}
+                      {% if not job.theme_display and not job.space_display %}
+                      <h6 class="card-title mb-0">Transformation</h6>
+                      {% endif %}
+                    </div>
+                  {% endif %}
                   
                   <!-- Mode badge -->
                   <div class="mb-2">
-                    <span class="badge {% if processed_image.processing_job.studio_mode == 'venue' %}bg-primary{% else %}bg-info{% endif %}">
+                    <span class="badge rounded-pill" style="background-color: {% if processed_image.processing_job.studio_mode == 'venue' %}#00F5FF{% else %}#06b6d4{% endif %}; color: #1a365d; font-size: 0.75rem;">
                       {{ processed_image.processing_job.get_studio_mode_display }}
                     </span>
                   </div>
                   
-                  <!-- Wedding Style Badges -->
+                  <!-- Custom prompt preview -->
                   {% with job=processed_image.processing_job %}
                     {% if job.custom_prompt %}
                       <small class="text-muted d-block mb-2">{{ job.custom_prompt|truncatechars:50 }}</small>
-                    {% elif job.studio_mode == 'venue' and job.wedding_theme and job.space_type %}
-                      <div class="mb-2">
-                        <span class="badge bg-secondary me-1">{{ job.theme_display|default:job.wedding_theme }}</span>
-                        <span class="badge bg-light text-dark">{{ job.space_display|default:job.space_type }}</span>
-                      </div>
-                    {% elif job.studio_mode != 'venue' %}
-                      <div class="mb-2">
-                        {% if job.setting_type %}
-                          <span class="badge bg-secondary">{{ job.setting_type|title }}</span>
-                        {% endif %}
-                        {% if job.pose_style %}
-                          <span class="badge bg-light text-dark">{{ job.pose_style|title }}</span>
-                        {% endif %}
-                      </div>
                     {% endif %}
                   {% endwith %}
                   

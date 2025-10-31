@@ -1,4 +1,4 @@
-# image_processing/admin.py - Updated admin with FavoriteUpload support
+# image_processing/admin.py - Updated for new model structure
 
 import os
 from django.contrib import admin
@@ -13,7 +13,10 @@ from datetime import timedelta
 from .models import (
     UserImage, ImageProcessingJob, ProcessedImage, 
     Collection, CollectionItem, Favorite, FavoriteUpload,
-    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES, PORTRAIT_THEMES, PORTRAIT_SETTINGS
+    WEDDING_THEMES, SPACE_TYPES, COLOR_SCHEMES,
+    ENGAGEMENT_SETTINGS, ENGAGEMENT_ACTIVITIES,
+    WEDDING_MOMENTS, WEDDING_SETTINGS, ATTIRE_STYLES,
+    COMPOSITION_CHOICES, EMOTIONAL_TONE_CHOICES
 )
 
 User = get_user_model()
@@ -127,12 +130,14 @@ class UserImageAdmin(admin.ModelAdmin, ImageDisplayMixin):
                 description = f"Custom: {job.custom_prompt[:50]}..."
             elif job.studio_mode == 'venue':
                 theme = dict(WEDDING_THEMES).get(job.wedding_theme, job.wedding_theme)
-                space = dict(SPACE_TYPES).get(job.space_type, job.space_type)
+                space = dict(SPACE_TYPES).get(job.space_type, job.space_type) if job.space_type else 'N/A'
                 description = f"Venue: {theme} - {space}"
-            else:
-                mode = 'Wedding' if job.studio_mode == 'portrait_wedding' else 'Engagement'
-                theme = dict(PORTRAIT_THEMES).get(job.photo_theme, job.photo_theme)
-                description = f"{mode}: {theme}"
+            elif job.studio_mode == 'portrait_engagement':
+                activity = dict(ENGAGEMENT_ACTIVITIES).get(job.engagement_activity, job.engagement_activity) if job.engagement_activity else 'N/A'
+                description = f"Engagement: {activity}"
+            else:  # portrait_wedding
+                moment = dict(WEDDING_MOMENTS).get(job.wedding_moment, job.wedding_moment) if job.wedding_moment else 'N/A'
+                description = f"Wedding: {moment}"
             
             processed_count = job.processed_images.count()
             
@@ -195,75 +200,97 @@ class ImageProcessingJobAdmin(admin.ModelAdmin):
     def mode_details(self, obj):
         """Show mode-specific details"""
         if obj.custom_prompt:
-            return format_html('<span style="color: #0066cc;">Custom Prompt</span>')
+            return format_html('<span title="Custom prompt">Custom 📝</span>')
         
         if obj.studio_mode == 'venue':
-            theme = dict(WEDDING_THEMES).get(obj.wedding_theme, obj.wedding_theme)
-            space = dict(SPACE_TYPES).get(obj.space_type, obj.space_type)
-            return format_html('<strong>{}</strong><br><small>{}</small>', theme, space)
-        else:
-            mode = 'Wedding' if obj.studio_mode == 'portrait_wedding' else 'Engagement'
-            theme = dict(PORTRAIT_THEMES).get(obj.photo_theme, obj.photo_theme) if obj.photo_theme else 'Portrait'
-            return format_html('<strong>{}</strong><br><small>{}</small>', mode, theme)
+            theme = dict(WEDDING_THEMES).get(obj.wedding_theme, obj.wedding_theme or 'N/A')
+            return format_html('<span title="{}">Venue</span>', theme)
+        elif obj.studio_mode == 'portrait_engagement':
+            activity = dict(ENGAGEMENT_ACTIVITIES).get(obj.engagement_activity, obj.engagement_activity or 'N/A')
+            return format_html('<span title="{}">Activity</span>', activity)
+        else:  # portrait_wedding
+            moment = dict(WEDDING_MOMENTS).get(obj.wedding_moment, obj.wedding_moment or 'N/A')
+            return format_html('<span title="{}">Moment</span>', moment)
     
     mode_details.short_description = "Details"
     
     def status_badge(self, obj):
-        """Display status with colored badge"""
         colors = {
             'completed': '#28a745',
             'failed': '#dc3545',
             'processing': '#ffc107',
             'pending': '#6c757d'
         }
-        color = colors.get(obj.status, '#6c757d')
         return format_html(
-            '<span style="background-color: {}; color: white; padding: 4px 8px; '
-            'border-radius: 12px; font-size: 11px; font-weight: bold;">{}</span>',
-            color,
+            '<span style="background: {}; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">{}</span>',
+            colors.get(obj.status, '#6c757d'),
             obj.status.upper()
         )
     status_badge.short_description = "Status"
     
     def has_output(self, obj):
         count = obj.processed_images_count if hasattr(obj, 'processed_images_count') else obj.processed_images.count()
-        return '✓' if count > 0 else '✗'
+        if count > 0:
+            return format_html('✅ {} image(s)', count)
+        return '❌ None'
     has_output.short_description = "Output"
+    has_output.admin_order_field = 'processed_images_count'
     
     def prompt_details(self, obj):
-        """Show detailed prompt information"""
-        html = f'<div style="margin-bottom: 15px;"><strong>Mode:</strong> {obj.get_studio_mode_display()}</div>'
+        """Show prompt configuration details"""
+        html = '<div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">'
         
         if obj.custom_prompt:
-            html += f'<div style="background: #f8f9fa; padding: 10px; border-radius: 4px;"><strong>Custom Prompt:</strong><br>{obj.custom_prompt}</div>'
-        elif obj.studio_mode == 'venue':
-            html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px;">'
-            html += f'<strong>Theme:</strong> {dict(WEDDING_THEMES).get(obj.wedding_theme, obj.wedding_theme)}<br>'
-            html += f'<strong>Space:</strong> {dict(SPACE_TYPES).get(obj.space_type, obj.space_type)}<br>'
-            if obj.season:
-                html += f'<strong>Season:</strong> {obj.season.title()}<br>'
-            if obj.lighting_mood:
-                html += f'<strong>Lighting:</strong> {obj.lighting_mood.title()}<br>'
-            if obj.color_scheme:
-                html += f'<strong>Colors:</strong> {obj.color_scheme}<br>'
-            html += '</div>'
+            html += '<div style="margin-bottom: 10px;"><strong>Custom Prompt:</strong></div>'
+            html += f'<div style="background: white; padding: 10px; border-radius: 4px; font-family: monospace;">{obj.custom_prompt}</div>'
         else:
-            html += '<div style="background: #f8f9fa; padding: 10px; border-radius: 4px;">'
-            html += f'<strong>Theme:</strong> {dict(PORTRAIT_THEMES).get(obj.photo_theme, obj.photo_theme)}<br>'
-            html += f'<strong>Setting:</strong> {dict(PORTRAIT_SETTINGS).get(obj.setting_type, obj.setting_type)}<br>'
-            if obj.pose_style:
-                html += f'<strong>Pose:</strong> {obj.pose_style}<br>'
-            if obj.attire_style:
-                html += f'<strong>Attire:</strong> {obj.attire_style}<br>'
+            if obj.studio_mode == 'venue':
+                html += '<div style="margin-bottom: 10px;"><strong>Venue Mode:</strong></div>'
+                html += f'<div><strong>Theme:</strong> {dict(WEDDING_THEMES).get(obj.wedding_theme, obj.wedding_theme or "N/A")}</div>'
+                if obj.space_type:
+                    html += f'<div><strong>Space:</strong> {dict(SPACE_TYPES).get(obj.space_type, obj.space_type)}</div>'
+            
+            elif obj.studio_mode == 'portrait_engagement':
+                html += '<div style="margin-bottom: 10px;"><strong>Engagement Portrait Mode:</strong></div>'
+                if obj.engagement_activity:
+                    html += f'<div><strong>Activity:</strong> {dict(ENGAGEMENT_ACTIVITIES).get(obj.engagement_activity, obj.engagement_activity)}</div>'
+                if obj.engagement_setting:
+                    html += f'<div><strong>Setting:</strong> {dict(ENGAGEMENT_SETTINGS).get(obj.engagement_setting, obj.engagement_setting)}</div>'
+                if obj.attire_style:
+                    html += f'<div><strong>Attire:</strong> {dict(ATTIRE_STYLES).get(obj.attire_style, obj.attire_style)}</div>'
+            
+            else:  # portrait_wedding
+                html += '<div style="margin-bottom: 10px;"><strong>Wedding Portrait Mode:</strong></div>'
+                if obj.wedding_moment:
+                    html += f'<div><strong>Moment:</strong> {dict(WEDDING_MOMENTS).get(obj.wedding_moment, obj.wedding_moment)}</div>'
+                if obj.wedding_setting:
+                    html += f'<div><strong>Setting:</strong> {dict(WEDDING_SETTINGS).get(obj.wedding_setting, obj.wedding_setting)}</div>'
+                if obj.attire_style:
+                    html += f'<div><strong>Attire:</strong> {dict(ATTIRE_STYLES).get(obj.attire_style, obj.attire_style)}</div>'
+            
+            # Shared fields
+            html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">'
+            html += '<strong>Additional Options:</strong>'
+            
+            if obj.composition:
+                html += f'<div><strong>Composition:</strong> {dict(COMPOSITION_CHOICES).get(obj.composition, obj.composition)}</div>'
+            if obj.emotional_tone:
+                html += f'<div><strong>Emotional Tone:</strong> {dict(EMOTIONAL_TONE_CHOICES).get(obj.emotional_tone, obj.emotional_tone)}</div>'
+            if obj.season:
+                html += f'<div><strong>Season:</strong> {obj.season.title()}</div>'
+            if obj.lighting_mood:
+                html += f'<div><strong>Lighting:</strong> {obj.lighting_mood.replace("_", " ").title()}</div>'
+            if obj.color_scheme:
+                html += f'<div><strong>Color Scheme:</strong> {dict(COLOR_SCHEMES).get(obj.color_scheme, obj.color_scheme)}</div>'
             html += '</div>'
         
         if obj.user_instructions:
-            html += f'<div style="background: #fff3cd; padding: 10px; border-radius: 4px; margin-top: 10px;"><strong>User Instructions:</strong><br>{obj.user_instructions}</div>'
+            html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #dee2e6;">'
+            html += '<div><strong>User Instructions:</strong></div>'
+            html += f'<div style="background: white; padding: 10px; border-radius: 4px; margin-top: 5px;">{obj.user_instructions}</div>'
+            html += '</div>'
         
-        # Show reference images count
-        ref_count = obj.reference_images.count()
-        if ref_count > 0:
-            html += f'<div style="margin-top: 10px;"><strong>Reference Images:</strong> {ref_count + 1} total (1 primary + {ref_count} additional)</div>'
+        html += '</div>'
         
         return mark_safe(html)
     prompt_details.short_description = "Prompt Configuration"
@@ -391,9 +418,9 @@ class ProcessedImageAdmin(admin.ModelAdmin, ImageDisplayMixin):
 # Favorite Uploads Admin (star icon)
 @admin.register(FavoriteUpload)
 class FavoriteUploadAdmin(admin.ModelAdmin):
-    list_display = ['user_link', 'image_preview', 'image_filename', 'times_used', 'last_used', 'created_at']
+    list_display = ['user_link', 'image_preview', 'image_filename', 'label', 'times_used', 'last_used', 'created_at']
     list_filter = ['created_at', 'last_used']
-    search_fields = ['user__username', 'image__original_filename']
+    search_fields = ['user__username', 'image__original_filename', 'label']
     readonly_fields = ['times_used', 'last_used', 'created_at']
     ordering = ['-last_used', '-created_at']
     
@@ -407,6 +434,11 @@ class FavoriteUploadAdmin(admin.ModelAdmin):
             return format_html(
                 '<img src="{}" style="max-width: 50px; max-height: 50px;" />',
                 obj.image.thumbnail.url
+            )
+        elif obj.image.image:
+            return format_html(
+                '<img src="{}" style="max-width: 50px; max-height: 50px;" />',
+                obj.image.image.url
             )
         return "No preview"
     image_preview.short_description = "Preview"

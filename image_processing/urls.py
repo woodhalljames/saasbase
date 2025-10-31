@@ -35,6 +35,9 @@ urlpatterns = [
     # Redo transformation
     path('redo-transformation/<int:job_id>/', views.redo_transformation_with_job, name='redo_transformation_with_job'),
     
+    # Get job details API
+    path('job/<int:job_id>/details/', views.get_job_details, name='get_job_details'),
+    
     # Collections
     path('collections/', views.collections_list, name='collections_list'),
     path('collections/create/', views.create_collection, name='create_collection'),

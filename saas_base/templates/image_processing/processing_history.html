@@ -44,8 +44,8 @@
           <div class="card mb-4 border-0 shadow-sm job-card" data-job-id="{{ job.id }}" data-job-status="{{ job.status }}">
             <div class="card-body">
               <div class="row">
-                <!-- Wedding Transformation Result (Main Focus) -->
-                <div class="col-md-6">
+                <!-- Wedding Transformation Result (Main Focus) - 2/3 width -->
+                <div class="col-md-8">
                   <h6 class="text-muted mb-3">Wedding Transformation</h6>
                   
                   {% if job.status == 'completed' %}
@@ -53,12 +53,12 @@
                       {% if processed_images %}
                         {% for processed_img in processed_images %}
                           {% if processed_img and processed_img.pk %}
-                          <div class="position-relative">
-                            <!-- Large processed image - NO overlay icons except heart -->
+                          <div class="position-relative mb-3">
+                            <!-- Large processed image - FULL IMAGE VISIBLE -->
                             <img src="{{ processed_img.processed_image.url }}" 
-                                 class="img-fluid rounded shadow-sm mb-3" 
+                                 class="img-fluid rounded shadow-sm" 
                                  alt="Wedding transformation"
-                                 style="width: 100%; max-height: 400px; object-fit: cover;">
+                                 style="width: 100%; max-height: 500px; object-fit: contain; background: #f8f9fa;">
                             
                             <!-- ONLY Favorite Heart - NO other overlay icons -->
                             <div class="position-absolute top-0 start-0 p-2">
@@ -127,20 +127,64 @@
                   {% endif %}
                 </div>
 
-                <!-- Details & Actions -->
-                <div class="col-md-6">
-                  <!-- Wedding Style & Status -->
+                <!-- Details & Actions - 1/3 width -->
+                <div class="col-md-4">
+                  <!-- Style Parameters & Status -->
                   <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                      <h6>Wedding Style</h6>
                       {% if job.custom_prompt %}
-                        <span class="badge bg-purple me-1">Custom Design</span>
+                        <span class="badge rounded-pill" style="background-color: #8b5cf6; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">Custom Design</span>
                         <small class="text-muted d-block mt-1">{{ job.custom_prompt|truncatechars:60 }}</small>
-                      {% elif job.wedding_theme and job.space_type %}
-                        <span class="badge bg-primary me-1">{{ job.theme_display }}</span>
-                        <span class="badge bg-secondary">{{ job.space_display }}</span>
                       {% else %}
-                        <span class="text-muted">Unknown style</span>
+                        <div class="d-flex gap-2 flex-wrap">
+                          <!-- Studio Mode Badge -->
+                          {% if job.studio_mode %}
+                          <span class="badge rounded-pill" style="background-color: #8b5cf6; color: white; font-size: 0.75rem; padding: 0.35rem 0.7rem;">
+                            {% if job.studio_mode == 'venue' %}
+                              🏛️ Venue
+                            {% elif job.studio_mode == 'portrait_wedding' %}
+                              👰 Wedding
+                            {% elif job.studio_mode == 'portrait_engagement' %}
+                              💕 Engagement
+                            {% endif %}
+                          </span>
+                          {% endif %}
+                          
+                          <!-- Venue Mode Parameters -->
+                          {% if job.studio_mode == 'venue' %}
+                            {% if job.theme_display and job.theme_display != 'Unknown' %}
+                            <span class="badge rounded-pill" style="background-color: #00F5FF; color: #1a365d; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                              {{ job.theme_display }}
+                            </span>
+                            {% endif %}
+                            {% if job.space_display and job.space_display != 'Unknown' %}
+                            <span class="badge rounded-pill" style="background-color: #f43f5e; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                              {{ job.space_display }}
+                            </span>
+                            {% endif %}
+                          {% else %}
+                            <!-- Portrait Mode Parameters -->
+                            {% if job.pose_display and job.pose_display != 'Unknown' %}
+                            <span class="badge rounded-pill" style="background-color: #00F5FF; color: #1a365d; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                              {{ job.pose_display }}
+                            </span>
+                            {% endif %}
+                            {% if job.setting_display and job.setting_display != 'Unknown' %}
+                            <span class="badge rounded-pill" style="background-color: #f43f5e; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                              {{ job.setting_display }}
+                            </span>
+                            {% endif %}
+                            {% if job.photo_theme_display and job.photo_theme_display != 'Unknown' %}
+                            <span class="badge rounded-pill" style="background-color: #06b6d4; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                              {{ job.photo_theme_display }}
+                            </span>
+                            {% endif %}
+                          {% endif %}
+                          
+                          {% if not job.theme_display and not job.pose_display and not job.space_display and not job.setting_display %}
+                          <span class="text-muted small">No style selected</span>
+                          {% endif %}
+                        </div>
                       {% endif %}
                     </div>
                     <span class="badge fs-6 job-status-badge {% if job.status == 'completed' %}bg-success{% elif job.status == 'failed' %}bg-danger{% elif job.status == 'processing' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
@@ -185,21 +229,37 @@
                     </small>
                   </div>
 
-                  <!-- Original Image Thumbnail -->
+                  <!-- Original Photo(s) - All Input Images -->
                   <div class="mb-3">
-                    <h6 class="small text-muted mb-2">Original Venue:</h6>
-                    <div class="d-flex align-items-center">
-                      <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
-                           class="rounded me-3" 
-                           alt="{{ job.user_image.original_filename }}"
-                           style="width: 80px; height: 60px; object-fit: cover;">
-                      <div>
-                        <small class="text-muted">
-                          <strong>{{ job.user_image.original_filename }}</strong><br>
-                          {{ job.user_image.width }}x{{ job.user_image.height }} • 
-                          {{ job.user_image.file_size|filesizeformat }}
+                    <h6 class="small text-muted mb-2">Original Photo(s):</h6>
+                    <div class="d-flex gap-2 flex-wrap align-items-start">
+                      <!-- Primary Image -->
+                      {% if job.user_image and job.user_image.image %}
+                      <div class="text-center">
+                        <img src="{% if job.user_image.thumbnail %}{{ job.user_image.thumbnail.url }}{% else %}{{ job.user_image.image.url }}{% endif %}" 
+                             alt="Primary image"
+                             class="rounded shadow-sm"
+                             style="width: 80px; height: 60px; object-fit: cover; border: 2px solid #dee2e6;">
+                        <small class="d-block text-muted mt-1" style="font-size: 0.7rem; max-width: 80px; word-break: break-all;">
+                          {{ job.user_image.original_filename|truncatechars:15 }}
                         </small>
                       </div>
+                      {% endif %}
+                      
+                      <!-- Reference Images -->
+                      {% for ref_img in job.reference_images.all %}
+                        {% if ref_img.reference_image and ref_img.reference_image.image %}
+                        <div class="text-center">
+                          <img src="{% if ref_img.reference_image.thumbnail %}{{ ref_img.reference_image.thumbnail.url }}{% else %}{{ ref_img.reference_image.image.url }}{% endif %}" 
+                               alt="Reference image {{ forloop.counter }}"
+                               class="rounded shadow-sm"
+                               style="width: 80px; height: 60px; object-fit: cover; border: 2px solid #dee2e6;">
+                          <small class="d-block text-muted mt-1" style="font-size: 0.7rem; max-width: 80px; word-break: break-all;">
+                            {{ ref_img.reference_image.original_filename|truncatechars:15 }}
+                          </small>
+                        </div>
+                        {% endif %}
+                      {% endfor %}
                     </div>
                   </div>
                   
@@ -330,7 +390,7 @@
         <div class="text-center py-5">
           <i class="bi bi-magic text-muted" style="font-size: 4rem;"></i>
           <h3 class="mt-3 text-muted">No Wedding Transformations Yet</h3>
-          <p class="text-muted">You haven't created any wedding venue transformations yet</p>
+          <p class="text-muted">You haven't created any wedding transformations yet</p>
           <div class="mt-4">
             <a href="{% url 'image_processing:wedding_studio' %}" class="btn btn-primary btn-lg">
               <i class="bi bi-magic"></i> Create Your First Wedding Transformation
@@ -717,6 +777,26 @@ window.addEventListener('beforeunload', () => {
 
 .favorite-heart-icon {
     font-size: 1.1rem;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+    /* Stack transformation and details vertically on mobile */
+    .job-card .row {
+        flex-direction: column;
+    }
+    
+    /* Full width for both columns on mobile */
+    .job-card .col-md-8,
+    .job-card .col-md-4 {
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    /* Reduce max height for processed image on mobile */
+    .job-card .col-md-8 img[alt="Wedding transformation"] {
+        max-height: 300px !important;
+    }
 }
 </style>
 {% endblock %}

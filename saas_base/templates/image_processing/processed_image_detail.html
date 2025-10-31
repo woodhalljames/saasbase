@@ -5,7 +5,7 @@
 
 {% block content %}
 {% csrf_token %}
-<div class="container py-4">
+<div class="container py-4 processed-image-detail-page">
  <!-- Breadcrumb -->
   <nav aria-label="breadcrumb" class="mb-4">
     <ol class="breadcrumb">
@@ -24,11 +24,24 @@
         <div class="card-header bg-navy text-white py-3">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <h4 class="mb-1">
+              <h4 class="mb-2">
                 <i class="bi bi-magic me-2 text-cyan"></i>
-                {{ theme_display }} • {{ space_display }}
+                Transformation Details
               </h4>
-              <small class="text-white-75">
+              <!-- Parameter Badges -->
+              <div class="d-flex gap-2 flex-wrap">
+                {% if theme_display and theme_display != 'Unknown' %}
+                <span class="badge rounded-pill" style="background-color: #00F5FF; color: #1a365d; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                  {{ theme_display }}
+                </span>
+                {% endif %}
+                {% if space_display and space_display != 'Unknown' %}
+                <span class="badge rounded-pill" style="background-color: #f43f5e; color: white; font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                  {{ space_display }}
+                </span>
+                {% endif %}
+              </div>
+              <small class="text-white-75 mt-1 d-block">
                 <i class="bi bi-calendar me-1"></i>
                 Created {{ processed_image.created_at|date:"M d, Y" }}
               </small>
@@ -45,7 +58,7 @@
           
           <!-- Main Image Section -->
           <div class="border-bottom">
-            <div class="p-4 text-center">
+            <div class="p-4 text-center" style="background: #f8f9fa;">
               <img src="{{ processed_image.processed_image.url }}" 
                    class="img-fluid rounded shadow-sm" 
                    alt="Wedding Transformation"
@@ -62,7 +75,7 @@
                 <i class="bi bi-lightning-fill me-2 text-cyan"></i>Quick Actions
               </h6>
               <div class="row g-3">
-                <div class="col-md-3 col-sm-6">
+                <div class="col-lg col-md-4 col-sm-6">
                   <a href="{{ processed_image.processed_image.url }}" 
                      class="btn btn-outline-primary w-100" 
                      target="_blank">
@@ -70,7 +83,7 @@
                     <small>View Full Size</small>
                   </a>
                 </div>
-                <div class="col-md-3 col-sm-6">
+                <div class="col-lg col-md-4 col-sm-6">
                   <a href="{{ processed_image.processed_image.url }}" 
                      class="btn btn-outline-secondary w-100" 
                      download="wedding-{{ theme_display|lower }}-{{ space_display|lower }}.png">
@@ -78,14 +91,21 @@
                     <small>Download</small>
                   </a>
                 </div>
-                <div class="col-md-3 col-sm-6">
+                <div class="col-lg col-md-4 col-sm-6">
                   <button class="btn btn-outline-info w-100 share-image-btn" 
                           data-image-url="{{ processed_image.processed_image.url }}">
                     <i class="bi bi-share mb-1 d-block"></i>
                     <small>Share</small>
                   </button>
                 </div>
-                <div class="col-md-3 col-sm-6">
+                <div class="col-lg col-md-4 col-sm-6">
+                  <button class="btn btn-outline-warning w-100" 
+                          onclick="redoTransformation({{ processed_image.processing_job.id }})">
+                    <i class="bi bi-arrow-repeat mb-1 d-block"></i>
+                    <small>Use Settings Again</small>
+                  </button>
+                </div>
+                <div class="col-lg col-md-4 col-sm-6">
                   <!-- UNIVERSAL Collection Button - Uses centralized system from base.html -->
                   <button class="btn btn-success w-100" 
                           type="button" 
@@ -98,37 +118,50 @@
             </div>
           </div>
 
-          <!-- Original Image Reference Section -->
+          <!-- Original Image(s) Reference Section -->
           <div class="border-bottom">
             <div class="p-4">
               <h6 class="fw-bold text-muted mb-3">
-                <i class="bi bi-image me-2 text-rose"></i>Original Venue
+                <i class="bi bi-image me-2 text-rose"></i>Original Photo(s)
               </h6>
               
-              <div class="row align-items-center">
-                <div class="col-md-3">
+              <!-- Show all input images horizontally -->
+              <div class="d-flex gap-3 flex-wrap align-items-start">
+                <!-- Primary Image -->
+                {% if processed_image.processing_job.user_image and processed_image.processing_job.user_image.image %}
+                <div class="text-center">
                   <img src="{% if processed_image.processing_job.user_image.thumbnail %}{{ processed_image.processing_job.user_image.thumbnail.url }}{% else %}{{ processed_image.processing_job.user_image.image.url }}{% endif %}" 
-                       class="img-fluid rounded shadow-sm" 
-                       style="width: 100%; max-height: 120px; object-fit: cover;"
-                       alt="{{ processed_image.processing_job.user_image.original_filename }}">
-                </div>
-                <div class="col-md-6">
-                  <h6 class="fw-bold mb-1">{{ processed_image.processing_job.user_image.original_filename }}</h6>
-                  <p class="text-muted mb-1">
-                    <i class="bi bi-arrows-fullscreen me-1"></i>
-                    {{ processed_image.processing_job.user_image.width }}×{{ processed_image.processing_job.user_image.height }}
-                  </p>
-                  <p class="text-muted mb-0">
-                    <i class="bi bi-hdd me-1"></i>
+                       class="rounded shadow-sm" 
+                       alt="{{ processed_image.processing_job.user_image.original_filename }}"
+                       style="width: 120px; height: 90px; object-fit: cover; border: 2px solid #dee2e6;">
+                  <small class="d-block text-muted mt-2" style="font-size: 0.75rem; max-width: 120px; word-break: break-all;">
+                    {{ processed_image.processing_job.user_image.original_filename|truncatechars:20 }}
+                  </small>
+                  <small class="d-block text-muted" style="font-size: 0.7rem;">
+                    {{ processed_image.processing_job.user_image.width }}×{{ processed_image.processing_job.user_image.height }} • 
                     {{ processed_image.processing_job.user_image.file_size|filesizeformat }}
-                  </p>
+                  </small>
                 </div>
-                <div class="col-md-3">
-                  <a href="{% url 'image_processing:image_detail' processed_image.processing_job.user_image.pk %}" 
-                     class="btn btn-outline-primary w-100">
-                    <i class="bi bi-eye me-1"></i> View Original
-                  </a>
-                </div>
+                {% endif %}
+                
+                <!-- Reference Images -->
+                {% for ref_img in processed_image.processing_job.reference_images.all %}
+                  {% if ref_img.reference_image and ref_img.reference_image.image %}
+                  <div class="text-center">
+                    <img src="{% if ref_img.reference_image.thumbnail %}{{ ref_img.reference_image.thumbnail.url }}{% else %}{{ ref_img.reference_image.image.url }}{% endif %}" 
+                         alt="{{ ref_img.reference_image.original_filename }}"
+                         class="rounded shadow-sm"
+                         style="width: 120px; height: 90px; object-fit: cover; border: 2px solid #dee2e6;">
+                    <small class="d-block text-muted mt-2" style="font-size: 0.75rem; max-width: 120px; word-break: break-all;">
+                      {{ ref_img.reference_image.original_filename|truncatechars:20 }}
+                    </small>
+                    <small class="d-block text-muted" style="font-size: 0.7rem;">
+                      {{ ref_img.reference_image.width }}×{{ ref_img.reference_image.height }} • 
+                      {{ ref_img.reference_image.file_size|filesizeformat }}
+                    </small>
+                  </div>
+                  {% endif %}
+                {% endfor %}
               </div>
             </div>
           </div>
@@ -224,47 +257,52 @@
 </div>
 
 <style>
-/* Unified Card Styling */
-.detail-group {
+/* Scoped to this page only - won't affect navbar/footer */
+.processed-image-detail-page .detail-group {
   margin-bottom: 1rem;
 }
 
-.detail-label {
+.processed-image-detail-page .detail-label {
   font-weight: 500;
   color: #6c757d;
   font-size: 0.9rem;
 }
 
-/* Navy header to match app theme */
-.bg-navy {
+/* Card header navy background - ONLY within this page */
+.processed-image-detail-page .card-header.bg-navy {
   background: #1a365d !important;
 }
 
-.text-white-75 {
+.processed-image-detail-page .text-white-75 {
   color: rgba(255, 255, 255, 0.75) !important;
 }
 
-.text-cyan {
+.processed-image-detail-page .text-cyan {
   color: #06b6d4 !important;
 }
 
-.text-rose {
+.processed-image-detail-page .text-rose {
   color: #f43f5e !important;
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .card-body .p-4 {
+  .processed-image-detail-page .card-body .p-4 {
     padding: 1.5rem !important;
   }
   
-  .row.g-3 > .col-md-3 {
+  .processed-image-detail-page .row.g-3 > .col-md-3 {
     margin-bottom: 0.5rem;
   }
 }
 </style>
 
 <script>
+// Redo transformation - redirect to studio with job settings
+function redoTransformation(jobId) {
+  window.location.href = `/studio/redo-transformation/${jobId}/`;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Collection picker is automatically handled by the centralized system in base.html
     console.log('Page loaded - collection picker ready');

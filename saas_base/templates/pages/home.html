@@ -18,11 +18,11 @@
       <div class="row min-vh-100 align-items-center">
         <div class="col-lg-6 hero-content">
           <h1 class="display-3 fw-bold mb-4 text-white">
-            Transform Any Space Into Your 
-            <span class="text-gradient">Dream Wedding</span>
+            Say Yes to Your
+            <span class="text-gradient">Wedding Journey</span>
           </h1>
           <p class="lead mb-4 text-white-75">
-         The world's first wedding design software by wedding designers that lets you upload any indoor or outdoor space and instantly transform it into your dream wedding venue.  </p>
+         From stunning engagement announcements to picture-perfect wedding ceremonies and flawless wedding day photos—transform every moment, save thousands on photographers and designers, and visualize your wedding & engagement.  </p>
           <div class="hero-buttons mb-4">
             {% if user.is_authenticated %}
               <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-3">
@@ -41,10 +41,10 @@
             <!-- Floating Elements -->
             <div class="floating-element">
               <div class="d-flex align-items-center">
-                <div class="me-3" style="font-size: 1.5rem;">📸</div>
+                <div class="me-3" style="font-size: 1.5rem;">💍</div>
                 <div>
-                  <div class="fw-bold">Upload Anywhere</div>
-                  <small class="opacity-75">Any venue, space and angle</small>
+                  <div class="fw-bold">Engagement Photos</div>
+                  <small class="opacity-75">Perfect for invites & announcements</small>
                 </div>
               </div>
             </div>
@@ -52,24 +52,24 @@
               <div class="d-flex align-items-center">
                 <div class="me-3" style="font-size: 1.5rem;">✨</div>
                 <div>
-                  <div class="fw-bold">Transform & Style</div>
-                  <small class="opacity-75">50+ wedding themes</small>
+                  <div class="fw-bold">Ceremony Staging</div>
+                  <small class="opacity-75">Visualize your wedding venue styled</small>
                 </div>
               </div>
             </div>
             <div class="floating-element">
               <div class="d-flex align-items-center">
-                <div class="me-3" style="font-size: 1.5rem;">👩‍❤️‍👨</div>
+                <div class="me-3" style="font-size: 1.5rem;">📸</div>
                 <div>
-                  <div class="fw-bold">Confidence & Security</div>
-                  <small class="opacity-75">Visualize & plan your big day</small>
+                  <div class="fw-bold">Wedding Day Photos</div>
+                  <small class="opacity-75">Fix & perfect every moment</small>
                 </div>
               </div>
             </div>
             
             <!-- Main Hero Image -->
             <div class="hero-image-wrapper">
-              <img src="{% static 'images/home/hero-main.png' %}" 
+              <img src="{% static 'images/home/hero.png' %}" 
                    alt="Beautiful wedding ceremony showcasing AI transformation possibilities" 
                    class="hero-featured-image">
               
@@ -80,13 +80,218 @@
     </div>
   </section>
 
+  <!-- Engagement Photo Section -->
+  <section class="engagement-photo-section" style="background-color: #f8f9fa;">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 order-lg-2 mb-4 mb-lg-0">
+          <div class="photo-comparison-grid">
+            <div class="engagement-multi-input">
+              <div class="input-photos">
+                <div class="input-photo-small">
+                  <img src="{% static 'images/home/engagement-input-1.jpg' %}" 
+                       alt="First input photo" 
+                       class="photo-sample-small"
+                       loading="lazy">
+                  <span class="photo-label">Photo 1</span>
+                </div>
+                <div class="input-photo-small">
+                  <img src="{% static 'images/home/engagement-input-2.jpg' %}" 
+                       alt="Second input photo" 
+                       class="photo-sample-small"
+                       loading="lazy">
+                  <span class="photo-label">Photo 2</span>
+                </div>
+                <div class="input-photo-small">
+                  <img src="{% static 'images/home/engagement-input-3.jpg' %}" 
+                       alt="Third input photo" 
+                       class="photo-sample-small"
+                       loading="lazy">
+                  <span class="photo-label">Photo 3</span>
+                </div>
+              </div>
+              <div class="merge-arrows">
+                <i class="bi bi-arrow-right"></i>
+                <i class="bi bi-arrow-right"></i>
+                <i class="bi bi-arrow-right"></i>
+              </div>
+              <div class="output-photo">
+                <img src="{% static 'images/home/engagement-post.png' %}" 
+                     alt="Combined perfect engagement photo" 
+                     class="photo-sample-output"
+                     loading="lazy">
+                <span class="photo-label enhanced"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-6 order-lg-1">
+          <span class="section-badge">
+            <i class="bi bi-heart-fill"></i> Engagement Photos
+          </span>
+          <h2 class="section-title text-dark mb-4">Picture-Perfect Engagement Announcements</h2>
+          <p class="section-text mb-4">
+            Transform your casual photos into magazine-worthy engagement shots that wow on social media and look stunning on your save-the-dates. No expensive photographer needed.
+          </p>
+          
+          <div class="benefit-list">
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Save on Professional Photography</strong>
+                <p class="mb-0">Get professional-quality engagement photos without the $500+ photographer session</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Perfect for Invitations & Social Media</strong>
+                <p class="mb-0">Create stunning images for save-the-dates, wedding websites, and Instagram announcements</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Fix Any Setting or Lighting</strong>
+                <p class="mb-0">Transform backyard snapshots into romantic, professionally-lit engagement portraits</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Match Your Wedding Aesthetic</strong>
+                <p class="mb-0">Start your wedding journey with photos that perfectly match your style and vision</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+              <i class="bi bi-camera-fill"></i> Create Your Engagement Photos
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wedding Day Photo Section -->
+  <section class="wedding-photo-section" style="background-color: #ffffff;">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <div class="photo-comparison-grid">
+            <div class="wedding-slideshow-comparison">
+              <div class="photo-before-static">
+                <div class="photo-container">
+                  <img src="{% static 'images/home/wedding-before.jpeg' %}" 
+                       alt="Original wedding photo with issues" 
+                       class="photo-sample-large"
+                       loading="lazy">
+                </div>
+                <span class="photo-label-below">Problem Photo</span>
+              </div>
+              <div class="photo-arrow">
+                <i class="bi bi-arrow-right"></i>
+              </div>
+              <div class="photo-after-slideshow">
+                <div class="slideshow-container">
+                  <div class="slideshow-slide active">
+                    <div class="photo-container">
+                      <img src="{% static 'images/home/wedding-after-1.png' %}" 
+                           alt="Fixed wedding photo - sunny" 
+                           class="photo-sample-large"
+                           loading="lazy">
+                    </div>
+                    <span class="photo-label-below">Remove blur and people in the background</span>
+                  </div>
+                  <div class="slideshow-slide">
+                    <div class="photo-container">
+                      <img src="{% static 'images/home/wedding-after-2.png' %}" 
+                           alt="Fixed wedding photo - enhanced" 
+                           class="photo-sample-large"
+                           loading="lazy">
+                    </div>
+                    <span class="photo-label-below">Beautiful sunny day</span>
+                  </div>
+                  <div class="slideshow-slide">
+                    <div class="photo-container">
+                      <img src="{% static 'images/home/wedding-after-3.png' %}" 
+                           alt="Fixed wedding photo - perfect" 
+                           class="photo-sample-large"
+                           loading="lazy">
+                    </div>
+                    <span class="photo-label-below">Extravagant winter wedding</span>
+                  </div>
+                </div>
+                <div class="slideshow-dots">
+                  <span class="dot active" data-slide="0"></span>
+                  <span class="dot" data-slide="1"></span>
+                  <span class="dot" data-slide="2"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-6">
+          <span class="section-badge">
+            <i class="bi bi-stars"></i> Wedding Day Photos
+          </span>
+          <h2 class="section-title text-dark mb-4">Never Settle for Imperfect Wedding Photos</h2>
+          <p class="section-text mb-4">
+            Rescue disappointing photos from underperforming photographers, fix weather issues, and ensure every shot from your wedding is frame-worthy.
+          </p>
+          
+          <div class="benefit-list">
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Fix Bad Photographer Experiences</strong>
+                <p class="mb-0">Salvage photos from inexperienced photographers—adjust exposure, fix focus, and enhance quality</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Transform Cloudy Days to Sunny</strong>
+                <p class="mb-0">Turn overcast or rainy wedding photos into bright, beautiful memories with perfect lighting</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Capture Moments Professionally</strong>
+                <p class="mb-0">Elevate candid shots and smartphone photos to professional-quality keepsakes</p>
+              </div>
+            </div>
+            <div class="benefit-item">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <div>
+                <strong>Every Shot Frame-Worthy</strong>
+                <p class="mb-0">Make every wedding photo print-ready and perfect for albums, walls, and sharing</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
+              <i class="bi bi-magic"></i> Perfect Your Wedding Photos
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Combined Studio Demo + How It Works Section -->
-  <section class="studio-demo-section" id="studio-demo">
+  <section class="studio-demo-section" id="studio-demo" style="background-color: #f8f9fa;">
     <div class="container">
       <div class="row">
         <div class="col-12 text-center mb-5">
-          <h2 class="section-title text-dark">See DreamWedAI in Action</h2>
-          <p class="section-subtitle text-muted">Transform any space into your dream wedding</p>
+          <h2 class="section-title text-dark">Visualize Your Perfect Wedding Venue</h2>
+          <p class="section-subtitle text-muted">Transform any space into your dream ceremony or reception—see it before the big day</p>
         </div>
       </div>
       
@@ -98,7 +303,8 @@
               <div class="before-image-container">
                 <img src="{% static 'images/home/before-transformation.jpg' %}" 
                      alt="Original empty venue space before AI transformation" 
-                     class="comparison-image">
+                     class="comparison-image"
+                     loading="lazy">
                 <div class="image-label before-label">
                  Drag to transform
                 </div>
@@ -106,7 +312,8 @@
               <div class="after-image-container">
                 <img src="{% static 'images/home/after-transformation.png' %}" 
                      alt="Same venue transformed into beautiful wedding space" 
-                     class="comparison-image">
+                     class="comparison-image"
+                     loading="lazy">
                 
               </div>
               <div class="slider-handle" id="sliderHandle">
@@ -161,14 +368,14 @@
          
               <div class="step-content">
                 <h4>See Your Wedding</h4>
-                <p>Watch instantly as your space transforms with perfect decorations, lighting, and atmosphere to confidently fulfill your wedding.</p>
+                <p>Watch instantly as your space transforms with perfect decorations, lighting, and atmosphere to confidently design your wedding.</p>
               </div>
             </div>
           </div>
           
           <div class="text-center mt-4">
             <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'account_signup' %}{% endif %}" class="hero-cta-primary">
-              <i class="bi bi-rocket-takeoff"></i> Try It Now - Free!
+              <i class="bi bi-rocket-takeoff"></i> Start Styling Your Venue - Free!
             </a>
           </div>
         </div>
@@ -177,12 +384,12 @@
   </section>
 
   <!-- Enhanced Theme Showcase Section -->
-  <section class="theme-showcase">
+  <section class="theme-showcase" style="background-color: #ffffff;">
     <div class="container">
       <div class="row">
         <div class="col-12 text-center mb-5">
-          <h2 class="section-title text-dark">Endless Wedding Styles & Themes</h2>
-          <p class="section-subtitle text-muted">From rustic barns to elegant ballrooms - explore 50+ professionally designed wedding themes</p>
+          <h2 class="section-title text-dark">The Tools to Support Every Wedding from Engagement to Ceremony</h2>
+          <p class="section-subtitle text-muted">One seamless journey, endless possibilities—stage engagement photos, try on dresses & tuxedos, and design your wedding venue with guidance from wedding designers and photographers. </p>
         </div>
       </div>
       
@@ -191,72 +398,75 @@
 
         <div class="theme-card-enhanced">
           <div class="theme-preview">
-            <img src="{% static 'images/home/barn-rustic.png' %}" 
+            <img src="{% static 'images/home/engagement-after.png' %}" 
                  alt="Rustic barn wedding example with natural wood and vintage charm" 
-                 class="theme-image">
+                 class="theme-image"
+                 loading="lazy">
             <div class="theme-overlay">
               <div class="theme-overlay-content">
-                <i class="bi bi-tree-fill fs-1 mb-2"></i>
-                <div class="theme-overlay-title">Barn & Country</div>
+               <i class="bi bi-gem fs-1 mb-2"></i>
+                <div class="theme-overlay-title">Tools for Every Couple</div>
               </div>
             </div>
           </div>
           <div class="theme-card-content">
-            <span class="theme-tag rustic-tag">Rustic</span>
-            <h4 class="mb-2">Barn & Country</h4>
-            <p class="text-muted mb-3">Works great with your favorite venues.</p>
+            <span class="theme-tag rustic-tag">Engagement Photos</span>
+            <h4 class="mb-2">Professional Photographer</h4>
+            <p class="text-muted mb-3">Bring your hobbies and yourselves. Easy to use Smart-Studio helps you make your perfect save-the-dates.</p>
             <div class="theme-features">
-              <span class="feature-tag">Wood Accents</span>
-              <span class="feature-tag">Late-summer</span>
-              <span class="feature-tag">Wildflowers</span>
+              <span class="feature-tag">Ferris Wheel</span>
+              <span class="feature-tag">Petting Zoo</span>
+              <span class="feature-tag">Walking Hand-in-hand</span>
             </div>
           </div>
         </div>
         
                 <div class="theme-card-enhanced">
           <div class="theme-preview">
-            <img src="{% static 'images/home/reception-at-home.png' %}" 
+            <img src="{% static 'images/home/barn-rustic.png' %}" 
                  alt="Garden wedding example with natural beauty and floral arrangements" 
-                 class="theme-image">
+                 class="theme-image"
+                 loading="lazy">
             <div class="theme-overlay">
               <div class="theme-overlay-content">
-                <i class="bi bi-house-fill fs-1 mb-2"></i>
-                <div class="theme-overlay-title">Home Reception</div>
+                <i class="bi bi-gem fs-1 mb-2"></i>
+                <div class="theme-overlay-title">Inspiration by Design</div>
               </div>
             </div>
           </div>
           <div class="theme-card-content">
-            <span class="theme-tag garden-tag">Traditional</span>
-            <h4 class="mb-2">Home Reception</h4>
-            <p class="text-muted mb-3">Celebrate anywhere your people are.</p>
+            <span class="theme-tag garden-tag">Venue Design</span>
+            <h4 class="mb-2">Wedding Designer</h4>
+            <p class="text-muted mb-3">Save money by knowing what exactly to buy, accomodate specific guest counts, and achieve your dream wedding with access to thousands of designs. </p>
             <div class="theme-features">
-              <span class="feature-tag">Classical Elements</span>
               <span class="feature-tag">Reception</span>
-              <span class="feature-tag">Luxury</span>
+              <span class="feature-tag">Bridal Suite</span>
+              <span class="feature-tag">Welcome Area</span>
             </div>
           </div>
         </div>
         
         <div class="theme-card-enhanced">
           <div class="theme-preview">
-            <img src="{% static 'images/home/classic-blue.png' %}" 
+            <img src="{% static 'images/home/Wedding_Champagne.png' %}" 
                  alt="Elegant formal wedding example with sophisticated decorations" 
-                 class="theme-image">
+                 class="theme-image"
+                 loading="lazy">
             <div class="theme-overlay">
               <div class="theme-overlay-content">
                 <i class="bi bi-gem fs-1 mb-2"></i>
-                <div class="theme-overlay-title">Traditional Wedding</div>
+                <div class="theme-overlay-title">Frame Ready Photos</div>
               </div>
             </div>
           </div>
           <div class="theme-card-content">
-            <span class="theme-tag elegant-tag">Blue</span>
-            <h4 class="mb-2">Something Blue</h4>
-            <p class="text-muted mb-3">Thousands of wedding designer inspired designs.</p>
+            <span class="theme-tag elegant-tag">Wedding Photos</span>
+            <h4 class="mb-2">Wedding Photographer</h4>
+            <p class="text-muted mb-3">Recreate and fix problem photos. Improve lighting or framing. Relive moments that go by too fast with our composition and emotion tools.</p>
             <div class="theme-features">
-              <span class="feature-tag">Fresh Flowers</span>
-              <span class="feature-tag">Tradition</span>
-              <span class="feature-tag">Blue Design</span>
+              <span class="feature-tag">Breaking Glass</span>
+              <span class="feature-tag">Bouquet Toss</span>
+              <span class="feature-tag">With Grandparents</span>
             </div>
           </div>
         </div>
@@ -264,10 +474,10 @@
       
       <div class="text-center mt-5">
         <a href="{% if user.is_authenticated %}{% url 'image_processing:wedding_studio' %}{% else %}{% url 'subscriptions:pricing' %}{% endif %}" class="hero-cta-primary">
-          <i class="bi bi-palette"></i> Explore All 50+ Themes
+          <i class="bi bi-palette"></i> Explore All Themes
         </a>
         <p class="small text-muted mt-2 mb-0">
-          Plus: Modern, Bohemian, Beach, Industrial, Vintage & More
+          Choose: Wedding Style, Moment, Activity, Lighting, Attire, Season, & More
         </p>
       </div>
     </div>
@@ -316,7 +526,7 @@
   </section>
 
   <!-- Social Proof Section -->
-  <section class="testimonials-section">
+  <section class="testimonials-section" style="background-color: #f8f9fa;">
     <div class="container">
       <div class="row mb-5">
         <div class="col-12 text-center">
@@ -336,7 +546,7 @@
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
               </div>
-              <p class="mb-3">"DreamWedAI helped us visualize our spring outdoor wedding perfectly. We could see exactly how the space would look decorated, which made picking a season so much easier!"</p>
+              <p class="mb-3">"DreamWedAI helped us visualize our fall outdoor wedding perfectly. We could see exactly how the space would look decorated, which made picking a season so much easier!"</p>
               <div class="testimonial-author">
                 <div class="author-info">
                   <strong>Danielle & Divine</strong>
@@ -357,11 +567,11 @@
                 <i class="bi bi-star-fill"></i>
                 <i class="bi bi-star-fill"></i>
               </div>
-              <p class="mb-3">"The barn looked so different than I imagined! DreamWedAI showed us how beautiful it could be with the right decorations. Our guests were amazed!"</p>
+              <p class="mb-3">"Our wedding ended up being ra ainy, cloud covered day!  We were happy to recieve the luck, but even happier our photos were able to be touched up and turned to sunny days by DreamWedAI."</p>
               <div class="testimonial-author">
                 <div class="author-info">
                   <strong>Anna & James</strong>
-                  <div class="text-muted">Rustic Wedding • November 2025</div>
+                  <div class="text-muted">Wedding Photos • November 2025</div>
                 </div>
               </div>
             </div>
@@ -393,12 +603,12 @@
   </section>
 
   <!-- Final CTA Section -->
-  <section class="final-cta">
+  <section class="final-cta" style="background-color: #ffffff;">
     <div class="container">
       <div class="row">
         <div class="col-12 text-center">
           <h2 class="section-title">Ready to See Your Wedding?</h2>
-          <p class="section-subtitle">Have fun planning and styling your perfect wedding without the wedding planner price tag.</p>
+          <p class="section-subtitle">Have fun planning and styling your engagement & wedding without the wedding planner price tag.</p>
           <div class="mb-4">
             {% if user.is_authenticated %}
               <a href="{% url 'image_processing:wedding_studio' %}" class="hero-cta-primary me-2">
@@ -408,7 +618,7 @@
             {% else %}
            
             <a href="{% url 'subscriptions:pricing' %}" class="hero-cta-primary me-2">
-               Easy Subscribe
+               Get started for free!
             </a>
             {% endif %}
           </div>
@@ -680,6 +890,59 @@ function initializeSmoothScroll() {
 
 <style>
 /* Enhanced Hero Styles */
+.hero-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.floating-element {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.5rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  animation: float 6s ease-in-out infinite;
+  transition: all 0.3s ease;
+  z-index: 3;
+  max-width: 250px;
+}
+
+.floating-element:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+.floating-element:nth-child(1) {
+  top: 10%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.floating-element:nth-child(2) {
+  top: 50%;
+  right: -10%;
+  animation-delay: 2s;
+}
+
+.floating-element:nth-child(3) {
+  bottom: 15%;
+  left: -8%;
+  animation-delay: 4s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
 .hero-image-wrapper {
   position: relative;
   width: 350px;
@@ -1076,6 +1339,31 @@ function initializeSmoothScroll() {
 
 /* Responsive Design */
 @media (max-width: 992px) {
+  .hero-visual {
+    min-height: 400px;
+  }
+  
+  .floating-element {
+    max-width: 200px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .floating-element:nth-child(1) {
+    top: 5%;
+    left: 0%;
+  }
+
+  .floating-element:nth-child(2) {
+    top: 50%;
+    right: -5%;
+  }
+
+  .floating-element:nth-child(3) {
+    bottom: 10%;
+    left: -3%;
+  }
+  
   .hero-image-wrapper {
     width: 300px;
     height: 300px;
@@ -1107,6 +1395,10 @@ function initializeSmoothScroll() {
   .hero-image-wrapper {
     width: 250px;
     height: 250px;
+  }
+  
+  .hero-visual {
+    min-height: 350px;
   }
   
   .floating-element {
@@ -1191,5 +1483,542 @@ function initializeSmoothScroll() {
     gap: 0.5rem;
   }
 }
+
+/* Engagement & Wedding Photo Sections */
+.engagement-photo-section,
+.wedding-photo-section {
+  padding: 6rem 0;
+  background: var(--light-bg);
+}
+
+.wedding-photo-section {
+  background: white;
+}
+
+.section-badge {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+}
+
+.section-text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--medium-gray);
+}
+
+.photo-comparison-grid {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+}
+
+.comparison-pair {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.photo-before,
+.photo-after {
+  flex: 1;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.photo-sample {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-sample-large {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.photo-label {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 0.4rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.photo-label-below {
+  display: block;
+  text-align: center;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--medium-gray);
+}
+
+.photo-label-below.enhanced {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.photo-label.enhanced {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+}
+
+.photo-arrow {
+  font-size: 2rem;
+  color: var(--primary-color);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.benefit-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.benefit-item i {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.benefit-item strong {
+  display: block;
+  color: var(--dark-color);
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+}
+
+.benefit-item p {
+  color: var(--medium-gray);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Engagement Multi-Input Layout */
+.engagement-multi-input {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.input-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+}
+
+.input-photo-small {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.photo-sample-small {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.merge-arrows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 2rem;
+  color: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.output-photo {
+  flex: 1.2;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.photo-sample-output {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+/* Wedding Slideshow Layout */
+.wedding-slideshow-comparison {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.photo-before-static {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-after-slideshow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.slideshow-container {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+.slideshow-slide {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.6s ease-in-out;
+}
+
+.slideshow-slide.active {
+  display: block;
+  position: relative;
+  opacity: 1;
+  transform: translateX(0);
+  animation: slideIn 0.6s ease-in-out;
+}
+
+.slideshow-slide.slide-out-left {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.slideshow-dots {
+  text-align: center;
+  margin-top: 1rem;
+  padding: 0.5rem 0;
+  position: relative;
+  z-index: 10;
+}
+
+.slideshow-dots .dot {
+  height: 10px;
+  width: 10px;
+  margin: 0 5px;
+  background-color: #d1d5db;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.slideshow-dots .dot:hover {
+  background-color: #9ca3af;
+}
+
+.slideshow-dots .dot.active {
+  background: #1e3a8a;
+  transform: scale(1.2);
+}
+
+/* Responsive for photo sections */
+@media (max-width: 992px) {
+  .engagement-photo-section,
+  .wedding-photo-section {
+    padding: 4rem 0;
+  }
+  
+  .photo-comparison-grid {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .engagement-multi-input,
+  .wedding-slideshow-comparison {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .wedding-slideshow-comparison {
+    align-items: center;
+  }
+  
+  .merge-arrows {
+    flex-direction: row;
+    transform: rotate(90deg);
+  }
+  
+  .photo-arrow {
+    transform: rotate(90deg);
+    align-self: center;
+  }
+  
+  .input-photos {
+    flex-direction: row;
+    width: 100%;
+  }
+  
+  .input-photo-small {
+    flex: 1;
+  }
+  
+  .photo-sample-small {
+    height: 160px;
+  }
+  
+  .output-photo {
+    width: 100%;
+  }
+  
+  .photo-sample-output {
+    height: 250px;
+  }
+  
+  .photo-sample-large {
+    height: 350px;
+  }
+  
+  .photo-before-static,
+  .photo-after-slideshow {
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .slideshow-container {
+    min-height: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .photo-sample,
+  .photo-sample-output {
+    height: 220px;
+  }
+  
+  .photo-sample-large {
+    height: 300px;
+  }
+  
+  .photo-sample-small {
+    height: 140px;
+  }
+  
+  .section-text {
+    font-size: 1rem;
+  }
+  
+  .benefit-item {
+    gap: 0.75rem;
+  }
+  
+  .benefit-item i {
+    font-size: 1.25rem;
+  }
+  
+  .merge-arrows {
+    font-size: 1.5rem;
+    display: none;
+  }
+  
+  .merge-arrows::after {
+    content: '↓';
+    display: block;
+    font-size: 2rem;
+    text-align: center;
+  }
+  
+  .photo-before-static,
+  .photo-after-slideshow {
+    max-width: 100%;
+  }
+  
+  .photo-container {
+    width: 100%;
+  }
+  
+  .photo-before-static .photo-container,
+  .photo-after-slideshow .photo-container {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .slideshow-container {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 576px) {
+  .input-photos {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .photo-sample-small {
+    height: 120px;
+  }
+  
+  .merge-arrows {
+    flex-direction: column;
+    transform: none;
+    display: none;
+  }
+  
+  .merge-arrows::after {
+    content: '↓';
+    display: block;
+    font-size: 2.5rem;
+    text-align: center;
+    color: var(--primary-color);
+  }
+  
+  .photo-sample-output {
+    height: 220px;
+  }
+  
+  .photo-sample-large {
+    height: 280px;
+  }
+  
+  .photo-before-static,
+  .photo-after-slideshow {
+    max-width: 100%;
+  }
+  
+  .slideshow-container {
+    width: 100%;
+    min-height: 280px;
+  }
+}
+
 </style>
+
+<script>
+// Wedding Photo Slideshow
+document.addEventListener('DOMContentLoaded', function() {
+  const slides = document.querySelectorAll('.slideshow-slide');
+  const dots = document.querySelectorAll('.slideshow-dots .dot');
+  let currentSlide = 0;
+  let slideInterval;
+
+  function showSlide(n) {
+    // Add slide-out effect to current slide
+    if (slides[currentSlide]) {
+      slides[currentSlide].classList.add('slide-out-left');
+    }
+    
+    // Small delay for slide-out animation
+    setTimeout(() => {
+      // Hide all slides
+      slides.forEach(slide => {
+        slide.classList.remove('active', 'slide-out-left');
+      });
+      
+      // Remove active class from all dots
+      dots.forEach(dot => {
+        dot.classList.remove('active');
+      });
+      
+      // Wrap around if needed
+      if (n >= slides.length) {
+        currentSlide = 0;
+      } else if (n < 0) {
+        currentSlide = slides.length - 1;
+      } else {
+        currentSlide = n;
+      }
+      
+      // Show current slide
+      slides[currentSlide].classList.add('active');
+      dots[currentSlide].classList.add('active');
+    }, 100);
+  }
+
+  function nextSlide() {
+    showSlide(currentSlide + 1);
+  }
+
+  // Add click handlers to dots
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      showSlide(index);
+      // Reset interval when user manually clicks
+      clearInterval(slideInterval);
+      slideInterval = setInterval(nextSlide, 3000);
+    });
+  });
+
+  // Auto-advance slides every 3 seconds
+  slideInterval = setInterval(nextSlide, 3000);
+
+  // Pause on hover
+  const slideshowContainer = document.querySelector('.slideshow-container');
+  if (slideshowContainer) {
+    slideshowContainer.addEventListener('mouseenter', () => {
+      clearInterval(slideInterval);
+    });
+
+    slideshowContainer.addEventListener('mouseleave', () => {
+      slideInterval = setInterval(nextSlide, 3000);
+    });
+  }
+});
+</script>
 {% endblock %}
