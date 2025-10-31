@@ -133,3 +133,42 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
             return f"{reverse('subscriptions:pricing')}?checkout={price_id}"
         
         return reverse("subscriptions:pricing")
+    
+    def pre_social_login(self, request, sociallogin):
+    """
+    Auto-connect social accounts to existing users by email.
+    Fixes: "An account already exists with this email address" error.
+    """
+    # If user is already logged in or social account already exists, skip
+    if request.user.is_authenticated or sociallogin.is_existing:
+        return
+    
+    # Try to find existing user by email
+    try:
+        email = sociallogin.account.extra_data.get('email', '').lower()
+        if not email:
+            return
+        
+        from saas_base.users.models import User
+        user = User.objects.get(email__iexact=email)
+        
+        # Auto-connect this social account to the existing user
+        sociallogin.connect(request, user)
+        
+        # Show friendly message
+        provider_name = sociallogin.account.provider.title()
+        messages.success(
+            request,
+            f"Welcome back! Your {provider_name} account has been connected."
+        )
+        
+    except User.DoesNotExist:
+        # No existing user, proceed with normal signup
+        pass
+    except Exception as e:
+        # Log but don't break the flow
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in pre_social_login: {e}")
+    
+
