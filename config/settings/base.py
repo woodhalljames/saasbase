@@ -42,7 +42,7 @@ LANGUAGE_CODE = "en-us"
 SITE_ID = 1
 SITE_NAME = "DreamWedAI"
 SITE_URL = env("SITE_URL", default="https://dreamwedai.com")
-DEFAULT_META_DESCRIPTION = "Transform any space into your dream wedding with AI-powered visualization. Create stunning wedding pages and plan your perfect day."
+DEFAULT_META_DESCRIPTION = "Say YES to your wedding and engagement. Visualize save-the-dates, design your own wedding, and perfect your wedding day photos. Start free today!"
 
 
 # https://docs.djangoproject.com/en/dev/ref/settings/#use-i18n

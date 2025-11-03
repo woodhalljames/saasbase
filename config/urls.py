@@ -1,3 +1,6 @@
+# config/urls.py
+# UPDATE THIS SECTION for optimized sitemaps
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -9,17 +12,23 @@ from wedding_shopping.views import PublicCoupleDetailView
 
 # Import sitemaps from config.sitemaps
 from config.sitemaps import (
-    StaticViewSitemap, WeddingPageSitemap, 
-    BlogPostSitemap, DiscoverySitemap
+    StaticViewSitemap,
+    WeddingPageSitemap,
+    BlogPostSitemap,
+    DiscoverySitemap,
+    AppPagesSitemap,
+    # FeatureLandingSitemap,  # Uncomment when you create feature pages
 )
 from config.views import robots_txt
 
-# Configure sitemaps
+# OPTIMIZED SITEMAP CONFIGURATION
 sitemaps = {
-    'static': StaticViewSitemap,
-    'weddings': WeddingPageSitemap,
-    'blog': BlogPostSitemap,
-    'discovery': DiscoverySitemap,
+    'static': StaticViewSitemap,           # Priority 1.0 - Homepage, About, Pricing
+    'weddings': WeddingPageSitemap,        # Priority 0.9 - Public wedding pages
+    'blog': BlogPostSitemap,               # Priority 0.8 - Blog/Resources
+    'discovery': DiscoverySitemap,         # Priority 0.7 - List pages
+    'app': AppPagesSitemap,                # Priority 0.6 - Login/Signup
+    # 'features': FeatureLandingSitemap,   # Priority 0.85 - Uncomment when feature pages ready
 }
 
 urlpatterns = [
@@ -27,9 +36,14 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
     path("about/", TemplateView.as_view(template_name="pages/about.html"), name="about"),
     
-    # SEO files
+    # SEO files - OPTIMIZED
     path("robots.txt", robots_txt, name="robots_txt"),
-    path("sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"),
+    path(
+        "sitemap.xml",
+        sitemap,
+        {"sitemaps": sitemaps},
+        name="django.contrib.sitemaps.views.sitemap"
+    ),
     
     # Django Admin
     path(settings.ADMIN_URL, admin.site.urls),

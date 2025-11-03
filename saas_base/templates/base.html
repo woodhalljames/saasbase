@@ -18,14 +18,14 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>
       {% block title %}
-      DreamWedAI - Say Yes to Your Wedding Before The Big Day
+      DreamWedAI - Say Yes to Your Wedding and Engagement
     {% endblock title %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description"
-        content="{% block meta_description %}Say YES to your wedding, before the big day.  Transform anywhere into the perfect wedding ceremony. Create your FREE beautiful wedding page to share with friends and family.{% endblock %}" />
+        content="{% block meta_description %}Say YES to your wedding and engagement. First AI Studio to visualize engagement photos, design your wedding venue, and perfect your wedding day photos. Start free today!{% endblock %}" />
   <meta name="author"
-        content="Cactus Cat LLC" />
+        content="DreamWedAI" />
         
   
   <!-- Favicons -->
@@ -35,15 +35,15 @@
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />
 <meta property="og:url" content="{{ request.build_absolute_uri }}" />
-<meta property="og:title" content="{% block og_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
-<meta property="og:description" content="{% block og_description %}Transform anywhere into the perfect wedding celebration. Create FREE beautiful wedding page to share with friends and family.  Wedding designer inspiration in your pocket.{% endblock %}" />
+<meta property="og:title" content="{% block og_title %}DreamWedAI - Say Yes to Your Wedding and Engagement.{% endblock %}" />
+<meta property="og:description" content="{% block og_description %}Say YES to your wedding and engagement. First AI Studio to visualize engagement photos, design your wedding venue, and perfect your wedding day photos. Start free today!{% endblock %}" />
 <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:url" content="{{ request.build_absolute_uri }}" />
-<meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Say Yes to Your Wedding Before The Big Day.{% endblock %}" />
-<meta property="twitter:description" content="{% block twitter_description %}Transform anywhere into the perfect wedding celebration. Create FREE beautiful wedding page to share with friends and family. Wedding designer inspiration in your pocket.{% endblock %}" />
+<meta property="twitter:title" content="{% block twitter_title %}DreamWedAI - Say Yes to Your Wedding and Engagement.{% endblock %}" />
+<meta property="twitter:description" content="{% block twitter_description %}Say YES to your wedding and engagement. First AI Studio to visualize engagement photos, design your wedding venue, and perfect your wedding day photos. Start free today!{% endblock %}" />
 <meta property="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% block twitter_image %}{% static 'images/og-image.jpg' %}{% endblock %}" />
 
   <!-- CSRF Token for AJAX requests -->
@@ -360,7 +360,7 @@
             <i class="bi bi-heart-fill me-2"></i>DreamWedAI
           </a>
           <p class="text-white-75 small">
-            Say Yes to Your Wedding Before The Big Day
+            Say Yes to Your Wedding and Engagement
           </p>
 
         </div>
