@@ -59,32 +59,62 @@ def stripe_webhook(request):
     return HttpResponse(status=200)
 
 def get_customer_subscription_by_stripe_id(customer_id):
-    """Helper function to get CustomerSubscription by Stripe customer ID"""
+    """Helper function to get CustomerSubscription by Stripe customer ID with email fallback"""
     try:
         return CustomerSubscription.objects.get(stripe_customer_id=customer_id)
     except CustomerSubscription.DoesNotExist:
-        logger.error(f"No CustomerSubscription found for stripe_customer_id: {customer_id}")
-        
-        # Try to find by customer metadata
+        logger.warning(f"No CustomerSubscription found for stripe_customer_id: {customer_id}")
+
+        # Try multiple fallback methods
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             customer = stripe.Customer.retrieve(customer_id)
-            
+
+            # Method 1: Try by customer metadata user_id
             if customer.metadata and 'user_id' in customer.metadata:
-                user = User.objects.get(id=customer.metadata['user_id'])
-                
-                # Create the missing CustomerSubscription
-                customer_subscription = CustomerSubscription.objects.create(
-                    user=user,
-                    stripe_customer_id=customer_id,
-                    subscription_active=False
-                )
-                logger.info(f"Created missing CustomerSubscription for user {user.id}")
-                return customer_subscription
-                
+                try:
+                    user = User.objects.get(id=customer.metadata['user_id'])
+                    customer_subscription, created = CustomerSubscription.objects.get_or_create(
+                        user=user,
+                        defaults={'stripe_customer_id': customer_id, 'subscription_active': False}
+                    )
+                    if not created:
+                        # Update existing subscription with new customer ID
+                        customer_subscription.stripe_customer_id = customer_id
+                        customer_subscription.save()
+                        logger.info(f"Updated existing CustomerSubscription for user {user.id} with new customer_id {customer_id}")
+                    else:
+                        logger.info(f"Created new CustomerSubscription for user {user.id}")
+                    return customer_subscription
+                except User.DoesNotExist:
+                    logger.warning(f"User {customer.metadata['user_id']} from metadata not found")
+
+            # Method 2: Try by customer email
+            if customer.email:
+                try:
+                    user = User.objects.get(email=customer.email)
+                    customer_subscription, created = CustomerSubscription.objects.get_or_create(
+                        user=user,
+                        defaults={'stripe_customer_id': customer_id, 'subscription_active': False}
+                    )
+                    if not created:
+                        # Update existing subscription with new customer ID
+                        old_customer_id = customer_subscription.stripe_customer_id
+                        customer_subscription.stripe_customer_id = customer_id
+                        customer_subscription.save()
+                        logger.info(
+                            f"Matched by email {customer.email}: Updated CustomerSubscription for user {user.id} "
+                            f"(old customer: {old_customer_id} → new customer: {customer_id})"
+                        )
+                    else:
+                        logger.info(f"Matched by email {customer.email}: Created CustomerSubscription for user {user.id}")
+                    return customer_subscription
+                except User.DoesNotExist:
+                    logger.warning(f"No user found with email {customer.email}")
+
         except Exception as e:
-            logger.error(f"Error creating CustomerSubscription from metadata: {str(e)}")
-        
+            logger.error(f"Error in fallback lookup for customer {customer_id}: {str(e)}", exc_info=True)
+
         return None
 
 def handle_checkout_session(session):
@@ -273,84 +303,132 @@ def sync_product_and_price(stripe_price):
 def handle_subscription_created(subscription):
     """Process customer.subscription.created event"""
     customer_id = subscription.customer
-    
+
     try:
         with transaction.atomic():
             stripe.api_key = settings.STRIPE_SECRET_KEY
-            
-            # Get existing CustomerSubscription (should exist from checkout)
-            try:
-                customer_subscription = CustomerSubscription.objects.get(stripe_customer_id=customer_id)
-                logger.info(f"Found existing CustomerSubscription for {customer_id}")
-            except CustomerSubscription.DoesNotExist:
-                logger.error(f"No CustomerSubscription found for {customer_id} - this shouldn't happen")
+
+            # Get CustomerSubscription with fallback lookup
+            customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+            if not customer_subscription:
+                logger.error(f"Could not find or create CustomerSubscription for customer {customer_id}")
                 return
-            
+
+            logger.info(f"Found CustomerSubscription for customer {customer_id}, user {customer_subscription.user.email}")
+
             # Update subscription details
             customer_subscription.stripe_subscription_id = subscription.id
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-            
-            # Get plan_id using safe API call
+
+            # Get plan_id using safe API call with fallback
+            plan_id_set = False
             try:
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
                     expand=['data.price.product']
                 )
-                
+
                 if subscription_items.data:
                     price_item = subscription_items.data[0]
                     customer_subscription.plan_id = price_item.price.id
-                    
+                    plan_id_set = True
+
                     # Sync product details
                     sync_product_and_price(price_item.price)
-                    logger.info(f"Set plan_id to {price_item.price.id} for subscription {subscription.id}")
+                    logger.info(f"✓ Set plan_id to {price_item.price.id} for subscription {subscription.id}")
                 else:
                     logger.warning(f"No subscription items found for {subscription.id}")
-                    
+
             except Exception as e:
                 logger.error(f"Error retrieving subscription items: {str(e)}", exc_info=True)
-            
+
+            # Fallback: Try to get plan_id from subscription object directly
+            if not plan_id_set:
+                try:
+                    if hasattr(subscription, 'items') and subscription.items and subscription.items.data:
+                        price_id = subscription.items.data[0].price.id
+                        customer_subscription.plan_id = price_id
+                        plan_id_set = True
+                        logger.info(f"✓ Set plan_id to {price_id} using subscription object fallback")
+                except Exception as e:
+                    logger.error(f"Fallback plan_id retrieval failed: {str(e)}")
+
+            if not plan_id_set:
+                logger.error(f"❌ Failed to set plan_id for subscription {subscription.id} - user may not get correct tier!")
+
             customer_subscription.save()
-            logger.info(f"Updated subscription details: {subscription.id} ({subscription.status})")
-            
+            logger.info(
+                f"✓ Subscription created: {subscription.id} for user {customer_subscription.user.email} "
+                f"(status: {subscription.status}, active: {customer_subscription.subscription_active}, "
+                f"plan_id: {customer_subscription.plan_id or 'NOT SET'})"
+            )
+
     except Exception as e:
         logger.error(f"Error processing subscription.created: {str(e)}", exc_info=True)
 
 def handle_subscription_updated(subscription):
     """Process customer.subscription.updated event"""
     customer_id = subscription.customer
-    
+
     try:
         with transaction.atomic():
             customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
             if not customer_subscription:
                 logger.error(f"Could not find CustomerSubscription for {customer_id}")
                 return
-            
+
+            logger.info(f"Updating subscription for customer {customer_id}, user {customer_subscription.user.email}")
+
             # Update subscription details
+            old_status = customer_subscription.status
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-            
-            # Get plan_id using safe API call
+
+            # Get plan_id using safe API call with fallback
+            plan_id_set = False
+            old_plan_id = customer_subscription.plan_id
             try:
                 stripe.api_key = settings.STRIPE_SECRET_KEY
                 subscription_items = stripe.SubscriptionItem.list(
                     subscription=subscription.id,
                     expand=['data.price.product']
                 )
-                
+
                 if subscription_items.data:
                     price_item = subscription_items.data[0]
                     customer_subscription.plan_id = price_item.price.id
-                    logger.info(f"Updated plan_id to {price_item.price.id} for subscription {subscription.id}")
-                    
+                    plan_id_set = True
+
+                    # Sync product details
+                    sync_product_and_price(price_item.price)
+                    logger.info(f"✓ Updated plan_id to {price_item.price.id} for subscription {subscription.id}")
+
             except Exception as e:
-                logger.error(f"Error retrieving subscription items: {str(e)}")
-            
+                logger.error(f"Error retrieving subscription items: {str(e)}", exc_info=True)
+
+            # Fallback: Try to get plan_id from subscription object directly
+            if not plan_id_set:
+                try:
+                    if hasattr(subscription, 'items') and subscription.items and subscription.items.data:
+                        price_id = subscription.items.data[0].price.id
+                        customer_subscription.plan_id = price_id
+                        plan_id_set = True
+                        logger.info(f"✓ Updated plan_id to {price_id} using subscription object fallback")
+                except Exception as e:
+                    logger.error(f"Fallback plan_id retrieval failed: {str(e)}")
+
+            if not plan_id_set and not old_plan_id:
+                logger.error(f"❌ Failed to set plan_id for subscription {subscription.id} - user may not get correct tier!")
+
             customer_subscription.save()
-            logger.info(f"Updated subscription {subscription.id} for customer {customer_id}")
-            
+            logger.info(
+                f"✓ Subscription updated: {subscription.id} for user {customer_subscription.user.email} "
+                f"(status: {old_status} → {subscription.status}, "
+                f"active: {customer_subscription.subscription_active}, "
+                f"plan_id: {customer_subscription.plan_id or 'NOT SET'})"
+            )
+
     except Exception as e:
         logger.error(f"Error updating subscription: {str(e)}", exc_info=True)
 
