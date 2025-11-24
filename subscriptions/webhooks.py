@@ -50,12 +50,16 @@ def stripe_webhook(request):
             handle_subscription_deleted(event.data.object)
         elif event.type == 'invoice.paid':
             handle_invoice_paid(event.data.object)
+        elif event.type == 'invoice.payment_failed':
+            handle_invoice_payment_failed(event.data.object)
+        elif event.type == 'invoice.payment_action_required':
+            handle_invoice_payment_action_required(event.data.object)
         else:
             logger.info(f"Unhandled event type: {event.type}")
     except Exception as e:
         logger.error(f"Error processing {event.type}: {str(e)}", exc_info=True)
         # Still return 200 to prevent Stripe from retrying
-    
+
     return HttpResponse(status=200)
 
 def get_customer_subscription_by_stripe_id(customer_id):
@@ -368,7 +372,15 @@ def handle_subscription_created(subscription):
         logger.error(f"Error processing subscription.created: {str(e)}", exc_info=True)
 
 def handle_subscription_updated(subscription):
-    """Process customer.subscription.updated event"""
+    """
+    Process customer.subscription.updated event
+
+    This fires when subscription status changes, including when:
+    - Payment retries succeed/fail
+    - Subscription moves to past_due after all retries exhausted
+    - User cancels subscription
+    - Subscription is upgraded/downgraded
+    """
     customer_id = subscription.customer
 
     try:
@@ -382,8 +394,31 @@ def handle_subscription_updated(subscription):
 
             # Update subscription details
             old_status = customer_subscription.status
+            old_active = customer_subscription.subscription_active
+
             customer_subscription.status = subscription.status
             customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+
+            # Log important status transitions
+            if old_status != subscription.status:
+                logger.info(
+                    f"Subscription status transition for {customer_subscription.user.email}: "
+                    f"{old_status} → {subscription.status} "
+                    f"(active: {old_active} → {customer_subscription.subscription_active})"
+                )
+
+                # Special logging for payment-related status changes
+                if subscription.status in ['past_due', 'unpaid']:
+                    logger.warning(
+                        f"⚠️ Subscription {subscription.id} moved to {subscription.status} - "
+                        f"payment retries exhausted or failed. User {customer_subscription.user.email} "
+                        f"will lose access."
+                    )
+                elif old_status in ['past_due', 'unpaid'] and subscription.status == 'active':
+                    logger.info(
+                        f"✅ Subscription {subscription.id} reactivated - "
+                        f"payment retry succeeded for {customer_subscription.user.email}"
+                    )
 
             # Get plan_id using safe API call with fallback
             plan_id_set = False
@@ -455,13 +490,13 @@ def handle_subscription_deleted(subscription):
 def handle_invoice_paid(invoice):
     """Process invoice.paid event - RESET TOKENS HERE"""
     customer_id = invoice.customer
-    
+
     try:
         customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
         if not customer_subscription:
             logger.warning(f"CustomerSubscription not found for invoice payment {customer_id}")
             return
-        
+
         # Update status if this was a late payment
         status_updated = False
         if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
@@ -470,10 +505,10 @@ def handle_invoice_paid(invoice):
             customer_subscription.save()
             status_updated = True
             logger.info(f"Reactivated subscription for customer {customer_id}")
-        
+
         # RESET TOKENS ON SUCCESSFUL PAYMENT (monthly billing cycle completed)
         from usage_limits.usage_tracker import UsageTracker
-        
+
         if UsageTracker.reset_usage_on_payment(customer_subscription.user):
             user_limit = UsageTracker.get_user_limit(customer_subscription.user)
             logger.info(
@@ -483,6 +518,128 @@ def handle_invoice_paid(invoice):
             )
         else:
             logger.error(f"Failed to reset tokens for {customer_subscription.user.email} after payment")
-            
+
     except Exception as e:
         logger.error(f"Error processing payment: {str(e)}", exc_info=True)
+
+def handle_invoice_payment_failed(invoice):
+    """
+    Process invoice.payment_failed event
+
+    Simple approach: Let user know payment failed and direct them to portal.
+    Let Stripe handle retries and grace periods automatically.
+    """
+    customer_id = invoice.customer
+
+    try:
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            logger.warning(f"CustomerSubscription not found for failed payment {customer_id}")
+            return
+
+        attempt_count = invoice.get('attempt_count', 0)
+        amount_due = invoice.amount_due / 100
+
+        logger.warning(
+            f"Payment failed for {customer_subscription.user.email} - "
+            f"Invoice: {invoice.id}, Amount: ${amount_due:.2f}, Attempt: {attempt_count}"
+        )
+
+        # Sync with Stripe's current subscription status
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        subscription = stripe.Subscription.retrieve(customer_subscription.stripe_subscription_id)
+
+        customer_subscription.status = subscription.status
+        customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+        customer_subscription.save()
+
+        # Send ONE email on first failure - simple and helpful
+        if attempt_count <= 1:
+            try:
+                send_payment_failure_email(customer_subscription.user, invoice)
+                logger.info(f"Sent payment failure notification to {customer_subscription.user.email}")
+            except Exception as email_error:
+                logger.error(f"Failed to send payment failure email: {str(email_error)}")
+
+    except Exception as e:
+        logger.error(f"Error processing payment failure: {str(e)}", exc_info=True)
+
+def handle_invoice_payment_action_required(invoice):
+    """Process invoice.payment_action_required event - Payment needs user action (e.g., 3D Secure)"""
+    customer_id = invoice.customer
+
+    try:
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            logger.warning(f"CustomerSubscription not found for payment action required {customer_id}")
+            return
+
+        logger.info(
+            f"Payment action required for {customer_subscription.user.email} - "
+            f"Customer: {customer_id}, Invoice: {invoice.id}"
+        )
+
+        # Optional: Send email to user asking them to complete payment authentication
+        try:
+            send_payment_action_required_email(customer_subscription.user, invoice)
+        except Exception as email_error:
+            logger.error(f"Failed to send payment action email: {str(email_error)}")
+
+    except Exception as e:
+        logger.error(f"Error processing payment action required: {str(e)}", exc_info=True)
+
+def send_payment_failure_email(user, invoice):
+    """Send simple email notification about failed payment"""
+    subject = "Subscription Payment Issue - DreamWedAI"
+
+    context = {
+        'user': user,
+        'amount': invoice.amount_due / 100,
+        'portal_url': f"{getattr(settings, 'SITE_URL', 'https://dreamwedai.com')}/subscriptions/portal/",
+    }
+
+    try:
+        html_message = render_to_string('subscriptions/emails/payment_failed.html', context)
+        text_message = render_to_string('subscriptions/emails/payment_failed.txt', context)
+
+        send_mail(
+            subject=subject,
+            message=text_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+
+        logger.info(f"Sent payment failure email to {user.email}")
+    except Exception as e:
+        logger.error(f"Error sending payment failure email: {str(e)}")
+        raise
+
+def send_payment_action_required_email(user, invoice):
+    """Send email notification about payment requiring authentication"""
+    subject = "Action Required - Complete Payment Authentication"
+
+    context = {
+        'user': user,
+        'invoice_url': invoice.hosted_invoice_url if hasattr(invoice, 'hosted_invoice_url') else None,
+        'amount': invoice.amount_due / 100,
+    }
+
+    try:
+        html_message = render_to_string('subscriptions/emails/payment_action_required.html', context)
+        text_message = render_to_string('subscriptions/emails/payment_action_required.txt', context)
+
+        send_mail(
+            subject=subject,
+            message=text_message,
+            html_message=html_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+
+        logger.info(f"Sent payment action required email to {user.email}")
+    except Exception as e:
+        logger.error(f"Error sending payment action email: {str(e)}")
+        raise

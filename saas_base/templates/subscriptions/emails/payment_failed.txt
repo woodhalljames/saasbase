@@ -1,0 +1,22 @@
+SUBSCRIPTION PAYMENT ISSUE
+===========================
+
+Hi {{ user.username }},
+
+We weren't able to renew your DreamWedAI subscription. The payment of ${{ amount }} was declined.
+
+UPDATE YOUR PAYMENT METHOD:
+{{ portal_url }}
+
+WHAT HAPPENS NEXT?
+We'll automatically retry the payment over the next few days. You can also update your payment method anytime in the customer portal to resolve this immediately.
+
+NEED HELP?
+If you have questions or need assistance, we're here to help!
+
+Support: hello@dreamwedai.com
+
+Thank you for being a DreamWedAI subscriber!
+
+DreamWedAI Team
+https://dreamwedai.com
