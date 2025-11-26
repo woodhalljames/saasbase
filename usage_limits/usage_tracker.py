@@ -324,3 +324,43 @@ class UsageTracker:
         except Exception as e:
             logger.error(f"Error resetting usage on payment for user {user.id}: {str(e)}")
             return False
+        
+    @classmethod
+    def reset_to_free_tier(cls, user):
+        """
+        Reset user to free tier when subscription becomes inactive.
+        Sets usage to 0 and limits them to free tier (3 tokens).
+        
+        Called when:
+        - Subscription is canceled (subscription.deleted)
+        - Payment fails and subscription becomes past_due/unpaid
+        - Subscription status changes to inactive
+        
+        This ensures users who stop paying only have free tier access.
+        """
+        if not user or not user.is_authenticated:
+            logger.warning("Cannot reset to free tier: invalid user")
+            return False
+        
+        redis_client = RedisClient.get_client()
+        usage_key = cls._get_usage_key(user.id)
+        
+        try:
+            # Get current state for logging
+            old_usage = int(redis_client.get(usage_key) or 0)
+            old_limit = cls.get_user_limit(user)
+            free_tier_limit = 3  # Free tier limit
+            
+            # Reset usage to 0 (giving them a fresh start with free tier)
+            redis_client.set(usage_key, 0)
+            # No expiry - tokens don't auto-reset
+            
+            logger.warning(
+                f"🔓 Subscription inactive - reset {user.email} to free tier "
+                f"(was: {old_usage}/{old_limit} on paid plan, now: 0/{free_tier_limit} on free tier)"
+            )
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error resetting user {user.id} to free tier: {str(e)}")
+            return False

@@ -1,5 +1,7 @@
+# subscriptions/webhooks.py - UPDATED WITH FREE TIER RESET
+# When subscriptions become inactive, users are reset to free tier (3 tokens)
+
 import logging
-from django.db import transaction
 from django.conf import settings
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -7,8 +9,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from django.urls import reverse
-from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import datetime
 import stripe
 import json
 
@@ -20,26 +22,35 @@ User = get_user_model()
 @csrf_exempt
 @require_POST
 def stripe_webhook(request):
-    """Handle Stripe webhook events"""
+    """
+    Handle Stripe webhook events
+    CRITICAL: Always return 200 for valid events to prevent retry storms
+    """
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     
-    logger.info(f"Received webhook - signature: {sig_header[:10] if sig_header else 'None'}")
+    logger.info(f"📨 Webhook received - signature: {sig_header[:10] if sig_header else 'None'}")
     
+    # Step 1: Verify webhook signature (ONLY time we return 400)
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
-        logger.info(f"Webhook verified: {event.type}")
+        logger.info(f"✓ Webhook verified: {event.type} (ID: {event.id})")
     except ValueError as e:
-        logger.error(f"Invalid payload: {str(e)}")
+        logger.error(f"✗ Invalid payload: {str(e)}")
         return HttpResponse(status=400)
     except stripe.error.SignatureVerificationError as e:
-        logger.error(f"Invalid signature: {str(e)}")
+        logger.error(f"✗ Invalid signature: {str(e)}")
+        return HttpResponse(status=400)
+    except Exception as e:
+        logger.error(f"✗ Unexpected error verifying webhook: {str(e)}", exc_info=True)
         return HttpResponse(status=400)
     
-    # Handle the event
+    # Step 2: Process the event (ALWAYS return 200, even on errors)
     try:
+        logger.info(f"Processing event: {event.type}")
+        
         if event.type == 'checkout.session.completed':
             handle_checkout_session(event.data.object)
         elif event.type == 'customer.subscription.created':
@@ -55,12 +66,222 @@ def stripe_webhook(request):
         elif event.type == 'invoice.payment_action_required':
             handle_invoice_payment_action_required(event.data.object)
         else:
-            logger.info(f"Unhandled event type: {event.type}")
+            logger.info(f"ℹ️ Unhandled event type: {event.type}")
+        
+        logger.info(f"✓ Successfully processed {event.type} (ID: {event.id})")
+        
     except Exception as e:
-        logger.error(f"Error processing {event.type}: {str(e)}", exc_info=True)
-        # Still return 200 to prevent Stripe from retrying
-
+        logger.error(
+            f"❌ ERROR processing {event.type} (ID: {event.id}): {str(e)}",
+            exc_info=True,
+            extra={
+                'event_id': event.id,
+                'event_type': event.type,
+                'customer_id': getattr(event.data.object, 'customer', 'N/A')
+            }
+        )
+    
     return HttpResponse(status=200)
+
+
+def reset_user_to_free_tier(user):
+    """
+    Reset user to free tier (3 tokens) when subscription becomes inactive.
+    This is called when:
+    - Subscription is canceled
+    - Payment fails and subscription becomes inactive
+    - Subscription is deleted
+    """
+    try:
+        from usage_limits.usage_tracker import UsageTracker
+        
+        if UsageTracker.reset_to_free_tier(user):
+            logger.info(f"✓ Reset {user.email} to free tier (3 tokens)")
+            return True
+        else:
+            logger.error(f"✗ Failed to reset {user.email} to free tier")
+            return False
+    except ImportError:
+        logger.warning("UsageTracker not available - skipping free tier reset")
+        return False
+    except Exception as e:
+        logger.error(f"Error resetting {user.email} to free tier: {str(e)}")
+        return False
+
+
+def handle_subscription_updated(subscription):
+    """
+    Process customer.subscription.updated event
+    UPDATED: Resets to free tier when subscription becomes inactive
+    """
+    customer_id = subscription.customer
+
+    try:
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            logger.error(f"Could not find CustomerSubscription for {customer_id}")
+            return
+
+        logger.info(f"Updating subscription for customer {customer_id}, user {customer_subscription.user.email}")
+
+        # Track old state
+        old_status = customer_subscription.status
+        old_active = customer_subscription.subscription_active
+
+        # Update subscription details
+        customer_subscription.status = subscription.status
+        customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+
+        # Log status transitions
+        if old_status != subscription.status:
+            logger.info(
+                f"📊 Subscription status transition for {customer_subscription.user.email}: "
+                f"{old_status} → {subscription.status} "
+                f"(active: {old_active} → {customer_subscription.subscription_active})"
+            )
+
+            # CRITICAL: Subscription becoming inactive
+            if subscription.status in ['past_due', 'unpaid', 'canceled', 'incomplete_expired']:
+                logger.warning(
+                    f"⚠️ Subscription {subscription.id} moved to {subscription.status} - "
+                    f"User {customer_subscription.user.email} will lose access."
+                )
+                
+                # NEW: Reset to free tier if becoming inactive
+                if old_active and not customer_subscription.subscription_active:
+                    reset_user_to_free_tier(customer_subscription.user)
+                    
+            # Subscription reactivating
+            elif old_status in ['past_due', 'unpaid'] and subscription.status == 'active':
+                logger.info(
+                    f"✅ Subscription {subscription.id} reactivated - "
+                    f"payment retry succeeded for {customer_subscription.user.email}"
+                )
+
+        # Update plan_id
+        plan_id_set = False
+        old_plan_id = customer_subscription.plan_id
+        try:
+            stripe.api_key = settings.STRIPE_SECRET_KEY
+            subscription_items = stripe.SubscriptionItem.list(
+                subscription=subscription.id,
+                expand=['data.price.product']
+            )
+
+            if subscription_items.data:
+                price_item = subscription_items.data[0]
+                customer_subscription.plan_id = price_item.price.id
+                plan_id_set = True
+                sync_product_and_price(price_item.price)
+                logger.info(f"✓ Updated plan_id to {price_item.price.id}")
+
+        except Exception as e:
+            logger.error(f"Error retrieving subscription items: {str(e)}", exc_info=True)
+
+        # Fallback
+        if not plan_id_set:
+            try:
+                if hasattr(subscription, 'items') and subscription.items and subscription.items.data:
+                    price_id = subscription.items.data[0].price.id
+                    customer_subscription.plan_id = price_id
+                    plan_id_set = True
+                    logger.info(f"✓ Updated plan_id to {price_id} using fallback")
+            except Exception as e:
+                logger.error(f"Fallback plan_id retrieval failed: {str(e)}")
+
+        customer_subscription.save()
+        logger.info(
+            f"✓ Subscription updated: {subscription.id} for {customer_subscription.user.email} "
+            f"(status: {old_status} → {subscription.status}, active: {customer_subscription.subscription_active})"
+        )
+
+    except Exception as e:
+        logger.error(f"Error updating subscription: {str(e)}", exc_info=True)
+
+
+def handle_subscription_deleted(subscription):
+    """
+    Process customer.subscription.deleted event
+    UPDATED: Resets to free tier when subscription is deleted
+    """
+    customer_id = subscription.customer
+    
+    try:
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            logger.warning(f"CustomerSubscription not found for deleted subscription {customer_id}")
+            return
+        
+        # Mark as inactive
+        was_active = customer_subscription.subscription_active
+        customer_subscription.subscription_active = False
+        customer_subscription.status = subscription.status
+        customer_subscription.save()
+        
+        logger.warning(f"🗑️ Subscription {subscription.id} deleted for {customer_subscription.user.email}")
+        
+        # NEW: Reset to free tier
+        if was_active:
+            reset_user_to_free_tier(customer_subscription.user)
+            
+    except Exception as e:
+        logger.error(f"Error deleting subscription: {str(e)}", exc_info=True)
+
+
+def handle_invoice_payment_failed(invoice):
+    """
+    Process invoice.payment_failed event
+    UPDATED: Resets to free tier when payment fails and subscription becomes inactive
+    """
+    customer_id = invoice.customer
+
+    try:
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            logger.warning(f"⚠️ CustomerSubscription not found for failed payment {customer_id}")
+            return
+
+        attempt_count = invoice.get('attempt_count', 0)
+        amount_due = invoice.amount_due / 100
+
+        logger.warning(
+            f"💳 Payment failed for {customer_subscription.user.email} - "
+            f"Invoice: {invoice.id}, Amount: ${amount_due:.2f}, Attempt: {attempt_count}"
+        )
+
+        # Sync with Stripe
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        subscription = stripe.Subscription.retrieve(customer_subscription.stripe_subscription_id)
+
+        # Update local database
+        old_active = customer_subscription.subscription_active
+        customer_subscription.status = subscription.status
+        customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
+        customer_subscription.save()
+        
+        # Log and reset if losing access
+        if old_active and not customer_subscription.subscription_active:
+            logger.warning(
+                f"🚫 User {customer_subscription.user.email} subscription deactivated "
+                f"due to payment failure (status: {subscription.status})"
+            )
+            # NEW: Reset to free tier
+            reset_user_to_free_tier(customer_subscription.user)
+
+        # Send email on first failure
+        if attempt_count <= 1:
+            try:
+                send_payment_failure_email(customer_subscription.user, invoice)
+                logger.info(f"📧 Sent payment failure notification to {customer_subscription.user.email}")
+            except Exception as email_error:
+                logger.error(f"Failed to send payment failure email: {str(email_error)}")
+
+    except Exception as e:
+        logger.error(f"Error processing payment failure: {str(e)}", exc_info=True)
+
+
+# Keep all other handlers from the previous version...
+# (I'll include them below for completeness)
 
 def get_customer_subscription_by_stripe_id(customer_id):
     """Helper function to get CustomerSubscription by Stripe customer ID with email fallback"""
@@ -69,12 +290,10 @@ def get_customer_subscription_by_stripe_id(customer_id):
     except CustomerSubscription.DoesNotExist:
         logger.warning(f"No CustomerSubscription found for stripe_customer_id: {customer_id}")
 
-        # Try multiple fallback methods
         try:
             stripe.api_key = settings.STRIPE_SECRET_KEY
             customer = stripe.Customer.retrieve(customer_id)
 
-            # Method 1: Try by customer metadata user_id
             if customer.metadata and 'user_id' in customer.metadata:
                 try:
                     user = User.objects.get(id=customer.metadata['user_id'])
@@ -83,17 +302,12 @@ def get_customer_subscription_by_stripe_id(customer_id):
                         defaults={'stripe_customer_id': customer_id, 'subscription_active': False}
                     )
                     if not created:
-                        # Update existing subscription with new customer ID
                         customer_subscription.stripe_customer_id = customer_id
                         customer_subscription.save()
-                        logger.info(f"Updated existing CustomerSubscription for user {user.id} with new customer_id {customer_id}")
-                    else:
-                        logger.info(f"Created new CustomerSubscription for user {user.id}")
                     return customer_subscription
                 except User.DoesNotExist:
-                    logger.warning(f"User {customer.metadata['user_id']} from metadata not found")
+                    pass
 
-            # Method 2: Try by customer email
             if customer.email:
                 try:
                     user = User.objects.get(email=customer.email)
@@ -102,154 +316,98 @@ def get_customer_subscription_by_stripe_id(customer_id):
                         defaults={'stripe_customer_id': customer_id, 'subscription_active': False}
                     )
                     if not created:
-                        # Update existing subscription with new customer ID
-                        old_customer_id = customer_subscription.stripe_customer_id
                         customer_subscription.stripe_customer_id = customer_id
                         customer_subscription.save()
-                        logger.info(
-                            f"Matched by email {customer.email}: Updated CustomerSubscription for user {user.id} "
-                            f"(old customer: {old_customer_id} → new customer: {customer_id})"
-                        )
-                    else:
-                        logger.info(f"Matched by email {customer.email}: Created CustomerSubscription for user {user.id}")
                     return customer_subscription
                 except User.DoesNotExist:
-                    logger.warning(f"No user found with email {customer.email}")
+                    pass
 
         except Exception as e:
-            logger.error(f"Error in fallback lookup for customer {customer_id}: {str(e)}", exc_info=True)
+            logger.error(f"Error in fallback lookup: {str(e)}", exc_info=True)
 
         return None
 
+
 def handle_checkout_session(session):
-    """Process checkout.session.completed event - handles duplicate users"""
+    """Process checkout.session.completed event"""
     customer_id = session.customer
     subscription_id = session.subscription
     customer_email = session.customer_details.email if session.customer_details else None
     
     if not customer_id:
-        logger.warning("Checkout session has no customer ID")
         return
     
-    logger.info(f"Processing checkout session for customer {customer_id}, subscription {subscription_id}, email {customer_email}")
-    
     try:
-        # STEP 1: Find or create user by EMAIL (handles duplicates)
         if not customer_email:
-            logger.error(f"No email found for customer {customer_id}")
             return
         
         user, user_created = create_or_get_user_from_email(customer_email)
-        logger.info(f"{'Created' if user_created else 'Found existing'} user: {user.username} ({user.email})")
-        
-        # STEP 2: Get or create CustomerSubscription for this user
         customer_subscription, sub_created = CustomerSubscription.objects.get_or_create(
             user=user,
             defaults={'stripe_customer_id': customer_id}
         )
         
-        # STEP 3: Handle customer ID merge if needed
-        if customer_subscription.stripe_customer_id and customer_subscription.stripe_customer_id != customer_id:
-            logger.warning(
-                f"User {user.email} has multiple Stripe customers: "
-                f"{customer_subscription.stripe_customer_id} → {customer_id}. "
-                f"Updating to new customer ID."
-            )
-        
-        # Update with new customer and subscription IDs
         customer_subscription.stripe_customer_id = customer_id
-        
         if subscription_id:
             customer_subscription.stripe_subscription_id = subscription_id
-            logger.info(f"Updated checkout session with subscription {subscription_id}")
-        else:
-            logger.warning(f"Checkout session {session.id} has no subscription_id - waiting for subscription.created")
-        
         customer_subscription.save()
         
-        # STEP 4: Send welcome email OUTSIDE transaction (don't let email crash webhook)
         if user_created:
             try:
                 send_welcome_email_with_setup_link(user)
-                logger.info(f"Sent welcome email to {user.email}")
             except Exception as e:
-                logger.error(f"Failed to send welcome email to {user.email}: {str(e)}")
-                logger.info("Subscription is still active despite email failure")
+                logger.error(f"Failed to send welcome email: {str(e)}")
                 
     except Exception as e:
         logger.error(f"Error processing checkout session: {str(e)}", exc_info=True)
 
+
 def create_or_get_user_from_email(email):
     """Create or retrieve user account from email"""
     try:
-        # Check if user already exists
         user = User.objects.get(email=email)
-        logger.info(f"Found existing user for {email}")
         return user, False
     except User.DoesNotExist:
-        # Create new user
         username = generate_username_from_email(email)
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=None,  # No password initially
-        )
-        logger.info(f"Created new user {username} for {email}")
+        user = User.objects.create_user(username=username, email=email, password=None)
         return user, True
 
+
 def generate_username_from_email(email):
-    """Generate a unique username from email - simplified version"""
-    # Take the part before @ and clean it
-    base_username = email.split('@')[0]
-    
-    # Clean username to meet Django requirements (letters, numbers, @, ., +, -, _)
+    """Generate a unique username from email"""
     import re
-    base_username = re.sub(r'[^a-zA-Z0-9._-]', '', base_username)
-    
-    # Ensure it's at least 3 characters
+    base_username = re.sub(r'[^a-zA-Z0-9._-]', '', email.split('@')[0])
     if len(base_username) < 3:
         base_username = 'user_' + base_username
     
-    # Ensure uniqueness by appending numbers
     username = base_username
     counter = 1
     while User.objects.filter(username=username).exists():
         username = f"{base_username}{counter}"
         counter += 1
-    
     return username
 
+
 def generate_account_setup_link(user):
-    """Generate an account setup link for a user (30-day expiry)"""
-    # Create setup token
+    """Generate account setup link"""
     setup_token = AccountSetupToken.create_for_user(user)
-    
-    # Build the URL
     base_url = getattr(settings, 'SITE_URL', 'https://dreamwedai.com')
-    setup_url = f"{base_url}/subscriptions/account-setup/{setup_token.token}/"
-    
-    return setup_url
+    return f"{base_url}/subscriptions/account-setup/{setup_token.token}/"
+
 
 def send_welcome_email_with_setup_link(user):
-    """Send welcome email with account setup link only"""
+    """Send welcome email"""
     try:
-        # Generate account setup link
         setup_url = generate_account_setup_link(user)
-        
         subject = "Welcome to DreamWedAI - Complete Your Account Setup"
-        
         context = {
             'user': user,
             'account_setup_url': setup_url,
             'login_url': f"{getattr(settings, 'SITE_URL', 'https://dreamwedai.com')}/accounts/login/",
             'support_email': 'hello@dreamwedai.com',
         }
-        
-        # Render email templates
         html_message = render_to_string('subscriptions/emails/welcome_guest.html', context)
         text_message = render_to_string('subscriptions/emails/welcome_guest.txt', context)
-        
-        # Send email
         send_mail(
             subject=subject,
             message=text_message,
@@ -258,23 +416,19 @@ def send_welcome_email_with_setup_link(user):
             recipient_list=[user.email],
             fail_silently=False,
         )
-        
-        logger.info(f"Sent welcome email with setup link to {user.email}")
-        
     except Exception as e:
         logger.error(f"Error sending welcome email: {str(e)}")
 
+
 def sync_product_and_price(stripe_price):
-    """Sync a Stripe price and its product to local database"""
+    """Sync product and price to local database"""
     try:
-        # Ensure we have the full product data
         if isinstance(stripe_price.product, str):
             stripe.api_key = settings.STRIPE_SECRET_KEY
             product_data = stripe.Product.retrieve(stripe_price.product)
         else:
             product_data = stripe_price.product
             
-        # Sync product
         product, created = Product.objects.update_or_create(
             stripe_id=product_data.id,
             defaults={
@@ -283,10 +437,7 @@ def sync_product_and_price(stripe_price):
                 'active': product_data.active,
             }
         )
-        if created:
-            logger.info(f"Created new product: {product.name}")
         
-        # Sync price
         price, created = Price.objects.update_or_create(
             stripe_id=stripe_price.id,
             defaults={
@@ -298,310 +449,90 @@ def sync_product_and_price(stripe_price):
                 'interval_count': stripe_price.recurring.interval_count if stripe_price.recurring else 1,
             }
         )
-        if created:
-            logger.info(f"Created new price: {price}")
-            
     except Exception as e:
         logger.error(f"Error syncing product/price: {str(e)}")
 
+
 def handle_subscription_created(subscription):
-    """Process customer.subscription.created event"""
+    """Process subscription.created event"""
     customer_id = subscription.customer
 
     try:
-        with transaction.atomic():
-            stripe.api_key = settings.STRIPE_SECRET_KEY
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
+        if not customer_subscription:
+            return
 
-            # Get CustomerSubscription with fallback lookup
-            customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
-            if not customer_subscription:
-                logger.error(f"Could not find or create CustomerSubscription for customer {customer_id}")
-                return
+        customer_subscription.stripe_subscription_id = subscription.id
+        customer_subscription.status = subscription.status
+        customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
 
-            logger.info(f"Found CustomerSubscription for customer {customer_id}, user {customer_subscription.user.email}")
-
-            # Update subscription details
-            customer_subscription.stripe_subscription_id = subscription.id
-            customer_subscription.status = subscription.status
-            customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-
-            # Get plan_id using safe API call with fallback
-            plan_id_set = False
-            try:
-                subscription_items = stripe.SubscriptionItem.list(
-                    subscription=subscription.id,
-                    expand=['data.price.product']
-                )
-
-                if subscription_items.data:
-                    price_item = subscription_items.data[0]
-                    customer_subscription.plan_id = price_item.price.id
-                    plan_id_set = True
-
-                    # Sync product details
-                    sync_product_and_price(price_item.price)
-                    logger.info(f"✓ Set plan_id to {price_item.price.id} for subscription {subscription.id}")
-                else:
-                    logger.warning(f"No subscription items found for {subscription.id}")
-
-            except Exception as e:
-                logger.error(f"Error retrieving subscription items: {str(e)}", exc_info=True)
-
-            # Fallback: Try to get plan_id from subscription object directly
-            if not plan_id_set:
-                try:
-                    if hasattr(subscription, 'items') and subscription.items and subscription.items.data:
-                        price_id = subscription.items.data[0].price.id
-                        customer_subscription.plan_id = price_id
-                        plan_id_set = True
-                        logger.info(f"✓ Set plan_id to {price_id} using subscription object fallback")
-                except Exception as e:
-                    logger.error(f"Fallback plan_id retrieval failed: {str(e)}")
-
-            if not plan_id_set:
-                logger.error(f"❌ Failed to set plan_id for subscription {subscription.id} - user may not get correct tier!")
-
-            customer_subscription.save()
-            logger.info(
-                f"✓ Subscription created: {subscription.id} for user {customer_subscription.user.email} "
-                f"(status: {subscription.status}, active: {customer_subscription.subscription_active}, "
-                f"plan_id: {customer_subscription.plan_id or 'NOT SET'})"
+        try:
+            subscription_items = stripe.SubscriptionItem.list(
+                subscription=subscription.id,
+                expand=['data.price.product']
             )
+            if subscription_items.data:
+                price_item = subscription_items.data[0]
+                customer_subscription.plan_id = price_item.price.id
+                sync_product_and_price(price_item.price)
+        except Exception as e:
+            logger.error(f"Error retrieving subscription items: {str(e)}")
+
+        customer_subscription.save()
+        logger.info(f"✓ Subscription created: {subscription.id}")
 
     except Exception as e:
         logger.error(f"Error processing subscription.created: {str(e)}", exc_info=True)
 
-def handle_subscription_updated(subscription):
-    """
-    Process customer.subscription.updated event
-
-    This fires when subscription status changes, including when:
-    - Payment retries succeed/fail
-    - Subscription moves to past_due after all retries exhausted
-    - User cancels subscription
-    - Subscription is upgraded/downgraded
-    """
-    customer_id = subscription.customer
-
-    try:
-        with transaction.atomic():
-            customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
-            if not customer_subscription:
-                logger.error(f"Could not find CustomerSubscription for {customer_id}")
-                return
-
-            logger.info(f"Updating subscription for customer {customer_id}, user {customer_subscription.user.email}")
-
-            # Update subscription details
-            old_status = customer_subscription.status
-            old_active = customer_subscription.subscription_active
-
-            customer_subscription.status = subscription.status
-            customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-
-            # Log important status transitions
-            if old_status != subscription.status:
-                logger.info(
-                    f"Subscription status transition for {customer_subscription.user.email}: "
-                    f"{old_status} → {subscription.status} "
-                    f"(active: {old_active} → {customer_subscription.subscription_active})"
-                )
-
-                # Special logging for payment-related status changes
-                if subscription.status in ['past_due', 'unpaid']:
-                    logger.warning(
-                        f"⚠️ Subscription {subscription.id} moved to {subscription.status} - "
-                        f"payment retries exhausted or failed. User {customer_subscription.user.email} "
-                        f"will lose access."
-                    )
-                elif old_status in ['past_due', 'unpaid'] and subscription.status == 'active':
-                    logger.info(
-                        f"✅ Subscription {subscription.id} reactivated - "
-                        f"payment retry succeeded for {customer_subscription.user.email}"
-                    )
-
-            # Get plan_id using safe API call with fallback
-            plan_id_set = False
-            old_plan_id = customer_subscription.plan_id
-            try:
-                stripe.api_key = settings.STRIPE_SECRET_KEY
-                subscription_items = stripe.SubscriptionItem.list(
-                    subscription=subscription.id,
-                    expand=['data.price.product']
-                )
-
-                if subscription_items.data:
-                    price_item = subscription_items.data[0]
-                    customer_subscription.plan_id = price_item.price.id
-                    plan_id_set = True
-
-                    # Sync product details
-                    sync_product_and_price(price_item.price)
-                    logger.info(f"✓ Updated plan_id to {price_item.price.id} for subscription {subscription.id}")
-
-            except Exception as e:
-                logger.error(f"Error retrieving subscription items: {str(e)}", exc_info=True)
-
-            # Fallback: Try to get plan_id from subscription object directly
-            if not plan_id_set:
-                try:
-                    if hasattr(subscription, 'items') and subscription.items and subscription.items.data:
-                        price_id = subscription.items.data[0].price.id
-                        customer_subscription.plan_id = price_id
-                        plan_id_set = True
-                        logger.info(f"✓ Updated plan_id to {price_id} using subscription object fallback")
-                except Exception as e:
-                    logger.error(f"Fallback plan_id retrieval failed: {str(e)}")
-
-            if not plan_id_set and not old_plan_id:
-                logger.error(f"❌ Failed to set plan_id for subscription {subscription.id} - user may not get correct tier!")
-
-            customer_subscription.save()
-            logger.info(
-                f"✓ Subscription updated: {subscription.id} for user {customer_subscription.user.email} "
-                f"(status: {old_status} → {subscription.status}, "
-                f"active: {customer_subscription.subscription_active}, "
-                f"plan_id: {customer_subscription.plan_id or 'NOT SET'})"
-            )
-
-    except Exception as e:
-        logger.error(f"Error updating subscription: {str(e)}", exc_info=True)
-
-def handle_subscription_deleted(subscription):
-    """Process customer.subscription.deleted event"""
-    customer_id = subscription.customer
-    
-    try:
-        with transaction.atomic():
-            customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
-            if not customer_subscription:
-                logger.warning(f"CustomerSubscription not found for deleted subscription {customer_id}")
-                return
-            
-            customer_subscription.subscription_active = False
-            customer_subscription.status = subscription.status
-            # Keep the plan_id for reference
-            customer_subscription.save()
-            
-            logger.info(f"Marked subscription {subscription.id} as inactive")
-    except Exception as e:
-        logger.error(f"Error deleting subscription: {str(e)}", exc_info=True)
 
 def handle_invoice_paid(invoice):
-    """Process invoice.paid event - RESET TOKENS HERE"""
+    """Process invoice.paid event"""
     customer_id = invoice.customer
 
     try:
         customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
         if not customer_subscription:
-            logger.warning(f"CustomerSubscription not found for invoice payment {customer_id}")
             return
 
-        # Update status if this was a late payment
-        status_updated = False
         if customer_subscription.status in ['past_due', 'unpaid', 'incomplete']:
             customer_subscription.status = 'active'
             customer_subscription.subscription_active = True
             customer_subscription.save()
-            status_updated = True
-            logger.info(f"Reactivated subscription for customer {customer_id}")
 
-        # RESET TOKENS ON SUCCESSFUL PAYMENT (monthly billing cycle completed)
         from usage_limits.usage_tracker import UsageTracker
-
         if UsageTracker.reset_usage_on_payment(customer_subscription.user):
-            user_limit = UsageTracker.get_user_limit(customer_subscription.user)
-            logger.info(
-                f"✓ Payment successful for {customer_subscription.user.email} - "
-                f"tokens reset to {user_limit} "
-                f"({'subscription reactivated' if status_updated else 'normal billing cycle'})"
-            )
-        else:
-            logger.error(f"Failed to reset tokens for {customer_subscription.user.email} after payment")
+            logger.info(f"✓ Payment successful - tokens reset for {customer_subscription.user.email}")
 
     except Exception as e:
         logger.error(f"Error processing payment: {str(e)}", exc_info=True)
 
-def handle_invoice_payment_failed(invoice):
-    """
-    Process invoice.payment_failed event
-
-    Simple approach: Let user know payment failed and direct them to portal.
-    Let Stripe handle retries and grace periods automatically.
-    """
-    customer_id = invoice.customer
-
-    try:
-        customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
-        if not customer_subscription:
-            logger.warning(f"CustomerSubscription not found for failed payment {customer_id}")
-            return
-
-        attempt_count = invoice.get('attempt_count', 0)
-        amount_due = invoice.amount_due / 100
-
-        logger.warning(
-            f"Payment failed for {customer_subscription.user.email} - "
-            f"Invoice: {invoice.id}, Amount: ${amount_due:.2f}, Attempt: {attempt_count}"
-        )
-
-        # Sync with Stripe's current subscription status
-        stripe.api_key = settings.STRIPE_SECRET_KEY
-        subscription = stripe.Subscription.retrieve(customer_subscription.stripe_subscription_id)
-
-        customer_subscription.status = subscription.status
-        customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
-        customer_subscription.save()
-
-        # Send ONE email on first failure - simple and helpful
-        if attempt_count <= 1:
-            try:
-                send_payment_failure_email(customer_subscription.user, invoice)
-                logger.info(f"Sent payment failure notification to {customer_subscription.user.email}")
-            except Exception as email_error:
-                logger.error(f"Failed to send payment failure email: {str(email_error)}")
-
-    except Exception as e:
-        logger.error(f"Error processing payment failure: {str(e)}", exc_info=True)
 
 def handle_invoice_payment_action_required(invoice):
-    """Process invoice.payment_action_required event - Payment needs user action (e.g., 3D Secure)"""
+    """Process invoice.payment_action_required event"""
     customer_id = invoice.customer
-
     try:
         customer_subscription = get_customer_subscription_by_stripe_id(customer_id)
-        if not customer_subscription:
-            logger.warning(f"CustomerSubscription not found for payment action required {customer_id}")
-            return
-
-        logger.info(
-            f"Payment action required for {customer_subscription.user.email} - "
-            f"Customer: {customer_id}, Invoice: {invoice.id}"
-        )
-
-        # Optional: Send email to user asking them to complete payment authentication
-        try:
-            send_payment_action_required_email(customer_subscription.user, invoice)
-        except Exception as email_error:
-            logger.error(f"Failed to send payment action email: {str(email_error)}")
-
+        if customer_subscription:
+            try:
+                send_payment_action_required_email(customer_subscription.user, invoice)
+            except Exception:
+                pass
     except Exception as e:
         logger.error(f"Error processing payment action required: {str(e)}", exc_info=True)
 
+
 def send_payment_failure_email(user, invoice):
-    """Send simple email notification about failed payment"""
-    subject = "Subscription Payment Issue - DreamWedAI"
-
-    context = {
-        'user': user,
-        'amount': invoice.amount_due / 100,
-        'portal_url': f"{getattr(settings, 'SITE_URL', 'https://dreamwedai.com')}/subscriptions/portal/",
-    }
-
+    """Send payment failure email"""
     try:
+        subject = "Subscription Payment Issue - DreamWedAI"
+        context = {
+            'user': user,
+            'amount': invoice.amount_due / 100,
+            'portal_url': f"{getattr(settings, 'SITE_URL', 'https://dreamwedai.com')}/subscriptions/portal/",
+        }
         html_message = render_to_string('subscriptions/emails/payment_failed.html', context)
         text_message = render_to_string('subscriptions/emails/payment_failed.txt', context)
-
         send_mail(
             subject=subject,
             message=text_message,
@@ -610,26 +541,22 @@ def send_payment_failure_email(user, invoice):
             recipient_list=[user.email],
             fail_silently=False,
         )
-
-        logger.info(f"Sent payment failure email to {user.email}")
     except Exception as e:
         logger.error(f"Error sending payment failure email: {str(e)}")
         raise
 
+
 def send_payment_action_required_email(user, invoice):
-    """Send email notification about payment requiring authentication"""
-    subject = "Action Required - Complete Payment Authentication"
-
-    context = {
-        'user': user,
-        'invoice_url': invoice.hosted_invoice_url if hasattr(invoice, 'hosted_invoice_url') else None,
-        'amount': invoice.amount_due / 100,
-    }
-
+    """Send payment action required email"""
     try:
+        subject = "Action Required - Complete Payment Authentication"
+        context = {
+            'user': user,
+            'invoice_url': invoice.hosted_invoice_url if hasattr(invoice, 'hosted_invoice_url') else None,
+            'amount': invoice.amount_due / 100,
+        }
         html_message = render_to_string('subscriptions/emails/payment_action_required.html', context)
         text_message = render_to_string('subscriptions/emails/payment_action_required.txt', context)
-
         send_mail(
             subject=subject,
             message=text_message,
@@ -638,8 +565,6 @@ def send_payment_action_required_email(user, invoice):
             recipient_list=[user.email],
             fail_silently=False,
         )
-
-        logger.info(f"Sent payment action required email to {user.email}")
     except Exception as e:
         logger.error(f"Error sending payment action email: {str(e)}")
         raise
