@@ -1,0 +1,20 @@
+Action Required: Complete Payment Authentication
+
+Hello {{ user.username }},
+
+Your payment of ${{ amount|floatformat:2 }} requires additional authentication to complete.
+
+This is a security measure required by your bank to verify the transaction. Please complete the authentication process as soon as possible to avoid any interruption to your service.
+
+{% if invoice_url %}
+Complete payment authentication here:
+{{ invoice_url }}
+{% endif %}
+
+If you have any questions or need assistance, please don't hesitate to contact us.
+
+Best regards,
+The DreamWedAI Team
+
+---
+DreamWedAI | Creating magical wedding experiences with AI
