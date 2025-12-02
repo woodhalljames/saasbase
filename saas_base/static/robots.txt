@@ -1,0 +1,31 @@
+# robots.txt for DreamWedAI
+# Wedding photo editing, engagement photos, and wedding organization service
+
+User-agent: *
+
+# Allow crawling of main pages
+Allow: /
+Allow: /about/
+Allow: /pricing/
+Allow: /blog/
+Allow: /resources/
+Allow: /wedding/
+
+# Disallow private/admin areas
+Disallow: /admin/
+Disallow: /accounts/
+Disallow: /studio/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /media/private/
+
+# Disallow search and filter pages to avoid duplicate content
+Disallow: /*?
+
+# Allow Googlebot to crawl images
+User-agent: Googlebot-Image
+Allow: /media/
+Allow: /static/images/
+
+# Sitemap location
+Sitemap: https://dreamwedai.com/sitemap.xml
