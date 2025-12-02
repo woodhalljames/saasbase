@@ -112,7 +112,8 @@ def reset_user_to_free_tier(user):
 def handle_subscription_updated(subscription):
     """
     Process customer.subscription.updated event
-    UPDATED: Resets to free tier when subscription becomes inactive
+    UPDATED: Immediately deactivates subscription on payment failure (past_due, unpaid, canceled)
+    User is downgraded to free tier until payment succeeds
     """
     customer_id = subscription.customer
 
@@ -130,6 +131,8 @@ def handle_subscription_updated(subscription):
 
         # Update subscription details
         customer_subscription.status = subscription.status
+        # Subscription only active when 'active' or 'trialing'
+        # past_due, unpaid, canceled = immediate loss of access
         customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
 
         # Log status transitions
@@ -143,19 +146,19 @@ def handle_subscription_updated(subscription):
             # CRITICAL: Subscription becoming inactive
             if subscription.status in ['past_due', 'unpaid', 'canceled', 'incomplete_expired']:
                 logger.warning(
-                    f"⚠️ Subscription {subscription.id} moved to {subscription.status} - "
-                    f"User {customer_subscription.user.email} will lose access."
+                    f"🚫 Subscription {subscription.id} moved to {subscription.status} - "
+                    f"User {customer_subscription.user.email} losing access immediately."
                 )
-                
-                # NEW: Reset to free tier if becoming inactive
+
+                # Reset to free tier immediately when losing access
                 if old_active and not customer_subscription.subscription_active:
                     reset_user_to_free_tier(customer_subscription.user)
-                    
-            # Subscription reactivating
+
+            # Subscription reactivating (payment succeeded)
             elif old_status in ['past_due', 'unpaid'] and subscription.status == 'active':
                 logger.info(
                     f"✅ Subscription {subscription.id} reactivated - "
-                    f"payment retry succeeded for {customer_subscription.user.email}"
+                    f"payment succeeded for {customer_subscription.user.email}"
                 )
 
         # Update plan_id
@@ -231,7 +234,9 @@ def handle_subscription_deleted(subscription):
 def handle_invoice_payment_failed(invoice):
     """
     Process invoice.payment_failed event
-    UPDATED: Resets to free tier when payment fails and subscription becomes inactive
+    UPDATED: Immediately deactivates subscription and downgrades to free tier on payment failure
+    Sends email notification to user so they can update payment method
+    Subscription will be restored automatically when payment succeeds (invoice.paid event)
     """
     customer_id = invoice.customer
 
@@ -249,32 +254,31 @@ def handle_invoice_payment_failed(invoice):
             f"Invoice: {invoice.id}, Amount: ${amount_due:.2f}, Attempt: {attempt_count}"
         )
 
-        # Sync with Stripe
+        # Sync with Stripe to get current subscription status
         stripe.api_key = settings.STRIPE_SECRET_KEY
         subscription = stripe.Subscription.retrieve(customer_subscription.stripe_subscription_id)
 
         # Update local database
         old_active = customer_subscription.subscription_active
         customer_subscription.status = subscription.status
+        # Immediately deactivate on payment failure
         customer_subscription.subscription_active = subscription.status in ['active', 'trialing']
         customer_subscription.save()
-        
-        # Log and reset if losing access
+
+        # Downgrade to free tier immediately when losing access
         if old_active and not customer_subscription.subscription_active:
             logger.warning(
-                f"🚫 User {customer_subscription.user.email} subscription deactivated "
-                f"due to payment failure (status: {subscription.status})"
+                f"🚫 Payment failed - Downgrading {customer_subscription.user.email} to free tier immediately. "
+                f"Subscription status: {subscription.status}. Stripe will retry automatically."
             )
-            # NEW: Reset to free tier
             reset_user_to_free_tier(customer_subscription.user)
 
-        # Send email on first failure
-        if attempt_count <= 1:
-            try:
-                send_payment_failure_email(customer_subscription.user, invoice)
-                logger.info(f"📧 Sent payment failure notification to {customer_subscription.user.email}")
-            except Exception as email_error:
-                logger.error(f"Failed to send payment failure email: {str(email_error)}")
+        # Send email notification so user can update payment method
+        try:
+            send_payment_failure_email(customer_subscription.user, invoice)
+            logger.info(f"📧 Sent payment failure notification to {customer_subscription.user.email}")
+        except Exception as email_error:
+            logger.error(f"Failed to send payment failure email: {str(email_error)}")
 
     except Exception as e:
         logger.error(f"Error processing payment failure: {str(e)}", exc_info=True)
