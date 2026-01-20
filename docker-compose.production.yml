@@ -3,10 +3,7 @@ volumes:
   production_postgres_data_backups: {}
   production_traefik: {}
   production_django_media: {}
-  
   production_redis_data: {}
-  
-
 
 services:
   django: &django
@@ -49,13 +46,14 @@ services:
       - '0.0.0.0:80:80'
       - '0.0.0.0:443:443'    
       - '0.0.0.0:5555:5555'
+    networks:
+      - traefik-public
+      - default
 
   redis:
     image: docker.io/redis:6
-    
     volumes:
       - production_redis_data:/data
-    
 
   celeryworker:
     <<: *django
@@ -81,3 +79,8 @@ services:
       - django
     volumes:
       - production_django_media:/usr/share/nginx/media:ro
+
+networks:
+  traefik-public:
+    name: traefik-public
+    driver: bridge
