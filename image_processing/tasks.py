@@ -239,7 +239,7 @@ def process_venue_job(job):
             # Save the generated image
             processed_image = ProcessedImage(
                 processing_job=job,
-                gemini_model=result.get('model', 'gemini-2.5-flash-image-preview'),
+                gemini_model=result.get('model', 'gemini-2.5-flash-image'),
                 finish_reason=result.get('finish_reason', 'STOP')
             )
             
@@ -255,7 +255,7 @@ def process_venue_job(job):
             return {
                 'success': True,
                 'processed_image_id': processed_image.id,
-                'model': result.get('model', 'gemini-2.5-flash-image-preview'),
+                'model': result.get('model', 'gemini-2.5-flash-image'),
                 'finish_reason': result.get('finish_reason', 'STOP'),
                 'filename': readable_filename
             }
@@ -314,7 +314,7 @@ def process_portrait_job(job):
             # Save the generated portrait
             processed_image = ProcessedImage(
                 processing_job=job,
-                gemini_model=result.get('model', 'gemini-2.5-flash-image-preview'),
+                gemini_model=result.get('model', 'gemini-2.5-flash-image'),
                 finish_reason=result.get('finish_reason', 'STOP')
             )
             
@@ -330,7 +330,7 @@ def process_portrait_job(job):
             return {
                 'success': True,
                 'processed_image_id': processed_image.id,
-                'model': result.get('model', 'gemini-2.5-flash-image-preview'),
+                'model': result.get('model', 'gemini-2.5-flash-image'),
                 'finish_reason': result.get('finish_reason', 'STOP'),
                 'filename': readable_filename
             }

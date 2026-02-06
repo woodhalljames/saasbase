@@ -415,7 +415,7 @@ STRIPE_PUBLIC_KEY = STRIPE_LIVE_PUBLIC_KEY if STRIPE_LIVE_MODE else STRIPE_TEST_
 # Google Gemini API Configuration
 # ------------------------------------------------------------------------------
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
-GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.5-flash-image-preview")
+GEMINI_MODEL = env("GEMINI_MODEL", default="gemini-2.5-flash-image")
 GEMINI_API_CONFIG = {
     'timeout': 120,  # 2 minutes for image processing
     'max_retries': 3,
