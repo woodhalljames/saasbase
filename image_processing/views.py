@@ -298,7 +298,7 @@ def wedding_studio(request):
         'season_choices': SEASON_CHOICES,
         'lighting_choices': LIGHTING_CHOICES,
         'upload_form': ImageUploadForm(),
-        'gemini_model': 'gemini-2.5-flash-image-preview',
+        'gemini_model': 'gemini-2.5-flash-image',
         'supports_custom_prompts': True,
         'processing_mode': 'real-time',
     }
@@ -562,7 +562,7 @@ def process_wedding_image(request, pk):
             'processing_mode': 'async',
             'job_details': {
                 'mode': studio_mode,
-                'model': 'gemini-2.5-flash-image-preview',
+                'model': 'gemini-2.5-flash-image',
                 'image_count': total_image_count,
                 'has_user_instructions': bool(user_instructions),
                 'prompt_length': len(generated_prompt)
@@ -587,7 +587,7 @@ def job_status(request, job_id):
             'job_id': job.id,
             'status': job.status,
             'created_at': job.created_at.isoformat(),
-            'model': 'gemini-2.5-flash-image-preview',
+            'model': 'gemini-2.5-flash-image',
             'mode': job.studio_mode,
             'has_user_instructions': bool(job.user_instructions)
         }
@@ -1070,7 +1070,7 @@ def processing_history(request):
     
     context = {
         'page_obj': page_obj,
-        'gemini_model': 'gemini-2.5-flash-image-preview',
+        'gemini_model': 'gemini-2.5-flash-image',
     }
     
     return render(request, 'image_processing/processing_history.html', context)

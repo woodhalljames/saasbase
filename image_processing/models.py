@@ -925,7 +925,7 @@ class ProcessedImage(models.Model):
     height = models.PositiveIntegerField()
     
     # Gemini generation metadata
-    gemini_model = models.CharField(max_length=50, default='gemini-2.5-flash-image-preview')
+    gemini_model = models.CharField(max_length=50, default='gemini-2.5-flash-image')
     finish_reason = models.CharField(max_length=50, blank=True, null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
